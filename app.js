@@ -973,8 +973,9 @@ function moyenDe(bas, haut) {
   return bas != null ? bas : (haut != null ? haut : null);
 }
 
-function formulaireOuvrage(o) {
-  const v = o || { designation: '', lot: lotCourant || BIB.lots[0].id, unite: 'u' };
+function formulaireOuvrage(o, lotChoisi) {
+  // Nouvel ouvrage : on reprend le lot choisi dans la bibliothèque
+  const v = o || { designation: '', lot: lotChoisi || lotCourant || BIB.lots[0].id, unite: 'u' };
   const p = (o && o.prix_indicatif) || {};
   const devis = devisDe(p);
   const val = x => (x != null ? String(Math.round(x * 100) / 100).replace('.', ',') : '');
@@ -1075,7 +1076,7 @@ async function sauverBibliotheque() {
 $('btnBiblio').onclick = ouvrirBiblio;
 $('biblioLot').onchange = renderBiblio;
 $('biblioRecherche').oninput = renderBiblio;
-$('btnBiblioNouveau').onclick = () => { ouvrirModal(); formulaireOuvrage(null); };
+$('btnBiblioNouveau').onclick = () => { ouvrirModal(); formulaireOuvrage(null, $('biblioLot').value); };
 $('biblioListe').addEventListener('click', e => {
   const b = e.target.closest('[data-edit]');
   if (!b) return;
