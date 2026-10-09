@@ -174,11 +174,57 @@ function ouvrirTableau() {
 
 function renderChantiers() {
   $('titre').textContent = 'Métré Atelier 2M';
-  $('listeChantiers').innerHTML = chantiers.length
-    ? chantiers.map(c => `<div class="card"><div class="row" style="justify-content:space-between;align-items:center">
+  const actifs = chantiers.filter(c => !c.supprime && !c.archive);
+  const archives = chantiers.filter(c => !c.supprime && c.archive);
+  const carte = c => `<div class="card"><div class="row" style="justify-content:space-between;align-items:center">
         <div><strong>${esc(c.nom)}</strong><div class="muted">${lignesDe(c.id).length} ligne(s)</div></div>
-        <button class="btn small" data-ouvrir="${esc(c.id)}">Ouvrir</button></div></div>`).join('')
-    : '<p class="muted">Aucun chantier pour l\'instant. Créez-en un ci-dessus.</p>';
+        <div class="row" style="flex:0 0 auto;gap:6px">
+          ${c.archive
+            ? `<button class="btn small sec" data-restaurer="${esc(c.id)}">Restaurer</button><button class="btn small danger" data-supprimer="${esc(c.id)}">Supprimer</button>`
+            : `<button class="btn small" data-ouvrir="${esc(c.id)}">Ouvrir</button>
+               <button class="btn small sec" data-dupliquer="${esc(c.id)}">Dupliquer</button>
+               <button class="btn small sec" data-archiver="${esc(c.id)}">Archiver</button>`}
+        </div></div></div>`;
+  $('listeChantiers').innerHTML = (actifs.length ? actifs.map(carte).join('')
+    : '<p class="muted">Aucun chantier pour l\'instant. Créez-en un ci-dessus.</p>')
+    + (archives.length ? `<details style="margin-top:16px"><summary class="muted">Archives (${archives.length})</summary>${archives.map(carte).join('')}</details>` : '');
+}
+
+// Archiver, restaurer, supprimer, dupliquer : toutes les actions passent par la synchronisation
+function archiverChantier(id, archive) {
+  const c = chantiers.find(x => x.id === id);
+  if (!c) return;
+  c.archive = archive;
+  lsSet('chantiers', chantiers);
+  marquerChantier(id);
+  renderChantiers();
+}
+function supprimerChantier(id) {
+  const c = chantiers.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Supprimer définitivement le chantier « ' + c.nom + ' » et toutes ses lignes ?')) return;
+  // Suppression marquée : les autres appareils la reçoivent et retirent le chantier
+  c.supprime = true;
+  c.archive = false;
+  lsSet('chantiers', chantiers);
+  lsSet('lignes.' + id, []);
+  marquerChantier(id);
+  if (courantId === id) { courantId = null; lsSet('courant', null); }
+  renderChantiers();
+}
+// Copie complète (lots et lignes) dans un nouveau chantier
+function dupliquerChantier(id) {
+  const src = chantiers.find(x => x.id === id);
+  if (!src) return;
+  const nom = prompt('Nom du nouveau chantier :', 'Copie de ' + src.nom);
+  if (!nom || !nom.trim()) return;
+  const nouveau = { id: 'c' + uid(), nom: nom.trim(), client: null, lots: [...(src.lots || [])] };
+  const lignes = lignesDe(id).map(l => Object.assign({}, l, { uid: uid() }));
+  chantiers.push(nouveau);
+  lsSet('chantiers', chantiers);
+  lsSet('lignes.' + nouveau.id, lignes);
+  marquerChantier(nouveau.id);
+  ouvrirChantier(nouveau.id);
 }
 
 function remplirLots() {
@@ -621,7 +667,7 @@ async function recupererChantiers() {
     const { lignes, ...meta } = doc;
     const i = chantiers.findIndex(c => c.id === id);
     if (i >= 0) chantiers[i] = meta; else chantiers.push(meta);
-    lsSet('lignes.' + id, lignes || []);
+    lsSet('lignes.' + id, doc.supprime ? [] : (lignes || []));
     x[id] = { maj: doc.maj, modifie: false };
     recus++;
   }
@@ -671,7 +717,15 @@ $('btnNouveau').onclick = () => {
 
 $('listeChantiers').addEventListener('click', e => {
   const b = e.target.closest('[data-ouvrir]');
-  if (b) ouvrirChantier(b.dataset.ouvrir);
+  if (b) { ouvrirChantier(b.dataset.ouvrir); return; }
+  const d = e.target.closest('[data-dupliquer]');
+  if (d) { dupliquerChantier(d.dataset.dupliquer); return; }
+  const a = e.target.closest('[data-archiver]');
+  if (a) { archiverChantier(a.dataset.archiver, true); return; }
+  const r = e.target.closest('[data-restaurer]');
+  if (r) { archiverChantier(r.dataset.restaurer, false); return; }
+  const x = e.target.closest('[data-supprimer]');
+  if (x) supprimerChantier(x.dataset.supprimer);
 });
 
 $('ongletSaisie').onclick = () => route('metre');
@@ -1182,7 +1236,7 @@ window.addEventListener('storage', e => {
   remplirLots();
   renderChantiers();
   preparerClients();
-  if (courantId && chantiers.find(c => c.id === courantId)) ouvrirChantier(courantId);
+  if (courantId && chantiers.find(c => c.id === courantId && !c.supprime)) ouvrirChantier(courantId);
   else route(PAGE === 'tableau' ? 'tableau' : 'chantiers');
   const refClient = new URLSearchParams(location.search).get('client');
   if (refClient) {
