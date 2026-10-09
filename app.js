@@ -860,7 +860,7 @@ function donneesDocument() {
            avecPrix, total };
 }
 
-function htmlImpression(d, logo) {
+function htmlImpression(d, logo, pg) {
   const cl = d.client || {};
   const ligne = (label, val) => val ? `<tr><th class="k">${esc(label)}</th><td>${esc(val)}</td></tr>` : '';
   const surf = cl.surf ? `${cl.surf} m²` : '';
@@ -894,6 +894,8 @@ function htmlImpression(d, logo) {
   .sous { color: #8a8a8a; font-size: 9pt; margin-top: 1mm; }
   .contact { text-align: right; color: #6b6b6b; font-size: 8.5pt; line-height: 1.5; }
   .titre { margin: 26mm 0 10mm; }
+  .pg { text-align: center; margin: 0 0 8mm; }
+  .pg img { width: auto; max-width: 100%; object-fit: contain; }
   .titre small { color: #E07838; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: 9pt; }
   .titre h1 { font-size: 24pt; margin: 2mm 0 0; font-weight: 700; }
   .bloc { border-left: 4px solid #E07838; background: #fdf4ee; padding: 5mm 6mm; margin-bottom: 6mm; }
@@ -921,6 +923,7 @@ function htmlImpression(d, logo) {
     <div class="contact">${esc(ATELIER.adresse)}<br>${esc(ATELIER.tel)} · ${esc(ATELIER.mail)}<br>${esc(ATELIER.web)}</div>
   </div>
   <div class="titre"><small>Métré estimatif</small><h1>${esc(d.titre)}</h1></div>
+  ${pg ? `<div class="pg"><img src="${pg.src}" alt="Projet 3D" style="height:${(265 * pg.pct / 100).toFixed(1)}mm"></div>` : ''}
   <div class="bloc"><h2>Client</h2><table>
     ${ligne('Nom', cl.nom)}${ligne('Référence', cl.ref)}${ligne('Téléphone', cl.tel)}${ligne('Courriel', cl.mail)}
     ${ligne('Adresse du client', cl.addr)}${ligne('Adresse du chantier', cl.cadr)}${ligne('Nature du projet', cl.nat)}
@@ -947,9 +950,43 @@ async function imprimerPdf() {
   const logo = new URL('logo.png', location.href).href;
   let avecLogo = false;
   try { avecLogo = (await fetch(logo, { method: 'HEAD', cache: 'no-cache' })).ok; } catch (e) {}
+  const pg = await imagePG();
   w.document.open();
-  w.document.write(htmlImpression(donneesDocument(), avecLogo ? logo : ''));
+  w.document.write(htmlImpression(donneesDocument(), avecLogo ? logo : '', pg));
   w.document.close();
+}
+
+// Taille de l'image de la page de garde, en % de la hauteur de la page (réglage, 20 % par défaut)
+function tailleImagePG() {
+  const n = parseInt(lsGet('pg_pct', 20), 10);
+  return isFinite(n) ? Math.min(40, Math.max(10, n)) : 20;
+}
+
+// Cherche « IMAGE PG » dans le dossier Drive du client du chantier (Kanban)
+async function imagePG() {
+  const c = chantiers.find(x => x.id === courantId);
+  const cl = c && c.client;
+  if (!cl || !cl.ref || !cl.nom || !syncConfigOk()) return null;
+  try {
+    const j = await post({ action: 'image_pg', ref: cl.ref, nom: cl.nom });
+    if (j.ok && j.image && j.image.base64) {
+      return { src: `data:${j.image.mime};base64,${j.image.base64}`, pct: tailleImagePG() };
+    }
+    alert("Image « IMAGE PG » introuvable dans le dossier du client sur Drive. Le métré est imprimé sans image.");
+  } catch (e) {
+    alert("Impossible de récupérer l'image « IMAGE PG » (réseau). Le métré est imprimé sans image.");
+  }
+  return null;
+}
+
+// Réglage de la taille de l'image de page de garde, dans Réglages
+function preparerTaillePG() {
+  if ($('pgPct') || !$('chkPrix')) return;
+  $('chkPrix').closest('.card').insertAdjacentHTML('afterend', `<div class="card">
+    <label for="pgPct">Taille de l'image « IMAGE PG » sur la page de garde (% de la page)</label>
+    <input id="pgPct" type="number" min="10" max="40" step="1" value="${tailleImagePG()}">
+    <p class="muted" style="margin:6px 0 0">Environ 20 % par défaut (un cinquième de la page). Entre 10 et 40.</p></div>`);
+  $('pgPct').onchange = e => lsSet('pg_pct', Math.min(40, Math.max(10, parseInt(e.target.value, 10) || 20)));
 }
 
 function chargerXlsx() {
@@ -1272,6 +1309,7 @@ window.addEventListener('storage', e => {
   }
   synchroBibliotheque();
   preparerSynchro();
+  preparerTaillePG();
   synchroniserChantiers();
   envoyerPropositions();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
