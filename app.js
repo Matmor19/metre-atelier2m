@@ -459,7 +459,9 @@ $('btnReglages').onclick = () => {
 $('btnNouveau').onclick = () => {
   const nom = $('nomChantier').value.trim();
   if (!nom) { alert('Donnez un nom au chantier.'); return; }
-  const c = { id: 'c' + uid(), nom };
+  const idx = $('selClient') ? $('selClient').value : '';
+  const client = idx !== '' && CLIENTS[idx] ? pickClient(CLIENTS[idx]) : null;
+  const c = { id: 'c' + uid(), nom, client };
   chantiers.push(c);
   lsSet('chantiers', chantiers);
   $('nomChantier').value = '';
@@ -500,21 +502,251 @@ $('modal').addEventListener('click', e => {
   if (e.target.id === 'bLibre') { e.preventDefault(); ouvrirLibre(); }
 });
 
-$('btnCsv').onclick = () => {
-  const nums = numeroLignes(courantId);
-  const L = lignesDe(courantId);
-  const rows = [['N°', 'Lot', 'Désignation', 'Unité', 'Quantité', 'Détail']];
-  lotsDuChantier(courantId).forEach(lotId => {
-    const lot = BIB.lots.find(x => x.id === lotId);
-    for (const l of L.filter(x => x.lot === lotId))
-      rows.push([nums[l.uid], lot ? lot.nom : lotId, l.designation, l.unite, fmt(l.quantite).replace(/\s/g, ''), detail(l)]);
-  });
-  const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'metre-' + (courantId || 'chantier') + '.csv';
-  a.click();
+/* ============ Clients (fiches du Kanban, lecture seule) ============ */
+let CLIENTS = [];
+const pickClient = x => ({
+  ref: x.ref || '', nom: x.nom || '', tel: x.tel || '', mail: x.mail || '',
+  addr: x.addr || '', cadr: x.cadr || '', nat: x.nat || '',
+  surf: x.surf || '', resume: x.resume || ''
+});
+function remplirSelectClients() {
+  const sel = $('selClient');
+  if (!sel) return;
+  CLIENTS = lsGet('clients', []).slice().sort((a, b) => String(a.nom || '').localeCompare(String(b.nom || ''), 'fr'));
+  sel.innerHTML = '<option value="">— Saisie libre —</option>' + CLIENTS.map((c, i) =>
+    `<option value="${i}">${esc((c.ref ? c.ref + ' – ' : '') + (c.nom || 'Sans nom'))}</option>`).join('');
+}
+async function actualiserClients(silencieux) {
+  if (!lsGet('url', '') || !lsGet('jeton', '')) {
+    if (!silencieux) alert("Renseignez d'abord l'adresse du script et le jeton dans Réglages.");
+    return;
+  }
+  try {
+    const j = await post({ action: 'importer_clients' });
+    if (j.ok) { lsSet('clients', j.clients); remplirSelectClients(); }
+    else if (!silencieux) alert('Refus : ' + (j.erreur || 'erreur inconnue'));
+  } catch (e) {
+    if (!silencieux) alert('Import impossible pour le moment (réseau).');
+  }
+}
+function preparerClients() {
+  const carte = $('nomChantier').closest('.card');
+  if (!$('selClient')) {
+    carte.insertAdjacentHTML('afterbegin', `<label for="selClient">Client (fiche du Kanban)</label>
+      <div class="row"><select id="selClient"></select>
+      <button class="btn small sec" id="btnClients" style="flex:0 0 auto">Actualiser</button></div>`);
+  }
+  $('selClient').onchange = e => {
+    const c = CLIENTS[e.target.value];
+    if (c) $('nomChantier').value = c.nom || '';
+  };
+  $('btnClients').onclick = () => actualiserClients(false);
+  remplirSelectClients();
+  actualiserClients(true);
+}
+
+// Lien depuis la fiche client du Kanban : ouvre (ou crée) le chantier de ce client
+async function ouvrirDepuisClient(ref) {
+  if (!lsGet('clients', []).length) await actualiserClients(true);
+  remplirSelectClients();
+  const cl = lsGet('clients', []).find(x => String(x.ref) === String(ref));
+  if (!cl) { alert('Client introuvable dans le Kanban : ' + ref); return; }
+  let c = chantiers.find(x => x.client && String(x.client.ref) === String(ref));
+  if (!c) {
+    c = { id: 'c' + uid(), nom: cl.nom || ('Chantier ' + ref), client: pickClient(cl) };
+    chantiers.push(c);
+    lsSet('chantiers', chantiers);
+  }
+  ouvrirChantier(c.id);
+}
+
+/* ============ Documents : page de garde + métré (Excel et PDF) ============ */
+const ATELIER = {
+  nom: 'Atelier 2M',
+  sous: "Dessin d'architecture",
+  adresse: '29 Avenue Thiers, 19100 Brive-la-Gaillarde',
+  tel: '06 59 98 68 81',
+  mail: 'contact@atelier2m.com',
+  web: 'www.atelier2m.com',
 };
+const pad2 = n => String(n).padStart(2, '0');
+
+function donneesDocument() {
+  const c = chantiers.find(x => x.id === courantId) || { nom: 'Métré' };
+  const L = lignesDe(courantId);
+  const nums = numeroLignes(courantId);
+  const lots = lotsDuChantier(courantId).map((lotId, i) => ({
+    num: pad2(i + 1),
+    nom: libLot(lotId),
+    lignes: L.filter(l => l.lot === lotId).map(l => ({
+      num: nums[l.uid], designation: l.designation, unite: l.unite,
+      quantite: l.quantite, detail: detail(l)
+    }))
+  }));
+  return { titre: c.nom, client: c.client || null, date: new Date().toLocaleDateString('fr-FR'), lots };
+}
+
+function htmlImpression(d, logo) {
+  const cl = d.client || {};
+  const ligne = (label, val) => val ? `<tr><th class="k">${esc(label)}</th><td>${esc(val)}</td></tr>` : '';
+  const surf = cl.surf ? `${cl.surf} m²` : '';
+  let corps = '';
+  for (const lot of d.lots) {
+    corps += `<tr class="lot"><td colspan="5">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
+    for (const l of lot.lignes) {
+      corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
+        <td class="num">${fmt(l.quantite)}</td><td class="det">${esc(l.detail)}</td></tr>`;
+    }
+  }
+  const marque = logo
+    ? `<img class="logo" src="${esc(logo)}" alt="Atelier 2M">`
+    : `<div class="marque">${esc(ATELIER.nom)}</div>`;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Métré – ${esc(d.titre)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Montserrat, Arial, sans-serif; color: #2b2b2b; font-size: 9.5pt; margin: 0; }
+  .garde { min-height: 265mm; display: flex; flex-direction: column; page-break-after: always; }
+  .entete { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #E07838; padding-bottom: 5mm; }
+  .logo { height: 20mm; display: block; }
+  .marque { color: #E07838; font-weight: 700; font-size: 18pt; }
+  .sous { color: #8a8a8a; font-size: 9pt; margin-top: 1mm; }
+  .contact { text-align: right; color: #6b6b6b; font-size: 8.5pt; line-height: 1.5; }
+  .titre { margin: 26mm 0 10mm; }
+  .titre small { color: #E07838; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: 9pt; }
+  .titre h1 { font-size: 24pt; margin: 2mm 0 0; font-weight: 700; }
+  .bloc { border-left: 4px solid #E07838; background: #fdf4ee; padding: 5mm 6mm; margin-bottom: 6mm; }
+  .bloc h2 { font-size: 9.5pt; margin: 0 0 3mm; color: #E07838; text-transform: uppercase; letter-spacing: .08em; }
+  .bloc table { width: 100%; border-collapse: collapse; }
+  .bloc th.k { width: 36mm; text-align: left; color: #6b6b6b; font-weight: 600; padding: 1.5mm 0; vertical-align: top; }
+  .bloc td { padding: 1.5mm 0; vertical-align: top; }
+  .pied { margin-top: auto; border-top: 1px solid #ddd; padding-top: 4mm; color: #6b6b6b; font-size: 8.5pt; }
+  table.metre { width: 100%; border-collapse: collapse; }
+  table.metre thead { display: table-header-group; }
+  table.metre th { background: #E07838; color: #fff; text-align: left; padding: 2mm; font-size: 8.5pt; }
+  table.metre td { padding: 1.6mm 2mm; border-bottom: 1px solid #e3e3e3; vertical-align: top; }
+  table.metre td.n { font-weight: 700; color: #E07838; white-space: nowrap; }
+  table.metre td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  table.metre td.det { color: #6b6b6b; font-size: 8.5pt; }
+  table.metre tr.lot td { background: #f4f4f4; font-weight: 700; border-bottom: 1px solid #E07838; padding-top: 3mm; }
+  table.metre tr { page-break-inside: avoid; }
+  .vide { font-weight: 400; color: #8a8a8a; }
+  h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
+</style></head><body>
+<section class="garde">
+  <div class="entete">
+    <div>${marque}<div class="sous">${esc(ATELIER.sous)}</div></div>
+    <div class="contact">${esc(ATELIER.adresse)}<br>${esc(ATELIER.tel)} · ${esc(ATELIER.mail)}<br>${esc(ATELIER.web)}</div>
+  </div>
+  <div class="titre"><small>Métré estimatif</small><h1>${esc(d.titre)}</h1></div>
+  <div class="bloc"><h2>Client</h2><table>
+    ${ligne('Nom', cl.nom)}${ligne('Référence', cl.ref)}${ligne('Téléphone', cl.tel)}${ligne('Courriel', cl.mail)}
+    ${ligne('Adresse du client', cl.addr)}${ligne('Adresse du chantier', cl.cadr)}${ligne('Nature du projet', cl.nat)}
+    ${ligne('Surface', surf)}${ligne('Résumé', cl.resume)}
+  </table></div>
+  <div class="pied">Métré établi le ${esc(d.date)} · ${esc(ATELIER.nom)} · ${esc(ATELIER.mail)}</div>
+</section>
+<section>
+  <h2 class="entete-metre">Détail du métré</h2>
+  <table class="metre">
+    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th>Quantité</th><th>Détail</th></tr></thead>
+    <tbody>${corps}</tbody>
+  </table>
+</section>
+<script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 400); });</script>
+</body></html>`;
+}
+
+async function imprimerPdf() {
+  // La fenêtre est ouverte tout de suite (sinon le navigateur la bloque), puis remplie.
+  const w = window.open('', 'metre2m-impression');
+  if (!w) { alert("La fenêtre d'impression est bloquée. Autorisez les fenêtres pour ce site, puis réessayez."); return; }
+  w.document.write('<p style="font-family:sans-serif;padding:20px">Préparation du document…</p>');
+  const logo = new URL('logo.png', location.href).href;
+  let avecLogo = false;
+  try { avecLogo = (await fetch(logo, { method: 'HEAD', cache: 'no-cache' })).ok; } catch (e) {}
+  w.document.open();
+  w.document.write(htmlImpression(donneesDocument(), avecLogo ? logo : ''));
+  w.document.close();
+}
+
+function chargerXlsx() {
+  return new Promise((ok, ko) => {
+    if (window.XLSX) return ok(window.XLSX);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+    s.onload = () => ok(window.XLSX);
+    s.onerror = () => ko(new Error('chargement impossible'));
+    document.head.appendChild(s);
+  });
+}
+
+async function exporterExcel() {
+  let XL;
+  try { XL = await chargerXlsx(); }
+  catch (e) { alert('Export Excel indisponible : vérifiez la connexion internet.'); return; }
+  const d = donneesDocument();
+  const cl = d.client || {};
+  const orange = { rgb: ORANGE };
+  const blanc = { rgb: 'FFFFFF' };
+  const wb = XL.utils.book_new();
+
+  // Feuille 1 : page de garde
+  const g = [
+    [ATELIER.nom], [ATELIER.sous], [ATELIER.adresse], [ATELIER.tel + ' · ' + ATELIER.mail + ' · ' + ATELIER.web], [],
+    ['MÉTRÉ ESTIMATIF'], [d.titre], [],
+    ['CLIENT'], ['Nom', cl.nom || ''], ['Référence', cl.ref || ''], ['Téléphone', cl.tel || ''], ['Courriel', cl.mail || ''],
+    ['Adresse du client', cl.addr || ''], ['Adresse du chantier', cl.cadr || ''], ['Nature du projet', cl.nat || ''],
+    ['Surface', cl.surf ? cl.surf + ' m²' : ''], ['Résumé', cl.resume || ''], [],
+    ['Métré établi le', d.date]
+  ];
+  const ws1 = XL.utils.aoa_to_sheet(g);
+  ws1['!cols'] = [{ wch: 22 }, { wch: 70 }];
+  const style = (ws, addr, s) => { if (!ws[addr]) ws[addr] = { t: 's', v: '' }; ws[addr].s = s; };
+  style(ws1, 'A1', { font: { bold: true, sz: 18, color: orange } });
+  style(ws1, 'A2', { font: { italic: true, color: { rgb: '8A8A8A' } } });
+  style(ws1, 'A6', { font: { bold: true, sz: 11, color: orange } });
+  style(ws1, 'A7', { font: { bold: true, sz: 16 } });
+  style(ws1, 'A9', { font: { bold: true, color: orange } });
+  for (let r = 10; r <= 17; r++) style(ws1, 'A' + r, { font: { bold: true, color: { rgb: '6B6B6B' } } });
+
+  // Feuille 2 : métré détaillé
+  const m = [['N°', 'Désignation', 'Unité', 'Quantité', 'Détail']];
+  const lignesLot = [], lignesLigne = [];
+  for (const lot of d.lots) {
+    lignesLot.push(m.length);
+    m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)']);
+    for (const l of lot.lignes) {
+      lignesLigne.push(m.length);
+      m.push([l.num, l.designation, l.unite, l.quantite, l.detail]);
+    }
+  }
+  const ws2 = XL.utils.aoa_to_sheet(m);
+  ws2['!cols'] = [{ wch: 9 }, { wch: 60 }, { wch: 10 }, { wch: 12 }, { wch: 48 }];
+  ws2['!merges'] = lignesLot.map(r => ({ s: { r, c: 0 }, e: { r, c: 4 } }));
+  style(ws2, 'A1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
+  for (const c of ['B', 'C', 'D', 'E']) style(ws2, c + '1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
+  for (const r of lignesLot) style(ws2, 'A' + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F4F4F4' } } });
+  for (const r of lignesLot) for (const c of ['B', 'C', 'D', 'E']) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
+  for (const r of lignesLigne) {
+    style(ws2, 'A' + (r + 1), { font: { bold: true, color: orange } });
+    ws2['D' + (r + 1)].z = '#,##0.00';
+    ws2['D' + (r + 1)].s = { font: { bold: true }, alignment: { horizontal: 'right' } };
+    style(ws2, 'E' + (r + 1), { font: { color: { rgb: '6B6B6B' }, sz: 9 } });
+  }
+
+  XL.utils.book_append_sheet(wb, ws1, 'Page de garde');
+  XL.utils.book_append_sheet(wb, ws2, 'Métré');
+  const nom = (d.titre || 'metre').replace(/[^\w\-]+/g, '_');
+  XL.writeFile(wb, `Metre_${nom}.xlsx`);
+}
+
+$('btnCsv').textContent = 'Excel';
+$('btnCsv').onclick = exporterExcel;
+$('btnCsv').insertAdjacentHTML('afterend', ' <button class="btn small" id="btnPdf">PDF / Imprimer</button>');
+$('btnPdf').onclick = imprimerPdf;
 
 $('btnSauverReglages').onclick = () => {
   lsSet('url', $('urlScript').value.trim());
@@ -549,8 +781,14 @@ window.addEventListener('storage', e => {
   lotCourant = BIB.lots[0].id;
   remplirLots();
   renderChantiers();
+  preparerClients();
   if (courantId && chantiers.find(c => c.id === courantId)) ouvrirChantier(courantId);
   else route(PAGE === 'tableau' ? 'tableau' : 'chantiers');
+  const refClient = new URLSearchParams(location.search).get('client');
+  if (refClient) {
+    history.replaceState(null, '', location.pathname);
+    await ouvrirDepuisClient(refClient);
+  }
   synchroBibliotheque();
   envoyerPropositions();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
