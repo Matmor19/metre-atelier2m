@@ -908,10 +908,24 @@ function renderBiblio() {
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
 
+// Liste des prix relevés (un par devis). Un ancien prix sans liste compte pour un seul relevé.
+function relevesDe(p) {
+  if (Array.isArray(p.releves)) return p.releves.slice();
+  return p.moyen != null ? [p.moyen] : [];
+}
+function moyenne(liste) {
+  return Math.round(liste.reduce((s, x) => s + x, 0) / liste.length * 100) / 100;
+}
+// Calcule minimum, maximum et moyenne à partir de la liste des prix relevés
+function calculerPrix(liste, source) {
+  return { moyen: moyenne(liste), min: Math.min(...liste), max: Math.max(...liste),
+           nb_prix: liste.length, releves: liste, source: source || 'saisie dans l\'application', date: aujourdhui() };
+}
+
 function formulaireOuvrage(o) {
   const v = o || { designation: '', lot: lotCourant || BIB.lots[0].id, unite: 'u' };
   const p = (o && o.prix_indicatif) || {};
-  const val = x => (x != null ? String(x).replace('.', ',') : '');
+  const releves = relevesDe(p);
   $('sheet').innerHTML = `<h2 style="margin:0 0 6px;font-size:18px">${o ? 'Modifier l\'ouvrage' : 'Nouvel ouvrage'}</h2>
     <form id="fBib">
       <label for="b_des">Désignation</label><input id="b_des" name="designation" required value="${esc(v.designation)}">
@@ -919,13 +933,15 @@ function formulaireOuvrage(o) {
       <label for="b_unite">Unité de mesure</label><select id="b_unite" name="unite">${UNITES.map(u => `<option ${u === v.unite ? 'selected' : ''}>${u}</option>`).join('')}</select>
       <div class="card" style="margin-top:12px">
         <strong>Prix indicatifs HT (€)</strong>
-        <p class="muted" style="margin:4px 0 6px">Laissez le prix moyen vide pour qu'il n'y ait aucun prix sur cet ouvrage.</p>
-        <div class="row">
-          <div><label for="b_moy">Prix moyen</label><input id="b_moy" name="moyen" inputmode="decimal" value="${val(p.moyen)}"></div>
-          <div><label for="b_min">Minimum</label><input id="b_min" name="min" inputmode="decimal" value="${val(p.min)}"></div>
-          <div><label for="b_max">Maximum</label><input id="b_max" name="max" inputmode="decimal" value="${val(p.max)}"></div>
-        </div>
-        <p class="muted" style="margin:8px 0 0">${p.source ? 'Source : ' + esc(p.source) + (p.date ? ' (' + esc(p.date) + ')' : '') + (p.nb_prix ? ' · ' + p.nb_prix + ' prix' : '') : 'Aucun prix enregistré.'}</p>
+        <p class="muted" style="margin:4px 0 6px">Saisissez un prix par devis : l'application calcule seule le minimum, le maximum et la moyenne.</p>
+        ${releves.length
+          ? `<p style="margin:6px 0">Prix enregistrés : <strong>${releves.map(x => fmt(x) + ' €').join(' · ')}</strong></p>
+             <p style="margin:0 0 6px">Minimum ${fmt(Math.min(...releves))} € · Maximum ${fmt(Math.max(...releves))} € · Moyenne ${fmt(moyenne(releves))} €</p>`
+          : '<p class="muted" style="margin:6px 0">Aucun prix enregistré pour cet ouvrage.</p>'}
+        <label for="b_nouv">${releves.length ? 'Ajouter un autre prix (nouveau devis)' : 'Prix unique (premier devis)'}</label>
+        <input id="b_nouv" name="nouveau" inputmode="decimal" placeholder="ex. 28,50">
+        ${releves.length ? '<label style="display:flex;gap:8px;align-items:center;color:var(--fg);margin-top:10px"><input type="checkbox" name="effacer" style="width:20px;height:20px;min-height:0"> Supprimer tous les prix de cet ouvrage</label>' : ''}
+        <p class="muted" style="margin:8px 0 0">${p.source ? 'Source : ' + esc(p.source) + (p.date ? ' (' + esc(p.date) + ')' : '') : ''}</p>
       </div>
       <div class="row" style="margin-top:12px">
         <button type="button" class="btn sec" id="bBibAnnuler">Annuler</button>
@@ -940,15 +956,16 @@ function enregistrerOuvrage(id) {
   const des = f.elements.designation.value.trim();
   if (!des) { alert('La désignation est obligatoire.'); return; }
   const lot = f.elements.lot.value, unite = f.elements.unite.value;
-  const brut = k => f.elements[k].value.trim().replace(',', '.');
-  const moy = brut('moyen'), mi = brut('min'), ma = brut('max');
-  let prix = null;
-  if (moy !== '') {
-    const m = num(moy);
-    if (!(m > 0)) { alert('Le prix moyen doit être un nombre supérieur à 0.'); return; }
-    const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
-    prix = { moyen: m, min: mi !== '' ? num(mi) : m, max: ma !== '' ? num(ma) : m,
-             nb_prix: ancien.nb_prix || 0, source: 'saisie dans l\'application', date: aujourdhui() };
+  const nouv = f.elements.nouveau.value.trim().replace(',', '.');
+  const effacer = f.elements.effacer ? f.elements.effacer.checked : false;
+  const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
+  let prix = ancien.moyen != null ? ancien : null;   // sans changement de prix, on garde l'existant
+  if (effacer) prix = null;
+  if (nouv !== '') {
+    const n = num(nouv);
+    if (!(n > 0)) { alert('Le prix doit être un nombre supérieur à 0.'); return; }
+    const releves = relevesDe(ancien).concat([n]);
+    prix = calculerPrix(releves, ancien.source);
   }
   if (id) {
     const o = BIB.ouvrages.find(x => x.id === id);
