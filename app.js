@@ -353,7 +353,7 @@ const LIBELLES_PRIX = [['moyen', 'Moyen', 'moyen'], ['bas', 'Bas', 'min'], ['hau
 function prixSelon(p, choix) {
   if (!p) return null;
   if (choix && choix.startsWith('devis:')) {          // un prix précis saisi dans « Ajouter un prix de devis »
-    const v = Array.isArray(p.releves) ? p.releves[parseInt(choix.slice(6), 10)] : undefined;
+    const v = devisDe(p)[parseInt(choix.slice(6), 10)];
     if (v != null) return v;
     choix = 'moyen';
   }
@@ -374,10 +374,10 @@ function optionsPrix(l, montants) {
     return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>${lib}${suite}</option>`;
   }).join('');
   // Chaque prix de devis saisi est aussi un choix, pour pouvoir le retrouver
-  const devis = Array.isArray(p.releves) ? p.releves.map((v, i) => {
+  const devis = devisDe(p).map((v, i) => {
     const cle = 'devis:' + i;
     return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>Devis ${i + 1}${montants ? ' ' + fmt(v) : ''}</option>`;
-  }).join('') : '';
+  }).join('');
   return base + devis;
 }
 // Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
@@ -947,25 +947,24 @@ function renderBiblio() {
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
 
-// Liste des prix relevés (un par devis). Un ancien prix sans liste compte pour un seul relevé.
-function relevesDe(p) {
+// Prix de devis saisis (« Ajouter un prix de devis ») : ils restent tels quels.
+// Un ancien enregistrement (liste « releves ») est repris comme liste de devis.
+function devisDe(p) {
+  if (Array.isArray(p.devis)) return p.devis.slice();
   if (Array.isArray(p.releves)) return p.releves.slice();
-  return p.moyen != null ? [p.moyen] : [];
+  return [];
 }
-function moyenne(liste) {
-  return Math.round(liste.reduce((s, x) => s + x, 0) / liste.length * 100) / 100;
-}
-// Calcule minimum, maximum et moyenne à partir de la liste des prix relevés
-function calculerPrix(liste, source) {
-  return { moyen: moyenne(liste), min: Math.min(...liste), max: Math.max(...liste),
-           nb_prix: liste.length, releves: liste, source: source || 'saisie dans l\'application', date: aujourdhui() };
+// Moyen = moyenne du prix bas et du prix haut (ou la seule valeur saisie)
+function moyenDe(bas, haut) {
+  if (bas != null && haut != null) return Math.round((bas + haut) / 2 * 100) / 100;
+  return bas != null ? bas : (haut != null ? haut : null);
 }
 
 function formulaireOuvrage(o) {
   const v = o || { designation: '', lot: lotCourant || BIB.lots[0].id, unite: 'u' };
   const p = (o && o.prix_indicatif) || {};
-  const releves = relevesDe(p);
-  const val = x => (x != null ? String(x).replace('.', ',') : '');
+  const devis = devisDe(p);
+  const val = x => (x != null ? String(Math.round(x * 100) / 100).replace('.', ',') : '');
   $('sheet').innerHTML = `<h2 style="margin:0 0 6px;font-size:18px">${o ? 'Modifier l\'ouvrage' : 'Nouvel ouvrage'}</h2>
     <form id="fBib">
       <label for="b_des">Désignation</label><input id="b_des" name="designation" required value="${esc(v.designation)}">
@@ -973,19 +972,19 @@ function formulaireOuvrage(o) {
       <label for="b_unite">Unité de mesure</label><select id="b_unite" name="unite">${UNITES.map(u => `<option ${u === v.unite ? 'selected' : ''}>${u}</option>`).join('')}</select>
       <div class="card" style="margin-top:12px">
         <strong>Prix indicatifs HT (€)</strong>
-        <p class="muted" style="margin:4px 0 6px">Saisissez le prix de chaque devis dans « Ajouter un prix » : bas, haut et moyen se calculent seuls.</p>
-        <div class="row">
-          <div><label>Prix bas (calculé)</label><input readonly value="${p.min != null ? val(p.min) : ''}" placeholder="—"></div>
-          <div><label>Prix haut (calculé)</label><input readonly value="${p.max != null ? val(p.max) : ''}" placeholder="—"></div>
-          <div><label>Prix moyen (calculé)</label><input readonly value="${p.moyen != null ? val(p.moyen) : ''}" placeholder="—"></div>
+        <div class="row" style="margin-top:8px">
+          <div><label for="b_bas">Prix bas</label><input id="b_bas" name="bas" inputmode="decimal" value="${val(p.min)}" placeholder="—"></div>
+          <div><label for="b_haut">Prix haut</label><input id="b_haut" name="haut" inputmode="decimal" value="${val(p.max)}" placeholder="—"></div>
+          <div><label for="b_moy">Prix moyen (automatique)</label><input id="b_moy" readonly value="${val(p.moyen)}" placeholder="—"></div>
         </div>
-        <p class="muted" style="margin:6px 0 0">${releves.length ? 'Prix saisis : ' + releves.map(x => fmt(x) + ' €').join(' · ') : 'Aucun prix de devis saisi.'}</p>
+        <p class="muted" style="margin:6px 0 0">Le prix moyen se calcule seul à partir du bas et du haut.</p>
+        <p class="muted" style="margin:8px 0 0">${devis.length ? 'Prix de devis saisis : ' + devis.map((x, i) => 'Devis ' + (i + 1) + ' = ' + fmt(x) + ' €').join(' · ') : 'Aucun prix de devis saisi.'}</p>
         <label for="b_nouv">Ajouter un prix de devis (HT)</label>
         <input id="b_nouv" name="nouveau" inputmode="decimal" placeholder="ex. 28,50">
         <label for="b_unique">Prix unique (HT)</label>
         <input id="b_unique" name="unique" inputmode="decimal" value="${val(p.unique)}" placeholder="si vous n'avez qu'un prix">
-        <p class="muted" style="margin:4px 0 0">Dans le métré, vous choisissez ensuite Moyen, Bas, Haut ou Unique. Par défaut : Moyen, ou Unique si pas de moyen.</p>
-        ${releves.length ? '<label style="display:flex;gap:8px;align-items:center;color:var(--fg);margin-top:10px"><input type="checkbox" name="effacer" style="width:20px;height:20px;min-height:0"> Supprimer tous les prix de cet ouvrage</label>' : ''}
+        <p class="muted" style="margin:4px 0 0">Dans le métré, vous choisissez ensuite Moyen, Bas, Haut, Unique ou un devis. Par défaut : Moyen, ou Unique si pas de moyen.</p>
+        ${o && o.prix_indicatif ? '<label style="display:flex;gap:8px;align-items:center;color:var(--fg);margin-top:10px"><input type="checkbox" name="effacer" style="width:20px;height:20px;min-height:0"> Supprimer tous les prix de cet ouvrage</label>' : ''}
         <p class="muted" style="margin:8px 0 0">${p.source ? 'Source : ' + esc(p.source) + (p.date ? ' (' + esc(p.date) + ')' : '') : ''}</p>
       </div>
       <div class="row" style="margin-top:12px">
@@ -993,6 +992,10 @@ function formulaireOuvrage(o) {
         <button type="submit" class="btn">Enregistrer</button>
       </div>
     </form>`;
+  const lireSaisie = id => { const t = $(id).value.trim().replace(',', '.'); return t === '' ? null : num(t); };
+  const majMoyen = () => { const m = moyenDe(lireSaisie('b_bas'), lireSaisie('b_haut')); $('b_moy').value = m != null ? val(m) : ''; };
+  $('b_bas').addEventListener('input', majMoyen);
+  $('b_haut').addEventListener('input', majMoyen);
   $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
 }
 
@@ -1001,25 +1004,22 @@ function enregistrerOuvrage(id) {
   const des = f.elements.designation.value.trim();
   if (!des) { alert('La désignation est obligatoire.'); return; }
   const lot = f.elements.lot.value, unite = f.elements.unite.value;
-  const nouv = f.elements.nouveau.value.trim().replace(',', '.');
-  const effacer = f.elements.effacer ? f.elements.effacer.checked : false;
-  const uniqueBrut = f.elements.unique.value.trim().replace(',', '.');
-  const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
-  let prix = effacer ? null : Object.assign({}, ancien);
-  if (!effacer && nouv !== '') {
-    const n = num(nouv);
-    if (!(n > 0)) { alert('Le prix de devis doit être un nombre supérieur à 0.'); return; }
-    prix = calculerPrix(relevesDe(ancien).concat([n]), ancien.source);
+  const lire = k => { const t = f.elements[k].value.trim().replace(',', '.'); return t === '' ? null : num(t); };
+  const bas = lire('bas'), haut = lire('haut'), nouv = lire('nouveau'), unique = lire('unique');
+  for (const [valeur, nom] of [[bas, 'Le prix bas'], [haut, 'Le prix haut'], [nouv, 'Le prix de devis'], [unique, 'Le prix unique']]) {
+    if (valeur !== null && !(valeur > 0)) { alert(nom + ' doit être un nombre supérieur à 0.'); return; }
   }
+  const effacer = f.elements.effacer ? f.elements.effacer.checked : false;
+  const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
+  let prix = null;
   if (!effacer) {
-    if (uniqueBrut !== '') {
-      const u = num(uniqueBrut);
-      if (!(u > 0)) { alert('Le prix unique doit être un nombre supérieur à 0.'); return; }
-      prix = Object.assign(prix || {}, { unique: u, source: (prix && prix.source) || 'saisie dans l\'application', date: aujourdhui() });
-    } else if (prix) {
-      delete prix.unique;
-    }
-    if (prix && prix.moyen == null && prix.unique == null) prix = null;
+    const devis = devisDe(ancien).concat(nouv !== null ? [nouv] : []);
+    // Le moyen enregistré est gardé, sauf si le bas ou le haut a été modifié
+    const inchange = (bas !== null || haut !== null) && bas === (ancien.min ?? null) && haut === (ancien.max ?? null) && ancien.moyen != null;
+    prix = { min: bas, max: haut, moyen: inchange ? ancien.moyen : moyenDe(bas, haut), unique, devis,
+             source: ancien.source || 'saisie dans l\'application', date: aujourdhui() };
+    for (const k of Object.keys(prix)) if (prix[k] === null || (Array.isArray(prix[k]) && !prix[k].length)) delete prix[k];
+    if (prix.moyen == null && prix.unique == null && !prix.devis) prix = null;
   }
   if (id) {
     const o = BIB.ouvrages.find(x => x.id === id);
