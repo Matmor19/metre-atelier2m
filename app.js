@@ -343,6 +343,7 @@ function renderMetre() {
   const avecPrix = prixAffiches();
   compterLignes();
   dessinerPanneauLot();
+  if ($('btnPrix')) $('btnPrix').textContent = avecPrix ? 'Masquer les prix' : 'Afficher les prix';
   const nc = avecPrix ? 8 : 6;
   const colonnes = avecPrix
     ? '<col style="width:9%"><col style="width:27%"><col style="width:7%"><col style="width:9%"><col style="width:20%"><col style="width:9%"><col style="width:12%"><col style="width:7%">'
@@ -841,6 +842,9 @@ $('btnCsv').textContent = 'Excel';
 $('btnCsv').onclick = exporterExcel;
 $('btnCsv').insertAdjacentHTML('afterend', ' <button class="btn small" id="btnPdf">PDF / Imprimer</button>');
 $('btnPdf').onclick = imprimerPdf;
+// Bouton « Afficher les prix » : même réglage que dans Réglages
+$('btnPdf').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnPrix"></button>');
+$('btnPrix').onclick = () => { lsSet('prix', !prixAffiches()); renderMetre(); };
 
 // Réglage « Afficher les prix » : enregistré tout de suite, mis à jour dans les deux fenêtres
 if ($('chkPrix')) $('chkPrix').onchange = e => { lsSet('prix', e.target.checked); renderMetre(); };
