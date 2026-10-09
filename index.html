@@ -67,8 +67,12 @@ td.num{text-align:right;white-space:nowrap}
     <div id="listeChantiers"></div>
   </section>
 
-  <!-- Métré d'un chantier -->
+  <!-- Écran 1 : saisie (choix du lot et des ouvrages) -->
   <section id="vMetre" class="hidden">
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn" id="ongletSaisie">Saisie</button>
+      <button class="btn sec" id="ongletTableau">Métré du chantier (<span id="nbLignes">0</span>)</button>
+    </div>
     <div class="card">
       <label for="selLot">1. Lot</label>
       <select id="selLot"></select>
@@ -76,9 +80,17 @@ td.num{text-align:right;white-space:nowrap}
       <input id="recherche" placeholder="Rechercher…">
     </div>
     <div class="card" id="listeOuvrages" style="padding:0;overflow:hidden"></div>
+  </section>
+
+  <!-- Écran 2 : métré validé du chantier -->
+  <section id="vTableau" class="hidden">
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn sec" id="ongletSaisie2">Saisie</button>
+      <button class="btn" id="ongletTableau2">Métré du chantier (<span id="nbLignes2">0</span>)</button>
+    </div>
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <strong>Métré du chantier</strong>
+        <strong>Lignes validées</strong>
         <button class="btn small sec" id="btnCsv">Exporter CSV</button>
       </div>
       <div id="tableMetre" style="overflow-x:auto;margin-top:8px"></div>
@@ -212,8 +224,20 @@ function detail(l) {
 
 /* ============ Affichage ============ */
 function route(nom) {
-  const vues = { chantiers: 'vChantiers', metre: 'vMetre', reglages: 'vReglages' };
+  const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', reglages: 'vReglages' };
   for (const k of Object.keys(vues)) $(vues[k]).classList.toggle('hidden', k !== nom);
+  if (nom === 'metre' || nom === 'tableau') compterLignes();
+}
+
+function compterLignes() {
+  const n = courantId ? lignesDe(courantId).length : 0;
+  $('nbLignes').textContent = n;
+  $('nbLignes2').textContent = n;
+}
+
+function ouvrirTableau() {
+  route('tableau');
+  renderMetre();
 }
 
 function renderChantiers() {
@@ -241,7 +265,7 @@ function renderOuvrages() {
 
 function renderMetre() {
   const L = lignesDe(courantId);
-  if (!L.length) { $('tableMetre').innerHTML = '<p class="muted">Aucune ligne. Choisissez un lot, puis un ouvrage.</p>'; return; }
+  if (!L.length) { $('tableMetre').innerHTML = '<p class="muted">Aucune ligne. Retournez à la saisie pour ajouter des ouvrages.</p>'; compterLignes(); return; }
   let h = '';
   for (const lot of BIB.lots) {
     const ls = L.filter(l => l.lot === lot.id);
@@ -256,6 +280,7 @@ function renderMetre() {
     h += '</table></div>';
   }
   $('tableMetre').innerHTML = h;
+  compterLignes();
 }
 
 /* ============ Fenêtre de saisie (ouvrage du catalogue) ============ */
@@ -405,6 +430,11 @@ $('listeChantiers').addEventListener('click', e => {
   const b = e.target.closest('[data-ouvrir]');
   if (b) ouvrirChantier(b.dataset.ouvrir);
 });
+
+$('ongletSaisie').onclick = () => route('metre');
+$('ongletTableau').onclick = ouvrirTableau;
+$('ongletSaisie2').onclick = () => route('metre');
+$('ongletTableau2').onclick = ouvrirTableau;
 
 $('selLot').onchange = e => { lotCourant = e.target.value; renderOuvrages(); };
 $('recherche').oninput = renderOuvrages;
