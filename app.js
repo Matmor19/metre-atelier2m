@@ -2,6 +2,27 @@
 /* ============ Utilitaires ============ */
 const LS = 'metre2m.';
 const PAGE = document.body.dataset.page || 'saisie';
+/* Style du tableau du métré */
+(function () {
+  const css = `
+    table.metre{width:100%;table-layout:fixed;border-collapse:collapse;font-size:14px;background:var(--card)}
+    table.metre th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);padding:8px 8px;border-bottom:2px solid var(--line)}
+    table.metre td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+    table.metre th.num,table.metre td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+    table.metre td.detail{font-size:12.5px;color:var(--mut)}
+    table.metre td.act{text-align:center;padding-left:0;padding-right:4px}
+    table.metre tr.lot td{background:var(--line);color:var(--acc2);font-weight:700;font-size:13px;padding:8px}
+    table.metre tr.lot .muted{font-weight:400}
+    table.metre tbody tr:not(.lot):hover td{background:rgba(47,111,176,.06)}
+    table.metre .btn.small{min-height:30px;padding:4px 9px}
+    table.metre td.numl{font-weight:700;color:var(--acc2);white-space:nowrap}
+    table.metre tr.lot .lotnum{display:inline-block;min-width:2.2em;font-weight:700;color:var(--acc2)}
+  `;
+  const s = document.createElement('style');
+  s.textContent = css;
+  document.head.appendChild(s);
+})();
+
 const UNITES = ['m²', 'm³', 'ml', 'u', 'forfait'];
 const $ = id => document.getElementById(id);
 function lsGet(k, d) { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -147,24 +168,109 @@ function renderOuvrages() {
     + '<div style="padding:12px"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button></div>';
 }
 
-function renderMetre() {
-  const L = lignesDe(courantId);
-  if (!L.length) { $('tableMetre').innerHTML = '<p class="muted">Aucune ligne. Retournez à la saisie pour ajouter des ouvrages.</p>'; compterLignes(); return; }
-  let h = '';
-  for (const lot of BIB.lots) {
-    const ls = L.filter(l => l.lot === lot.id);
-    if (!ls.length) continue;
-    h += `<div class="lotbloc"><h3>${esc(lot.nom)}</h3><table>
-      <tr><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th></th></tr>`;
-    for (const l of ls) {
-      h += `<tr><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
-        <td class="num">${fmt(l.quantite)}</td><td class="muted">${esc(detail(l))}</td>
-        <td><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td></tr>`;
-    }
-    h += '</table></div>';
+/* ============ Lots du chantier et numérotation ============ */
+// Ordre des lots = ordre dans lequel ils ont été ajoutés au métré (pas l'ordre de la bibliothèque)
+function lotsDuChantier(id) {
+  const c = chantiers.find(x => x.id === id);
+  const liste = c && Array.isArray(c.lots) ? [...c.lots] : [];
+  for (const l of lignesDe(id)) if (!liste.includes(l.lot)) liste.push(l.lot);
+  return liste.filter(lid => BIB.lots.some(x => x.id === lid));
+}
+function sauverLotsDuChantier(id, liste) {
+  const c = chantiers.find(x => x.id === id);
+  if (!c) return;
+  c.lots = liste;
+  lsSet('chantiers', chantiers);
+}
+function ajouterLotSiAbsent(id, lotId) {
+  const liste = lotsDuChantier(id);
+  if (!liste.includes(lotId)) sauverLotsDuChantier(id, [...liste, lotId]);
+}
+// Numéro de chaque ligne : 01.1, 01.2, 02.1…
+function numeroLignes(id) {
+  const L = lignesDe(id);
+  const map = {};
+  lotsDuChantier(id).forEach((lotId, i) => {
+    L.filter(l => l.lot === lotId).forEach((l, k) => {
+      map[l.uid] = String(i + 1).padStart(2, '0') + '.' + (k + 1);
+    });
+  });
+  return map;
+}
+function insererLot(lotId, apresId) {
+  const liste = lotsDuChantier(courantId).filter(x => x !== lotId);
+  const idx = apresId ? liste.indexOf(apresId) + 1 : 0;
+  liste.splice(idx, 0, lotId);
+  sauverLotsDuChantier(courantId, liste);
+  renderMetre();
+}
+function retirerLot(lotId) {
+  if (lignesDe(courantId).some(l => l.lot === lotId)) return;
+  sauverLotsDuChantier(courantId, lotsDuChantier(courantId).filter(x => x !== lotId));
+  renderMetre();
+}
+function dessinerPanneauLot() {
+  if (PAGE !== 'tableau' || !courantId) return;
+  let p = $('panneauLot');
+  if (!p) {
+    p = document.createElement('div');
+    p.id = 'panneauLot';
+    p.className = 'card';
+    $('tableMetre').closest('.card').insertAdjacentElement('beforebegin', p);
   }
-  $('tableMetre').innerHTML = h;
+  const deja = lotsDuChantier(courantId);
+  const dispo = BIB.lots.filter(l => !deja.includes(l.id));
+  p.innerHTML = `<strong>Ajouter un lot au métré</strong>
+    <div class="row" style="margin-top:8px">
+      <div><label for="lotNouveau">Lot</label><select id="lotNouveau">${dispo.length
+        ? dispo.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('')
+        : '<option value="">Tous les lots sont déjà dans le métré</option>'}</select></div>
+      <div><label for="lotPlace">Placer</label><select id="lotPlace"><option value="">En premier</option>${deja
+        .map(id => `<option value="${esc(id)}">Après « ${esc(libLot(id))} »</option>`).join('')}</select></div>
+      <div style="flex:0 0 auto"><button class="btn" id="btnAjouterLot" ${dispo.length ? '' : 'disabled'}>Insérer</button></div>
+    </div>`;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#btnAjouterLot')) {
+    const lot = $('lotNouveau').value;
+    if (lot) insererLot(lot, $('lotPlace').value || null);
+    return;
+  }
+  const r = e.target.closest('[data-retirer-lot]');
+  if (r) { if (confirm('Retirer ce lot vide du métré ?')) retirerLot(r.dataset.retirerLot); }
+});
+
+function renderMetre() {
+  if (!courantId) return;
+  const L = lignesDe(courantId);
+  const lots = lotsDuChantier(courantId);
+  const nums = numeroLignes(courantId);
   compterLignes();
+  dessinerPanneauLot();
+  let h = `<table class="metre">
+    <colgroup><col style="width:9%"><col style="width:37%"><col style="width:9%"><col style="width:13%"><col style="width:26%"><col style="width:6%"></colgroup>
+    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th></th></tr></thead><tbody>`;
+  lots.forEach((lotId, i) => {
+    const lot = BIB.lots.find(x => x.id === lotId);
+    const ls = L.filter(l => l.lot === lotId);
+    const vide = ls.length === 0;
+    h += `<tr class="lot"><td colspan="6"><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
+      <span class="muted">(${vide ? 'aucune ligne' : ls.length + ' ligne' + (ls.length > 1 ? 's' : '')})</span>
+      ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}</td></tr>`;
+    for (const l of ls) {
+      h += `<tr>
+        <td class="numl">${nums[l.uid]}</td>
+        <td>${esc(l.designation)}</td>
+        <td>${esc(l.unite)}</td>
+        <td class="num">${fmt(l.quantite)}</td>
+        <td class="detail">${esc(detail(l))}</td>
+        <td class="act"><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td>
+      </tr>`;
+    }
+  });
+  if (!lots.length) h += '<tr><td colspan="6" class="muted">Aucune ligne. Retournez à la saisie pour ajouter des ouvrages.</td></tr>';
+  h += '</tbody></table>';
+  $('tableMetre').innerHTML = h;
 }
 
 /* ============ Fenêtre de saisie (ouvrage du catalogue) ============ */
@@ -208,6 +314,7 @@ function ouvrirOuvrage(o, precedent, message) {
     if (!(q > 0)) { $('apercu').textContent = 'Quantité nulle : vérifiez les cotes.'; return; }
     const surface = (o.saisie === 'menuiseries' && num(vals.largeur_cm) && num(vals.hauteur_cm))
       ? num(vals.nombre || 1) * num(vals.largeur_cm) * num(vals.hauteur_cm) / 10000 : null;
+    ajouterLotSiAbsent(courantId, o.lot);
     const L = lignesDe(courantId);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
              valeurs: vals, quantite: q, surface, cree: new Date().toISOString() });
@@ -267,6 +374,7 @@ function ouvrirLibre() {
     const lot = f.elements.lot.value;
     const designation = f.elements.designation.value.trim();
     const ouvrage = { id: 'LIBRE-' + uid(), lot, designation, unite, type: 'commun', saisie: 'metre', champs: champs.map(c => ({ cle: c.cle, libelle: c.libelle })), propose_le: new Date().toISOString() };
+    ajouterLotSiAbsent(courantId, lot);
     const L = lignesDe(courantId);
     L.push({ uid: uid(), lot, ouvrage: ouvrage.id, designation, unite, valeurs: v, quantite: q, surface: null, libre: true, cree: new Date().toISOString() });
     sauverLignes(courantId, L);
@@ -345,11 +453,14 @@ $('modal').addEventListener('click', e => {
 });
 
 $('btnCsv').onclick = () => {
-  const rows = [['Lot', 'Désignation', 'Unité', 'Quantité', 'Détail']];
+  const nums = numeroLignes(courantId);
   const L = lignesDe(courantId);
-  for (const lot of BIB.lots)
-    for (const l of L.filter(x => x.lot === lot.id))
-      rows.push([lot.nom, l.designation, l.unite, fmt(l.quantite).replace(/\s/g, ''), detail(l)]);
+  const rows = [['N°', 'Lot', 'Désignation', 'Unité', 'Quantité', 'Détail']];
+  lotsDuChantier(courantId).forEach(lotId => {
+    const lot = BIB.lots.find(x => x.id === lotId);
+    for (const l of L.filter(x => x.lot === lotId))
+      rows.push([nums[l.uid], lot ? lot.nom : lotId, l.designation, l.unite, fmt(l.quantite).replace(/\s/g, ''), detail(l)]);
+  });
   const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
