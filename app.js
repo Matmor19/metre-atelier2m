@@ -352,6 +352,11 @@ const REPLI_PRIX = { moyen: ['moyen', 'unique'], bas: ['min', 'moyen', 'unique']
 const LIBELLES_PRIX = [['moyen', 'Moyen', 'moyen'], ['bas', 'Bas', 'min'], ['haut', 'Haut', 'max'], ['unique', 'Unique', 'unique']];
 function prixSelon(p, choix) {
   if (!p) return null;
+  if (choix && choix.startsWith('devis:')) {          // un prix précis saisi dans « Ajouter un prix de devis »
+    const v = Array.isArray(p.releves) ? p.releves[parseInt(choix.slice(6), 10)] : undefined;
+    if (v != null) return v;
+    choix = 'moyen';
+  }
   for (const champ of (REPLI_PRIX[choix] || REPLI_PRIX.moyen)) if (p[champ] != null) return p[champ];
   return null;
 }
@@ -363,11 +368,17 @@ function optionsPrix(l, montants) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const p = (o && o.prix_indicatif) || {};
   const choisi = l.prix || 'moyen';
-  return LIBELLES_PRIX.map(([cle, lib, champ]) => {
+  const base = LIBELLES_PRIX.map(([cle, lib, champ]) => {
     const v = p[champ];
     const suite = montants ? (v != null ? ' ' + fmt(v) : ' (—)') : '';
     return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>${lib}${suite}</option>`;
   }).join('');
+  // Chaque prix de devis saisi est aussi un choix, pour pouvoir le retrouver
+  const devis = Array.isArray(p.releves) ? p.releves.map((v, i) => {
+    const cle = 'devis:' + i;
+    return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>Devis ${i + 1}${montants ? ' ' + fmt(v) : ''}</option>`;
+  }).join('') : '';
+  return base + devis;
 }
 // Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
 function prixAffiches() { return lsGet('prix', false) === true; }
