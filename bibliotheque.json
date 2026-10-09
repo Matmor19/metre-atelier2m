@@ -6066,6 +6066,468 @@
     }
    ],
    "version": 1
+  },
+  {
+   "id": "OUV-0358",
+   "lot": "chauffage-vmc-climatisation",
+   "designation": "Alimentation VMC (forfait)",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 73.99,
+    "min": 73.99,
+    "max": 73.99,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0359",
+   "lot": "electricite",
+   "designation": "Tableau électrique 4 rangées (logement > 100 m²)",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 1765.0,
+    "min": 1765.0,
+    "max": 1765.0,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0360",
+   "lot": "electricite",
+   "designation": "Tableau télécommunication",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 258.04,
+    "min": 258.04,
+    "max": 258.04,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0361",
+   "lot": "electricite",
+   "designation": "Dossier CONSUEL",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 102.0,
+    "min": 102.0,
+    "max": 102.0,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0362",
+   "lot": "electricite",
+   "designation": "Circuit équipotentiel (salle d'eau)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 85.0,
+    "min": 85.0,
+    "max": 85.0,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0363",
+   "lot": "electricite",
+   "designation": "Mise à la terre avec barrette de coupure",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 115.0,
+    "min": 115.0,
+    "max": 115.0,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0364",
+   "lot": "electricite",
+   "designation": "Interrupteur simple allumage (point)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 77.98,
+    "min": 77.98,
+    "max": 77.98,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0365",
+   "lot": "electricite",
+   "designation": "Interrupteur va-et-vient (point)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 126.5,
+    "min": 126.5,
+    "max": 126.5,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0366",
+   "lot": "electricite",
+   "designation": "Prise de courant 2P+T 16 A (point)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 68.74,
+    "min": 68.74,
+    "max": 68.74,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0367",
+   "lot": "electricite",
+   "designation": "Prise de courant double 10/16 A+T (point)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 93.01,
+    "min": 93.01,
+    "max": 93.01,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0368",
+   "lot": "electricite",
+   "designation": "Prise RJ45 (point)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 82.73,
+    "min": 82.73,
+    "max": 82.73,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0369",
+   "lot": "plomberie-sanitaire",
+   "designation": "Alimentation eau froide WC",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 254.99,
+    "min": 254.99,
+    "max": 254.99,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0370",
+   "lot": "plomberie-sanitaire",
+   "designation": "Alimentation eau chaude / eau froide lavabo",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 405.0,
+    "min": 405.0,
+    "max": 405.0,
+    "nb_prix": 6,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0371",
+   "lot": "plomberie-sanitaire",
+   "designation": "Alimentation eau chaude / eau froide douche",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 408.98,
+    "min": 408.98,
+    "max": 408.98,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0372",
+   "lot": "plomberie-sanitaire",
+   "designation": "Ensemble vannes, réducteur de pression et collecteur",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 649.65,
+    "min": 524.54,
+    "max": 807.21,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0373",
+   "lot": "plomberie-sanitaire",
+   "designation": "Pack WC standard",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 187.24,
+    "min": 140.06,
+    "max": 258.0,
+    "nb_prix": 5,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0374",
+   "lot": "plomberie-sanitaire",
+   "designation": "Pack WC suspendu avec cuvette à frein de chute",
+   "unite": "forfait",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre (1 pour un forfait)"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 535.0,
+    "min": 535.0,
+    "max": 535.0,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0375",
+   "lot": "plomberie-sanitaire",
+   "designation": "Bac de douche composite 140 x 80",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 535.0,
+    "min": 535.0,
+    "max": 535.0,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0376",
+   "lot": "plomberie-sanitaire",
+   "designation": "Colonne de douche thermostatique avec douchette",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 350.86,
+    "min": 350.86,
+    "max": 350.86,
+    "nb_prix": 3,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0377",
+   "lot": "chauffage-vmc-climatisation",
+   "designation": "Alimentation chauffe-eau thermodynamique",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 75.0,
+    "min": 75.0,
+    "max": 75.0,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
+  },
+  {
+   "id": "OUV-0378",
+   "lot": "charpente-structure-bois",
+   "designation": "Chevêtre pour fenêtre de toiture (bois)",
+   "unite": "u",
+   "type": "commun",
+   "saisie": "metre",
+   "champs": [
+    {
+     "cle": "nombre",
+     "libelle": "Nombre"
+    }
+   ],
+   "version": 1,
+   "prix_indicatif": {
+    "moyen": 950.0,
+    "min": 950.0,
+    "max": 950.0,
+    "nb_prix": 2,
+    "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
+   }
   }
  ]
 }
