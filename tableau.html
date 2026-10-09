@@ -115,8 +115,27 @@ body[data-page="tableau"] .hdr{display:none}
         <button class="btn" id="btnSauverReglages">Enregistrer</button>
         <button class="btn sec" id="btnEnvoiBib">Envoyer la bibliothèque sur Drive</button>
       </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn sec" id="btnBiblio">Modifier la bibliothèque (ouvrages et prix)</button>
+      </div>
       <p class="muted">Ces réglages restent sur cet appareil. Le jeton n'est jamais affiché ailleurs.</p>
     </div>
+  </section>
+
+  <!-- Bibliothèque : modifier les ouvrages et les prix -->
+  <section id="vBiblio" class="hidden">
+    <div class="card">
+      <div class="row">
+        <div><label for="biblioLot">Lot</label><select id="biblioLot"></select></div>
+        <div><label for="biblioRecherche">Recherche</label><input id="biblioRecherche" placeholder="Rechercher un ouvrage…"></div>
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:space-between;align-items:center">
+        <span class="muted" id="biblioCompte"></span>
+        <button class="btn small" id="btnBiblioNouveau" style="flex:0 0 auto">+ Nouvel ouvrage</button>
+      </div>
+      <p class="ok hidden" id="biblioStatut" style="margin-top:10px"></p>
+    </div>
+    <div class="card" id="biblioListe" style="padding:0;overflow:hidden"></div>
   </section>
 </main>
 

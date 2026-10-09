@@ -25,6 +25,14 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre td.pu,table.metre td.mt{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
     table.metre tfoot td{font-weight:700;border-top:2px solid var(--line);padding-top:10px}
     body.en-glisse{cursor:grabbing;user-select:none}
+    /* Fenêtre du métré : couleurs différentes de la saisie (orange de la charte) */
+    body[data-page="tableau"]{background:#fdf3ea}
+    body[data-page="tableau"] header{background:#E07838}
+    body[data-page="tableau"] .btn{background:#E07838}
+    body[data-page="tableau"] .btn.sec{background:transparent;color:#B9561A;border-color:#E07838}
+    body[data-page="tableau"] .card{border-color:#f0c9ab}
+    body[data-page="tableau"] table.metre tr.lot td{background:#fbe3d2;color:#9a4413}
+    @media (prefers-color-scheme: dark){ body[data-page="tableau"]{background:#2a1d15} body[data-page="tableau"] table.metre tr.lot td{background:#3d2a1e;color:#f5b58a} }
   `;
   const s = document.createElement('style');
   s.textContent = css;
@@ -65,11 +73,21 @@ async function chargerBibliotheque() {
   } catch (e) {
     BIB = lsGet('bib', null);   // hors ligne : dernière copie connue
   }
+  // Modifications faites dans l'application et pas encore envoyées sur Drive : elles prévalent
+  if (lsGet('bib_modifiee', false) && lsGet('bib', null)) BIB = lsGet('bib', null);
 }
 
 // Si le script est joignable, la bibliothèque maîtresse (Drive) remplace la copie locale.
 async function synchroBibliotheque() {
   if (!lsGet('url', '') || !lsGet('jeton', '')) return;
+  if (lsGet('bib_modifiee', false)) {
+    // Des modifications locales attendent d'être envoyées : on les envoie, sans rien écraser
+    try {
+      const j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB });
+      if (j.ok) lsSet('bib_modifiee', false);
+    } catch (e) { /* pas de réseau : elles restent sur l'appareil */ }
+    return;
+  }
   try {
     const j = await post({ action: 'lire_bibliotheque' });
     if (j.ok && j.bibliotheque && j.bibliotheque.ouvrages) {
@@ -138,7 +156,7 @@ function detail(l) {
 
 /* ============ Affichage ============ */
 function route(nom) {
-  const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', reglages: 'vReglages' };
+  const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', reglages: 'vReglages', biblio: 'vBiblio' };
   if (PAGE === 'tableau') nom = 'tableau';
   for (const k of Object.keys(vues)) $(vues[k]).classList.toggle('hidden', k !== nom);
   if (nom === 'metre' || nom === 'tableau') compterLignes();
@@ -503,7 +521,7 @@ function ouvrirChantier(id) {
   courantId = id;
   lsSet('courant', id);
   const c = chantiers.find(x => x.id === id);
-  $('titre').textContent = c ? c.nom : 'Métré';
+  $('titre').textContent = c ? (PAGE === 'tableau' ? 'Métré du chantier · ' : '') + c.nom : 'Métré';
   remplirLots();
   route(PAGE === 'tableau' ? 'tableau' : 'metre');
   renderOuvrages();
@@ -562,7 +580,7 @@ $('tableMetre').addEventListener('click', e => {
 });
 
 $('modal').addEventListener('click', e => {
-  if (e.target.id === 'modal' || e.target.id === 'bAnnuler' || e.target.id === 'bAnnulerL') { fermer(); return; }
+  if (e.target.id === 'modal' || e.target.id === 'bAnnuler' || e.target.id === 'bAnnulerL' || e.target.id === 'bBibAnnuler') { fermer(); return; }
   if (e.target.id === 'bLibre') { e.preventDefault(); ouvrirLibre(); }
 });
 
@@ -864,6 +882,122 @@ $('btnEnvoiBib').onclick = async () => {
     alert(j.ok ? 'Bibliothèque envoyée sur Drive.' : 'Refus : ' + (j.erreur || 'erreur inconnue'));
   } catch (e) { alert('Envoi impossible pour le moment (réseau).'); }
 };
+
+/* ============ Bibliothèque : modifier les ouvrages et leurs prix ============ */
+const ouvragesLibres = () => BIB.ouvrages;
+function champsBib(unite) { return champsLibre(unite).map(c => ({ cle: c.cle, libelle: c.libelle })); }
+const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
+
+function ouvrirBiblio() {
+  $('titre').textContent = 'Bibliothèque de métré';
+  $('biblioLot').innerHTML = '<option value="">Tous les lots</option>' + BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
+  $('biblioStatut').classList.add('hidden');
+  route('biblio');
+  renderBiblio();
+}
+
+function renderBiblio() {
+  const q = $('biblioRecherche').value.trim().toLowerCase();
+  const lot = $('biblioLot').value;
+  const liste = ouvragesLibres().filter(o => (!lot || o.lot === lot) && (!q || o.designation.toLowerCase().includes(q)));
+  $('biblioListe').innerHTML = liste.map(o => {
+    const p = o.prix_indicatif;
+    return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px">${esc(libLot(o.lot))}</div></span>
+      <span class="tag">${esc(o.unite)} · ${p ? fmt(p.moyen) + ' € HT' : 'sans prix'}</span></div>`;
+  }).join('') || '<p class="muted" style="padding:12px">Aucun ouvrage.</p>';
+  $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
+}
+
+function formulaireOuvrage(o) {
+  const v = o || { designation: '', lot: lotCourant || BIB.lots[0].id, unite: 'u' };
+  const p = (o && o.prix_indicatif) || {};
+  const val = x => (x != null ? String(x).replace('.', ',') : '');
+  $('sheet').innerHTML = `<h2 style="margin:0 0 6px;font-size:18px">${o ? 'Modifier l\'ouvrage' : 'Nouvel ouvrage'}</h2>
+    <form id="fBib">
+      <label for="b_des">Désignation</label><input id="b_des" name="designation" required value="${esc(v.designation)}">
+      <label for="b_lot">Lot</label><select id="b_lot" name="lot">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === v.lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select>
+      <label for="b_unite">Unité de mesure</label><select id="b_unite" name="unite">${UNITES.map(u => `<option ${u === v.unite ? 'selected' : ''}>${u}</option>`).join('')}</select>
+      <div class="card" style="margin-top:12px">
+        <strong>Prix indicatifs HT (€)</strong>
+        <p class="muted" style="margin:4px 0 6px">Laissez le prix moyen vide pour qu'il n'y ait aucun prix sur cet ouvrage.</p>
+        <div class="row">
+          <div><label for="b_moy">Prix moyen</label><input id="b_moy" name="moyen" inputmode="decimal" value="${val(p.moyen)}"></div>
+          <div><label for="b_min">Minimum</label><input id="b_min" name="min" inputmode="decimal" value="${val(p.min)}"></div>
+          <div><label for="b_max">Maximum</label><input id="b_max" name="max" inputmode="decimal" value="${val(p.max)}"></div>
+        </div>
+        <p class="muted" style="margin:8px 0 0">${p.source ? 'Source : ' + esc(p.source) + (p.date ? ' (' + esc(p.date) + ')' : '') + (p.nb_prix ? ' · ' + p.nb_prix + ' prix' : '') : 'Aucun prix enregistré.'}</p>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" class="btn sec" id="bBibAnnuler">Annuler</button>
+        <button type="submit" class="btn">Enregistrer</button>
+      </div>
+    </form>`;
+  $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
+}
+
+function enregistrerOuvrage(id) {
+  const f = $('fBib');
+  const des = f.elements.designation.value.trim();
+  if (!des) { alert('La désignation est obligatoire.'); return; }
+  const lot = f.elements.lot.value, unite = f.elements.unite.value;
+  const brut = k => f.elements[k].value.trim().replace(',', '.');
+  const moy = brut('moyen'), mi = brut('min'), ma = brut('max');
+  let prix = null;
+  if (moy !== '') {
+    const m = num(moy);
+    if (!(m > 0)) { alert('Le prix moyen doit être un nombre supérieur à 0.'); return; }
+    const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
+    prix = { moyen: m, min: mi !== '' ? num(mi) : m, max: ma !== '' ? num(ma) : m,
+             nb_prix: ancien.nb_prix || 0, source: 'saisie dans l\'application', date: aujourdhui() };
+  }
+  if (id) {
+    const o = BIB.ouvrages.find(x => x.id === id);
+    if (o.unite !== unite || !o.champs) o.champs = champsBib(unite);
+    o.designation = des; o.lot = lot; o.unite = unite;
+    o.version = (o.version || 1) + 1;
+    if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
+  } else {
+    const n = Math.max(0, ...BIB.ouvrages.map(o => parseInt(o.id.slice(4), 10))) + 1;
+    const o = { id: 'OUV-' + String(n).padStart(4, '0'), lot, designation: des, unite, type: 'commun', saisie: 'metre', champs: champsBib(unite), version: 1 };
+    if (prix) o.prix_indicatif = prix;
+    BIB.ouvrages.push(o);
+  }
+  sauverBibliotheque();
+}
+
+// Enregistre sur l'appareil, puis envoie sur Drive si la connexion est active
+async function sauverBibliotheque() {
+  lsSet('bib', BIB);
+  lsSet('bib_modifiee', true);
+  const statut = $('biblioStatut');
+  let texte;
+  if (!lsGet('url', '') || !lsGet('jeton', '')) {
+    texte = 'Enregistré sur cet appareil. Renseignez le script dans Réglages pour l\'envoyer sur Drive.';
+  } else {
+    try {
+      const j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB });
+      if (j.ok) { lsSet('bib_modifiee', false); texte = 'Enregistré et envoyé sur Drive.'; }
+      else texte = 'Drive a refusé l\'envoi : ' + (j.erreur || 'erreur inconnue') + '. Enregistré sur cet appareil.';
+    } catch (e) {
+      texte = 'Pas de réseau : enregistré sur cet appareil, il sera envoyé plus tard.';
+    }
+  }
+  fermer();
+  statut.textContent = texte;
+  statut.classList.remove('hidden');
+  renderBiblio();
+}
+
+$('btnBiblio').onclick = ouvrirBiblio;
+$('biblioLot').onchange = renderBiblio;
+$('biblioRecherche').oninput = renderBiblio;
+$('btnBiblioNouveau').onclick = () => { ouvrirModal(); formulaireOuvrage(null); };
+$('biblioListe').addEventListener('click', e => {
+  const b = e.target.closest('[data-edit]');
+  if (!b) return;
+  const o = BIB.ouvrages.find(x => x.id === b.dataset.edit);
+  if (o) { ouvrirModal(); formulaireOuvrage(o); }
+});
 
 /* ============ Synchro entre les deux fenêtres ============ */
 window.addEventListener('storage', e => {
