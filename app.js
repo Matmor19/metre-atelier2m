@@ -349,7 +349,7 @@ document.addEventListener('click', e => {
 // Choix du prix dans le métré : moyen (par défaut), bas, haut ou unique.
 // Si le prix choisi n'existe pas, on prend le suivant dans l'ordre ci-dessous.
 const REPLI_PRIX = { moyen: ['moyen', 'unique'], bas: ['min', 'moyen', 'unique'], haut: ['max', 'moyen', 'unique'], unique: ['unique', 'moyen'] };
-const LIBELLES_PRIX = [['moyen', 'Moyen', 'moyen'], ['bas', 'Bas', 'min'], ['haut', 'Haut', 'max'], ['unique', 'Unique', 'unique']];
+const LIBELLES_PRIX = [['moyen', 'Moyen', 'moyen'], ['bas', 'Bas', 'min'], ['haut', 'Haut', 'max'], ['unique', 'Unique', 'unique'], ['devis', 'Devis', null]];
 function prixSelon(p, choix) {
   if (!p) return null;
   if (choix && choix.startsWith('devis:')) {          // un prix précis saisi dans « Ajouter un prix de devis »
@@ -360,25 +360,34 @@ function prixSelon(p, choix) {
   for (const champ of (REPLI_PRIX[choix] || REPLI_PRIX.moyen)) if (p[champ] != null) return p[champ];
   return null;
 }
+// Clé de choix d'une ligne : « devis » suit le numéro de devis choisi (devisNum)
+function cleChoix(l) {
+  return l.prix === 'devis' ? 'devis:' + (l.devisNum || 0) : (l.prix || 'moyen');
+}
 function prixUnitaire(l) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
-  return o ? prixSelon(o.prix_indicatif, l.prix || 'moyen') : null;
+  return o ? prixSelon(o.prix_indicatif, cleChoix(l)) : null;
 }
 function optionsPrix(l, montants) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const p = (o && o.prix_indicatif) || {};
-  const choisi = l.prix || 'moyen';
-  const base = LIBELLES_PRIX.map(([cle, lib, champ]) => {
-    const v = p[champ];
-    const suite = montants ? (v != null ? ' ' + fmt(v) : ' (—)') : '';
+  const choisi = (l.prix || 'moyen');
+  const liste = devisDe(p);
+  return LIBELLES_PRIX.map(([cle, lib, champ]) => {
+    let suite = '';
+    if (montants) {
+      const v = cle === 'devis' ? (liste.length ? liste[Math.min(l.devisNum || 0, liste.length - 1)] : null) : p[champ];
+      suite = v != null ? ' ' + fmt(v) : ' (—)';
+    } else if (cle === 'devis' && !liste.length) suite = ' (—)';
     return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>${lib}${suite}</option>`;
   }).join('');
-  // Chaque prix de devis saisi est aussi un choix, pour pouvoir le retrouver
-  const devis = devisDe(p).map((v, i) => {
-    const cle = 'devis:' + i;
-    return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>Devis ${i + 1}${montants ? ' ' + fmt(v) : ''}</option>`;
-  }).join('');
-  return base + devis;
+}
+// Liste des devis (seconde liste, affichée seulement quand « Devis » est choisi)
+function optionsDevis(l, montants) {
+  const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
+  const liste = devisDe((o && o.prix_indicatif) || {});
+  const num = Math.min(l.devisNum || 0, Math.max(liste.length - 1, 0));
+  return liste.map((v, i) => `<option value="${i}" ${i === num ? 'selected' : ''}>Devis ${i + 1}${montants ? ' ' + fmt(v) : ''}</option>`).join('');
 }
 // Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
 function prixAffiches() { return lsGet('prix', false) === true; }
@@ -417,7 +426,7 @@ function renderMetre() {
         <td>${esc(l.unite)}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td class="detail">${esc(detail(l))}</td>
-        <td><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l, avecPrix)}</select></td>
+        <td><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l, avecPrix)}</select>${l.prix === 'devis' && devisDe((BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).prix_indicatif || {}).length ? `<select class="choix" data-choix-devis="${esc(l.uid)}" title="Devis à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px;margin-top:4px">${optionsDevis(l, avecPrix)}</select>` : ''}</td>
         ${avecPrix ? `<td class="pu">${pu != null ? fmt(pu) : '—'}</td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
         <td class="act"><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td>
       </tr>`;
@@ -480,8 +489,8 @@ function ouvrirOuvrage(o, precedent, message) {
              valeurs: vals, quantite: q, surface, cree: new Date().toISOString() });
     sauverLignes(courantId, L);
     renderMetre();
-    // Même ouvrage, critères conservés : l'utilisateur peut modifier et valider une nouvelle ligne.
-    ouvrirOuvrage(o, vals, `Ligne ajoutée : ${fmt(q)} ${o.unite}. Modifiez les critères pour une autre ligne.`);
+    // La fenêtre se ferme après la validation (un clic de moins)
+    fermer();
   });
 }
 
@@ -612,9 +621,13 @@ $('tableMetre').addEventListener('click', e => {
 
 // Choix du prix (moyen, bas, haut, unique) pour une ligne du métré
 $('tableMetre').addEventListener('change', e => {
-  const s = e.target.closest('[data-choix-prix]');
+  const s = e.target.closest('[data-choix-prix], [data-choix-devis]');
   if (!s) return;
-  sauverLignes(courantId, lignesDe(courantId).map(l => l.uid === s.dataset.choixPrix ? Object.assign({}, l, { prix: s.value }) : l));
+  const uid = s.dataset.choixPrix || s.dataset.choixDevis;
+  sauverLignes(courantId, lignesDe(courantId).map(l => {
+    if (l.uid !== uid) return l;
+    return s.dataset.choixPrix ? Object.assign({}, l, { prix: s.value }) : Object.assign({}, l, { devisNum: parseInt(s.value, 10) });
+  }));
   renderMetre();
 });
 
