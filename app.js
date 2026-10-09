@@ -20,6 +20,10 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre .poignee{cursor:grab;touch-action:none;user-select:none;color:var(--mut);padding:0 10px 0 2px;font-size:16px;letter-spacing:-2px}
     table.metre tr.lot.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
     table.metre tr.lot.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
+    table.metre tr.ligne.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
+    table.metre tr.ligne.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
+    table.metre td.pu,table.metre td.mt{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    table.metre tfoot td{font-weight:700;border-top:2px solid var(--line);padding-top:10px}
     body.en-glisse{cursor:grabbing;user-select:none}
   `;
   const s = document.createElement('style');
@@ -28,6 +32,7 @@ const PAGE = document.body.dataset.page || 'saisie';
 })();
 
 const UNITES = ['m²', 'm³', 'ml', 'u', 'forfait'];
+const ORANGE = 'E07838';   // couleur de la charte Atelier 2M (exports)
 const $ = id => document.getElementById(id);
 function lsGet(k, d) { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
@@ -235,44 +240,78 @@ function dessinerPanneauLot() {
     </div>`;
 }
 /* ============ Glisser-déposer des lots (souris et tactile) ============ */
+// glisse = { type: 'lot', lot } (un lot entier) ou { type: 'ligne', uid } (un ouvrage du métré)
 let glisse = null;
-function ligneLotSous(x, y) {
+function cibleSous(x, y) {
   const el = document.elementFromPoint(x, y);
-  return el ? el.closest('tr.lot[data-lot]') : null;
+  return el ? el.closest('tr.lot[data-lot], tr.ligne[data-uid]') : null;
 }
 function marquerCible(tr, y) {
-  document.querySelectorAll('tr.lot.cible-avant, tr.lot.cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
-  if (!tr || tr.dataset.lot === glisse.lot) return;
+  document.querySelectorAll('.cible-avant, .cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
+  if (!tr) return;
+  if (glisse.type === 'lot') {
+    if (!tr.classList.contains('lot') || tr.dataset.lot === glisse.lot) return;
+  } else {
+    if (tr.dataset.uid === glisse.uid) return;
+    if (tr.classList.contains('lot')) { tr.classList.add('cible-avant'); return; }  // en-tête : début du lot
+  }
   const r = tr.getBoundingClientRect();
   tr.classList.add(y < r.top + r.height / 2 ? 'cible-avant' : 'cible-apres');
 }
 document.addEventListener('pointerdown', e => {
-  const p = e.target.closest('[data-glisser]');
+  const p = e.target.closest('[data-glisser], [data-glisser-ligne]');
   if (!p || PAGE !== 'tableau') return;
   e.preventDefault();
-  glisse = { lot: p.dataset.glisser };
+  glisse = p.dataset.glisserLigne
+    ? { type: 'ligne', uid: p.dataset.glisserLigne }
+    : { type: 'lot', lot: p.dataset.glisser };
   document.body.classList.add('en-glisse');
 });
 document.addEventListener('pointermove', e => {
   if (!glisse) return;
-  marquerCible(ligneLotSous(e.clientX, e.clientY), e.clientY);
+  marquerCible(cibleSous(e.clientX, e.clientY), e.clientY);
 });
 function finGlisse(e) {
   if (!glisse) return;
-  const tr = e.type === 'pointerup' ? ligneLotSous(e.clientX, e.clientY) : null;
-  const cible = tr && tr.dataset.lot !== glisse.lot ? tr : null;
-  const apres = cible && cible.classList.contains('cible-apres');
-  const cibleId = cible ? cible.dataset.lot : null;
-  const lotId = glisse.lot;
+  const g = glisse;
+  const tr = e.type === 'pointerup' ? cibleSous(e.clientX, e.clientY) : null;
+  const apres = !!tr && tr.classList.contains('cible-apres');
   glisse = null;
   document.body.classList.remove('en-glisse');
-  document.querySelectorAll('tr.lot.cible-avant, tr.lot.cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
-  if (!cibleId) return;
-  const liste = lotsDuChantier(courantId).filter(x => x !== lotId);
-  let idx = liste.indexOf(cibleId);
-  if (apres) idx += 1;
-  liste.splice(idx, 0, lotId);
-  sauverLotsDuChantier(courantId, liste);
+  document.querySelectorAll('.cible-avant, .cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
+  if (!tr) return;
+  if (g.type === 'lot') {
+    if (!tr.classList.contains('lot') || tr.dataset.lot === g.lot) return;
+    const liste = lotsDuChantier(courantId).filter(x => x !== g.lot);
+    let idx = liste.indexOf(tr.dataset.lot);
+    if (apres) idx += 1;
+    liste.splice(idx, 0, g.lot);
+    sauverLotsDuChantier(courantId, liste);
+    renderMetre();
+  } else {
+    deplacerLigne(g.uid, tr, apres);
+  }
+}
+// Déplace un ouvrage du métré : il change de lot si besoin. La numérotation se recalcule
+// toute seule, puisqu'elle suit l'ordre des lignes dans chaque lot.
+function deplacerLigne(uid, tr, apres) {
+  const L = lignesDe(courantId);
+  const src = L.find(l => l.uid === uid);
+  if (!src) return;
+  const lotCible = tr.dataset.lot;
+  const reste = L.filter(l => l.uid !== uid);
+  let idx;
+  if (tr.dataset.uid) {
+    if (tr.dataset.uid === uid) return;
+    idx = reste.findIndex(l => l.uid === tr.dataset.uid);
+    idx = idx < 0 ? reste.length : idx + (apres ? 1 : 0);
+  } else {
+    idx = reste.findIndex(l => l.lot === lotCible);   // en-tête de lot : en tête du lot
+    if (idx < 0) idx = reste.length;
+  }
+  src.lot = lotCible;
+  reste.splice(idx, 0, src);
+  sauverLignes(courantId, reste);
   renderMetre();
 }
 document.addEventListener('pointerup', finGlisse);
@@ -288,36 +327,59 @@ document.addEventListener('click', e => {
   if (r) { if (confirm('Retirer ce lot vide du métré ?')) retirerLot(r.dataset.retirerLot); }
 });
 
+// Prix indicatif HT d'un ouvrage du métré (moyenne des devis), ou null
+function prixUnitaire(l) {
+  const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
+  return o && o.prix_indicatif ? o.prix_indicatif.moyen : null;
+}
+// Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
+function prixAffiches() { return lsGet('prix', false) === true; }
+
 function renderMetre() {
   if (!courantId) return;
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
   const nums = numeroLignes(courantId);
+  const avecPrix = prixAffiches();
   compterLignes();
   dessinerPanneauLot();
+  const nc = avecPrix ? 8 : 6;
+  const colonnes = avecPrix
+    ? '<col style="width:9%"><col style="width:27%"><col style="width:7%"><col style="width:9%"><col style="width:20%"><col style="width:9%"><col style="width:12%"><col style="width:7%">'
+    : '<col style="width:10%"><col style="width:40%"><col style="width:10%"><col style="width:14%"><col style="width:20%"><col style="width:6%">';
+  let total = 0, sansPrix = 0;
   let h = `<table class="metre">
-    <colgroup><col style="width:9%"><col style="width:37%"><col style="width:9%"><col style="width:13%"><col style="width:26%"><col style="width:6%"></colgroup>
-    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th></th></tr></thead><tbody>`;
+    <colgroup>${colonnes}</colgroup>
+    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th>${avecPrix ? '<th class="num">P.U. HT ind.</th><th class="num">Montant HT ind.</th>' : ''}<th></th></tr></thead><tbody>`;
   lots.forEach((lotId, i) => {
     const lot = BIB.lots.find(x => x.id === lotId);
     const ls = L.filter(l => l.lot === lotId);
     const vide = ls.length === 0;
-    h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="6"><span class="poignee" data-glisser="${esc(lotId)}" title="Glisser pour déplacer le lot">⋮⋮</span><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
+    h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="${nc}"><span class="poignee" data-glisser="${esc(lotId)}" title="Glisser pour déplacer le lot">⋮⋮</span><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
       <span class="muted">(${vide ? 'aucune ligne' : ls.length + ' ligne' + (ls.length > 1 ? 's' : '')})</span>
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}</td></tr>`;
     for (const l of ls) {
-      h += `<tr>
-        <td class="numl">${nums[l.uid]}</td>
+      const pu = prixUnitaire(l);
+      const mt = pu != null ? l.quantite * pu : null;
+      if (mt != null) total += mt; else sansPrix++;
+      h += `<tr class="ligne" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
+        <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
         <td>${esc(l.unite)}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td class="detail">${esc(detail(l))}</td>
+        ${avecPrix ? `<td class="pu">${pu != null ? fmt(pu) : '—'}</td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
         <td class="act"><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td>
       </tr>`;
     }
   });
-  if (!lots.length) h += '<tr><td colspan="6" class="muted">Aucune ligne. Retournez à la saisie pour ajouter des ouvrages.</td></tr>';
-  h += '</tbody></table>';
+  if (!lots.length) h += `<tr><td colspan="${nc}" class="muted">Aucune ligne. Retournez à la saisie pour ajouter des ouvrages.</td></tr>`;
+  h += '</tbody>';
+  if (avecPrix && L.length) {
+    h += `<tfoot><tr><td colspan="${nc - 2}">Total indicatif HT${sansPrix ? ` (${sansPrix} ligne(s) sans prix non comptée(s))` : ''}</td>
+      <td class="mt">${fmt(total)} €</td><td></td></tr></tfoot>`;
+  }
+  h += '</table>';
   $('tableMetre').innerHTML = h;
 }
 
@@ -452,6 +514,7 @@ $('btnChantiers').onclick = () => { route('chantiers'); renderChantiers(); };
 $('btnReglages').onclick = () => {
   $('urlScript').value = lsGet('url', '');
   $('jeton').value = lsGet('jeton', '');
+  if ($('chkPrix')) $('chkPrix').checked = prixAffiches();
   $('titre').textContent = 'Réglages';
   route('reglages');
 };
@@ -575,15 +638,21 @@ function donneesDocument() {
   const c = chantiers.find(x => x.id === courantId) || { nom: 'Métré' };
   const L = lignesDe(courantId);
   const nums = numeroLignes(courantId);
+  const avecPrix = prixAffiches();
+  let total = 0;
   const lots = lotsDuChantier(courantId).map((lotId, i) => ({
     num: pad2(i + 1),
     nom: libLot(lotId),
-    lignes: L.filter(l => l.lot === lotId).map(l => ({
-      num: nums[l.uid], designation: l.designation, unite: l.unite,
-      quantite: l.quantite, detail: detail(l)
-    }))
+    lignes: L.filter(l => l.lot === lotId).map(l => {
+      const pu = avecPrix ? prixUnitaire(l) : null;
+      const montant = pu != null ? l.quantite * pu : null;
+      if (montant != null) total += montant;
+      return { num: nums[l.uid], designation: l.designation, unite: l.unite,
+               quantite: l.quantite, detail: detail(l), pu, montant };
+    })
   }));
-  return { titre: c.nom, client: c.client || null, date: new Date().toLocaleDateString('fr-FR'), lots };
+  return { titre: c.nom, client: c.client || null, date: new Date().toLocaleDateString('fr-FR'), lots,
+           avecPrix, total };
 }
 
 function htmlImpression(d, logo) {
@@ -591,13 +660,18 @@ function htmlImpression(d, logo) {
   const ligne = (label, val) => val ? `<tr><th class="k">${esc(label)}</th><td>${esc(val)}</td></tr>` : '';
   const surf = cl.surf ? `${cl.surf} m²` : '';
   let corps = '';
+  const nc = d.avecPrix ? 7 : 5;
   for (const lot of d.lots) {
-    corps += `<tr class="lot"><td colspan="5">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
+    corps += `<tr class="lot"><td colspan="${nc}">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
     for (const l of lot.lignes) {
       corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
-        <td class="num">${fmt(l.quantite)}</td><td class="det">${esc(l.detail)}</td></tr>`;
+        <td class="num">${fmt(l.quantite)}</td><td class="det">${esc(l.detail)}</td>
+        ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
     }
   }
+  const pied = d.avecPrix
+    ? `<tfoot><tr class="tot"><td colspan="${nc - 1}">Total indicatif HT (prix moyens de référence, à valider)</td><td class="num">${fmt(d.total)} €</td></tr></tfoot>`
+    : '';
   const marque = logo
     ? `<img class="logo" src="${esc(logo)}" alt="Atelier 2M">`
     : `<div class="marque">${esc(ATELIER.nom)}</div>`;
@@ -634,6 +708,7 @@ function htmlImpression(d, logo) {
   table.metre tr { page-break-inside: avoid; }
   .vide { font-weight: 400; color: #8a8a8a; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
+  table.metre tr.tot td { font-weight: 700; border-top: 2px solid #E07838; border-bottom: none; padding-top: 3mm; }
 </style></head><body>
 <section class="garde">
   <div class="entete">
@@ -651,8 +726,8 @@ function htmlImpression(d, logo) {
 <section>
   <h2 class="entete-metre">Détail du métré</h2>
   <table class="metre">
-    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th>Quantité</th><th>Détail</th></tr></thead>
-    <tbody>${corps}</tbody>
+    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th>Quantité</th><th>Détail</th>${d.avecPrix ? '<th>P.U. HT ind.</th><th>Montant HT ind.</th>' : ''}</tr></thead>
+    <tbody>${corps}</tbody>${pied}
   </table>
 </section>
 <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 400); });</script>
@@ -700,7 +775,8 @@ async function exporterExcel() {
     ['CLIENT'], ['Nom', cl.nom || ''], ['Référence', cl.ref || ''], ['Téléphone', cl.tel || ''], ['Courriel', cl.mail || ''],
     ['Adresse du client', cl.addr || ''], ['Adresse du chantier', cl.cadr || ''], ['Nature du projet', cl.nat || ''],
     ['Surface', cl.surf ? cl.surf + ' m²' : ''], ['Résumé', cl.resume || ''], [],
-    ['Métré établi le', d.date]
+    ['Métré établi le', d.date],
+    ['Prix', d.avecPrix ? 'Prix indicatifs HT (à titre de référence)' : 'Document sans prix']
   ];
   const ws1 = XL.utils.aoa_to_sheet(g);
   ws1['!cols'] = [{ wch: 22 }, { wch: 70 }];
@@ -712,29 +788,47 @@ async function exporterExcel() {
   style(ws1, 'A9', { font: { bold: true, color: orange } });
   for (let r = 10; r <= 17; r++) style(ws1, 'A' + r, { font: { bold: true, color: { rgb: '6B6B6B' } } });
 
-  // Feuille 2 : métré détaillé
-  const m = [['N°', 'Désignation', 'Unité', 'Quantité', 'Détail']];
+  // Feuille 2 : métré détaillé (colonnes de prix seulement si le réglage est activé)
+  const avecPrix = d.avecPrix;
+  const nc = avecPrix ? 7 : 5;
+  const lettres = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, nc);
+  const m = [['N°', 'Désignation', 'Unité', 'Quantité', 'Détail', ...(avecPrix ? ['P.U. HT ind.', 'Montant HT ind.'] : [])]];
   const lignesLot = [], lignesLigne = [];
   for (const lot of d.lots) {
     lignesLot.push(m.length);
-    m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)']);
+    m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)', ...(avecPrix ? [''] : []), ...(avecPrix ? [''] : [])].slice(0, nc));
     for (const l of lot.lignes) {
       lignesLigne.push(m.length);
-      m.push([l.num, l.designation, l.unite, l.quantite, l.detail]);
+      m.push([l.num, l.designation, l.unite, l.quantite, l.detail, ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
     }
   }
+  let ligneTotal = null;
+  if (avecPrix) {
+    ligneTotal = m.length;
+    m.push(['', 'TOTAL INDICATIF HT (prix moyens de référence, à valider)', '', '', '', '', d.total]);
+  }
   const ws2 = XL.utils.aoa_to_sheet(m);
-  ws2['!cols'] = [{ wch: 9 }, { wch: 60 }, { wch: 10 }, { wch: 12 }, { wch: 48 }];
-  ws2['!merges'] = lignesLot.map(r => ({ s: { r, c: 0 }, e: { r, c: 4 } }));
-  style(ws2, 'A1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
-  for (const c of ['B', 'C', 'D', 'E']) style(ws2, c + '1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
-  for (const r of lignesLot) style(ws2, 'A' + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F4F4F4' } } });
-  for (const r of lignesLot) for (const c of ['B', 'C', 'D', 'E']) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
+  ws2['!cols'] = [{ wch: 9 }, { wch: 60 }, { wch: 10 }, { wch: 12 }, { wch: 48 }, ...(avecPrix ? [{ wch: 14 }, { wch: 16 }] : [])];
+  ws2['!merges'] = lignesLot.map(r => ({ s: { r, c: 0 }, e: { r, c: nc - 1 } }));
+  for (const c of lettres) style(ws2, c + '1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
+  for (const r of lignesLot) {
+    style(ws2, 'A' + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F4F4F4' } } });
+    for (const c of lettres.slice(1)) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
+  }
   for (const r of lignesLigne) {
     style(ws2, 'A' + (r + 1), { font: { bold: true, color: orange } });
     ws2['D' + (r + 1)].z = '#,##0.00';
     ws2['D' + (r + 1)].s = { font: { bold: true }, alignment: { horizontal: 'right' } };
     style(ws2, 'E' + (r + 1), { font: { color: { rgb: '6B6B6B' }, sz: 9 } });
+    if (avecPrix) for (const c of ['F', 'G']) if (ws2[c + (r + 1)] && typeof ws2[c + (r + 1)].v === 'number') {
+      ws2[c + (r + 1)].z = '#,##0.00';
+      ws2[c + (r + 1)].s = { alignment: { horizontal: 'right' } };
+    }
+  }
+  if (ligneTotal !== null) {
+    style(ws2, 'B' + (ligneTotal + 1), { font: { bold: true } });
+    style(ws2, 'G' + (ligneTotal + 1), { font: { bold: true }, alignment: { horizontal: 'right' } });
+    ws2['G' + (ligneTotal + 1)].z = '#,##0.00';
   }
 
   XL.utils.book_append_sheet(wb, ws1, 'Page de garde');
@@ -747,6 +841,9 @@ $('btnCsv').textContent = 'Excel';
 $('btnCsv').onclick = exporterExcel;
 $('btnCsv').insertAdjacentHTML('afterend', ' <button class="btn small" id="btnPdf">PDF / Imprimer</button>');
 $('btnPdf').onclick = imprimerPdf;
+
+// Réglage « Afficher les prix » : enregistré tout de suite, mis à jour dans les deux fenêtres
+if ($('chkPrix')) $('chkPrix').onchange = e => { lsSet('prix', e.target.checked); renderMetre(); };
 
 $('btnSauverReglages').onclick = () => {
   lsSet('url', $('urlScript').value.trim());
