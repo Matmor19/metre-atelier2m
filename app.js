@@ -17,6 +17,10 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre .btn.small{min-height:30px;padding:4px 9px}
     table.metre td.numl{font-weight:700;color:var(--acc2);white-space:nowrap}
     table.metre tr.lot .lotnum{display:inline-block;min-width:2.2em;font-weight:700;color:var(--acc2)}
+    table.metre .poignee{cursor:grab;touch-action:none;user-select:none;color:var(--mut);padding:0 10px 0 2px;font-size:16px;letter-spacing:-2px}
+    table.metre tr.lot.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
+    table.metre tr.lot.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
+    body.en-glisse{cursor:grabbing;user-select:none}
   `;
   const s = document.createElement('style');
   s.textContent = css;
@@ -230,6 +234,50 @@ function dessinerPanneauLot() {
       <div style="flex:0 0 auto"><button class="btn" id="btnAjouterLot" ${dispo.length ? '' : 'disabled'}>Insérer</button></div>
     </div>`;
 }
+/* ============ Glisser-déposer des lots (souris et tactile) ============ */
+let glisse = null;
+function ligneLotSous(x, y) {
+  const el = document.elementFromPoint(x, y);
+  return el ? el.closest('tr.lot[data-lot]') : null;
+}
+function marquerCible(tr, y) {
+  document.querySelectorAll('tr.lot.cible-avant, tr.lot.cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
+  if (!tr || tr.dataset.lot === glisse.lot) return;
+  const r = tr.getBoundingClientRect();
+  tr.classList.add(y < r.top + r.height / 2 ? 'cible-avant' : 'cible-apres');
+}
+document.addEventListener('pointerdown', e => {
+  const p = e.target.closest('[data-glisser]');
+  if (!p || PAGE !== 'tableau') return;
+  e.preventDefault();
+  glisse = { lot: p.dataset.glisser };
+  document.body.classList.add('en-glisse');
+});
+document.addEventListener('pointermove', e => {
+  if (!glisse) return;
+  marquerCible(ligneLotSous(e.clientX, e.clientY), e.clientY);
+});
+function finGlisse(e) {
+  if (!glisse) return;
+  const tr = e.type === 'pointerup' ? ligneLotSous(e.clientX, e.clientY) : null;
+  const cible = tr && tr.dataset.lot !== glisse.lot ? tr : null;
+  const apres = cible && cible.classList.contains('cible-apres');
+  const cibleId = cible ? cible.dataset.lot : null;
+  const lotId = glisse.lot;
+  glisse = null;
+  document.body.classList.remove('en-glisse');
+  document.querySelectorAll('tr.lot.cible-avant, tr.lot.cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
+  if (!cibleId) return;
+  const liste = lotsDuChantier(courantId).filter(x => x !== lotId);
+  let idx = liste.indexOf(cibleId);
+  if (apres) idx += 1;
+  liste.splice(idx, 0, lotId);
+  sauverLotsDuChantier(courantId, liste);
+  renderMetre();
+}
+document.addEventListener('pointerup', finGlisse);
+document.addEventListener('pointercancel', finGlisse);
+
 document.addEventListener('click', e => {
   if (e.target.closest('#btnAjouterLot')) {
     const lot = $('lotNouveau').value;
@@ -254,7 +302,7 @@ function renderMetre() {
     const lot = BIB.lots.find(x => x.id === lotId);
     const ls = L.filter(l => l.lot === lotId);
     const vide = ls.length === 0;
-    h += `<tr class="lot"><td colspan="6"><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
+    h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="6"><span class="poignee" data-glisser="${esc(lotId)}" title="Glisser pour déplacer le lot">⋮⋮</span><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
       <span class="muted">(${vide ? 'aucune ligne' : ls.length + ' ligne' + (ls.length > 1 ? 's' : '')})</span>
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}</td></tr>`;
     for (const l of ls) {
