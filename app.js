@@ -155,10 +155,10 @@ function renderMetre() {
     const ls = L.filter(l => l.lot === lot.id);
     if (!ls.length) continue;
     h += `<div class="lotbloc"><h3>${esc(lot.nom)}</h3><table>
-      <tr><th>Désignation</th><th>Détail</th><th class="num">Quantité</th><th></th></tr>`;
+      <tr><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th></th></tr>`;
     for (const l of ls) {
-      h += `<tr><td>${esc(l.designation)}</td><td class="muted">${esc(detail(l))}</td>
-        <td class="num">${fmt(l.quantite)} ${esc(l.unite)}</td>
+      h += `<tr><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
+        <td class="num">${fmt(l.quantite)}</td><td class="muted">${esc(detail(l))}</td>
         <td><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td></tr>`;
     }
     h += '</table></div>';
@@ -345,11 +345,11 @@ $('modal').addEventListener('click', e => {
 });
 
 $('btnCsv').onclick = () => {
-  const rows = [['Lot', 'Désignation', 'Détail', 'Quantité', 'Unité']];
+  const rows = [['Lot', 'Désignation', 'Unité', 'Quantité', 'Détail']];
   const L = lignesDe(courantId);
   for (const lot of BIB.lots)
     for (const l of L.filter(x => x.lot === lot.id))
-      rows.push([lot.nom, l.designation, detail(l), fmt(l.quantite).replace(/\s/g, ''), l.unite]);
+      rows.push([lot.nom, l.designation, l.unite, fmt(l.quantite).replace(/\s/g, ''), detail(l)]);
   const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
