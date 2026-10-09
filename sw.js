@@ -1,5 +1,5 @@
-const CACHE = 'metre2m-v1';
-const FICHIERS = ['./', 'index.html', 'bibliotheque.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'metre2m-v2';
+const FICHIERS = ['./', 'index.html', 'tableau.html', 'app.js', 'bibliotheque.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)).then(() => self.skipWaiting()));

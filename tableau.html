@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Métré Atelier 2M</title>
+<title>Métré du chantier</title>
 <style>
 :root{--bg:#f6f7f9;--fg:#1d2330;--mut:#667085;--card:#fff;--line:#e2e5ea;--acc:#1f3a5f;--acc2:#2f6fb0;--ok:#1e7b4a;--r:10px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171c;--fg:#e6e9ef;--mut:#9aa3b2;--card:#1d2128;--line:#2c323c;--acc:#26466e;--acc2:#4f8fd6;--ok:#4cc38a}}
@@ -47,7 +47,7 @@ body[data-page="tableau"] .hdr{display:none}
 @media (min-width:700px){.modal{align-items:center}.sheet{border-radius:16px}}
 </style>
 </head>
-<body data-page="saisie">
+<body data-page="tableau">
 
 <header>
   <h1 id="titre">Métré Atelier 2M</h1>
@@ -82,7 +82,6 @@ body[data-page="tableau"] .hdr{display:none}
     </div>
     <div class="card" id="listeOuvrages" style="padding:0;overflow:hidden"></div>
   </section>
-
 
   <!-- Écran 2 : métré validé du chantier -->
   <section id="vTableau" class="hidden">
