@@ -56,7 +56,7 @@ let courantId = lsGet('courant', null);
 let lotCourant = null;
 
 function lignesDe(id) { return lsGet('lignes.' + id, []); }
-function sauverLignes(id, L) { return lsSet('lignes.' + id, L); }
+function sauverLignes(id, L) { const ok = lsSet('lignes.' + id, L); marquerChantier(id); return ok; }
 function libLot(id) { const l = BIB.lots.find(x => x.id === id); return l ? l.nom : id; }
 
 async function post(corps) {
@@ -208,6 +208,7 @@ function sauverLotsDuChantier(id, liste) {
   if (!c) return;
   c.lots = liste;
   lsSet('chantiers', chantiers);
+  marquerChantier(id);
 }
 function ajouterLotSiAbsent(id, lotId) {
   const liste = lotsDuChantier(id);
@@ -568,6 +569,83 @@ function ouvrirChantier(id) {
   renderMetre();
 }
 
+/* ============ Synchronisation des chantiers (Drive) ============ */
+// Par chantier, on garde : maj (version connue sur Drive) et modifie (modifications pas encore envoyées)
+function syncLire() { return lsGet('sync', {}); }
+function syncEcrire(x) { lsSet('sync', x); }
+function syncStatut(texte) { const e = $('syncStatut'); if (e) e.textContent = texte; }
+function syncConfigOk() { return !!(lsGet('url', '') && lsGet('jeton', '')); }
+
+// Appelé après chaque modification d'un chantier ou de ses lignes : envoi rapide
+function marquerChantier(id) {
+  const x = syncLire();
+  x[id] = Object.assign({}, x[id], { modifie: true });
+  syncEcrire(x);
+  clearTimeout(marquerChantier.t);
+  marquerChantier.t = setTimeout(envoyerChantiers, 3000);
+}
+
+async function envoyerChantiers() {
+  if (!syncConfigOk()) return;
+  const x = syncLire();
+  for (const c of chantiers) if (!x[c.id]) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois
+  let envoyes = 0;
+  for (const id of Object.keys(x)) {
+    if (!x[id].modifie) continue;
+    const c = chantiers.find(y => y.id === id);
+    if (!c) { delete x[id]; continue; }
+    const doc = Object.assign({}, c, { lignes: lignesDe(id) });
+    try {
+      const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: x[id].maj || null });
+      if (j.ok) { x[id] = { maj: j.maj, modifie: false }; envoyes++; }
+      else if (j.conflit) { x[id].conflit = true; syncStatut('Conflit sur « ' + c.nom + ' » : modifié ailleurs. Cliquez sur Synchroniser pour récupérer cette version.'); }
+    } catch (e) { syncEcrire(x); syncStatut('Pas de réseau : les modifications seront envoyées plus tard.'); return; }
+  }
+  syncEcrire(x);
+  if (envoyes) syncStatut('Envoyé vers Drive à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+}
+
+// Récupère les chantiers modifiés sur un autre appareil (sans écraser les modifications non envoyées)
+async function recupererChantiers() {
+  if (!syncConfigOk()) return;
+  const liste = await post({ action: 'lister_chantiers' });
+  if (!liste.ok) { syncStatut('Refus du script : ' + (liste.erreur || 'erreur inconnue')); return; }
+  const x = syncLire();
+  let recus = 0;
+  for (const item of liste.chantiers) {
+    const id = item.id;
+    if (x[id] && x[id].modifie) continue;
+    const j = await post({ action: 'lire_chantier', id });
+    const doc = j.ok ? j.chantier : null;
+    if (!doc || (x[id] && x[id].maj === doc.maj)) continue;
+    const { lignes, ...meta } = doc;
+    const i = chantiers.findIndex(c => c.id === id);
+    if (i >= 0) chantiers[i] = meta; else chantiers.push(meta);
+    lsSet('lignes.' + id, lignes || []);
+    x[id] = { maj: doc.maj, modifie: false };
+    recus++;
+  }
+  lsSet('chantiers', chantiers);
+  syncEcrire(x);
+  if (recus) renderChantiers();
+  syncStatut(recus ? recus + ' chantier(s) reçu(s) de Drive' : 'Chantiers à jour');
+}
+
+async function synchroniserChantiers() {
+  if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
+  try { await envoyerChantiers(); await recupererChantiers(); }
+  catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
+}
+
+// Bouton « Synchroniser les chantiers » sur la liste des chantiers
+function preparerSynchro() {
+  if ($('btnSynchro') || !$('listeChantiers')) return;
+  $('listeChantiers').insertAdjacentHTML('beforebegin', `<div class="row" style="margin-bottom:12px;align-items:center">
+    <button class="btn sec small" id="btnSynchro" style="flex:0 0 auto">Synchroniser les chantiers</button>
+    <span class="muted" id="syncStatut"></span></div>`);
+  $('btnSynchro').onclick = synchroniserChantiers;
+}
+
 /* ============ Événements ============ */
 $('btnChantiers').onclick = () => { route('chantiers'); renderChantiers(); };
 $('btnReglages').onclick = () => {
@@ -586,6 +664,7 @@ $('btnNouveau').onclick = () => {
   const c = { id: 'c' + uid(), nom, client };
   chantiers.push(c);
   lsSet('chantiers', chantiers);
+  marquerChantier(c.id);
   $('nomChantier').value = '';
   ouvrirChantier(c.id);
 };
@@ -690,6 +769,7 @@ async function ouvrirDepuisClient(ref) {
     c = { id: 'c' + uid(), nom: cl.nom || ('Chantier ' + ref), client: pickClient(cl) };
     chantiers.push(c);
     lsSet('chantiers', chantiers);
+    marquerChantier(c.id);
   }
   ouvrirChantier(c.id);
 }
@@ -1110,6 +1190,8 @@ window.addEventListener('storage', e => {
     await ouvrirDepuisClient(refClient);
   }
   synchroBibliotheque();
+  preparerSynchro();
+  synchroniserChantiers();
   envoyerPropositions();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
