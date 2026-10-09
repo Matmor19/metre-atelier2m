@@ -359,13 +359,14 @@ function prixUnitaire(l) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   return o ? prixSelon(o.prix_indicatif, l.prix || 'moyen') : null;
 }
-function optionsPrix(l) {
+function optionsPrix(l, montants) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const p = (o && o.prix_indicatif) || {};
   const choisi = l.prix || 'moyen';
   return LIBELLES_PRIX.map(([cle, lib, champ]) => {
     const v = p[champ];
-    return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>${lib}${v != null ? ' ' + fmt(v) : ' (—)'}</option>`;
+    const suite = montants ? (v != null ? ' ' + fmt(v) : ' (—)') : '';
+    return `<option value="${cle}" ${cle === choisi ? 'selected' : ''}>${lib}${suite}</option>`;
   }).join('');
 }
 // Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
@@ -380,14 +381,14 @@ function renderMetre() {
   compterLignes();
   dessinerPanneauLot();
   if ($('btnPrix')) $('btnPrix').textContent = avecPrix ? 'Masquer les prix' : 'Afficher les prix';
-  const nc = avecPrix ? 8 : 6;
+  const nc = avecPrix ? 8 : 7;
   const colonnes = avecPrix
-    ? '<col style="width:9%"><col style="width:27%"><col style="width:7%"><col style="width:9%"><col style="width:20%"><col style="width:9%"><col style="width:12%"><col style="width:7%">'
-    : '<col style="width:10%"><col style="width:40%"><col style="width:10%"><col style="width:14%"><col style="width:20%"><col style="width:6%">';
+    ? '<col style="width:9%"><col style="width:25%"><col style="width:7%"><col style="width:9%"><col style="width:18%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:7%">'
+    : '<col style="width:9%"><col style="width:33%"><col style="width:8%"><col style="width:11%"><col style="width:18%"><col style="width:12%"><col style="width:9%">';
   let total = 0, sansPrix = 0;
   let h = `<table class="metre">
     <colgroup>${colonnes}</colgroup>
-    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th>${avecPrix ? '<th class="num">P.U. HT ind.</th><th class="num">Montant HT ind.</th>' : ''}<th></th></tr></thead><tbody>`;
+    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th>Prix</th>${avecPrix ? '<th class="num">P.U. HT ind.</th><th class="num">Montant HT ind.</th>' : ''}<th></th></tr></thead><tbody>`;
   lots.forEach((lotId, i) => {
     const lot = BIB.lots.find(x => x.id === lotId);
     const ls = L.filter(l => l.lot === lotId);
@@ -405,7 +406,8 @@ function renderMetre() {
         <td>${esc(l.unite)}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td class="detail">${esc(detail(l))}</td>
-        ${avecPrix ? `<td class="pu"><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l)}</select><div>${pu != null ? fmt(pu) : '—'}</div></td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
+        <td><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l, avecPrix)}</select></td>
+        ${avecPrix ? `<td class="pu">${pu != null ? fmt(pu) : '—'}</td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
         <td class="act"><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td>
       </tr>`;
     }
