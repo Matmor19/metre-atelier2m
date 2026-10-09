@@ -235,7 +235,7 @@ function remplirLots() {
 
 function renderOuvrages() {
   const q = $('recherche').value.trim().toLowerCase();
-  const liste = BIB.ouvrages.filter(o => o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
+  const liste = BIB.ouvrages.filter(o => !o.supprime && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
   const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)}</span><span class="tag">${esc(o.unite)}</span></div>`).join('');
   $('listeOuvrages').innerHTML = (lignes || '<p class="muted" style="padding:12px">Aucun ouvrage trouvé dans ce lot.</p>')
     + '<div style="padding:12px"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button></div>';
@@ -1070,7 +1070,7 @@ $('btnEnvoiBib').onclick = async () => {
 };
 
 /* ============ Bibliothèque : modifier les ouvrages et leurs prix ============ */
-const ouvragesLibres = () => BIB.ouvrages;
+const ouvragesLibres = () => BIB.ouvrages.filter(o => !o.supprime);   // les ouvrages supprimés n'apparaissent plus
 function champsBib(unite) { return champsLibre(unite).map(c => ({ cle: c.cle, libelle: c.libelle })); }
 const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
 
@@ -1091,6 +1091,13 @@ function renderBiblio() {
     return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px">${esc(libLot(o.lot))}</div></span>
       <span class="tag">${esc(o.unite)} · ${p && (p.moyen != null || p.unique != null) ? fmt(p.moyen != null ? p.moyen : p.unique) + ' € HT' : 'sans prix'}</span></div>`;
   }).join('') || '<p class="muted" style="padding:12px">Aucun ouvrage.</p>';
+  // Ouvrages supprimés (restaurables) : en bas de la liste
+  const supprimes = BIB.ouvrages.filter(o => o.supprime && (!lot || o.lot === lot));
+  if (supprimes.length) {
+    $('biblioListe').innerHTML += `<details style="padding:0 12px 12px"><summary class="muted">Supprimés (${supprimes.length})</summary>` +
+      supprimes.map(o => `<div class="ouv" style="padding:8px 0"><span>${esc(o.designation)}</span>
+        <button class="btn small sec" data-restaurer-ouv="${esc(o.id)}">Restaurer</button></div>`).join('') + '</details>';
+  }
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
 
@@ -1137,6 +1144,7 @@ function formulaireOuvrage(o, lotChoisi) {
       </div>
       <div class="row" style="margin-top:12px">
         <button type="button" class="btn sec" id="bBibAnnuler">Annuler</button>
+        ${o ? '<button type="button" class="btn danger" id="bSupprOuv">Supprimer</button>' : ''}
         <button type="submit" class="btn">Enregistrer</button>
       </div>
     </form>`;
@@ -1145,6 +1153,19 @@ function formulaireOuvrage(o, lotChoisi) {
   $('b_bas').addEventListener('input', majMoyen);
   $('b_haut').addEventListener('input', majMoyen);
   $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
+  if (o && $('bSupprOuv')) $('bSupprOuv').onclick = () => supprimerOuvrage(o.id);
+}
+
+// Suppression d'un ouvrage de la bibliothèque (il reste restaurable dans « Supprimés »)
+function supprimerOuvrage(id) {
+  const o = BIB.ouvrages.find(x => x.id === id);
+  if (!o) return;
+  if (!confirm('Supprimer l\'ouvrage « ' + o.designation + ' » de la bibliothèque ? Vous pourrez le restaurer depuis « Supprimés ».')) return;
+  o.supprime = true;
+  o.version = (o.version || 1) + 1;
+  sauverBibliotheque();
+  fermer();
+  renderBiblio();
 }
 
 function enregistrerOuvrage(id) {
@@ -1212,6 +1233,12 @@ $('biblioLot').onchange = renderBiblio;
 $('biblioRecherche').oninput = renderBiblio;
 $('btnBiblioNouveau').onclick = () => { ouvrirModal(); formulaireOuvrage(null, $('biblioLot').value); };
 $('biblioListe').addEventListener('click', e => {
+  const r = e.target.closest('[data-restaurer-ouv]');
+  if (r) {
+    const o = BIB.ouvrages.find(x => x.id === r.dataset.restaurerOuv);
+    if (o) { o.supprime = false; o.version = (o.version || 1) + 1; sauverBibliotheque(); renderBiblio(); }
+    return;
+  }
   const b = e.target.closest('[data-edit]');
   if (!b) return;
   const o = BIB.ouvrages.find(x => x.id === b.dataset.edit);
