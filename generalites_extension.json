@@ -1,0 +1,446 @@
+{
+ "installation-chantier": {
+  "titre": "Installation de chantier",
+  "sections": [
+   {
+    "titre": "Site habité",
+    "points": [
+     "Logement occupé : accès, zone de vie et circulation des compagnons définis pour préserver l'habitation pendant les travaux.",
+     "Protection des pièces contiguës au chantier (poussière, bruit) et horaires convenus avec le maître d'ouvrage."
+    ]
+   },
+   {
+    "titre": "Protection des existants",
+    "points": [
+     "Bâchage des ouvertures existantes et protection des sols, escaliers et menuiseries conservés.",
+     "Accès au jardin et aux réseaux existants maintenus pendant la durée du chantier."
+    ]
+   }
+  ]
+ },
+ "demolition": {
+  "titre": "Démolition",
+  "sections": [
+   {
+    "titre": "Repérage et sécurité",
+    "points": [
+     "Diagnostic amiante avant travaux (RAT) pour toute dépose sur l'existant, et repérage du plomb si le bâti est antérieur à 1949.",
+     "Coupure des réseaux existants avant percement ou démolition de mur."
+    ]
+   },
+   {
+    "titre": "Ouverture et percement",
+    "points": [
+     "Percement d'un mur existant uniquement après étaiement et mise en place du linteau prévu à la note de calcul.",
+     "Démolition limitée à l'emprise de l'extension ; les gravats sont évacués au fur et à mesure."
+    ]
+   }
+  ]
+ },
+ "renovation": {
+  "titre": "Reprises de l'existant et raccord",
+  "sections": [
+   {
+    "titre": "Relevé et état de l'existant",
+    "points": [
+     "Relevé précis de l'existant (cotes, niveaux de sol, hauteurs sous plafond) avant commande des éléments de jonction.",
+     "Désordres constatés sur le bâti existant (fissures, humidité) signalés par écrit avant de raccorder le neuf."
+    ]
+   },
+   {
+    "titre": "Jonction ancien / neuf",
+    "points": [
+     "Liaison entre l'existant et l'extension traitée selon le descriptif : chaînage de liaison, reprise des appuis, joint de désolidarisation.",
+     "Niveaux de sol et seuils de jonction ajustés pour éviter les ressauts et les infiltrations."
+    ]
+   }
+  ]
+ },
+ "terrassement-vrd": {
+  "titre": "Terrassement & VRD",
+  "sections": [
+   {
+    "titre": "Réseaux existants",
+    "points": [
+     "Déclaration DT-DICT avant terrassement près des réseaux existants, et repérage sur site des branchements de la maison.",
+     "Fouilles d'extension réalisées sans déstabiliser les fondations de la maison existante."
+    ]
+   },
+   {
+    "titre": "Évacuations et abords",
+    "points": [
+     "Pentes et évacuation des eaux pluviales vérifiées pour éloigner l'eau des murs existants et de l'extension.",
+     "Raccordement des eaux usées de l'extension au réseau existant, avec regards accessibles."
+    ]
+   }
+  ]
+ },
+ "gros-oeuvre": {
+  "titre": "Gros œuvre",
+  "sections": [
+   {
+    "titre": "Fondations et tassement",
+    "points": [
+     "Étude de sol obligatoire, avec fondations dimensionnées pour le nouveau bâti et une profondeur d'ancrage adaptée au voisinage du bâti existant.",
+     "Joint de désolidarisation entre l'extension et la maison existante pour absorber les mouvements différentiels."
+    ]
+   },
+   {
+    "titre": "Liaison et chaînage",
+    "points": [
+     "Chaînage de liaison et ancrages mécaniques entre les murs anciens et neufs, selon l'étude de structure.",
+     "Murs neufs montés d'aplomb et d'équerre, avec contrôle des niveaux de jonction avant coulage des dalles."
+    ]
+   },
+   {
+    "titre": "Interfaces avec les autres lots",
+    "points": [
+     "Charpentier / couvreur : appuis et niveaux de la nouvelle charpente calés sur ceux de la toiture existante.",
+     "Plombier / électricien : fourreaux et attentes posés avant coulage, en tenant compte des réseaux existants à raccorder."
+    ]
+   },
+   {
+    "titre": "Étanchéité et humidité",
+    "points": [
+     "Coupure de capillarité sur tout le pourtour de l'extension, y compris à la jonction avec l'existant.",
+     "Étanchéité de la jonction (bande d'arase, mortier hydrofugé) pour éviter les remontées d'humidité."
+    ]
+   }
+  ]
+ },
+ "charpente-structure-bois": {
+  "titre": "Charpente & structure bois",
+  "sections": [
+   {
+    "titre": "Raccord de toiture",
+    "points": [
+     "Charpente de l'extension raccordée à la charpente existante, avec des appuis et des pentes calés sur celle-ci.",
+     "Contrôle des pièces existantes (humidité, insectes) avant tout assemblage, avec traitement si nécessaire."
+    ]
+   },
+   {
+    "titre": "Pose",
+    "points": [
+     "Assemblages et ancrages conformes à la note de calcul ; étaiement de la toiture existante pendant le raccord.",
+     "Chevêtres et ouvertures de toiture posés selon les cotes du plan de charpente."
+    ]
+   }
+  ]
+ },
+ "couverture-zinguerie": {
+  "titre": "Couverture & zinguerie",
+  "sections": [
+   {
+    "titre": "Raccord des toitures",
+    "points": [
+     "Continuité de la couverture entre l'existant et l'extension : même matériau ou raccord validé, pentes compatibles.",
+     "Noues, solins et arêtiers traités pour assurer l'étanchéité à la jonction des deux toitures."
+    ]
+   },
+   {
+    "titre": "Zinguerie et ventilation",
+    "points": [
+     "Gouttières et descentes dimensionnées pour la surface de toiture totale, neuve et existante.",
+     "Ventilation de la lame d'air et écran de sous-toiture raccordés à ceux de l'existant."
+    ]
+   }
+  ]
+ },
+ "isolation-thermique": {
+  "titre": "Isolation thermique",
+  "sections": [
+   {
+    "titre": "Performance et continuité",
+    "points": [
+     "Résistances thermiques conformes à l'étude thermique de l'extension (RE 2020 ou RT existant élément par élément, selon la surface créée).",
+     "Continuité de l'isolation entre l'extension et l'existant, avec traitement du pont thermique à la jonction."
+    ]
+   },
+   {
+    "titre": "Étanchéité à l'air et humidité",
+    "points": [
+     "Pare-vapeur ou membrane d'étanchéité à l'air raccordé aux parois existantes.",
+     "Isolation des murs enterrés et des dalles traitée contre l'humidité du sol."
+    ]
+   }
+  ]
+ },
+ "doublages-cloisons-plafonds": {
+  "titre": "Doublages, cloisons & plafonds",
+  "sections": [
+   {
+    "titre": "Mise en œuvre",
+    "points": [
+     "Doublages et cloisons posés selon le DTU 25.41, avec traitement des jonctions avec les murs et plafonds existants.",
+     "Rattrapage des différences de planéité entre l'existant et le neuf prévu au devis."
+    ]
+   },
+   {
+    "titre": "Interfaces",
+    "points": [
+     "Électricien et plombier : passages et boîtiers prévus avant fermeture, en lien avec les réseaux existants.",
+     "Menuisier : huisseries et tableaux réalisés selon les cotes de la nouvelle ouverture."
+    ]
+   }
+  ]
+ },
+ "menuiseries-exterieures": {
+  "titre": "Menuiseries extérieures",
+  "sections": [
+   {
+    "titre": "Relevé et pose",
+    "points": [
+     "Relevé des baies de l'extension et des tableaux existants pour fixer les dimensions de commande.",
+     "Pose conforme au DTU 36.5, avec calfeutrement étanche et performance thermique selon l'étude."
+    ]
+   },
+   {
+    "titre": "Protection",
+    "points": [
+     "Protection des finitions intérieures existantes pendant la pose.",
+     "Réglage des ouvrants et contrôle de l'étanchéité après pose."
+    ]
+   }
+  ]
+ },
+ "menuiseries-interieures": {
+  "titre": "Menuiseries intérieures",
+  "sections": [
+   {
+    "titre": "Ouvertures et portes",
+    "points": [
+     "Huisseries posées dans les ouvertures créées dans l'existant, d'aplomb et de niveau.",
+     "Portes et placards dimensionnés pour les passages entre l'existant et l'extension."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Réglage des portes et quincailleries à la réception.",
+     "Protection des ouvrages posés pendant les autres lots."
+    ]
+   }
+  ]
+ },
+ "electricite": {
+  "titre": "Électricité",
+  "sections": [
+   {
+    "titre": "Extension du réseau existant",
+    "points": [
+     "Vérification de la capacité du tableau existant et de l'éventuel besoin d'un nouveau tableau ou d'un disjoncteur de branchement.",
+     "Circuits de l'extension raccordés à l'installation existante, avec mise à la terre vérifiée."
+    ]
+   },
+   {
+    "titre": "Conformité",
+    "points": [
+     "Installation conforme à la norme NF C 15-100, avec attestation Consuel pour la partie modifiée.",
+     "Liaison équipotentielle de la salle de bains et des zones humides réalisée dans l'extension."
+    ]
+   }
+  ]
+ },
+ "plomberie-sanitaire": {
+  "titre": "Plomberie & sanitaire",
+  "sections": [
+   {
+    "titre": "Raccordements",
+    "points": [
+     "Alimentation en eau froide et chaude de l'extension piquée sur le réseau existant, avec robinet d'arrêt accessible.",
+     "Évacuations de l'extension raccordées à la sortie existante, avec pentes et ventilation primaire vérifiées."
+    ]
+   },
+   {
+    "titre": "Essais",
+    "points": [
+     "Essais de pression réalisés avant fermeture des gaines et des murs.",
+     "Vérification du fonctionnement des évacuations de la maison existante après raccordement."
+    ]
+   }
+  ]
+ },
+ "chauffage-vmc-climatisation": {
+  "titre": "Chauffage, VMC & climatisation",
+  "sections": [
+   {
+    "titre": "Dimensionnement",
+    "points": [
+     "Émetteurs de chaleur dimensionnés pour l'extension, avec contrôle de la capacité de la chaudière ou de la pompe à chaleur existante.",
+     "VMC de l'extension raccordée au système existant ou créée selon la capacité de celui-ci."
+    ]
+   },
+   {
+    "titre": "Mise en service",
+    "points": [
+     "Réglages et mise en service consignés, avec remise de la notice au maître d'ouvrage.",
+     "Conduits et gaines posés sans contre-pente et passages prévus avant fermeture."
+    ]
+   }
+  ]
+ },
+ "revetements-sols": {
+  "titre": "Revêtements de sols",
+  "sections": [
+   {
+    "titre": "Jonction des sols",
+    "points": [
+     "Niveau de sol de l'extension calé sur celui de la maison existante, avec seuil de jonction prévu au devis.",
+     "Joints de fractionnement entre l'existant et le neuf selon le DTU 52.2 (carrelage) et les fiches techniques."
+    ]
+   },
+   {
+    "titre": "Pose",
+    "points": [
+     "Supports contrôlés (planéité, siccité, propreté) avant pose ; ragréage si nécessaire.",
+     "Protection des sols posés pendant la suite du chantier."
+    ]
+   }
+  ]
+ },
+ "revetements-muraux": {
+  "titre": "Revêtements muraux",
+  "sections": [
+   {
+    "titre": "Préparation",
+    "points": [
+     "Supports préparés (planéité, sans humidité) ; étanchéité des pièces humides réalisée avant pose.",
+     "Raccord des revêtements entre l'existant et l'extension soigné."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Découpes soignées autour des appareils et des prises.",
+     "Nettoyage des joints et protection contre les projections de peinture."
+    ]
+   }
+  ]
+ },
+ "peinture-finitions": {
+  "titre": "Peinture & finitions",
+  "sections": [
+   {
+    "titre": "Raccord des finitions",
+    "points": [
+     "Teintes et finitions de l'extension harmonisées avec l'existant, avec essai sur place validé par le maître d'ouvrage.",
+     "Préparation des supports de l'extension et des zones de jonction (enduit, sous-couche) selon le DTU 59.1."
+    ]
+   },
+   {
+    "titre": "Protection",
+    "points": [
+     "Protection des sols et des menuiseries existantes pendant les travaux.",
+     "Retouches après pose des équipements, avant réception."
+    ]
+   }
+  ]
+ },
+ "cuisine": {
+  "titre": "Cuisine",
+  "sections": [
+   {
+    "titre": "Implantation",
+    "points": [
+     "Si la cuisine est dans l'extension, relevé des arrivées et évacuations existantes avant commande.",
+     "Dimensions vérifiées sur place, les murs de jonction n'étant pas toujours d'équerre."
+    ]
+   },
+   {
+    "titre": "Mise en œuvre",
+    "points": [
+     "Meubles et plan de travail posés d'aplomb, raccordements réalisés par les lots concernés.",
+     "Hotte et appareils encastrés posés selon les notices fabricants."
+    ]
+   }
+  ]
+ },
+ "amenagement-exterieur": {
+  "titre": "Aménagement extérieur",
+  "sections": [
+   {
+    "titre": "Abords",
+    "points": [
+     "Terrasse de l'extension calée au niveau du seuil, avec pente d'évacuation vers les espaces verts.",
+     "Remise en état des abords et des accès existants après les travaux."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Revêtements extérieurs et clôtures posés selon les plans et le permis ou la déclaration préalable.",
+     "Plantations et engazonnement réalisés à la saison adaptée."
+    ]
+   }
+  ]
+ },
+ "reception-fin-chantier": {
+  "titre": "Réception et fin de chantier",
+  "sections": [
+   {
+    "titre": "Constat et essais",
+    "points": [
+     "Constat contradictoire avant et après travaux, pour comparer l'état de la maison existante.",
+     "Test d'étanchéité à l'air et attestations Consuel réalisés avant réception."
+    ]
+   },
+   {
+    "titre": "Réception",
+    "points": [
+     "Liste des réserves établie à la visite de réception ; levée des réserves avant solde.",
+     "Remise des plans de récolement, DOE et garanties de parfait achèvement."
+    ]
+   }
+  ]
+ },
+ "ossature-bois": {
+  "titre": "Ossature bois",
+  "sections": [
+   {
+    "titre": "Conformité et règles de l'art",
+    "points": [
+     "Construction conforme au DTU 31.2 (maisons à ossature bois) et à l'Eurocode 5 (NF EN 1995) ; bois de structure classé et traité.",
+     "Humidité du bois inférieure à 20 % au montage ; bois stocké à l'abri de la pluie et posé sur cales."
+    ]
+   },
+   {
+    "titre": "Bande d'arase et lisse basse",
+    "points": [
+     "Bande d'arase compressible posée sous la lisse basse, pour rompre la remontée d'humidité depuis la dalle.",
+     "Lisse basse fixée sur la dalle par tiges et chevilles chimiques, avec bande d'étanchéité à l'air sur le pourtour."
+    ]
+   },
+   {
+    "titre": "Montants, lisse haute et baies",
+    "points": [
+     "Montants 145×45 (ou 120×45) à l'entraxe prévu par la note de calcul, généralement 600 mm ; entraxe réduit à 400 mm sous charge élevée.",
+     "Double lisse haute, chaînage haut et sablière de rive assurant la liaison avec la charpente.",
+     "Montants de tableaux doublés ou triplés autour des baies, linteaux lamellés-collés calculés pour chaque ouverture."
+    ]
+   },
+   {
+    "titre": "Contreventement",
+    "points": [
+     "Panneaux OSB 9 mm (cloisons et ouvrages légers) ou OSB 12 mm (murs contreventés), fixations à pas serré en rive selon la note de calcul.",
+     "Joints de panneaux décalés, espacement de 3 mm entre panneaux, ancrages de contreventement (sabots ou équerres) aux angles et en pied."
+    ]
+   },
+   {
+    "titre": "Étanchéité à l'air, pare-vapeur et pare-pluie",
+    "points": [
+     "Pare-vapeur hygrovariable posé côté intérieur, en continu, avec adhésifs de jonction et rubans aux menuiseries.",
+     "Pare-pluie HPV posé côté extérieur, suivi d'un lattage de ventilation de 27×40 pour la lame d'air avant le bardage ou l'enduit.",
+     "Test d'étanchéité à l'air en fin de chantier : les jonctions de membrane sont contrôlées avant fermeture."
+    ]
+   },
+   {
+    "titre": "Isolation, planchers et sécurité incendie",
+    "points": [
+     "Isolant entre montants (laine de bois, ouate de cellulose ou fibre de bois) posé sans vide ni tassement, épaisseur de 145 mm.",
+     "Plancher bois : solives et panneau OSB 22 mm, avec protection coupe-feu entre niveaux selon la réglementation applicable.",
+     "Réservations pour réseaux prévues dans l'épaisseur de l'isolant avant fermeture des parois."
+    ]
+   }
+  ]
+ }
+}

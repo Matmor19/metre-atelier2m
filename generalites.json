@@ -1,0 +1,463 @@
+{
+ "installation-chantier": {
+  "titre": "Installation de chantier",
+  "sections": [
+   {
+    "titre": "Organisation du chantier",
+    "points": [
+     "Clôture de chantier, accès, aire de stockage et zone de vie conformes au PPSPS (plan particulier de sécurité et de protection de la santé).",
+     "Branchements provisoires eau et électricité, raccordement à la charge de l'entreprise jusqu'à la réception."
+    ]
+   },
+   {
+    "titre": "Protection et nettoyage",
+    "points": [
+     "Protection des existants (voirie, mitoyens, plantations) et remise en état à l'achèvement.",
+     "Évacuation régulière des déchets de chantier vers les filières agréées, bennes et bordereaux à conserver."
+    ]
+   }
+  ]
+ },
+ "demolition": {
+  "titre": "Démolition",
+  "sections": [
+   {
+    "titre": "Préparation et sécurité",
+    "points": [
+     "Repérage préalable des matériaux dangereux (amiante, plomb) et évacuation selon la réglementation.",
+     "Coupure des réseaux (eau, gaz, électricité) avant toute démolition."
+    ]
+   },
+   {
+    "titre": "Exécution",
+    "points": [
+     "Démolition soignée des éléments conservés ; étaiement des parties à reprendre.",
+     "Tri et évacuation des gravats et déchets vers les déchetteries ou centres agréés."
+    ]
+   }
+  ]
+ },
+ "renovation": {
+  "titre": "Rénovation",
+  "sections": [
+   {
+    "titre": "État des existants",
+    "points": [
+     "Vérification de l'état des existants (planchers, murs, charpente) avant travaux ; signalement de tout désordre au maître d'ouvrage.",
+     "Travaux de reprise limités aux éléments prévus au descriptif, toute plus-value soumise à accord écrit."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Protection des finitions conservées pendant les travaux de reprise.",
+     "Mise à niveau des réseaux existants selon les règles en vigueur."
+    ]
+   }
+  ]
+ },
+ "terrassement-vrd": {
+  "titre": "Terrassement & VRD",
+  "sections": [
+   {
+    "titre": "Implantation et terrassement",
+    "points": [
+     "Implantation par géomètre ou par l'entreprise d'après le plan de masse du permis de construire.",
+     "Décapage de la terre végétale, réutilisation ou évacuation selon le plan de terrassement."
+    ]
+   },
+   {
+    "titre": "Réseaux et voirie",
+    "points": [
+     "Réseaux enterrés (eaux usées, eaux pluviales, électricité, télécom) posés avant remblaiement, avec regards et tampons.",
+     "Plateformes, accès et terrasses réalisés selon les pentes indiquées, sans stagnation d'eau sous la maison."
+    ]
+   }
+  ]
+ },
+ "gros-oeuvre": {
+  "titre": "Gros œuvre",
+  "sections": [
+   {
+    "titre": "Conformité réglementaire et normative",
+    "points": [
+     "RE 2020 : matériaux (briques, blocs isolants, béton bas carbone) conformes à l'étude thermique du projet.",
+     "Règles parasismiques selon la zone de sismicité de la commune (Eurocode 8 et arrêtés), chaînage systématique des maçonneries.",
+     "DTU applicables : DTU 20.1 (maçonnerie de petits éléments), DTU 13.12 (fondations superficielles), DTU 21 (ouvrages en béton)."
+    ]
+   },
+   {
+    "titre": "Reconnaissance du sol et fondations",
+    "points": [
+     "Prise de connaissance de l'étude géotechnique (obligatoire en zone d'argile gonflante, loi Élan).",
+     "Profondeur d'ancrage, ciment (ex. PM-ES en sol agressif) et ferraillage conformes aux préconisations du bureau d'études structure."
+    ]
+   },
+   {
+    "titre": "Interfaces avec les autres lots",
+    "points": [
+     "Charpentier / couvreur : arases de niveau et d'aplomb, ancrages intégrés pour la charpente.",
+     "Menuisier : cotes d'ouvertures et tolérances de verticalité respectées pour une pose étanche des fenêtres et seuils PMR.",
+     "Plombier / électricien : fourreaux, gaines et attentes en dalle posés avant le coulage du béton."
+    ]
+   },
+   {
+    "titre": "Étanchéité et humidité",
+    "points": [
+     "Coupure de capillarité à la base des murs (bande d'arase ou mortier hydrofugé).",
+     "Soin des joints de maçonnerie et rebouchage des réservations, pour réussir le test d'étanchéité à l'air en fin de chantier."
+    ]
+   },
+   {
+    "titre": "Implantation et aléas climatiques",
+    "points": [
+     "Tracé des axes d'après les bornes du géomètre et le plan de masse.",
+     "Protection des bétons frais contre la chaleur (cure) et le gel."
+    ]
+   }
+  ]
+ },
+ "charpente-structure-bois": {
+  "titre": "Charpente & structure bois",
+  "sections": [
+   {
+    "titre": "Conformité et fabrication",
+    "points": [
+     "Bois de structure classé et traité, conforme aux DTU de la construction bois (DTU 31.2 pour les maisons à ossature bois).",
+     "Plans d'exécution validés par le maître d'ouvrage avant débit."
+    ]
+   },
+   {
+    "titre": "Pose et interfaces",
+    "points": [
+     "Ancrages et sabots posés sur des arases de niveau, en accord avec le gros œuvre.",
+     "Chevêtres et ouvertures de toiture réalisés selon les cotes du plan de charpente."
+    ]
+   },
+   {
+    "titre": "Fermettes : pentes et pénétrations",
+    "points": [
+     "Fermettes industrielles : pente de toiture, type (deux pans, un pan, quatre pans) et classe de pente (inférieure à 30 %, 30 à 45 %, supérieure à 45 %) à préciser au chiffrage.",
+     "Pénétrations (jonction de deux sens de toiture) : chiffrées au nombre, selon la pente de chaque pan, avec contrôle de la compatibilité des fermettes avant fabrication.",
+     "Chevêtres de cheminée et de trémie, arêtiers et noues en fermettes ou en charpente traditionnelle : à préciser sur le plan de charpente."
+    ]
+   }
+  ]
+ },
+ "couverture-zinguerie": {
+  "titre": "Couverture & zinguerie",
+  "sections": [
+   {
+    "titre": "Conformité et mise en œuvre",
+    "points": [
+     "Pose selon les DTU de couverture et les règles professionnelles, avec pentes adaptées au matériau choisi.",
+     "Écran de sous-toiture et ventilation de la lame d'air assurés."
+    ]
+   },
+   {
+    "titre": "Zinguerie et finitions",
+    "points": [
+     "Gouttières, descentes et solins en zinc ou aluminium, dimensionnés selon la surface de toiture.",
+     "Raccords avec les fenêtres de toit et cheminées étanches, avec contrôle après pose."
+    ]
+   }
+  ]
+ },
+ "isolation-thermique": {
+  "titre": "Isolation thermique",
+  "sections": [
+   {
+    "titre": "Performance et conformité",
+    "points": [
+     "Résistances thermiques (R) conformes à l'étude thermique RE 2020 du projet.",
+     "Mise en œuvre sans vide ni tassement, sans ponts thermiques visibles."
+    ]
+   },
+   {
+    "titre": "Coordination et étanchéité à l'air",
+    "points": [
+     "Pare-vapeur et membrane d'étanchéité à l'air posés en continu, avec bandes et joints traités.",
+     "Réservations pour réseaux et menuiseries préparées avant la pose de l'isolant."
+    ]
+   }
+  ]
+ },
+ "doublages-cloisons-plafonds": {
+  "titre": "Doublages, cloisons & plafonds",
+  "sections": [
+   {
+    "titre": "Conformité et mise en œuvre",
+    "points": [
+     "Plaques de plâtre et ossatures posées selon le DTU 25.41, avec joints enduits et ponçés.",
+     "Hauteur et planimétrie vérifiées avant finition ; découpes des réseaux réalisées proprement."
+    ]
+   },
+   {
+    "titre": "Interfaces",
+    "points": [
+     "Plombier et électricien : boîtiers, gaines et trappes de visite posés avant fermeture.",
+     "Menuisier : huisseries et tableaux préparés selon les cotes du plan."
+    ]
+   }
+  ]
+ },
+ "menuiseries-exterieures": {
+  "titre": "Menuiseries extérieures",
+  "sections": [
+   {
+    "titre": "Conformité et pose",
+    "points": [
+     "Fenêtres et portes conformes au DTU 36.5 et aux performances thermiques de l'étude RE 2020.",
+     "Pose d'aplomb et de niveau, calage et calfeutrement étanche ; seuils PMR posés selon la notice."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Réglage des ouvrants et contrôle de l'étanchéité après pose.",
+     "Protection des menuiseries jusqu'à la réception du chantier."
+    ]
+   }
+  ]
+ },
+ "menuiseries-interieures": {
+  "titre": "Menuiseries intérieures",
+  "sections": [
+   {
+    "titre": "Conformité et pose",
+    "points": [
+     "Bâtis, portes et placards posés d'aplomb, avec réglage des jeux et des quincailleries.",
+     "Huisseries posées avant finitions, en respect des passages et des normes PMR."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Protection des ouvrages posés contre les chocs pendant les autres lots.",
+     "Réglage final des portes et tiroirs à la réception."
+    ]
+   }
+  ]
+ },
+ "electricite": {
+  "titre": "Électricité",
+  "sections": [
+   {
+    "titre": "Conformité",
+    "points": [
+     "Installation conforme à la norme NF C 15-100 et au Consuel, avec attestation remise au maître d'ouvrage.",
+     "Tableau, circuits et protections dimensionnés selon le descriptif et la puissance souscrite."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Fourreaux et gaines posés avant coulage des dalles et fermeture des cloisons.",
+     "Mise à la terre et liaison équipotentielle réalisées avant les finitions."
+    ]
+   }
+  ]
+ },
+ "plomberie-sanitaire": {
+  "titre": "Plomberie & sanitaire",
+  "sections": [
+   {
+    "titre": "Conformité",
+    "points": [
+     "Réseaux d'eau froide et chaude, évacuations et ventilation primaire conformes aux DTU de plomberie (DTU 60.11 pour les eaux usées).",
+     "Essais de pression réalisés avant fermeture des gaines."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Évacuations sous dallage posées avant coulage du béton, avec pentes respectées.",
+     "Sanitaires et robinetterie posés selon les notices fabricants, arrêts d'eau prévus."
+    ]
+   }
+  ]
+ },
+ "chauffage-vmc-climatisation": {
+  "titre": "Chauffage, VMC & climatisation",
+  "sections": [
+   {
+    "titre": "Conformité et performance",
+    "points": [
+     "Installation conforme à l'étude thermique RE 2020 et aux notices des fabricants.",
+     "VMC dimensionnée pour le logement, bouches et conduits posés sans contre-pente."
+    ]
+   },
+   {
+    "titre": "Mise en service",
+    "points": [
+     "Réglages et mise en service réalisés et consignés, avec remise de la notice au maître d'ouvrage.",
+     "Passages de gaines et réservations prévus avant fermeture des cloisons."
+    ]
+   }
+  ]
+ },
+ "revetements-sols": {
+  "titre": "Revêtements de sols",
+  "sections": [
+   {
+    "titre": "Préparation des supports",
+    "points": [
+     "Supports contrôlés (planéité, siccité, propreté) avant pose ; ragréage si nécessaire.",
+     "Joints de fractionnement et de dilatation prévus selon le DTU 52.2 (carrelage) et les fiches techniques."
+    ]
+   },
+   {
+    "titre": "Pose et finitions",
+    "points": [
+     "Colle, joints et seuils adaptés au support et au trafic prévu.",
+     "Protection des sols posés pendant la suite du chantier."
+    ]
+   }
+  ]
+ },
+ "revetements-muraux": {
+  "titre": "Revêtements muraux",
+  "sections": [
+   {
+    "titre": "Préparation et pose",
+    "points": [
+     "Supports préparés (planéité, sans humidité) ; étanchéité des pièces humides réalisée avant la pose.",
+     "Pose de faïence selon le DTU 52.2 avec joints adaptés aux zones humides."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Découpes soignées autour des appareils et des robinets.",
+     "Nettoyage des joints et protection contre les projections de peinture."
+    ]
+   }
+  ]
+ },
+ "peinture-finitions": {
+  "titre": "Peinture & finitions",
+  "sections": [
+   {
+    "titre": "Préparation et application",
+    "points": [
+     "Supports préparés (rebouchage, ponçage, sous-couche) selon le DTU 59.1.",
+     "Deux couches minimum, teintes et finitions conformes au choix du maître d'ouvrage."
+    ]
+   },
+   {
+    "titre": "Protection",
+    "points": [
+     "Protection des sols, menuiseries et équipements pendant les travaux.",
+     "Retouches après pose des équipements, avant réception."
+    ]
+   }
+  ]
+ },
+ "cuisine": {
+  "titre": "Cuisine",
+  "sections": [
+   {
+    "titre": "Mise en œuvre",
+    "points": [
+     "Meubles et plan de travail posés d'aplomb, avec arrivées et évacuations raccordées par les lots concernés.",
+     "Hottes et appareils encastrés posés selon les notices fabricants."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Dimensions vérifiées sur place avant commande du plan de travail.",
+     "Raccordements électriques et d'eau réalisés avant pose définitive."
+    ]
+   }
+  ]
+ },
+ "amenagement-exterieur": {
+  "titre": "Aménagement extérieur",
+  "sections": [
+   {
+    "titre": "Préparation",
+    "points": [
+     "Terrain nivelé et drainé ; réseaux d'eaux pluviales raccordés avant les revêtements.",
+     "Pentes d'évacuation vers les espaces verts ou les dispositifs de rétention."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Revêtements extérieurs et clôtures posés selon les plans et le permis de construire.",
+     "Plantations et engazonnement réalisés à la saison adaptée."
+    ]
+   }
+  ]
+ },
+ "reception-fin-chantier": {
+  "titre": "Réception et fin de chantier",
+  "sections": [
+   {
+    "titre": "Essais et contrôles",
+    "points": [
+     "Test d'étanchéité à l'air et contrôle des réseaux réalisés avant réception.",
+     "Attestations Consuel, garanties et notices remises au maître d'ouvrage."
+    ]
+   },
+   {
+    "titre": "Réception",
+    "points": [
+     "Visite contradictoire et liste des réserves établie ; levée des réserves avant solde.",
+     "Remise des plans de récolement, des DOE et des garanties de parfait achèvement."
+    ]
+   }
+  ]
+ },
+ "ossature-bois": {
+  "titre": "Ossature bois",
+  "sections": [
+   {
+    "titre": "Conformité et règles de l'art",
+    "points": [
+     "Construction conforme au DTU 31.2 (maisons à ossature bois) et à l'Eurocode 5 (NF EN 1995) ; bois de structure classé et traité.",
+     "Humidité du bois inférieure à 20 % au montage ; bois stocké à l'abri de la pluie et posé sur cales."
+    ]
+   },
+   {
+    "titre": "Bande d'arase et lisse basse",
+    "points": [
+     "Bande d'arase compressible posée sous la lisse basse, pour rompre la remontée d'humidité depuis la dalle.",
+     "Lisse basse fixée sur la dalle par tiges et chevilles chimiques, avec bande d'étanchéité à l'air sur le pourtour."
+    ]
+   },
+   {
+    "titre": "Montants, lisse haute et baies",
+    "points": [
+     "Montants 145×45 (ou 120×45) à l'entraxe prévu par la note de calcul, généralement 600 mm ; entraxe réduit à 400 mm sous charge élevée.",
+     "Double lisse haute, chaînage haut et sablière de rive assurant la liaison avec la charpente.",
+     "Montants de tableaux doublés ou triplés autour des baies, linteaux lamellés-collés calculés pour chaque ouverture."
+    ]
+   },
+   {
+    "titre": "Contreventement",
+    "points": [
+     "Panneaux OSB 9 mm (cloisons et ouvrages légers) ou OSB 12 mm (murs contreventés), fixations à pas serré en rive selon la note de calcul.",
+     "Joints de panneaux décalés, espacement de 3 mm entre panneaux, ancrages de contreventement (sabots ou équerres) aux angles et en pied."
+    ]
+   },
+   {
+    "titre": "Étanchéité à l'air, pare-vapeur et pare-pluie",
+    "points": [
+     "Pare-vapeur hygrovariable posé côté intérieur, en continu, avec adhésifs de jonction et rubans aux menuiseries.",
+     "Pare-pluie HPV posé côté extérieur, suivi d'un lattage de ventilation de 27×40 pour la lame d'air avant le bardage ou l'enduit.",
+     "Test d'étanchéité à l'air en fin de chantier : les jonctions de membrane sont contrôlées avant fermeture."
+    ]
+   },
+   {
+    "titre": "Isolation, planchers et sécurité incendie",
+    "points": [
+     "Isolant entre montants (laine de bois, ouate de cellulose ou fibre de bois) posé sans vide ni tassement, épaisseur de 145 mm.",
+     "Plancher bois : solives et panneau OSB 22 mm, avec protection coupe-feu entre niveaux selon la réglementation applicable.",
+     "Réservations pour réseaux prévues dans l'épaisseur de l'isolant avant fermeture des parois."
+    ]
+   }
+  ]
+ }
+}

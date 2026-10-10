@@ -52,6 +52,7 @@ body[data-page="tableau"] .hdr{display:none}
 <header>
   <h1 id="titre">Métré Atelier 2M</h1>
   <button class="hdr" id="btnChantiers">Chantiers</button>
+  <button class="hdr" id="btnConfig">Configurateur</button>
   <button class="hdr" id="btnReglages">Réglages</button>
 </header>
 
@@ -97,6 +98,18 @@ body[data-page="tableau"] .hdr{display:none}
       </div>
       <div id="tableMetre" style="overflow-x:auto;margin-top:8px"></div>
     </div>
+  </section>
+
+  <!-- Écran 3 : configurateur complet (dimensions, structure, pièces, équipements) -->
+  <section id="vConfig" class="hidden">
+    <div class="row" style="margin-bottom:4px;justify-content:space-between;align-items:center">
+      <strong>Configurateur complet</strong>
+      <button type="button" id="btnRevue" class="btn">Revue complète avant édition</button>
+      <button type="button" id="btnRetirerAuto" class="btn sec">Retirer les lignes générées</button>
+    </div>
+    <p id="cfgStatut" class="muted" style="font-size:13px;margin:0 0 8px"></p>
+    <div id="cfgFiche"></div>
+    <div id="cfgPieces"></div>
   </section>
 
   <!-- Réglages -->

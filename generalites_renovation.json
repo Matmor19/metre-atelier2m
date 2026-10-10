@@ -1,0 +1,439 @@
+{
+ "installation-chantier": {
+  "titre": "Installation de chantier",
+  "sections": [
+   {
+    "titre": "Organisation en site occupé ou non",
+    "points": [
+     "Accès, stockage et zone de vie définis avec le maître d'ouvrage, en tenant compte du fait que le logement est habité ou non.",
+     "Horaires de chantier, nuisances (bruit, poussière) et protection des accès communs à convenir à l'avance."
+    ]
+   },
+   {
+    "titre": "Protection des existants",
+    "points": [
+     "Bâchage et protection des sols, escaliers, menuiseries et équipements conservés pendant toute la durée des travaux.",
+     "Évacuation régulière des déchets et nettoyage de fin de chantier."
+    ]
+   }
+  ]
+ },
+ "demolition": {
+  "titre": "Démolition",
+  "sections": [
+   {
+    "titre": "Repérage préalable obligatoire",
+    "points": [
+     "Diagnostic amiante avant travaux (RAT) avant toute dépose de revêtement, cloison, colle ou conduit susceptible d'en contenir.",
+     "Repérage du plomb si le bâti est antérieur à 1949, et coupure des réseaux avant démolition."
+    ]
+   },
+   {
+    "titre": "Exécution sélective",
+    "points": [
+     "Démolition sélective : seuls les éléments identifiés au descriptif sont retirés, les parties à conserver sont étayées.",
+     "Tri des gravats et des déchets vers les filières agréées, bordereaux conservés."
+    ]
+   }
+  ]
+ },
+ "renovation": {
+  "titre": "Travaux de rénovation et reprises",
+  "sections": [
+   {
+    "titre": "Diagnostic de l'existant",
+    "points": [
+     "Relevé des existants (cotes, niveaux, réseaux) réalisé avant chiffrage ; les écarts constatés sont signalés par écrit au maître d'ouvrage.",
+     "Tout désordre découvert pendant les travaux (humidité, fissure, bois attaqué) fait l'objet d'un avenant avant exécution."
+    ]
+   },
+   {
+    "titre": "Mise en conformité",
+    "points": [
+     "Les travaux visent la mise en conformité des parties rénovées, avec des règles adaptées au bâti existant (RT existant élément par élément).",
+     "Les reprises sont limitées au périmètre du descriptif ; toute plus-value fait l'objet d'un accord écrit."
+    ]
+   }
+  ]
+ },
+ "terrassement-vrd": {
+  "titre": "Terrassement & VRD",
+  "sections": [
+   {
+    "titre": "Réseaux existants",
+    "points": [
+     "Déclaration de travaux à proximité de réseaux (DT-DICT) obligatoire avant tout terrassement, et repérage sur site des réseaux existants.",
+     "Plans des réseaux existants vérifiés, raccordements effectués sans coupure prolongée des services."
+    ]
+   },
+   {
+    "titre": "Accès et évacuations",
+    "points": [
+     "Accès et plateformes adaptés aux existants (clôtures, murs de soutènement, voirie).",
+     "Évacuation des eaux pluviales et pentes vérifiées pour éviter les infiltrations contre les murs existants."
+    ]
+   }
+  ]
+ },
+ "gros-oeuvre": {
+  "titre": "Gros œuvre",
+  "sections": [
+   {
+    "titre": "État structurel et reprises",
+    "points": [
+     "Vérification de l'état des murs, planchers et fondations ; les reprises en sous-œuvre ou les chaînages sont réalisés selon l'étude de structure.",
+     "Traitement des fissures et des désordres avant finitions, avec un avis du bureau d'études si la structure est touchée."
+    ]
+   },
+   {
+    "titre": "Humidité et traitement des murs",
+    "points": [
+     "Traitement des remontées capillaires et des infiltrations avant toute finition intérieure (enduit adapté, chaux ou assainissement).",
+     "Vide sanitaire, sol et drainage périphérique contrôlés et remis en état si nécessaire."
+    ]
+   },
+   {
+    "titre": "Interfaces avec les autres lots",
+    "points": [
+     "Charpentier / couvreur : contrôle des appuis existants et des niveaux avant reprise de la toiture.",
+     "Menuisier / plombier / électricien : réservations et passages vérifiés sur les murs existants avant tracé."
+    ]
+   }
+  ]
+ },
+ "charpente-structure-bois": {
+  "titre": "Charpente & structure bois",
+  "sections": [
+   {
+    "titre": "Diagnostic",
+    "points": [
+     "Contrôle de la charpente existante : humidité, attaques d'insectes ou de champignons, portance des pièces et appuis.",
+     "Traitement curatif du bois si nécessaire, et remplacement des pièces dégradées selon la note de calcul."
+    ]
+   },
+   {
+    "titre": "Reprises et pose",
+    "points": [
+     "Reprises ponctuelles réalisées sans affaiblir la structure ; étaiement pendant les travaux.",
+     "Liaison entre les bois anciens et neufs assurée par des assemblages adaptés."
+    ]
+   }
+  ]
+ },
+ "couverture-zinguerie": {
+  "titre": "Couverture & zinguerie",
+  "sections": [
+   {
+    "titre": "Diagnostic de la toiture",
+    "points": [
+     "Contrôle des éléments existants (tuiles, ardoises, écran, solins) avant chiffrage ; les éléments réutilisables sont identifiés.",
+     "Vérification de la ventilation de la toiture et de la lame d'air."
+    ]
+   },
+   {
+    "titre": "Reprise et zinguerie",
+    "points": [
+     "Dépose soignée des tuiles ou ardoises à réemployer, pose d'un écran de sous-toiture si la toiture en est dépourvue.",
+     "Gouttières, descentes et solins remplacés ou raccordés pour assurer l'étanchéité avec les existants."
+    ]
+   }
+  ]
+ },
+ "isolation-thermique": {
+  "titre": "Isolation thermique",
+  "sections": [
+   {
+    "titre": "Performance et choix du système",
+    "points": [
+     "Résistances thermiques conformes au descriptif et à l'étude thermique de rénovation (RT existant, élément par élément).",
+     "Isolation par l'intérieur ou l'extérieur choisie selon l'état des murs : une isolation intérieure peut créer des condensations si le support est humide."
+    ]
+   },
+   {
+    "titre": "Humidité et étanchéité",
+    "points": [
+     "Pare-vapeur posé côté chaud en continu, avec traitement des jonctions et des traversées.",
+     "Contrôle de l'humidité des supports avant pose de l'isolant."
+    ]
+   }
+  ]
+ },
+ "doublages-cloisons-plafonds": {
+  "titre": "Doublages, cloisons & plafonds",
+  "sections": [
+   {
+    "titre": "Mise en œuvre",
+    "points": [
+     "Doublages et cloisons posés selon le DTU 25.41 (plâtrerie) et le DTU 25.42 pour les doublages isolants.",
+     "Contrôle des planimétries existantes : les rattrapages de niveau sont prévus au devis."
+    ]
+   },
+   {
+    "titre": "Interfaces",
+    "points": [
+     "Électricien et plombier : passages et boîtiers prévus avant fermeture, en tenant compte des réseaux existants.",
+     "Menuisier : huisseries et tableaux adaptés aux ouvertures existantes."
+    ]
+   }
+  ]
+ },
+ "menuiseries-exterieures": {
+  "titre": "Menuiseries extérieures",
+  "sections": [
+   {
+    "titre": "Relevé et pose",
+    "points": [
+     "Relevé des ouvertures sur place avant commande, avec contrôle des tableaux et des appuis existants.",
+     "Pose conforme au DTU 36.5, avec calfeutrement et étanchéité à l'air entre dormant et maçonnerie."
+    ]
+   },
+   {
+    "titre": "Protection",
+    "points": [
+     "Protection des sols et des finitions intérieures pendant la dépose et la pose.",
+     "Réglage des ouvrants et contrôle après pose."
+    ]
+   }
+  ]
+ },
+ "menuiseries-interieures": {
+  "titre": "Menuiseries intérieures",
+  "sections": [
+   {
+    "titre": "Dépose et adaptation",
+    "points": [
+     "Dépose des éléments existants avec réemploi quand c'est possible, en respectant les matériaux anciens.",
+     "Adaptation des bâtis et des portes aux ouvertures existantes, qui ne sont pas toujours d'aplomb."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Réglage des portes, tiroirs et quincailleries à la réception.",
+     "Protection des ouvrages posés pendant les autres lots."
+    ]
+   }
+  ]
+ },
+ "electricite": {
+  "titre": "Électricité",
+  "sections": [
+   {
+    "titre": "Diagnostic et mise en conformité",
+    "points": [
+     "Diagnostic de l'installation existante avant travaux, pour définir ce qui est conservé et ce qui est refait.",
+     "Mise en conformité selon la norme NF C 15-100, avec attestation Consuel pour l'installation modifiée."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Tracés et réseaux existants relevés avant saignées ou percements ; câblage ancien remplacé si nécessaire.",
+     "Mise à la terre et liaison équipotentielle vérifiées avant les finitions."
+    ]
+   }
+  ]
+ },
+ "plomberie-sanitaire": {
+  "titre": "Plomberie & sanitaire",
+  "sections": [
+   {
+    "titre": "Existants et mise en conformité",
+    "points": [
+     "Contrôle des réseaux existants (canalisations, évacuations, ventilation primaire) ; remplacement des parties vétustes.",
+     "Essais de pression réalisés avant fermeture des gaines et des murs."
+    ]
+   },
+   {
+    "titre": "Coordination",
+    "points": [
+     "Arrivées et évacuations relevées sur place avant le choix définitif des appareils.",
+     "Sanitaires et robinetterie posés selon les notices, avec arrêts d'eau prévus."
+    ]
+   }
+  ]
+ },
+ "chauffage-vmc-climatisation": {
+  "titre": "Chauffage, VMC & climatisation",
+  "sections": [
+   {
+    "titre": "Existants et sécurité",
+    "points": [
+     "Contrôle des conduits de fumée et de ventilation existants ; tubage ou remplacement si nécessaire.",
+     "Diagnostic du système de chauffage existant avant remplacement, pour dimensionner la nouvelle installation."
+    ]
+   },
+   {
+    "titre": "Performance et mise en service",
+    "points": [
+     "Dimensionnement de la VMC adapté au logement existant, avec bouches et gaines posées sans contre-pente.",
+     "Réglages et mise en service consignés, avec remise de la notice au maître d'ouvrage."
+    ]
+   }
+  ]
+ },
+ "revetements-sols": {
+  "titre": "Revêtements de sols",
+  "sections": [
+   {
+    "titre": "Dépose et support",
+    "points": [
+     "Dépose de l'ancien revêtement ; si ce sont des dalles ou colles anciennes, un repérage amiante est fait au préalable.",
+     "Support contrôlé (planéité, humidité, fissures) avant pose ; ragréage si nécessaire."
+    ]
+   },
+   {
+    "titre": "Pose",
+    "points": [
+     "Joints de fractionnement prévus selon le DTU 52.2 (carrelage) et les fiches techniques.",
+     "Seuils et raccords entre pièces anciennes et neuves soignés."
+    ]
+   }
+  ]
+ },
+ "revetements-muraux": {
+  "titre": "Revêtements muraux",
+  "sections": [
+   {
+    "titre": "Préparation des supports",
+    "points": [
+     "Dépose des anciens revêtements (faïence, papier peint) avec contrôle du support et de l'humidité.",
+     "Enduit de préparation et impression adaptés au support ancien."
+    ]
+   },
+   {
+    "titre": "Pose et finitions",
+    "points": [
+     "Pose de faïence selon le DTU 52.2, avec joints adaptés aux zones humides.",
+     "Découpes soignées autour des appareils existants ou nouveaux."
+    ]
+   }
+  ]
+ },
+ "peinture-finitions": {
+  "titre": "Peinture & finitions",
+  "sections": [
+   {
+    "titre": "Préparation des anciens supports",
+    "points": [
+     "Grattage, ponçage et rebouchage des supports anciens selon le DTU 59.1 ; les peintures anciennes sont contrôlées (plomb) avant ponçage.",
+     "Sous-couche adaptée aux supports anciens, puis deux couches minimum."
+    ]
+   },
+   {
+    "titre": "Protection",
+    "points": [
+     "Protection des sols et des menuiseries conservées pendant les travaux.",
+     "Retouches après pose des équipements, avant réception."
+    ]
+   }
+  ]
+ },
+ "cuisine": {
+  "titre": "Cuisine",
+  "sections": [
+   {
+    "titre": "Relevé et existants",
+    "points": [
+     "Relevé des arrivées, évacuations et gaines existantes avant commande des meubles.",
+     "Dimensions vérifiées sur place : les murs anciens ne sont pas toujours d'équerre."
+    ]
+   },
+   {
+    "titre": "Mise en œuvre",
+    "points": [
+     "Meubles et plan de travail posés d'aplomb, avec raccordements réalisés par les lots concernés.",
+     "Hotte et appareils encastrés posés selon les notices fabricants."
+    ]
+   }
+  ]
+ },
+ "amenagement-exterieur": {
+  "titre": "Aménagement extérieur",
+  "sections": [
+   {
+    "titre": "Existants",
+    "points": [
+     "État des clôtures, murs de soutènement et revêtements existants relevé avant travaux.",
+     "Réseaux d'eaux pluviales et pentes contrôlés pour éviter les infiltrations."
+    ]
+   },
+   {
+    "titre": "Finitions",
+    "points": [
+     "Revêtements extérieurs et plantations posés selon les plans et la saison.",
+     "Remise en état des abords après travaux, avec gestion des accès au logement."
+    ]
+   }
+  ]
+ },
+ "reception-fin-chantier": {
+  "titre": "Réception et fin de chantier",
+  "sections": [
+   {
+    "titre": "Constat et essais",
+    "points": [
+     "Constat contradictoire avant travaux et à la réception, pour comparer l'état des existants.",
+     "Attestations Consuel, diagnostics et contrôles réalisés selon les lots."
+    ]
+   },
+   {
+    "titre": "Réception",
+    "points": [
+     "Liste des réserves établie à la visite de réception ; levée des réserves avant solde.",
+     "Remise des plans de récolement, DOE et garanties de parfait achèvement."
+    ]
+   }
+  ]
+ },
+ "ossature-bois": {
+  "titre": "Ossature bois",
+  "sections": [
+   {
+    "titre": "Conformité et règles de l'art",
+    "points": [
+     "Construction conforme au DTU 31.2 (maisons à ossature bois) et à l'Eurocode 5 (NF EN 1995) ; bois de structure classé et traité.",
+     "Humidité du bois inférieure à 20 % au montage ; bois stocké à l'abri de la pluie et posé sur cales."
+    ]
+   },
+   {
+    "titre": "Bande d'arase et lisse basse",
+    "points": [
+     "Bande d'arase compressible posée sous la lisse basse, pour rompre la remontée d'humidité depuis la dalle.",
+     "Lisse basse fixée sur la dalle par tiges et chevilles chimiques, avec bande d'étanchéité à l'air sur le pourtour."
+    ]
+   },
+   {
+    "titre": "Montants, lisse haute et baies",
+    "points": [
+     "Montants 145×45 (ou 120×45) à l'entraxe prévu par la note de calcul, généralement 600 mm ; entraxe réduit à 400 mm sous charge élevée.",
+     "Double lisse haute, chaînage haut et sablière de rive assurant la liaison avec la charpente.",
+     "Montants de tableaux doublés ou triplés autour des baies, linteaux lamellés-collés calculés pour chaque ouverture."
+    ]
+   },
+   {
+    "titre": "Contreventement",
+    "points": [
+     "Panneaux OSB 9 mm (cloisons et ouvrages légers) ou OSB 12 mm (murs contreventés), fixations à pas serré en rive selon la note de calcul.",
+     "Joints de panneaux décalés, espacement de 3 mm entre panneaux, ancrages de contreventement (sabots ou équerres) aux angles et en pied."
+    ]
+   },
+   {
+    "titre": "Étanchéité à l'air, pare-vapeur et pare-pluie",
+    "points": [
+     "Pare-vapeur hygrovariable posé côté intérieur, en continu, avec adhésifs de jonction et rubans aux menuiseries.",
+     "Pare-pluie HPV posé côté extérieur, suivi d'un lattage de ventilation de 27×40 pour la lame d'air avant le bardage ou l'enduit.",
+     "Test d'étanchéité à l'air en fin de chantier : les jonctions de membrane sont contrôlées avant fermeture."
+    ]
+   },
+   {
+    "titre": "Isolation, planchers et sécurité incendie",
+    "points": [
+     "Isolant entre montants (laine de bois, ouate de cellulose ou fibre de bois) posé sans vide ni tassement, épaisseur de 145 mm.",
+     "Plancher bois : solives et panneau OSB 22 mm, avec protection coupe-feu entre niveaux selon la réglementation applicable.",
+     "Réservations pour réseaux prévues dans l'épaisseur de l'isolant avant fermeture des parois."
+    ]
+   }
+  ]
+ }
+}
