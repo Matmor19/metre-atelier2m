@@ -1285,7 +1285,8 @@ function projetCalcul(p) {
   r.net = Math.max(0, r.brut - r.deduit);
   const pente = p.toiture.type === 'plat' ? (num(p.toiture.pente) || 3.5) : num(p.toiture.pente);
   const S = num(p.toiture.surface);
-  r.toiture = pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S;
+  // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente
+  r.toiture = num(p.toiture.surfCouv) > 0 ? num(p.toiture.surfCouv) : (pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S);
   const f = p.fond || FICHE_FONDS_DEF;
   r.semelle = r.linP * num(f.largeur) * num(f.hauteur);
   r.fouille = r.linP * num(f.largeur) * num(f.profondeur);
@@ -1520,6 +1521,7 @@ function ficheRendre() {
   const contenuToit = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Type de toiture', sel2('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
       ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
+      ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
       ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"', plat && !toit.pente ? '3.5' : toit.pente))}
       ${plat ? champ('Étanchéité (partie courante)', choix('data-k="toit" data-champ="etancheite"', Object.entries(FICHE_ETANCH), toit.etancheite))
              : champ('Couverture', choix('data-k="toit" data-champ="couverture"', Object.entries(FICHE_COUV), couvDe(toit)))}
@@ -1576,6 +1578,8 @@ function ficheRendre() {
   $('cfgFiche').innerHTML = `<div>
     <h2 style="margin:0 0 8px;font-size:18px">Terrain, dimensions, structure et soubassement</h2>
     ${carte('0. Terrain', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}
+      <div style="display:flex;align-items:end"><button type="button" class="btn sec" data-action="kanbanSurface">Reprendre la surface du Kanban</button></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
       ${champ('Périmètre du terrain (ml)', inp('data-k="terr" data-champ="perimetre" inputmode="decimal"', p.terrain.perimetre))}
       ${champ('Surface à décaper (m²)', inp('data-k="terr" data-champ="decap" inputmode="decimal"', p.terrain.decap || ''))}
@@ -1647,14 +1651,35 @@ function ficheChange(e) {
   else if (k === 'equip') { p.equip = p.equip || {}; p.equip[champ] = val; }
   else if (k === 'cuis') p.cuisine[champ] = val;
   else if (k === 'chant') p.chantier[champ] = val;
+  else if (k === 'kref') { c.kanbanRef = String(val).trim(); }
   sauverFiche(c);
   const refaire = (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type');
   if (refaire) ficheRendre(); else ficheResume();
+}
+// Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
+const KANBAN_LECTURE = 'https://script.google.com/macros/s/AKfycbwLGYVnT9HvYgLJNzEP1QCa8b-BQw18eZ0vse2hXixZT4LwrFv3-bt4X4i--gX8eqDoKw/exec';
+function kanbanSurface(c) {
+  const msg = t => { if ($('cfgStatut')) $('cfgStatut').textContent = t; };
+  const ref = (c.kanbanRef || '').trim();
+  if (!ref) { msg('Saisissez d\'abord la référence du dossier Kanban (ex. 003-02-2026).'); return; }
+  msg('Lecture du Kanban…');
+  fetch(KANBAN_LECTURE).then(r => r.json()).then(db => {
+    const card = [...(db.cards || []), ...(db.archived || [])].find(x => x.ref === ref);
+    if (!card) { msg('Aucun dossier Kanban avec la référence ' + ref + '.'); return; }
+    let m2 = card.faisa && card.faisa.surface ? Math.round(card.faisa.surface) : NaN;
+    if (!(m2 > 0)) m2 = parseFloat(String(card.contenance || '').replace(/\s/g, '').replace(',', '.').replace(/[^\d.]/g, ''));
+    if (!(m2 > 0)) { msg('Le dossier ' + ref + ' n\'a pas de contenance enregistrée dans le Kanban.'); return; }
+    projetDe(c).terrain.surface = String(m2);
+    sauverFiche(c);
+    ficheRendre();
+    setTimeout(() => msg('Surface du terrain reprise du Kanban (dossier ' + ref + ') : ' + m2 + ' m².'), 500);
+  }).catch(() => msg('Kanban injoignable pour le moment. Réessayez plus tard.'));
 }
 function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
+  if (a === 'kanbanSurface') { kanbanSurface(c); return; }
   if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
   else if (a === 'addouv') p.ouvertures.push({ id: 'o' + uid(), nom: 'Menuiserie ' + (p.ouvertures.length + 1), mur: p.murs[0] ? p.murs[0].id : '', type: 'ouvrant', largeur: '', hauteur: '', materiau: 'PVC', volet: 'aucun', matvolet: 'alu', electrique: false, securit: false, opaque: false });
@@ -2473,7 +2498,7 @@ $('btnCsv').onclick = exporterExcel;
 $('btnCsv').insertAdjacentHTML('afterend', ' <button class="btn small" id="btnPdf">PDF / Imprimer</button>');
 $('btnPdf').onclick = imprimerPdf;
 // Bouton « Afficher les prix » : même réglage que dans Réglages
-$('btnPdf').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnPrix"></button>');
+$('btnPdf').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnPrix">Afficher les prix</button>');
 $('btnPrix').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnFeuille">Feuille de métré (par lot)</button> <button class="btn small sec" id="btnCdpgf">CDPGF (par lot)</button>');
 $('btnFeuille').onclick = () => imprimerPdf('feuille');
 $('btnCdpgf').onclick = () => imprimerPdf('cdpgf');
