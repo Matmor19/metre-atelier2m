@@ -1482,8 +1482,8 @@ function ficheRendre() {
   const sel = (opts, val) => opts.map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const optListe = (liste, val) => `<option value="" ${!val ? 'selected' : ''}>— choisir —</option>` + liste.map(d => `<option value="${esc(d)}" ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const carte = (titre, contenu) => `<section style="background:#fff;border:2px solid #6a1b9a;border-radius:10px;padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;color:#6a1b9a;font-size:16px">${titre}</h3>${contenu}</section>`;
-  const champ = (lib, html) => `<label style="display:block;margin:6px 0 2px;font-size:12px;color:#6b5a7a">${lib}</label>${html}`;
-  const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:6px;border:1px solid #c9b8dc;border-radius:6px">`;
+  const champ = (lib, html) => `<div style="min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${lib}</label>${html}</div>`;
+  const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:10px;border:1px solid var(--mut);border-radius:8px;background:var(--card);color:var(--fg);font-size:16px">`;
   const sel2 = (attrs, opts, val) => `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(opts, val)}</select>`;
 
   const murs = p.murs.map(m => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:6px;align-items:end;margin-bottom:6px">
@@ -1578,8 +1578,7 @@ function ficheRendre() {
   $('cfgFiche').innerHTML = `<div>
     <h2 style="margin:0 0 8px;font-size:18px">Terrain, dimensions, structure et soubassement</h2>
     ${carte('0. Terrain', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}
-      <div style="display:flex;align-items:end"><button type="button" class="btn sec" data-action="kanbanSurface">Reprendre la surface du Kanban</button></div>
+      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}</div><button type="button" class="btn sec" data-action="kanbanSurface" style="margin-bottom:2px">Reprendre la surface du Kanban</button></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
       ${champ('Périmètre du terrain (ml)', inp('data-k="terr" data-champ="perimetre" inputmode="decimal"', p.terrain.perimetre))}
       ${champ('Surface à décaper (m²)', inp('data-k="terr" data-champ="decap" inputmode="decimal"', p.terrain.decap || ''))}

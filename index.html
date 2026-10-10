@@ -26,6 +26,14 @@ button,select,input{font:inherit}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:12px}
 input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);min-height:44px}
 label{display:block;font-size:14px;color:var(--mut);margin:10px 0 4px}
+/* Configurateur : lisibilité (champs contrastés, textes plus grands, cartes colorées) */
+input,select,textarea{color:var(--fg);background:var(--card)}
+input::placeholder{color:var(--mut);opacity:.8}
+#vConfig label,#vConfig .muted,#cfgFiche label{font-size:15px;color:var(--fg)}
+#vConfig h3{font-size:18px;letter-spacing:.2px}
+#vConfig section,#cfgFiche section,#cfgPieces section{background:var(--card)!important;border-width:2px!important;border-radius:14px!important;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+#vConfig section h3{color:var(--acc2)!important;border-bottom:2px solid var(--line);padding-bottom:6px}
+#cfgStatut{font-size:15px!important;color:var(--fg)!important;opacity:.9}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .row>*{flex:1 1 140px}
 .ouv{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--line);cursor:pointer;min-height:48px}
