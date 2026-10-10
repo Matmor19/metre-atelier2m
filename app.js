@@ -1481,7 +1481,7 @@ function ficheRendre() {
   const p = projetDe(c);
   const sel = (opts, val) => opts.map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const optListe = (liste, val) => `<option value="" ${!val ? 'selected' : ''}>— choisir —</option>` + liste.map(d => `<option value="${esc(d)}" ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
-  const carte = (titre, contenu) => `<section style="background:#fff;border:2px solid #6a1b9a;border-radius:10px;padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;color:#6a1b9a;font-size:16px">${titre}</h3>${contenu}</section>`;
+  const carte = (titre, contenu) => `<section style="background:#fff;border:2px solid #e07b1a;border-radius:10px;padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;color:#e07b1a;font-size:16px">${titre}</h3>${contenu}</section>`;
   const champ = (lib, html) => `<div style="min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${lib}</label>${html}</div>`;
   const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:10px;border:1px solid var(--mut);border-radius:8px;background:var(--card);color:var(--fg);font-size:16px">`;
   const sel2 = (attrs, opts, val) => `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(opts, val)}</select>`;
@@ -1518,34 +1518,43 @@ function ficheRendre() {
   const toit = p.toiture;
   const plat = toit.type === 'plat';
   const choix = (attrs, entries, val) => sel2(attrs, [CHOIX_VIDE, ...entries], val || '');
-  const contenuToit = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${champ('Type de toiture', sel2('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
-      ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
-      ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
-      ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"', plat && !toit.pente ? '3.5' : toit.pente))}
+  const lot = (t) => `<h2 style="margin:20px 0 8px;padding:8px 12px;border-radius:10px;background:var(--acc);color:#fff;font-size:17px">${t}</h2>`;
+  const contenuCharp = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${champ('Type de toiture', sel2('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
+            ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
+            ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
+            ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"', plat && !toit.pente ? '3.5' : toit.pente))}
+            ${champ('Charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), toit.charpente))}
+            ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
+            ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
+    </div>`;
+  const contenuCouv = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${plat ? champ('Étanchéité (partie courante)', choix('data-k="toit" data-champ="etancheite"', Object.entries(FICHE_ETANCH), toit.etancheite))
              : champ('Couverture', choix('data-k="toit" data-champ="couverture"', Object.entries(FICHE_COUV), couvDe(toit)))}
-      ${plat ? champ('Relevés d\'acrotère, linéaire (m)', inp('data-k="toit" data-champ="acrotere" inputmode="decimal"', toit.acrotere)) : '<div></div>'}
-      ${plat ? champ('Coiffe et couvertine d\'acrotère', choix('data-k="toit" data-champ="couvertine"', Object.entries(FICHE_COUVERTINE), toit.couvertine)) : '<div></div>'}
-      ${champ('Longueur d\'égout, côtés gouttières (m)', inp('data-k="toit" data-champ="egout" inputmode="decimal"', toit.egout))}
-      ${champ('Longueur de rives, pignons (m)', inp('data-k="toit" data-champ="rive" inputmode="decimal"', toit.rive))}
-      ${champ('Longueur de faîtage (m)', inp('data-k="toit" data-champ="faite" inputmode="decimal"', toit.faite))}
-      ${plat ? '<div></div>' : champ('Longueur d\'arêtiers (m)', inp('data-k="toit" data-champ="arete" inputmode="decimal"', toit.arete))}
-      ${plat ? '<div></div>' : champ('Longueur de noues (m)', inp('data-k="toit" data-champ="noue" inputmode="decimal"', toit.noue))}
-      ${champ('Matériau des gouttières', choix('data-k="toit" data-champ="gouttiere"', Object.entries(FICHE_GOUT), toit.gouttiere))}
-      ${champ(plat ? 'Nombre d\'évacuations d\'eau pluviale (unité)' : 'Nombre de descentes d\'eau (unité)', inp('data-k="toit" data-champ="nbDesc" inputmode="decimal"', toit.nbDesc))}
-      ${champ('Hauteur des descentes (m)', inp('data-k="toit" data-champ="hautDesc" inputmode="decimal"', toit.hautDesc))}
-      ${champ('Matériau des descentes', choix('data-k="toit" data-champ="descente"', Object.entries(FICHE_DESC), toit.descente))}
-      ${champ('Charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), toit.charpente))}
-      ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
-      ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:6px">Un ouvrage n'est proposé dans le métré que lorsque son choix est fait ici. Les champs laissés « — à choisir — » ne créent rien.</div>`;
+            ${plat ? champ('Relevés d\'acrotère, linéaire (m)', inp('data-k="toit" data-champ="acrotere" inputmode="decimal"', toit.acrotere)) : '<div></div>'}
+            ${plat ? champ('Coiffe et couvertine d\'acrotère', choix('data-k="toit" data-champ="couvertine"', Object.entries(FICHE_COUVERTINE), toit.couvertine)) : '<div></div>'}
+            ${champ('Longueur d\'égout, côtés gouttières (m)', inp('data-k="toit" data-champ="egout" inputmode="decimal"', toit.egout))}
+            ${champ('Longueur de rives, pignons (m)', inp('data-k="toit" data-champ="rive" inputmode="decimal"', toit.rive))}
+            ${champ('Longueur de faîtage (m)', inp('data-k="toit" data-champ="faite" inputmode="decimal"', toit.faite))}
+            ${plat ? '<div></div>' : champ('Longueur d\'arêtiers (m)', inp('data-k="toit" data-champ="arete" inputmode="decimal"', toit.arete))}
+            ${plat ? '<div></div>' : champ('Longueur de noues (m)', inp('data-k="toit" data-champ="noue" inputmode="decimal"', toit.noue))}
+            ${champ('Matériau des gouttières', choix('data-k="toit" data-champ="gouttiere"', Object.entries(FICHE_GOUT), toit.gouttiere))}
+            ${champ(plat ? 'Nombre d\'évacuations d\'eau pluviale (unité)' : 'Nombre de descentes d\'eau (unité)', inp('data-k="toit" data-champ="nbDesc" inputmode="decimal"', toit.nbDesc))}
+            ${champ('Hauteur des descentes (m)', inp('data-k="toit" data-champ="hautDesc" inputmode="decimal"', toit.hautDesc))}
+            ${champ('Matériau des descentes', choix('data-k="toit" data-champ="descente"', Object.entries(FICHE_DESC), toit.descente))}
+    </div>`;
   const eq = p.equip || {};
-  const lignesEq = EQ_SEL.map(([k, lib, opts]) => champ(lib, choix(`data-k="equip" data-champ="${k}"`, opts, eq[k]))).join('')
-    + EQ_NUM.map(([k, lib]) => champ(lib, inp(`data-k="equip" data-champ="${k}" inputmode="decimal"`, eq[k]))).join('')
-    + (eq.poele === 'bois' || eq.poele === 'granules' ? champ('Hauteur du conduit, du poêle à la sortie de toit (m)', inp('data-k="equip" data-champ="poeleHaut" inputmode="decimal"', eq.poeleHaut)) : '');
-  const contenuEquip = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${lignesEq}</div>
+  const EQ_GRP = {
+    elec: ['portail_moto', 'nb_portail', 'borne', 'alarme', 'visio', 'nb_eclairage'],
+    plomb: ['eau_chaude', 'thermo_type', 'thermo_litres', 'thermo_gaine', 'thermo_liaison', 'adouc', 'cuve', 'cuve_pose', 'cuve_litres', 'cuve_reseau', 'cuve_tranchee', 'piscine', 'anc', 'anc_epand'],
+    chauf: ['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine']
+  };
+  const rendreEq = g => EQ_SEL.filter(x => EQ_GRP[g].includes(x[0])).map(([k, lib, opts]) => champ(lib, choix(`data-k="equip" data-champ="${k}"`, opts, eq[k]))).join('')
+    + EQ_NUM.filter(x => EQ_GRP[g].includes(x[0])).map(([k, lib]) => champ(lib, inp(`data-k="equip" data-champ="${k}" inputmode="decimal"`, eq[k]))).join('')
+    + (g === 'chauf' && (eq.poele === 'bois' || eq.poele === 'granules') ? champ('Hauteur du conduit, du poêle à la sortie de toit (m)', inp('data-k="equip" data-champ="poeleHaut" inputmode="decimal"', eq.poeleHaut)) : '');
+  const contenuElec = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rendreEq('elec')}</div>`;
+  const contenuPlomb = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rendreEq('plomb')}</div>`;
+  const contenuChauf = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rendreEq('chauf')}</div>
     <div class="muted" style="font-size:12px;margin-top:6px">Un ouvrage n'est proposé que si son équipement est choisi ici. Un champ vide ne crée rien. La ventilation primaire est toujours prévue.</div>`;
   const fd = p.fond;
   const contenuFond = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
@@ -1577,7 +1586,8 @@ function ficheRendre() {
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Calcul sur les murs porteurs : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête.</p>`;
   $('cfgFiche').innerHTML = `<div>
     <h2 style="margin:0 0 8px;font-size:18px">Terrain, dimensions, structure et soubassement</h2>
-    ${carte('0. Terrain', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    ${lot('4. Terrassement et VRD')}
+    ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}</div><button type="button" class="btn sec" data-action="kanbanSurface" style="margin-bottom:2px">Reprendre la surface du Kanban</button></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
       ${champ('Périmètre du terrain (ml)', inp('data-k="terr" data-champ="perimetre" inputmode="decimal"', p.terrain.perimetre))}
@@ -1587,25 +1597,38 @@ function ficheRendre() {
       ${champ('Longueur eaux pluviales (ml)', inp('data-k="terr" data-champ="resEp" inputmode="decimal"', p.terrain.resEp || ''))}
       ${champ('Longueur électricité (ml)', inp('data-k="terr" data-champ="resElec" inputmode="decimal"', p.terrain.resElec || ''))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Sert à la clôture et aux protections du chantier.</p>`)}
-    ${carte('0 bis. Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
+    ${lot('1. Installation de chantier')}
+    ${carte('Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Branchement provisoire d\'électricité', `<select data-k="chant" data-champ="elec" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.elec || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Base de vie (bungalow ou conteneur)', `<select data-k="chant" data-champ="base" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.base || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Grue de chantier', `<select data-k="chant" data-champ="grue" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.grue || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Nombre de bennes à gravats', inp('data-k="chant" data-champ="bennes" inputmode="numeric"', p.chantier.bennes, '120px'))
       + champ('Nombre de bennes à déchets triés', inp('data-k="chant" data-champ="bennesTri" inputmode="numeric"', p.chantier.bennesTri, '120px')))}
-    ${carte('1. Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
-    ${carte('2. Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
-    ${carte('3. Menuiseries', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
-    ${carte('4. Toiture', contenuToit)}
-    ${carte('4 bis. Équipements de la maison (sorties de toit)', contenuEquip)}
-    ${carte('5. Fondations', contenuFond)}
-    ${carte('5 bis. Soubassement (mur au-dessus des fondations)', contenuSoub)}
-    ${carte('5 ter. Plancher bas', contenuPlancher)}
-    ${carte('6 bis. Cuisine (linéaires et plan de travail)', champ('Meubles bas (ml)', inp('data-k="cuis" data-champ="bas" inputmode="decimal"', p.cuisine.bas, '160px'))
+    ${lot('5. Gros œuvre')}
+    ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
+    ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
+    ${carte('Fondations', contenuFond)}
+    ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
+    ${carte('Plancher bas', contenuPlancher)}
+    ${lot('11. Menuiseries extérieures')}
+    ${carte('Menuiseries (fenêtres, portes)', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
+    ${lot('6. Charpente bois')}
+    ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
+    ${lot('8. Couverture et zinguerie')}
+    ${carte('Couverture, égouts, faîtage, gouttières, descentes', contenuCouv)}
+    ${lot('13. Électricité et extérieur')}
+    ${carte('Équipements électriques et extérieurs', contenuElec)}
+    ${lot('14. Plomberie sanitaire')}
+    ${carte('Équipements sanitaires, eau chaude, cuves, assainissement', contenuPlomb)}
+    ${lot('15. Chauffage, VMC, climatisation')}
+    ${carte('Chauffage, ventilation, climatisation', contenuChauf)}
+    ${lot('19. Cuisine')}
+    ${carte('Cuisine (linéaires et plan de travail)', champ('Meubles bas (ml)', inp('data-k="cuis" data-champ="bas" inputmode="decimal"', p.cuisine.bas, '160px'))
       + champ('Meubles hauts (ml)', inp('data-k="cuis" data-champ="haut" inputmode="decimal"', p.cuisine.haut, '160px'))
       + champ('Plan de travail', `<select data-k="cuis" data-champ="plan" style="width:100%;padding:6px">${['', 'stratifie', 'quartz'].map(v => `<option value="${v}" ${(p.cuisine.plan || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', stratifie: 'Stratifié', quartz: 'Quartz' }[v]}</option>`).join('')}</select>`)
       + champ('Longueur du plan de travail (ml)', inp('data-k="cuis" data-champ="plan_ml" inputmode="decimal"', p.cuisine.plan_ml, '160px')))}
-    ${carte('6. Ouvrages à utiliser dans le métré', champ('Matériau des murs (élévation)', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.murs)}</select>`)
+    ${lot('Matériaux et finitions')}
+    ${carte('Matériaux et finitions (utilisés dans le métré)', champ('Matériau des murs (élévation)', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.murs)}</select>`)
       + champ('Finition extérieure (enduit, bardage, peinture…)', `<select data-k="choix" data-champ="finition" style="width:100%;padding:6px">${optListe(ficheListeFinition(), p.choix.finition)}</select>`)
       + champ('Tableaux de menuiseries', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.tableaux)}</select>`)
       + champ('Appuis de fenêtre', `<select data-k="choix" data-champ="appuis_fen" style="width:100%;padding:6px">${['', 'beton', 'beton-pierre', 'alu', 'acier'].map(v => `<option value="${v}" ${(p.choix.appuis_fen || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', beton: 'Béton', 'beton-pierre': 'Béton ton pierre', alu: 'Aluminium', acier: 'Acier laqué 75/100e' }[v]}</option>`).join('')}</select>`))}
@@ -2754,3 +2777,14 @@ window.addEventListener('storage', e => {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 if ($('btnConfig')) $('btnConfig').onclick = () => ouvrirConfig();
+
+// Champs remplis du configurateur : fond vert 6eea9f (mis à jour à la saisie et à chaque affichage)
+(function () {
+  const f = document.getElementById('cfgFiche');
+  if (!f) return;
+  const marque = el => { if (el.matches && el.matches('input:not([type=checkbox]):not([type=button]),select,textarea')) el.classList.toggle('rempli', el.value !== ''); };
+  const toutes = () => f.querySelectorAll('input,select,textarea').forEach(marque);
+  new MutationObserver(toutes).observe(f, { childList: true, subtree: true });
+  f.addEventListener('input', e => marque(e.target));
+  f.addEventListener('change', e => marque(e.target));
+})();
