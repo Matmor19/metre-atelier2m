@@ -1604,12 +1604,14 @@ function ficheRendre() {
       + champ('Grue de chantier', `<select data-k="chant" data-champ="grue" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.grue || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Nombre de bennes à gravats', inp('data-k="chant" data-champ="bennes" inputmode="numeric"', p.chantier.bennes, '120px'))
       + champ('Nombre de bennes à déchets triés', inp('data-k="chant" data-champ="bennesTri" inputmode="numeric"', p.chantier.bennesTri, '120px')))}
+    <div style="border:4px solid #e07b1a;border-radius:14px;padding:10px;margin-bottom:14px">
     ${lot('5. Gros œuvre')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
     ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
     ${carte('Fondations', contenuFond)}
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
     ${carte('Plancher bas', contenuPlancher)}
+    </div>
     ${lot('11. Menuiseries extérieures')}
     ${carte('Menuiseries (fenêtres, portes)', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
     ${lot('6. Charpente bois')}
