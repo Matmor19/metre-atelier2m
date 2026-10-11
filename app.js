@@ -1421,7 +1421,9 @@ function projetCalcul(p) {
   r.fondLin = rig ? num(f.rigLin) : r.linP;
   r.fdimLarg = rig && num(f.rigLarg) > 0 ? num(f.rigLarg) : num(f.largeur);
   r.fdimProf = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.profondeur);
-  r.semelle = r.fondLin * r.fdimLarg * num(f.hauteur);
+  // Hauteur de semelle : avec des rigoles, c'est la HT du terrassement (hauteur de fouille).
+  r.semHaut = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.hauteur);
+  r.semelle = r.fondLin * r.fdimLarg * r.semHaut;
   r.fouille = r.fondLin * r.fdimLarg * r.fdimProf;
   // Soubassement : murs porteurs × hauteur du soubassement
   r.soubS = r.linP * num((p.soub || {}).hauteur);
@@ -1482,7 +1484,7 @@ function ctxQuantites(c) {
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     fond_fouille: r.fouille,
     fond_lin: r.fondLin, fond_larg: r.fdimLarg, fond_prof: r.fdimProf,
-    sem_lin: r.fondLin, sem_larg: r.fdimLarg, sem_haut: num((p.fond || FICHE_FONDS_DEF).hauteur),
+    sem_lin: r.fondLin, sem_larg: r.fdimLarg, sem_haut: r.semHaut,
     fond_semelle: r.semelle,
     drain_ml: (p.murs || []).reduce((a, m) => a + num(m.longueur), 0),
     decap_m2: num(p.terrain.decap),
@@ -1703,13 +1705,13 @@ function ficheRendre() {
   // Longueur des semelles : calculée (pas saisie), à partir des rigoles si elles sont renseignées, sinon des murs porteurs
   const lonSemelles = projetCalcul(p).fondLin;
   const rigoleActive = num(fd.rigLin) > 0;
-  // Avec des rigoles, longueur et largeur viennent du terrassement : affichées, non ressaisies. La hauteur de semelle (béton) reste à saisir.
+  // Avec des rigoles, longueur et largeur viennent du terrassement : affichées, non ressaisies. La hauteur vient de la HT du terrassement.
   const ro = (lib, val) => champ(lib, inp('readonly tabindex="-1" style="background:#eef2f7"', val, '100%'));
   const contenuFond = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
       ${ro(rigoleActive ? 'Longueur (m), depuis le terrassement' : 'Longueur (m), calculée', fmt(lonSemelles).replace(/\s/g, ''))}
       ${rigoleActive ? ro('Largeur (m), depuis le terrassement', fd.rigLarg || '') : champ('Largeur de semelle (m)', inp('data-k="fond" data-champ="largeur" inputmode="decimal"', fd.largeur))}
-      ${champ('Hauteur de semelle, béton (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">${rigoleActive ? 'Longueur et largeur reprises des rigoles du bloc 1 Terrassement (non ressaisies ici).' : 'Longueur calculée sur les murs cochés « Porteur ».'} La profondeur de fouille sans rigoles se saisit dans le bloc 1 Terrassement.</p>
+      ${rigoleActive ? ro('Hauteur (m), depuis le terrassement', fd.rigHt || '') : champ('Hauteur de semelle (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
+    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">${rigoleActive ? 'Longueur, largeur et hauteur reprises des rigoles du bloc 1 Terrassement (non ressaisies ici).' : 'Longueur calculée sur les murs cochés « Porteur ».'} La profondeur de fouille sans rigoles se saisit dans le bloc 1 Terrassement.</p>
 `;
   const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
@@ -1919,7 +1921,7 @@ function ficheVersMetre() {
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
-    { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(num(fdim.hauteur)) });
+    { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) });
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
   ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement', null, SRC_QTE.soub_s);
   ajouter('Membrane de protection et drainage Delta-MS sur mur de soubassement', r.soubS, 'Membrane Delta-MS sur mur de soubassement', null, SRC_QTE.soub_s);
