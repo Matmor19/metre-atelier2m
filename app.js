@@ -277,7 +277,7 @@ function detail(l) {
 }
 // Version colorée (écran et impressions) : chaque cote a sa couleur
 function detailHtml(l) {
-  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src);
+  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src.replace(/^Calcul du configurateur : /, 'Calcul suivant plan : '));
   if (l.valeurs && l.valeurs.mode === 'plan') return 'Surface mesurée sur plan : ' + fmt(num(l.valeurs.cote1)) + ' m²';
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
@@ -885,7 +885,7 @@ function genererPlat() {
     if (!o) { manquants.push(des); continue; }
     ajouterLotSiAbsent(courantId, o.lot);
     // Quantité selon l'unité : m² = surface, ml = longueur, u = nombre
-    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1', src: 'Calcul du configurateur : surfaces des pièces saisies' }
+    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1', src: 'Calcul suivant plan : surfaces des pièces saisies' }
       : o.unite === 'ml' ? { nombre: '1', cote1: q.toFixed(2) }
       : { nombre: String(Math.round(q)) };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
@@ -1602,7 +1602,7 @@ const SRC_SURF = new Set(['surface_terrain', 'surface_facades', 'surface_planche
 function srcTxt(qte) {
   if (qte === 'decap_m2') return 'Surface mesurée sur plan';
   if (SRC_SURF.has(qte)) return 'Surface du configurateur : ' + (SRC_QTE[qte] || qte);
-  return 'Calcul du configurateur : ' + (SRC_QTE[qte] || 'quantité calculée');
+  return 'Calcul suivant plan : ' + (SRC_QTE[qte] || 'quantité calculée');
 }
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
@@ -1960,7 +1960,7 @@ function ficheVersMetre() {
     if (!o) { manquants.push(des); return; }
     if (!(q > 0)) return;
     const valeurs = valeursFixes || valeursPour(o.unite, q);
-    if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
+    if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul suivant plan : ' + src;
     ajouterLotSiAbsent(courantId, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString(),
@@ -2055,7 +2055,7 @@ function ouvrirOuvrage(o, precedent, message) {
   const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
-    + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
+    + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul suivant plan : |^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
   h += `
     <div class="muted">${esc(libLot(o.lot))} · unité : ${esc(o.unite)}</div>`;
   if (o.rappel) h += `<div class="card" style="margin:10px 0 0;background:#fdf4ee;border-color:#E07838"><strong style="font-size:13px">Rappel de mesure</strong><div style="margin-top:4px;white-space:pre-line">${esc(o.rappel)}</div></div>`;
