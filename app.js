@@ -576,6 +576,7 @@ function prixAffiches() { return lsGet('prix', false) === true; }
 
 function renderMetre() {
   if (!courantId || !BIB) return;
+  majQuantitesAuto(chantiers.find(x => x.id === courantId));
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
   const nums = numeroLignes(courantId);
@@ -1627,9 +1628,10 @@ function majQuantitesAuto(c) {
     const o = BIB.ouvrages.find(x => x.id === l.ouvrage);
     const valeurs = qteValeur(o, ctx);
     if (!valeurs) continue;
+    const avant = JSON.stringify([l.valeurs, l.quantite]);
     l.valeurs = valeurs;
     l.quantite = calcul(o, valeurs);
-    change = true;
+    if (JSON.stringify([l.valeurs, l.quantite]) !== avant) change = true;
   }
   if (change) sauverLignes(courantId, L);
 }
@@ -1956,7 +1958,8 @@ function ficheVersMetre() {
     if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
     ajouterLotSiAbsent(courantId, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
-             valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString() });
+             valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString(),
+             qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined });
     nb++;
   };
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
@@ -1983,8 +1986,12 @@ function ficheVersMetre() {
   if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
+  // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
+  const sf = semellesDuTerrassement(c);
+  const cotesSem = sf.sem_lin > 0 ? { cote1: String(sf.sem_lin), cote2: String(sf.sem_larg), cote3: String(sf.sem_haut) }
+    : { cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) };
   ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
-    { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) });
+    { nombre: '1', ...cotesSem });
   }
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
   ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement', null, SRC_QTE.soub_s);
