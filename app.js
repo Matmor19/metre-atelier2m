@@ -624,15 +624,11 @@ function valeurLien(c, l) {
   return b ? b[l.champ] : undefined;
 }
 // Cotes reliées une à une à des cases du configurateur : { cote1: '0.8', … } (seulement celles qui ont une valeur)
-// Liaisons des cotes d'un ouvrage : propres à chaque chantier (c.liens), jamais partagées
-function liensOuv(o, c) { return (o && c && c.liens && c.liens[o.id]) || {}; }
-function chantierCourant() { return chantiers.find(x => x.id === courantId) || null; }
 function valeursCotes(o, c) {
   const out = {};
-  const liens = liensOuv(o, c);
-  if (!o || !c) return out;
-  for (const cle of Object.keys(liens)) {
-    const v = valeurLien(c, liens[cle]);
+  if (!o || !o.cotes || !c) return out;
+  for (const cle of Object.keys(o.cotes)) {
+    const v = valeurLien(c, o.cotes[cle]);
     if (v !== undefined && v !== null && v !== '') out[cle] = String(v);
   }
   return out;
@@ -1094,18 +1090,18 @@ function genererPlat() {
   return msg;
 }
 // Liens « case de pièce » : après la suppression de la pièce n°idx, les liens vers les pièces suivantes reculent d'un cran ; ceux vers la pièce supprimée sont retirés
-function decalerLiensPieces(c, idx) {
+function decalerLiensPieces(idx) {
   let retires = 0;
-  for (const oid of Object.keys(c.liens || {})) {
-    const liens = c.liens[oid];
-    for (const k of Object.keys(liens)) {
-      const l = liens[k];
+  for (const o of (BIB && BIB.ouvrages) || []) {
+    if (!o.cotes) continue;
+    for (const k of Object.keys(o.cotes)) {
+      const l = o.cotes[k];
       if (!l || l.k !== 'piece') continue;
-      if (l.idx === idx) { delete liens[k]; retires++; }
+      if (l.idx === idx) { delete o.cotes[k]; retires++; }
       else if (l.idx > idx) l.idx -= 1;
     }
-    if (!Object.keys(liens).length) delete c.liens[oid];
   }
+  if (retires) lsSet('bib', BIB);
   return retires;
 }
 function ouvrirConfigurateur() {
@@ -1353,7 +1349,7 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
     if (parts.length === 1) {
       const idxSupp = parseInt(parts[0], 10);
       L.splice(idxSupp, 1);
-      const retires = decalerLiensPieces(c, idxSupp);
+      const retires = decalerLiensPieces(idxSupp);
       sauverPlat(c); ouvrirConfigurateur();
       if (retires) alert(`Pièce supprimée : ${retires} cote(s) reliée(s) à cette pièce ont été retirées de la bibliothèque. Refaites le lien si besoin.`);
       return;
@@ -2276,8 +2272,8 @@ function ouvrirOuvrage(o, precedent, message) {
   // Ouvrage lié : cotes reprises de la dernière ligne de l'ouvrage source (dans ce chantier)
   let compteLie = null;
   if ((o.liePar || o.lieConfig) && !precedent) compteLie = coteSource(o, courantId, null);
-  if (!precedent && Object.keys(liensOuv(o, chantierCourant())).length) {
-    const vc = valeursCotes(o, chantierCourant());
+  if (o.cotes && !precedent) {
+    const vc = valeursCotes(o, chantiers.find(x => x.id === courantId));
     if (Object.keys(vc).length) compteLie = Object.assign({}, compteLie || {}, vc);
   }
   const v = precedent || compteLie || compte;
@@ -3162,7 +3158,7 @@ let COTES_EDIT = {};   // liaisons des cotes en cours d'édition dans la fiche
 function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
   // Nouvel ouvrage : on reprend le lot choisi dans la bibliothèque
   const v = o || { designation: '', lot: lotChoisi || lotCourant || BIB.lots[0].id, unite: 'u' };
-  COTES_EDIT = JSON.parse(JSON.stringify(cotesInit || (o && liensOuv(o, chantierCourant())) || {}));
+  COTES_EDIT = JSON.parse(JSON.stringify(cotesInit || (o && o.cotes) || {}));
   const mesureCour = draftRestaure && draftRestaure.mesure !== undefined ? draftRestaure.mesure : v.mesure;
   const blocCotes = `<div class="card" style="margin-top:10px"><strong>Cotes reliées au configurateur (case par case)</strong>
       <p class="muted" style="margin:4px 0 6px;font-size:12px">Pour chaque cote, cliquez « Choisir », puis la case du configurateur qui donne cette valeur. Elle est reprise dans le métré et suit le configurateur.</p>
@@ -3342,7 +3338,6 @@ function supprimerOuvrage(id) {
 }
 
 function enregistrerOuvrage(id) {
-  let oid = id;
   const f = $('fBib');
   const des = f.elements.designation.value.trim();
   if (!des) { alert('La désignation est obligatoire.'); return; }
@@ -3376,7 +3371,7 @@ function enregistrerOuvrage(id) {
     if (rappel) o.rappel = rappel; else delete o.rappel;
     if (lie && lie !== o.id) o.liePar = lie; else delete o.liePar;
     if (lieConf) o.lieConfig = lieConf; else delete o.lieConfig;
-    delete o.cotes;   // ancien emplacement (partagé) : les liaisons sont désormais dans le chantier
+    if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT)); else delete o.cotes;
     o.designation = des; o.lot = lot; o.unite = unite;
     o.version = (o.version || 1) + 1;
     if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
@@ -3387,16 +3382,9 @@ function enregistrerOuvrage(id) {
     if (rappel) o.rappel = rappel;
     if (lie) o.liePar = lie;
     if (lieConf) o.lieConfig = lieConf;
+    if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT));
     if (prix) o.prix_indicatif = prix;
     BIB.ouvrages.push(o);
-    oid = o.id;
-  }
-  const cc = chantierCourant();
-  if (cc) {
-    cc.liens = cc.liens || {};
-    if (Object.keys(COTES_EDIT).length) cc.liens[oid] = JSON.parse(JSON.stringify(COTES_EDIT));
-    else delete cc.liens[oid];
-    lsSet('chantiers', chantiers);
   }
   sauverBibliotheque();
 }
