@@ -2398,6 +2398,13 @@ function ficheVersMetre() {
 function fermer() { $('modal').classList.remove('open'); }
 function ouvrirModal() { $('modal').classList.add('open'); }
 
+// Surface du configurateur déjà comptée au métré : même ouvrage ou même source, même quantité, même type de mur
+function doublonConfig(o, q, srcAjout, typeAjout) {
+  return lignesDe(courantId).find(x => Math.abs(num(x.quantite) - num(q)) < 1e-9
+    && (x.lien || x.projet || x.lienDe || (x.valeurs || {}).src)
+    && (!(x.valeurs || {}).typeMur || (x.valeurs || {}).typeMur === (typeAjout || ''))
+    && (x.ouvrage === o.id || (!!srcAjout && srcAjout !== TXT_SURFACE && (x.valeurs || {}).src === srcAjout))) || null;
+}
 function ouvrirOuvrage(o, precedent, message) {
   const champs = champsDe(o);
   const cc = chantiers.find(x => x.id === courantId);
@@ -2478,6 +2485,17 @@ function ouvrirOuvrage(o, precedent, message) {
     if (!(q > 0)) { $('apercu').textContent = 'Quantité nulle : vérifiez les cotes.'; return; }
     const surface = (o.saisie === 'menuiseries' && num(vals.largeur_cm) && num(vals.hauteur_cm))
       ? num(vals.nombre || 1) * num(vals.largeur_cm) * num(vals.hauteur_cm) / 10000 : null;
+    // Garde-fou : une surface du configurateur déjà comptée au métré n'est pas ajoutée sans confirmation
+    if (!precedent) {
+      const viaConfig = !!vals.src || (!!o.lieConfig && !!compteLie);
+      const srcAjout = vals.src || (viaConfig ? srcTxt(o.qte) : '');
+      const typeAjout = vals.typeMur || (o.si && o.si.cle === 'murs_choix' ? o.si.val : '');
+      const deja = viaConfig ? doublonConfig(o, q, srcAjout, typeAjout) : null;
+      if (deja && !confirm(`Cette surface du configurateur est déjà comptée au métré, à la ligne ${numeroLignes(courantId)[deja.uid] || ''} (« ${deja.designation} »). L'ajouter une deuxième fois ?`)) {
+        $('apercu').textContent = 'Non ajoutée : cette surface est déjà comptée au métré.';
+        return;
+      }
+    }
     ajouterLotSiAbsent(courantId, o.lot);
     // Cotes reprises telles quelles du lien avec le configurateur : ligne liée (pas une saisie manuelle)
     const lienConfig = !precedent && !!compteLie && ['cote1', 'cote2', 'cote3'].every(k => num(compteLie[k]) === num(vals[k]));
