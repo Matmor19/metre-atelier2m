@@ -1586,6 +1586,13 @@ function ficheRendre() {
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Calcul sur les murs porteurs : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête.</p>`;
   $('cfgFiche').innerHTML = `<div>
     <h2 style="margin:0 0 8px;font-size:18px">Terrain, dimensions, structure et soubassement</h2>
+    ${lot('1. Installation de chantier')}
+    ${carte('Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
+      + champ('Branchement provisoire d\'électricité', `<select data-k="chant" data-champ="elec" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.elec || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
+      + champ('Base de vie (bungalow ou conteneur)', `<select data-k="chant" data-champ="base" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.base || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
+      + champ('Grue de chantier', `<select data-k="chant" data-champ="grue" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.grue || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
+      + champ('Nombre de bennes à gravats', inp('data-k="chant" data-champ="bennes" inputmode="numeric"', p.chantier.bennes, '120px'))
+      + champ('Nombre de bennes à déchets triés', inp('data-k="chant" data-champ="bennesTri" inputmode="numeric"', p.chantier.bennesTri, '120px')))}
     ${lot('4. Terrassement et VRD')}
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}</div><button type="button" class="btn sec" data-action="kanbanSurface" style="margin-bottom:2px">Reprendre la surface du Kanban</button></div>
@@ -1597,13 +1604,6 @@ function ficheRendre() {
       ${champ('Longueur eaux pluviales (ml)', inp('data-k="terr" data-champ="resEp" inputmode="decimal"', p.terrain.resEp || ''))}
       ${champ('Longueur électricité (ml)', inp('data-k="terr" data-champ="resElec" inputmode="decimal"', p.terrain.resElec || ''))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Sert à la clôture et aux protections du chantier.</p>`)}
-    ${lot('1. Installation de chantier')}
-    ${carte('Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
-      + champ('Branchement provisoire d\'électricité', `<select data-k="chant" data-champ="elec" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.elec || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
-      + champ('Base de vie (bungalow ou conteneur)', `<select data-k="chant" data-champ="base" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.base || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
-      + champ('Grue de chantier', `<select data-k="chant" data-champ="grue" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.grue || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
-      + champ('Nombre de bennes à gravats', inp('data-k="chant" data-champ="bennes" inputmode="numeric"', p.chantier.bennes, '120px'))
-      + champ('Nombre de bennes à déchets triés', inp('data-k="chant" data-champ="bennesTri" inputmode="numeric"', p.chantier.bennesTri, '120px')))}
     <div style="border:4px solid #e07b1a;border-radius:14px;padding:10px;margin-bottom:14px">
     ${lot('5. Gros œuvre')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
@@ -1612,12 +1612,12 @@ function ficheRendre() {
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
     ${carte('Plancher bas', contenuPlancher)}
     </div>
-    ${lot('11. Menuiseries extérieures')}
-    ${carte('Menuiseries (fenêtres, portes)', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
     ${lot('6. Charpente bois')}
     ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
     ${lot('8. Couverture et zinguerie')}
     ${carte('Couverture, égouts, faîtage, gouttières, descentes', contenuCouv)}
+    ${lot('11. Menuiseries extérieures')}
+    ${carte('Menuiseries (fenêtres, portes)', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
     ${lot('13. Électricité et extérieur')}
     ${carte('Équipements électriques et extérieurs', contenuElec)}
     ${lot('14. Plomberie sanitaire')}
