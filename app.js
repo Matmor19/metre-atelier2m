@@ -85,7 +85,7 @@ async function post(corps) {
 
 // Ajoute les ouvrages de soutènement et de muret s'ils manquent (copie du téléphone comprise)
 function assurerOuvragesSoutenement() {
-  if (!BIB || !Array.isArray(BIB.ouvrages)) return;
+  if (!BIB || !Array.isArray(BIB.ouvrages)) return false;
   let change = false;
   for (const t of SOUT_TYPES) {
     if (BIB.ouvrages.some(o => o.id === t.idOuv)) continue;
@@ -95,6 +95,7 @@ function assurerOuvragesSoutenement() {
   const plusGrand = Math.max(BIB.prochainNumero || 0, ...BIB.ouvrages.map(o => parseInt(String(o.id).slice(4), 10) || 0));
   if (plusGrand > (BIB.prochainNumero || 0)) { BIB.prochainNumero = plusGrand; change = true; }
   if (change) lsSet('bib', BIB);
+  return change;
 }
 async function chargerBibliotheque() {
   try {
@@ -198,7 +199,9 @@ async function synchroBibliotheque() {
         return;
       }
       BIB = j.bibliotheque;
+      const ajoutes = assurerOuvragesSoutenement();
       lsSet('bib', BIB);
+      if (ajoutes) { const s2 = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB }); if (s2.ok) lsSet('bib_modifiee', false); }
       if (!lotCourant) lotCourant = BIB.lots[0].id;
       remplirLots(); renderOuvrages();
     }
@@ -3268,7 +3271,7 @@ if ($('btnRecupBib')) $('btnRecupBib').onclick = async () => {
   try {
     const j = await post({ action: 'lire_bibliotheque' });
     if (!j.ok || !j.bibliotheque || !j.bibliotheque.ouvrages) { alert('Le Drive n\'a pas renvoyé de bibliothèque.'); return; }
-    BIB = j.bibliotheque; lsSet('bib', BIB); lsSet('bib_modifiee', false);
+    BIB = j.bibliotheque; assurerOuvragesSoutenement(); lsSet('bib', BIB); lsSet('bib_modifiee', false);
     remplirLots(); renderOuvrages(); renderBiblio();
     alert('Bibliothèque récupérée du Drive (révision ' + (BIB.revision || '?') + ').');
   } catch (e) { alert('Récupération impossible pour le moment (réseau).'); }
@@ -3283,7 +3286,7 @@ if ($('btnFichierBib')) $('btnFichierBib').onclick = async () => {
     const fichier = await r.json();
     const j = await post({ action: 'sauver_bibliotheque', bibliotheque: fichier });
     if (!j.ok) { alert('Refus du Drive : ' + (j.erreur || 'erreur inconnue') + '. Rien n\'a été modifié.'); return; }
-    BIB = fichier; lsSet('bib', BIB); lsSet('bib_modifiee', false);
+    BIB = fichier; assurerOuvragesSoutenement(); lsSet('bib', BIB); lsSet('bib_modifiee', false);
     remplirLots(); renderOuvrages(); renderBiblio();
     alert('Version livrée (révision ' + (BIB.revision || '?') + ') envoyée sur le Drive.');
   } catch (e) { alert('Envoi impossible pour le moment (réseau).'); }
