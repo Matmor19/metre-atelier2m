@@ -1454,6 +1454,11 @@ function semellesDuTerrassement(c) {
   const L = num(l.valeurs.cote1), W = num(l.valeurs.cote2), H = num(l.valeurs.cote3);
   return { sem_lin: L, sem_larg: W, sem_haut: H, fond_semelle: L * W * H };
 }
+// Proposition de quantité pour un type de fouille : seulement s'il n'y en a qu'une (jamais de somme de plusieurs fouilles)
+function uneSeuleFouille(fd, usage, valide, valeur) {
+  const es = pleinesDe(fd).filter(e => e.usage === usage && valide(e));
+  return es.length === 1 ? valeur(es[0]) : 0;
+}
 function ctxQuantites(c) {
   const p = projetDe(c), r = projetCalcul(p), pieces = piecesDe(c);
   const rigOk = num((p.fond || {}).rigLin) > 0;
@@ -1498,10 +1503,10 @@ function ctxQuantites(c) {
     // Fouilles et semelles : seulement si des rigoles sont saisies dans le terrassement (sinon rien n'est proposé)
     fond_fouille: rigOk ? r.fouille : '',
     // Semelles isolées : nombre de massifs de fondation saisis dans le terrassement (0 = aucun, rien n'est proposé)
-    semi_nb: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'massif' && num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0 ? num(e.nb) : 0), 0),
+    semi_nb: uneSeuleFouille(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0, e => num(e.nb)),
     // Volumes des fouilles en pleine masse saisies dans le configurateur (pour proposer la quantité dans le métré)
-    massif_m3: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'massif' && num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0 ? num(e.nb) * num(e.L) * num(e.l) * num(e.h) : 0), 0),
-    plat_m3: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'plateforme' && num(e.s) > 0 && num(e.h) > 0 ? (num(e.nb) > 0 ? num(e.nb) : 1) * num(e.s) * num(e.h) : 0), 0),
+    massif_m3: uneSeuleFouille(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0, e => num(e.nb) * num(e.L) * num(e.l) * num(e.h)),
+    plat_m3: uneSeuleFouille(p.fond, 'plateforme', e => num(e.s) > 0 && num(e.h) > 0, e => (num(e.nb) > 0 ? num(e.nb) : 1) * num(e.s) * num(e.h)),
     fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
     // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
@@ -1966,14 +1971,13 @@ function ficheVersMetre() {
   const fdim = p.fond || FICHE_FONDS_DEF;
   const origineFond = 'rigoles';
   // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
-  let nbSemelles = 0;
   for (const e of pleinesDe(fdim)) {
     const L_ = num(e.L), l_ = num(e.l), h_ = num(e.h), n_ = num(e.nb);
     const dims = { cote1: String(L_), cote2: String(l_), cote3: String(h_) };
     if (e.usage === 'massif') {
       if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
-      nbSemelles += n_;
+      ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_) });  // une ligne par massif, sans addition
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_) });
@@ -1981,7 +1985,6 @@ function ficheVersMetre() {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
     }
   }
-  if (nbSemelles > 0) ajouter(DES_SEMELLE_ISO, nbSemelles, undefined, { nombre: String(nbSemelles) });
   // Semelles filantes et fouilles en tranchée : seulement si des rigoles sont saisies
   if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
