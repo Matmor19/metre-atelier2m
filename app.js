@@ -1745,10 +1745,14 @@ function ficheRendre() {
     ${pleinesDe(fd).map(e => `<div style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
-        ${champ('Nombre (massifs)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))}
-        ${champ('Longueur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="L" inputmode="decimal"`, e.L || ''))}
-        ${champ('Largeur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="l" inputmode="decimal"`, e.l || ''))}
-        ${champ('Hauteur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="h" inputmode="decimal"`, e.h || ''))}
+        ${(e.usage || 'massif') === 'plateforme'
+          ? champ('Nombre', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))
+            + champ('Surface (m²)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="s" inputmode="decimal"`, e.s || ''))
+            + champ('Hauteur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="h" inputmode="decimal"`, e.h || ''))
+          : champ('Nombre (massifs)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))
+            + champ('Longueur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="L" inputmode="decimal"`, e.L || ''))
+            + champ('Largeur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="l" inputmode="decimal"`, e.l || ''))
+            + champ('Hauteur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="h" inputmode="decimal"`, e.h || ''))}
       </div>
       <button type="button" class="btn small danger" data-action="delpleine" data-id="${esc(e.id)}" style="margin-top:6px">✕ Supprimer cette fouille</button>
     </div>`).join('')}
@@ -1965,7 +1969,8 @@ function ficheVersMetre() {
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
       nbSemelles += n_;
     } else if (e.usage === 'plateforme') {
-      if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_PLATEFORME, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
+      const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
+      if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_) });
     } else if (e.usage === 'divers') {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
     }
