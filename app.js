@@ -588,12 +588,12 @@ function renderMetre() {
   if ($('dateLimite')) $('dateLimite').value = (chantiers.find(x => x.id === courantId) || {}).dateLimite || '';
   const nc = avecPrix ? 8 : 7;
   const colonnes = avecPrix
-    ? '<col style="width:9%"><col style="width:25%"><col style="width:7%"><col style="width:9%"><col style="width:18%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:7%">'
-    : '<col style="width:9%"><col style="width:33%"><col style="width:8%"><col style="width:11%"><col style="width:18%"><col style="width:12%"><col style="width:9%">';
+    ? '<col style="width:9%"><col style="width:25%"><col style="width:9%"><col style="width:7%"><col style="width:18%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:7%">'
+    : '<col style="width:9%"><col style="width:33%"><col style="width:11%"><col style="width:8%"><col style="width:18%"><col style="width:12%"><col style="width:9%">';
   let total = 0, sansPrix = 0;
   let h = `<table class="metre">
     <colgroup>${colonnes}</colgroup>
-    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th><th>Détail</th><th>Prix</th>${avecPrix ? '<th class="num">P.U. HT ind.</th><th class="num">Montant HT ind.</th>' : ''}<th></th></tr></thead><tbody>`;
+    <thead><tr><th>N°</th><th>Désignation</th><th class="num">Quantité</th><th>Unité</th><th>Détail</th><th>Prix</th>${avecPrix ? '<th class="num">P.U. HT ind.</th><th class="num">Montant HT ind.</th>' : ''}<th></th></tr></thead><tbody>`;
   lots.forEach((lotId, i) => {
     const lot = BIB.lots.find(x => x.id === lotId);
     const ls = L.filter(l => l.lot === lotId);
@@ -612,8 +612,8 @@ function renderMetre() {
       h += `<tr class="ligne" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
-        <td>${esc(l.unite)}</td>
         <td class="num">${fmt(l.quantite)}</td>
+        <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}</td>
         <td><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l, avecPrix)}</select>${l.prix === 'devis' && devisDe((BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).prix_indicatif || {}).length ? `<select class="choix" data-choix-devis="${esc(l.uid)}" title="Devis à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px;margin-top:4px">${optionsDevis(l, avecPrix)}</select>` : ''}</td>
         ${avecPrix ? `<td class="pu">${pu != null ? fmt(pu) : '—'}</td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
