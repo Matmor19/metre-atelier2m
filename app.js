@@ -607,8 +607,7 @@ let _majConfigEnCours = false;
 // Sources « configurateur » possibles pour les cotes d'un ouvrage (L, l, h)
 const SOURCES_CONFIG = [
   { cle: 'massif_m3', libelle: 'Massif de fondation (longueur, largeur, hauteur)' },
-  { cle: 'fond_fouille', libelle: 'Fouille en tranchée des semelles filantes (rigoles)' },
-  { cle: 'fond_semelle', libelle: 'Semelles filantes béton armé (rigoles)' }
+  { cle: 'fond_fouille', libelle: 'Fouille en tranchée des semelles filantes (rigoles)' }
 ];
 // Cotes (cote1..3) d'un ouvrage lié : configurateur, ou dernière ligne de l'ouvrage source. Null si rien.
 function coteSource(o, id, uidExclu) {
@@ -1839,7 +1838,7 @@ function ficheRendre() {
   const p = projetDe(c);
   const sel = (opts, val) => opts.map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const optListe = (liste, val) => `<option value="" ${!val ? 'selected' : ''}>— choisir —</option>` + liste.map(d => `<option value="${esc(d)}" ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
-  const carte = (titre, contenu) => `<section class="sousbloc" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">${titre}</h3>${contenu}</section>`;
+  const carte = (titre, contenu, src) => `<section ${src ? `data-source="${src}"` : ''} class="sousbloc" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">${titre}</h3>${contenu}</section>`;
   const champ = (lib, html) => `<div style="min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${lib}</label>${html}</div>`;
   const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:10px;border:1px solid var(--mut);border-radius:8px;background:var(--card);color:var(--fg);font-size:16px">`;
   const sel2 = (attrs, opts, val) => `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(opts, val)}</select>`;
@@ -1916,7 +1915,7 @@ function ficheRendre() {
     </div>
     <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
-    ${pleinesDe(fd).map(e => `<div style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
+    ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
         ${(e.usage || 'massif') === 'plateforme'
@@ -1969,7 +1968,7 @@ function ficheRendre() {
       + champ('Nombre de bennes à déchets triés', inp('data-k="chant" data-champ="bennesTri" inputmode="numeric"', p.chantier.bennesTri, '120px')))}
     </div>
     <div class="bloc">${lotTitre('1. Terrassement')}
-    ${carte('Fouilles en rigoles (linéaire saisi à la main)', contenuRig)}
+    ${carte('Fouilles en rigoles (linéaire saisi à la main)', contenuRig, 'fond_fouille')}
     </div>
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
@@ -3111,6 +3110,7 @@ function formulaireOuvrage(o, lotChoisi) {
       <select id="b_lie" name="lie"><option value="">— aucun —</option>${BIB.ouvrages.filter(x => !x.supprime && (!o || x.id !== o.id)).slice().sort((a, b) => a.designation.localeCompare(b.designation, 'fr')).map(x => `<option value="${esc(x.id)}" ${o && o.liePar === x.id ? 'selected' : ''}>${esc(x.designation)} · ${esc(x.id)}</option>`).join('')}</select>
       <label for="b_lieconf">Ou reprend les cotes du configurateur</label>
       <select id="b_lieconf" name="lieconf"><option value="">— aucun —</option>${SOURCES_CONFIG.map(x => `<option value="${esc(x.cle)}" ${o && o.lieConfig === x.cle ? 'selected' : ''}>${esc(x.libelle)}</option>`).join('')}</select>
+      <button type="button" class="btn sec" id="bChoixConf" style="margin-top:6px">Choisir dans le configurateur</button>
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
       <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 2 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
@@ -3144,7 +3144,53 @@ function formulaireOuvrage(o, lotChoisi) {
   $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
   $('b_unite').addEventListener('change', () => { $('b_mesure').innerHTML = optionsMesure($('b_unite').value, null); });
   if (o && $('bSupprOuv')) $('bSupprOuv').onclick = () => supprimerOuvrage(o.id);
+  $('bChoixConf').onclick = () => {
+    if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
+    const draft = {};
+    for (const el of $('fBib').elements) if (el.name) draft[el.name] = el.value;
+    window.CHOIX_CONF = { ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft };
+    fermer();
+    ouvrirConfig();
+    activerBandeauChoix();
+  };
 }
+
+// Choix d'une source dans le configurateur : bandeau en bas, clic sur la case, retour à la fiche
+function activerBandeauChoix() {
+  let b = $('bandeauChoix');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'bandeauChoix';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:60;background:#E07838;color:#fff;padding:12px 16px;font-weight:600;box-shadow:0 -2px 8px rgba(0,0,0,.2)';
+    b.innerHTML = 'Cliquez sur la case à reprendre (massif ou fouille en rigoles). <button type="button" id="bAnnulChoix" class="btn sec" style="margin-left:8px;background:#fff">Annuler</button>';
+    document.body.appendChild(b);
+    $('bAnnulChoix').onclick = () => retourBibliotheque(null);
+  }
+  b.style.display = 'block';
+}
+// Retour à la fiche d'ouvrage, avec ce qui était saisi et la source choisie (ou aucune si annulé)
+function retourBibliotheque(src) {
+  const ch = window.CHOIX_CONF;
+  window.CHOIX_CONF = null;
+  if ($('bandeauChoix')) $('bandeauChoix').style.display = 'none';
+  if (!ch) return;
+  route('biblio');
+  const o = ch.ouvId ? BIB.ouvrages.find(x => x.id === ch.ouvId) : null;
+  ouvrirModal();
+  formulaireOuvrage(o, ch.lot);
+  const f = $('fBib');
+  for (const [k, v] of Object.entries(ch.draft)) { if (f.elements[k] && k !== 'lieconf' && k !== 'lie') f.elements[k].value = v; }
+  if (src) { f.elements.lieconf.value = src; f.elements.lie.value = ''; }
+  else { f.elements.lieconf.value = ch.draft.lieconf || ''; f.elements.lie.value = ch.draft.lie || ''; }
+}
+// Clic dans le configurateur pendant le choix
+document.addEventListener('click', e => {
+  if (!window.CHOIX_CONF) return;
+  const t = e.target.closest('[data-source]');
+  if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  retourBibliotheque(t.dataset.source);
+}, true);
 
 // Suppression d'un ouvrage de la bibliothèque (il reste restaurable dans « Supprimés »)
 function supprimerOuvrage(id) {
