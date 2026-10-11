@@ -1475,6 +1475,7 @@ function ctxQuantites(c) {
     couverture: p.toiture.type === 'plat' ? '' : couvDe(p.toiture),
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     fond_fouille: r.fouille,
+    fond_lin: r.linP, fond_larg: num((p.fond || FICHE_FONDS_DEF).largeur), fond_prof: num((p.fond || FICHE_FONDS_DEF).profondeur),
     fond_semelle: r.semelle,
     drain_ml: (p.murs || []).reduce((a, m) => a + num(m.longueur), 0),
     decap_m2: num(p.terrain.decap),
@@ -1558,6 +1559,7 @@ function qteValeur(o, ctx) {
   if (o.sin && String(ctx[o.sin.cle]) === String(o.sin.val)) return null;
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
+  if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
   if (o.unite === 'm²' && o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan' };
   if (o.unite === 'm²') return { nombre: '1', cote1: v.toFixed(2), cote2: '1' };
   if (o.unite === 'm³') return { nombre: '1', cote1: v.toFixed(3), cote2: '1', cote3: '1' };
@@ -1865,19 +1867,21 @@ function ficheVersMetre() {
     if (unite === 'ml') return { nombre: '1', cote1: q.toFixed(2) };
     return { nombre: String(q) };
   };
-  const ajouter = (des, q, designation) => {
+  const ajouter = (des, q, designation, valeursFixes) => {
     if (!des) { if (q > 0) manquants.push('(choix non fait)'); return; }
     const o = BIB.ouvrages.find(x => !x.supprime && x.designation === des);
     if (!o) { manquants.push(des); return; }
     if (!(q > 0)) return;
-    const valeurs = valeursPour(o.unite, q);
+    const valeurs = valeursFixes || valeursPour(o.unite, q);
     ajouterLotSiAbsent(courantId, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString() });
     nb++;
   };
   // Fondations
-  ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes (murs porteurs)');
+  const fdim = p.fond || FICHE_FONDS_DEF;
+  ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes (murs porteurs)',
+    { nombre: '1', cote1: String(r.linP), cote2: String(num(fdim.largeur)), cote3: String(num(fdim.profondeur)) });
   ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé (murs porteurs)');
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
   ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement');
@@ -1932,7 +1936,9 @@ function ouvrirOuvrage(o, precedent, message) {
   const cc = chantiers.find(x => x.id === courantId);
   const auto = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
   // Cases de cotes vierges : la quantité proposée par le configurateur (déjà calculée) est utilisée si rien n'est saisi
-  const compte = o.unite === 'u' || o.unite === 'forfait' ? { nombre: auto ? auto.nombre : '' } : {};
+  // Cases remplies seulement avec ce que le configurateur fournit : dimensions (fouille), surface (plan) ou quantité
+  const dimsConfig = !!auto && (o.qte === 'fond_fouille' || auto.mode === 'plan');
+  const compte = !auto ? {} : dimsConfig ? { ...auto } : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur (${esc(o.qte.replace(/_/g, ' '))}). Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
