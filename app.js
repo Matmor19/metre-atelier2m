@@ -204,6 +204,8 @@ async function synchroBibliotheque() {
       if (ajoutes) { const s2 = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB }); if (s2.ok) lsSet('bib_modifiee', false); }
       if (!lotCourant) lotCourant = BIB.lots[0].id;
       remplirLots(); renderOuvrages();
+      // Sur la page du métré, les lignes reprennent les textes de la bibliothèque reçue du Drive
+      if (PAGE === 'tableau' && courantId) renderMetre();
     }
   } catch (e) { /* pas de réseau : on garde la copie locale */ }
 }
