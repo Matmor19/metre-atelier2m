@@ -328,11 +328,12 @@ function detailHtml(l) {
   }
   if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
   // Surface nette des murs : on liste chaque mur (dimensions prises dans le configurateur du chantier)
-  if (v.src && /^Calcul du configurateur : murs, surface nette/.test(v.src)) {
+  if (v.src && /^(Calcul du configurateur : )?murs, surface nette/.test(v.src)) {
     const c = chantiers.find(x => x.id === courantId);
-    const murs = c ? projetDe(c).murs.filter(m => num(m.longueur) > 0 && num(m.hauteur) > 0) : [];
+    const typeLigne = v.typeMur || '';
+    const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
-    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>`).join(' ; ');
+    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures déduites' : ''}`).join(' ; ');
     return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
@@ -1016,7 +1017,8 @@ function menusDe(piece) {
 // Liste à plat de toutes les menuiseries du chantier, avec leur pièce et leur nombre total
 function menusCalcul(c) {
   const L = [];
-  for (const pc of piecesDe(c)) for (const m of menusDe(pc)) L.push({ piece: pc, m, nb: (num(m.nb) || 1) * (num(pc.nb) || 1) });
+  const pcs = Array.isArray(c) ? c : piecesDe(c);
+  for (const pc of pcs) for (const m of menusDe(pc)) L.push({ piece: pc, m, nb: (num(m.nb) || 1) * (num(pc.nb) || 1) });
   return L;
 }
 // Appuis de fenêtre : longueur par type d'appui, pris dans chaque menuiserie
@@ -1633,11 +1635,20 @@ const DES_PLATEFORME = 'Fouille en pleine masse (dallage, plateforme)';
 const DES_DIVERS = 'Fouille pour trou divers';
 const FICHE_FONDS_DEF = { largeur: '', hauteur: '' };
 
+// Types de murs proposés : élévations de la bibliothèque, puis murs de soutènement et muret
+function typesMurs() {
+  const elev = [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.qte === 'elev_net').map(o => o.designation))];
+  return elev.concat(SOUT_TYPES.map(t => t.designation));
+}
 function projetDe(c) {
   if (!c.projet) c.projet = { epaisseur: '', murs: [], ouvertures: [], toiture: { type: '', surface: '', pente: '', couverture: '' }, choix: { murs: '', tableaux: '', finition: '' }, fond: Object.assign({}, FICHE_FONDS_DEF) };
   if (!c.projet.fond) c.projet.fond = Object.assign({}, FICHE_FONDS_DEF);
   if (!c.projet.equip) c.projet.equip = {};
-  if (!c.projet.soutenement) c.projet.soutenement = [];
+  // Ancienne liste séparée des murs de soutènement : reprise dans la liste « Murs » (une seule liste)
+  if (Array.isArray(c.projet.soutenement)) {
+    for (const s of c.projet.soutenement) c.projet.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (c.projet.murs.length + 1), longueur: s.longueur || '', hauteur: s.hauteur || '', porteur: false, type: (SOUT_TYPES.find(t => t.id === s.type) || SOUT_TYPES[0]).designation, deduire: false });
+    delete c.projet.soutenement;
+  }
   if (!c.projet.cuisine) c.projet.cuisine = { bas: '', haut: '', plan: '', plan_ml: '' };
   if (!c.projet.chantier) c.projet.chantier = { eau: '', elec: '', base: '', grue: '', bennes: '', bennesTri: '' };
   if (c.projet.choix.finition === undefined) c.projet.choix.finition = '';
@@ -1689,7 +1700,16 @@ function projetCalcul(p) {
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: nomPiece(x.piece) + ' · ' + FICHE_OUV[x.m.type] }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: x.nb });
   }
+  // Ouvertures : déduites seulement des murs dont la case « Déduire les ouvertures » est cochée, au prorata de leur surface
+  const cochés = r.murs.filter(x => x.m.deduire === true);
+  const brutCochés = cochés.reduce((a, x) => a + x.brut, 0);
+  for (const x of cochés) x.ded = brutCochés > 0 ? Math.min(x.brut, r.deduit * x.brut / brutCochés) : 0;
+  r.deduitMenuiseries = r.deduit;
+  r.deduit = cochés.reduce((a, x) => a + x.ded, 0);
   r.net = Math.max(0, r.brut - r.deduit);
+  // Surface nette par type de mur (sans type = choix du chantier)
+  r.parType = {};
+  for (const x of r.murs) { const k = x.m.type || ''; r.parType[k] = (r.parType[k] || 0) + (x.brut - x.ded); }
   const pente = num(p.toiture.pente);
   const S = num(p.toiture.surface);
   // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente
@@ -1746,6 +1766,7 @@ function ctxQuantites(c) {
     surface_terrain: num(p.terrain.surface),
     perimetre_terrain: num(p.terrain.perimetre),
     surface_facades: r.brut,
+    murs_par_type: Object.assign({}, r.parType || {}),
     surface_plancher: r.plS > 0 ? r.plS : surfPieces,
     surface_pieces: surfPieces,
     surface_emprise: r.plS > 0 ? r.plS : surfPieces,
@@ -1872,7 +1893,7 @@ const SRC_QTE = {
   surface_terrain: 'surface du terrain', surface_facades: 'surface des façades', surface_plancher: 'surface de plancher',
   surface_pieces: 'surface des pièces', surface_emprise: 'emprise au sol', surface_soubassement: 'surface du soubassement',
   surface_toiture: 'surface de toiture (pente comprise)', surface_toiture_plan: 'surface de toiture (projection)',
-  elev_net: 'murs, surface nette (ouvertures de plus de 1,50 m² déduites)', finit_net: 'surface nette des murs',
+  elev_net: 'murs, surface nette', finit_net: 'surface nette des murs',
   soub_s: 'murs de soubassement', plan_hourdis: 'plancher à hourdis', plan_dalle: 'dalle de compression (surface × épaisseur)',
   fond_semelle: 'semelles filantes (linéaire × largeur × hauteur)', cuve_fouille: 'fouille de la cuve',
   cuve_remblai: 'remblai de la cuve', cuve_evac: 'évacuation des terres de la cuve',
@@ -1889,6 +1910,12 @@ function srcTxt(qte) {
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
   // Variante : l'ouvrage ne vaut que si la condition de la fiche est remplie (si : égal, sin : différent)
+  // Murs typés : l'ouvrage se remplit avec la surface nette des murs de ce type
+  if (o.si && o.si.cle === 'murs_choix' && ctx.murs_par_type && ctx.murs_par_type[o.si.val] !== undefined) {
+    const surf = ctx.murs_par_type[o.si.val];
+    if (!(surf > 0)) return null;
+    return { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: srcTxt('elev_net'), typeMur: o.si.val };
+  }
   if (o.si && String(ctx[o.si.cle]) !== String(o.si.val)) return null;
   if (o.sin && String(ctx[o.sin.cle]) === String(o.sin.val)) return null;
   const v = ctx[o.qte];
@@ -1974,19 +2001,19 @@ function ficheRendre() {
   const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:10px;border:1px solid var(--mut);border-radius:8px;background:var(--card);color:var(--fg);font-size:16px">`;
   const sel2 = (attrs, opts, val) => `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(opts, val)}</select>`;
 
-  const murs = p.murs.map(m => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:6px;align-items:end;margin-bottom:6px">
-      ${champ('Nom', inp(`data-k="mur" data-id="${m.id}" data-champ="nom"`, m.nom))}
-      ${champ('Longueur (m)', inp(`data-k="mur" data-id="${m.id}" data-champ="longueur" inputmode="decimal"`, m.longueur))}
-      ${champ('Hauteur (m)', inp(`data-k="mur" data-id="${m.id}" data-champ="hauteur" inputmode="decimal"`, m.hauteur))}
-      <label style="font-size:12px;padding-bottom:8px"><input type="checkbox" data-k="mur" data-id="${m.id}" data-champ="porteur" ${m.porteur !== false ? 'checked' : ''}> Porteur</label>
-      <button type="button" class="btn small danger" data-action="delmur" data-id="${m.id}">✕</button></div>`).join('')
-    || '<p style="color:#6b5a7a">Aucun mur. Ajoutez un mur par segment (une hauteur par segment si elle change).</p>';
-  const sout = (p.soutenement || []).map((s, i) => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;align-items:end;margin-bottom:6px">
-      ${champ('Type', `<select data-k="sout" data-id="${s.id}" data-champ="type">${SOUT_TYPES.map(t => `<option value="${t.id}" ${s.type === t.id ? 'selected' : ''}>${esc(t.nom)}</option>`).join('')}</select>`)}
-      ${champ('Longueur (m)', inp(`data-k="sout" data-id="${s.id}" data-champ="longueur" inputmode="decimal"`, s.longueur))}
-      ${champ('Hauteur (m)', inp(`data-k="sout" data-id="${s.id}" data-champ="hauteur" inputmode="decimal"`, s.hauteur))}
-      <div style="grid-column:1/-1;text-align:right"><button type="button" class="btn small danger" data-action="delsout" data-id="${s.id}">Supprimer</button></div></div>`).join('')
-    || '<p style="color:#6b5a7a">Aucun mur de soutènement ni muret de jardin.</p>';
+  const optTypes = (sel) => `<option value="">Matériau des murs du chantier</option>` + typesMurs().map(t => `<option value="${esc(t)}" ${sel === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const murs = p.murs.map(m => `<div style="border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:end">
+        ${champ('Nom', inp(`data-k="mur" data-id="${m.id}" data-champ="nom"`, m.nom))}
+        ${champ('Longueur (m)', inp(`data-k="mur" data-id="${m.id}" data-champ="longueur" inputmode="decimal"`, m.longueur))}
+        ${champ('Hauteur (m)', inp(`data-k="mur" data-id="${m.id}" data-champ="hauteur" inputmode="decimal"`, m.hauteur))}
+        <button type="button" class="btn small danger" data-action="delmur" data-id="${m.id}">✕</button></div>
+      ${champ('Type de mur', `<select data-k="mur" data-id="${m.id}" data-champ="type" style="width:100%;padding:6px">${optTypes(m.type || '')}</select>`)}
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:13px">
+        <label><input type="checkbox" data-k="mur" data-id="${m.id}" data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les ouvertures</label>
+        <label><input type="checkbox" data-k="mur" data-id="${m.id}" data-champ="porteur" ${m.porteur !== false ? 'checked' : ''}> Porteur</label>
+      </div></div>`).join('')
+    || '<p style="color:#6b5a7a">Aucun mur. Ajoutez un mur par segment, puis choisissez son type.</p>';
   const menusResume = (() => {
     const pcs = piecesDe(c).filter(x => menusDe(x).length);
     const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')}${finTxt(m.fin, m.ral) ? ' · ' + esc(finTxt(m.fin, m.ral)) : ''} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
@@ -2109,8 +2136,7 @@ function ficheRendre() {
     </div>
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal" placeholder="ex. 30"', p.epaisseur, '160px')))}
-    ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
-    ${carte('Murs de soutènement et murets (surface nette, aucune ouverture déduite)', sout + '<button type="button" class="btn sec" data-action="addsout" style="margin-top:6px">+ Ajouter un mur de soutènement ou muret</button>')}
+    ${carte('Murs (type, longueur, hauteur, ouvertures)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
     ${carte('Plancher bas', contenuPlancher)}
@@ -2182,7 +2208,6 @@ function ficheChange(e) {
   const champ = t.dataset.champ;
   if (k === 'epais') p.epaisseur = val;
   else if (k === 'mur') { const m = p.murs.find(x => x.id === t.dataset.id); if (m) m[champ] = val; }
-  else if (k === 'sout') { const s = p.soutenement.find(x => x.id === t.dataset.id); if (s) s[champ] = val; }
   else if (k === 'ouv') { const o = p.ouvertures.find(x => x.id === t.dataset.id); if (o) o[champ] = val; }
   else if (k === 'toit') p.toiture[champ] = val;
   else if (k === 'fond') p.fond[champ] = val;
@@ -2233,10 +2258,8 @@ function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
-  if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
+  if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true, type: '', deduire: false });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
-  else if (a === 'addsout') p.soutenement.push({ id: 's' + uid(), type: 'beton', longueur: '', hauteur: '' });
-  else if (a === 'delsout') p.soutenement = p.soutenement.filter(x => x.id !== b.dataset.id);
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
   else if (a === 'addpleine') pleinesDe(p.fond).push({ id: 'p' + uid(), usage: 'massif', nb: '', L: '', l: '', h: '' });
   else if (a === 'delpleine') p.fond.pleines = pleinesDe(p.fond).filter(e => e.id !== b.dataset.id);
@@ -2269,15 +2292,6 @@ function ficheVersMetre() {
              qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined });
     nb++;
   };
-  // Murs de soutènement et murets : surface nette = longueur × hauteur, sans déduction d'ouvertures
-  (p.soutenement || []).forEach((s, i) => {
-    const t = SOUT_TYPES.find(x => x.id === s.type) || SOUT_TYPES[0];
-    const ouv = BIB.ouvrages.find(x => x.id === t.idOuv && !x.supprime);
-    if (!ouv) { manquants.push(t.nom); return; }
-    const L_ = num(s.longueur), H_ = num(s.hauteur);
-    if (!(L_ > 0 && H_ > 0)) return;
-    ajouter(ouv.designation, L_ * H_, `${ouv.designation} – n°${i + 1}`, { nombre: '1', cote1: String(L_), cote2: String(H_) });
-  });
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
   // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
@@ -2324,7 +2338,16 @@ function ficheVersMetre() {
     ajouter('Support de parquet : OSB 21 mm', r.plS, 'OSB 21 mm support de revêtement de sol');
   }
   // Élévation, finition, tableaux, toiture
-  ajouter(p.choix.murs, r.net, 'Élévation des murs (ouvertures de plus de 1,50 m² déduites)', null, SRC_QTE.elev_net);
+  // Une ligne par type de mur ; les murs sans type prennent le « Matériau des murs » du chantier
+  for (const [t, surf] of Object.entries(r.parType || {})) {
+    if (!(surf > 0)) continue;
+    if (t === '') {
+      if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
+      ajouter(p.choix.murs, surf, 'Élévation des murs (surface nette)', { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: '' }, null);
+    } else {
+      ajouter(t, surf, t, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: t }, null);
+    }
+  }
   ajouter(p.choix.finition, r.net, 'Finition des murs (surface nette)', null, SRC_QTE.finit_net);
   ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
