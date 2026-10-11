@@ -307,6 +307,13 @@ function detailHtml(l) {
     return (nb !== 1 ? esc(fmt(nb)) + ' × ' : '') + esc(TXT_SURFACE) + ' ' + esc(fmt(num(v.cote1))) + ' m² × hauteur ' + esc(fmt(num(v.cote3))) + ' m';
   }
   if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
+  // Surface nette des murs : on liste chaque mur (dimensions prises dans le configurateur du chantier)
+  if (v.src && /^Calcul du configurateur : murs, surface nette/.test(v.src)) {
+    const c = chantiers.find(x => x.id === courantId);
+    const murs = c ? projetDe(c).murs.filter(m => num(m.longueur) > 0 && num(m.hauteur) > 0) : [];
+    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : ${esc(fmt(num(m.longueur)))} m × ${esc(fmt(num(m.hauteur)))} m`).join(' ; ');
+    return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
+  }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
