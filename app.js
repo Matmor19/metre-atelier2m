@@ -1929,9 +1929,9 @@ function ouvrirOuvrage(o, precedent, message) {
   const champs = champsDe(o);
   const cc = chantiers.find(x => x.id === courantId);
   const auto = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
-  // Seule la valeur proposée par le configurateur est remplie ; le reste reste vierge (rien d'inventé)
-  const propose = auto ? (['m²', 'm³', 'ml'].includes(o.unite) ? { cote1: auto.cote1 } : { nombre: auto.nombre }) : null;
-  const v = precedent || propose || {};   // pas de quantité par défaut : un manque doit se voir dans le métré
+  // Cases de cotes vierges : la quantité proposée par le configurateur (déjà calculée) est utilisée si rien n'est saisi
+  const compte = o.unite === 'u' || o.unite === 'forfait' ? { nombre: auto ? auto.nombre : '' } : {};
+  const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur (${esc(o.qte.replace(/_/g, ' '))}). Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
   h += `
@@ -1952,8 +1952,11 @@ function ouvrirOuvrage(o, precedent, message) {
   </form>`;
   $('sheet').innerHTML = h;
   const f = $('fOuv');
+  // Rien saisi dans les cotes : on utilise la quantité du configurateur
+  const sansCotes = vals => champs.every(ch => ch.texte || String(vals[ch.cle] ?? '').trim() === '');
   const maj = () => {
-    const q = calcul(o, lireForm(f, champs));
+    const vv0 = lireForm(f, champs);
+    const q = auto && !precedent && sansCotes(vv0) ? calcul(o, auto) : calcul(o, vv0);
     let t = `Quantité : ${fmt(q)} ${o.unite}`;
     const vv = lireForm(f, champs);
     if (o.saisie === 'menuiseries' && num(vv.largeur_cm) && num(vv.hauteur_cm))
@@ -1964,7 +1967,8 @@ function ouvrirOuvrage(o, precedent, message) {
   maj();
   f.addEventListener('submit', e => {
     e.preventDefault();
-    const vals = lireForm(f, champs);
+    let vals = lireForm(f, champs);
+    if (auto && !precedent && sansCotes(vals)) vals = { ...auto };   // quantité du configurateur, sans rien inventer
     const manque = champs.filter(ch => !ch.texte && String(vals[ch.cle] ?? '').trim() === '');
     if (manque.length) { $('apercu').textContent = 'Quantité à saisir : ' + manque.map(ch => ch.libelle).join(', ') + '.'; return; }
     const q = calcul(o, vals);
