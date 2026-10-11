@@ -1089,7 +1089,22 @@ function genererPlat() {
   if (uniques.length) msg += ' À compléter : ' + uniques.join(' ; ') + '.';
   return msg;
 }
-function ouvrirConfigurateur(message) {
+// Liens « case de pièce » : après la suppression de la pièce n°idx, les liens vers les pièces suivantes reculent d'un cran ; ceux vers la pièce supprimée sont retirés
+function decalerLiensPieces(idx) {
+  let retires = 0;
+  for (const o of (BIB && BIB.ouvrages) || []) {
+    if (!o.cotes) continue;
+    for (const k of Object.keys(o.cotes)) {
+      const l = o.cotes[k];
+      if (!l || l.k !== 'piece') continue;
+      if (l.idx === idx) { delete o.cotes[k]; retires++; }
+      else if (l.idx > idx) l.idx -= 1;
+    }
+  }
+  if (retires) lsSet('bib', BIB);
+  return retires;
+}
+function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
   const P = platDe(c), pieces = piecesDe(c);
@@ -1331,7 +1346,14 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   if (del) {
     const parts = del.dataset.pldel.split(':');
     const L = piecesDe(c);
-    if (parts.length === 1) L.splice(parseInt(parts[0], 10), 1);
+    if (parts.length === 1) {
+      const idxSupp = parseInt(parts[0], 10);
+      L.splice(idxSupp, 1);
+      const retires = decalerLiensPieces(idxSupp);
+      sauverPlat(c); ouvrirConfigurateur();
+      if (retires) alert(`Pièce supprimée : ${retires} cote(s) reliée(s) à cette pièce ont été retirées de la bibliothèque. Refaites le lien si besoin.`);
+      return;
+    }
     else L[parseInt(parts[0], 10)][parts[1]].splice(parseInt(parts[2], 10), 1);
     sauverPlat(c); ouvrirConfigurateur(); return;
   }
