@@ -276,9 +276,12 @@ function detail(l) {
   return t;
 }
 // Version colorée (écran et impressions) : chaque cote a sa couleur
+// Détail d'une surface donnée en m² : seulement ce texte
+const TXT_SURFACE = 'Surface mesurée suivant plan';
 function detailHtml(l) {
-  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src);
-  if (l.valeurs && l.valeurs.mode === 'plan') return 'Surface mesurée sur plan : ' + fmt(num(l.valeurs.cote1)) + ' m²';
+  const v = l.valeurs || {};
+  if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
+  if (v.src) return esc(v.src);
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
     const c = COTE_COULEUR[categorieCote(m.nom)];
@@ -885,7 +888,7 @@ function genererPlat() {
     if (!o) { manquants.push(des); continue; }
     ajouterLotSiAbsent(courantId, o.lot);
     // Quantité selon l'unité : m² = surface, ml = longueur, u = nombre
-    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1', src: 'Calcul suivant plan : surfaces des pièces saisies' }
+    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1', src: TXT_SURFACE }
       : o.unite === 'ml' ? { nombre: '1', cote1: q.toFixed(2) }
       : { nombre: String(Math.round(q)) };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
@@ -1631,9 +1634,8 @@ const SRC_SURF = new Set(['surface_terrain', 'surface_facades', 'surface_planche
 // Quantités données directement en surface ou en volume dans le configurateur (pas de calcul à partir de L, l, h)
 const SRC_PLAN = new Set(['plat_m3']);
 function srcTxt(qte) {
-  if (qte === 'decap_m2') return 'Surface mesurée sur plan';
-  if (SRC_SURF.has(qte)) return 'Surface du configurateur : ' + (SRC_QTE[qte] || qte);
-  return (SRC_PLAN.has(qte) ? 'Calcul suivant plan : ' : 'Calcul du configurateur : ') + (SRC_QTE[qte] || 'quantité calculée');
+  if (qte === 'decap_m2' || SRC_SURF.has(qte) || SRC_PLAN.has(qte)) return TXT_SURFACE;
+  return 'Calcul du configurateur : ' + (SRC_QTE[qte] || 'quantité calculée');
 }
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
@@ -2013,7 +2015,7 @@ function ficheVersMetre() {
       ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_) });  // une ligne par massif, sans addition
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
-      if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: 'Calcul suivant plan : fouilles en pleine masse, plateforme (terrassement)' });
+      if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
     } else if (e.usage === 'divers') {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
     }
