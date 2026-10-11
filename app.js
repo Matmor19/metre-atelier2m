@@ -426,6 +426,7 @@ function sauverLotsDuChantier(id, liste) {
   marquerChantier(id);
 }
 function ajouterLotSiAbsent(id, lotId) {
+  if (_revueCollecte) return;   // calcul interne du configurateur : aucune ligne n'est gardée, le lot ne doit pas revenir
   const liste = lotsDuChantier(id);
   if (!liste.includes(lotId)) sauverLotsDuChantier(id, [...liste, lotId]);
 }
@@ -784,7 +785,7 @@ function renderMetre() {
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
-      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto);
+      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
@@ -2369,12 +2370,14 @@ function ouvrirOuvrage(o, precedent, message) {
     const surface = (o.saisie === 'menuiseries' && num(vals.largeur_cm) && num(vals.hauteur_cm))
       ? num(vals.nombre || 1) * num(vals.largeur_cm) * num(vals.hauteur_cm) / 10000 : null;
     ajouterLotSiAbsent(courantId, o.lot);
+    // Cotes reprises telles quelles du lien avec le configurateur : ligne liée (pas une saisie manuelle)
+    const lienConfig = !precedent && !!compteLie && ['cote1', 'cote2', 'cote3'].every(k => num(compteLie[k]) === num(vals[k]));
     const L = lignesDe(courantId);
     // Ligne liée à la configuration seulement si la quantité proposée n'a pas été modifiée
     const proposee = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
     const memeValeur = proposee && Object.keys(proposee).every(k => vals[k] === undefined || num(proposee[k]) === num(vals[k]));
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
-             valeurs: vals, quantite: q, surface, cree: new Date().toISOString(), qteAuto: memeValeur ? o.qte : undefined });
+             valeurs: vals, quantite: q, surface, cree: new Date().toISOString(), qteAuto: memeValeur ? o.qte : undefined, lien: lienConfig || undefined });
     sauverLignes(courantId, L);
     renderMetre();
     // La fenêtre se ferme après la validation (un clic de moins)
