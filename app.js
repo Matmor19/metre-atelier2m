@@ -309,7 +309,7 @@ function renderChantiers() {
   const actifs = chantiers.filter(c => !c.supprime && !c.archive);
   const archives = chantiers.filter(c => !c.supprime && c.archive);
   const carte = c => `<div class="card"><div class="row" style="justify-content:space-between;align-items:center">
-        <div><strong>${esc(c.nom)}</strong><div class="muted">${lignesDe(c.id).length} ligne(s)</div></div>
+        <div><strong>${esc(c.nom)}</strong><div class="muted">${c.client && c.client.ref ? 'Kanban ' + esc(c.client.ref) + ' · ' : ''}${lignesDe(c.id).length} ligne(s)</div></div>
         <div class="row" style="flex:0 0 auto;gap:6px">
           ${c.archive
             ? `<button class="btn small sec" data-restaurer="${esc(c.id)}">Restaurer</button><button class="btn small danger" data-supprimer="${esc(c.id)}">Supprimer</button>`
@@ -2064,10 +2064,14 @@ $('btnReglages').onclick = () => {
 };
 
 $('btnNouveau').onclick = () => {
-  const nom = $('nomChantier').value.trim();
-  if (!nom) { alert('Donnez un nom au chantier.'); return; }
   const idx = $('selClient') ? $('selClient').value : '';
   const client = idx !== '' && CLIENTS[idx] ? pickClient(CLIENTS[idx]) : null;
+  if (client) {
+    const deja = metresDuClient(client.ref);
+    if (deja.length) { proposerMetre(client, deja); return; }
+  }
+  const nom = $('nomChantier').value.trim();
+  if (!nom) { alert('Donnez un nom au chantier.'); return; }
   const c = { id: 'c' + uid(), nom, client };
   chantiers.push(c);
   lsSet('chantiers', chantiers);
@@ -2179,13 +2183,56 @@ function preparerClients() {
   actualiserClients(true);
 }
 
+// Plusieurs métrés pour un même client (référence du Kanban) : reprendre ou créer « CLIENT – nom »
+function metresDuClient(ref) {
+  return chantiers.filter(c => !c.supprime && !c.archive && c.client && String(c.client.ref) === String(ref));
+}
+let clientEnAttente = null;
+function panneauClient() {
+  if (!$('panneauClient')) $('listeChantiers').insertAdjacentHTML('beforebegin', '<div id="panneauClient"></div>');
+  return $('panneauClient');
+}
+function proposerMetre(client, deja) {
+  clientEnAttente = client;
+  const liste = deja.map(c => `<div class="ouv" style="min-height:0;padding:8px 0"><span><strong>${esc(c.nom)}</strong> · ${lignesDe(c.id).length} ligne(s)</span><button type="button" class="btn small" data-reprendre="${esc(c.id)}">Reprendre</button></div>`).join('');
+  panneauClient().innerHTML = `<div class="card" style="border:2px solid #E07838">
+    <strong>Métrés déjà faits pour ${esc(client.nom)}${client.ref ? ' (réf. ' + esc(client.ref) + ')' : ''}</strong>
+    ${liste}
+    <p class="muted" style="margin:10px 0 4px">Ou créer un nouveau métré pour ce client. Donnez-lui un nom court, par exemple « garage ».</p>
+    <label for="suffixeMetre" style="display:block;font-weight:600;margin:6px 0 4px">Nom du nouveau métré</label>
+    <div class="row" style="align-items:center;gap:6px"><span style="white-space:nowrap">${esc(client.nom)} – </span><input id="suffixeMetre" placeholder="ex. garage" style="flex:1"></div>
+    <div class="row" style="margin-top:10px;gap:8px"><button type="button" class="btn" data-creer-metre>Créer ce métré</button><button type="button" class="btn sec" data-fermer-panneau>Annuler</button></div>
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const pn = $('panneauClient');
+  if (!pn || !pn.contains(e.target)) return;
+  const r = e.target.closest('[data-reprendre]');
+  if (r) { pn.innerHTML = ''; ouvrirChantier(r.dataset.reprendre); return; }
+  if (e.target.closest('[data-fermer-panneau]')) { pn.innerHTML = ''; return; }
+  if (e.target.closest('[data-creer-metre]') && clientEnAttente) {
+    const suffixe = ($('suffixeMetre').value || '').trim();
+    if (!suffixe) { alert('Donnez un nom au nouveau métré, par exemple « garage ».'); return; }
+    const nom = clientEnAttente.nom + ' – ' + suffixe;
+    if (chantiers.some(c => !c.supprime && c.nom === nom)) { alert('Un métré porte déjà ce nom.'); return; }
+    const c = { id: 'c' + uid(), nom, client: clientEnAttente };
+    chantiers.push(c);
+    lsSet('chantiers', chantiers);
+    marquerChantier(c.id);
+    pn.innerHTML = '';
+    ouvrirChantier(c.id);
+  }
+});
+
 // Lien depuis la fiche client du Kanban : ouvre (ou crée) le chantier de ce client
 async function ouvrirDepuisClient(ref) {
   if (!lsGet('clients', []).length) await actualiserClients(true);
   remplirSelectClients();
   const cl = lsGet('clients', []).find(x => String(x.ref) === String(ref));
   if (!cl) { alert('Client introuvable dans le Kanban : ' + ref); return; }
-  let c = chantiers.find(x => x.client && String(x.client.ref) === String(ref));
+  const deja = metresDuClient(ref);
+  if (deja.length) { route('chantiers'); renderChantiers(); proposerMetre(pickClient(cl), deja); return; }
+  let c = null;
   if (!c) {
     c = { id: 'c' + uid(), nom: cl.nom || ('Chantier ' + ref), client: pickClient(cl) };
     chantiers.push(c);
