@@ -1700,18 +1700,22 @@ function ficheRendre() {
   const contenuChauf = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rendreEq('chauf')}</div>
     <div class="muted" style="font-size:12px;margin-top:6px">Un ouvrage n'est proposé que si son équipement est choisi ici. Un champ vide ne crée rien. La ventilation primaire est toujours prévue.</div>`;
   const fd = p.fond;
+  // Longueur des semelles : calculée (pas saisie), à partir des rigoles si elles sont renseignées, sinon des murs porteurs
+  const lonSemelles = projetCalcul(p).fondLin;
+  const rigoleActive = num(fd.rigLin) > 0;
   const contenuFond = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      ${champ('Longueur (m), calculée', inp('readonly tabindex="-1" style="background:#eef2f7"', fmt(lonSemelles).replace(/\s/g, ''), '100%'))}
       ${champ('Largeur de semelle (m)', inp('data-k="fond" data-champ="largeur" inputmode="decimal"', fd.largeur))}
       ${champ('Hauteur de semelle (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
-      ${champ('Profondeur de fouille (m)', inp('data-k="fond" data-champ="profondeur" inputmode="decimal"', fd.profondeur))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Calcul sur les murs cochés « Porteur ».</p>
+    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Longueur = ${rigoleActive ? 'linéaire des rigoles (bloc 1 Terrassement)' : 'murs cochés « Porteur »'}. La profondeur de fouille se saisit dans le bloc 1 Terrassement.</p>
 `;
   const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">
       ${champ('Linéaire de rigoles (ml)', inp('data-k="fond" data-champ="rigLin" inputmode="decimal"', fd.rigLin || ''))}
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
+      ${champ('Profondeur de fouille (m), sans rigoles', inp('data-k="fond" data-champ="profondeur" inputmode="decimal"', fd.profondeur))}
     </div>`;
   const contenuPlancher = (() => {
     const pl = p.plancher;
