@@ -603,6 +603,29 @@ function prixAffiches() { return lsGet('prix', false) === true; }
 // Mise à jour automatique : les lignes déjà au métré qui correspondent à un ouvrage du configurateur
 // sont mises à jour sur place (même place, même numéro). Rien n'est ajouté ni supprimé ici.
 let _majConfigEnCours = false;
+// Liaison permanente : une ligne dont l'ouvrage « reprend les cotes » d'un autre suit les cotes de sa dernière ligne
+function majLignesLiees(id) {
+  if (!id || !BIB || _revueCollecte) return;
+  let L = lignesDe(id), ch = false;
+  for (let passe = 0; passe < 3; passe++) {
+    let change = false;
+    L = L.map(x => {
+      const o = BIB.ouvrages.find(y => y.id === x.ouvrage);
+      if (!o || !o.liePar || o.liePar === o.id) return x;
+      const src = L.slice().reverse().find(y => y.ouvrage === o.liePar && y.uid !== x.uid);
+      if (!src || !src.valeurs || src.valeurs.cote1 == null || src.valeurs.cote1 === '') return x;
+      const nv = Object.assign({}, x.valeurs);
+      delete nv.src; delete nv.mode;
+      ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = src.valeurs[k] != null ? src.valeurs[k] : ''; });
+      const q = calcul(o, nv);
+      if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) return x;
+      change = true; ch = true;
+      return Object.assign({}, x, { valeurs: nv, quantite: q, lienDe: o.liePar });
+    });
+    if (!change) break;
+  }
+  if (ch) sauverLignes(id, L);
+}
 // Nettoyage du libellé « (rigoles) » : ne dépend pas de la reconnaissance des lignes
 function nettoyerSuffixeRigoles(id) {
   if (_revueCollecte || !id) return;
@@ -660,6 +683,7 @@ function renderMetre() {
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
   majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
+  majLignesLiees(courantId);
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
@@ -2169,7 +2193,13 @@ function ouvrirOuvrage(o, precedent, message) {
   // Dimensions du configurateur (fouille) ou surface (plan) : reprises. Total calculé : cases vides, la quantité est proposée.
   const dimsConfig = !!auto && (o.qte === 'fond_fouille' || o.qte === 'fond_semelle' || o.qte === 'massif_m3' || o.qte === 'semi_nb' || auto.mode === 'plan');
   const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
-  const v = precedent || compte;
+  // Ouvrage lié : cotes reprises de la dernière ligne de l'ouvrage source (dans ce chantier)
+  let compteLie = null;
+  if (o.liePar && !precedent) {
+    const src = lignesDe(courantId).slice().reverse().find(y => y.ouvrage === o.liePar && y.valeurs && y.valeurs.cote1 != null && y.valeurs.cote1 !== '');
+    if (src) compteLie = { cote1: src.valeurs.cote1, cote2: src.valeurs.cote2 ?? '', cote3: src.valeurs.cote3 ?? '' };
+  }
+  const v = precedent || compteLie || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul suivant plan : |^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
   h += `
@@ -3059,6 +3089,9 @@ function formulaireOuvrage(o, lotChoisi) {
       <label for="b_lot">Lot</label><select id="b_lot" name="lot">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === v.lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select>
       <label for="b_unite">Unité de mesure</label><select id="b_unite" name="unite">${UNITES.map(u => `<option ${u === v.unite ? 'selected' : ''}>${u}</option>`).join('')}</select>
       <label for="b_mesure">Mode de métré (cotes demandées)</label><select id="b_mesure" name="mesure">${optionsMesure(v.unite, v.mesure)}</select>
+      <label for="b_lie">Reprend les cotes de l'ouvrage (liaison permanente)</label>
+      <select id="b_lie" name="lie"><option value="">— aucun —</option>${BIB.ouvrages.filter(x => !x.supprime && (!o || x.id !== o.id)).slice().sort((a, b) => a.designation.localeCompare(b.designation, 'fr')).map(x => `<option value="${esc(x.id)}" ${o && o.liePar === x.id ? 'selected' : ''}>${esc(x.designation)} · ${esc(x.id)}</option>`).join('')}</select>
+      <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
       <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 2 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
       <div class="card" style="margin-top:12px">
@@ -3118,6 +3151,7 @@ function enregistrerOuvrage(id) {
   const effacer = f.elements.effacer ? f.elements.effacer.checked : false;
   const mesure = f.elements.mesure ? f.elements.mesure.value : '';
   const rappel = f.elements.rappel ? f.elements.rappel.value.trim() : '';
+  const lie = f.elements.lie ? f.elements.lie.value : '';
   const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
   let prix = null;
   if (!effacer) {
@@ -3135,6 +3169,7 @@ function enregistrerOuvrage(id) {
     else if (o.unite !== unite || !o.champs || o.mesure) o.champs = champsBib(unite);
     if (mesure) o.mesure = mesure; else delete o.mesure;
     if (rappel) o.rappel = rappel; else delete o.rappel;
+    if (lie && lie !== o.id) o.liePar = lie; else delete o.liePar;
     o.designation = des; o.lot = lot; o.unite = unite;
     o.version = (o.version || 1) + 1;
     if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
@@ -3143,6 +3178,7 @@ function enregistrerOuvrage(id) {
     const o = { id: 'OUV-' + String(n).padStart(4, '0'), lot, designation: des, unite, type: 'commun', saisie: 'metre', champs: (mesure ? champsPourMode(unite, mesure) : champsBib(unite)), version: 1 };
     if (mesure) o.mesure = mesure;
     if (rappel) o.rappel = rappel;
+    if (lie) o.liePar = lie;
     if (prix) o.prix_indicatif = prix;
     BIB.ouvrages.push(o);
   }
