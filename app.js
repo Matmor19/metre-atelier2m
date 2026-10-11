@@ -635,7 +635,7 @@ function majLignesDepuisConfigurateur(c) {
       if (!ex) continue;
       if (sig(ex.valeurs) !== sig(l.valeurs) || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation) {
         // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur
-        remplacer.set(ex.uid, Object.assign({}, ex, { designation: l.designation, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
+        remplacer.set(ex.uid, Object.assign({}, ex, { designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
       }
     }
     if (!remplacer.size) return;

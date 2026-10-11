@@ -865,16 +865,24 @@
       "id": "OUV-0041",
       "lot": "gros-oeuvre",
       "designation": "Semelles isolées en béton armé",
-      "unite": "u",
+      "unite": "m³",
       "type": "commun",
       "saisie": "metre",
       "champs": [
         {
-          "cle": "nombre",
-          "libelle": "Nombre"
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Épaisseur ou hauteur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "semi_nb"
     },
     {
@@ -15937,5 +15945,5 @@
       "mesure": "nombre"
     }
   ],
-  "revision": 41
+  "revision": 42
 }
