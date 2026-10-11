@@ -11,11 +11,11 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre th.num,table.metre td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
     table.metre td.detail{font-size:12.5px;color:var(--mut)}
     table.metre td.act{text-align:center;padding-left:0;padding-right:4px}
-    table.metre tr.lot td{background:#C0622B;color:#fff;font-weight:700;font-size:13px;padding:8px;text-transform:uppercase;letter-spacing:.02em}
+    table.metre tr.lot td{background:#E07838;color:#fff;font-weight:700;font-size:13px;padding:8px;text-transform:uppercase;letter-spacing:.02em}
     table.metre tr.lot .muted{font-weight:400;color:#fff;opacity:.9;text-transform:none}
     table.metre tr.lot .poignee{color:#fff}
     table.metre tr.lot .gen-choix{color:#fff;text-transform:none}
-    table.metre tr.lot .btn{color:#C0622B;border-color:#fff;background:#fff}
+    table.metre tr.lot .btn{color:#E07838;border-color:#fff;background:#fff}
     table.metre tbody tr:not(.lot):hover td{background:rgba(47,111,176,.06)}
     table.metre .btn.small{min-height:30px;padding:4px 9px}
     table.metre td.numl{font-weight:700;color:var(--acc2);white-space:nowrap}
@@ -42,7 +42,7 @@ const PAGE = document.body.dataset.page || 'saisie';
     body[data-page="tableau"] .btn{background:#E07838}
     body[data-page="tableau"] .btn.sec{background:transparent;color:#B9561A;border-color:#E07838}
     body[data-page="tableau"] .card{border-color:#f0c9ab}
-    body[data-page="tableau"] table.metre tr.lot td{background:#C0622B;color:#fff}
+    body[data-page="tableau"] table.metre tr.lot td{background:#E07838;color:#fff}
     @media (prefers-color-scheme: dark){ body[data-page="tableau"]{background:#2a1d15} }
   `;
   const s = document.createElement('style');
