@@ -1929,7 +1929,9 @@ function ouvrirOuvrage(o, precedent, message) {
   const champs = champsDe(o);
   const cc = chantiers.find(x => x.id === courantId);
   const auto = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
-  const v = precedent || auto || {};   // pas de quantité par défaut : un manque doit se voir dans le métré
+  // Seule la valeur proposée par le configurateur est remplie ; le reste reste vierge (rien d'inventé)
+  const propose = auto ? (['m²', 'm³', 'ml'].includes(o.unite) ? { cote1: auto.cote1 } : { nombre: auto.nombre }) : null;
+  const v = precedent || propose || {};   // pas de quantité par défaut : un manque doit se voir dans le métré
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur (${esc(o.qte.replace(/_/g, ' '))}). Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
   h += `
