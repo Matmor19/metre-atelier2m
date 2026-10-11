@@ -13,6 +13,7 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre td.act{text-align:center;padding-left:0;padding-right:4px}
     table.metre tr.lot td{background:#E07838;color:#fff;font-weight:700;font-size:13px;padding:8px;text-transform:uppercase;letter-spacing:.02em}
     table.metre tr.lot .muted{font-weight:400;color:#fff;opacity:.9;text-transform:none}
+    @media print{button[data-desig]{display:none !important}}
     table.metre tr.lot .poignee{color:#fff}
     table.metre tr.lot .gen-choix{color:#fff;text-transform:none}
     table.metre tr.lot .btn{color:#E07838;border-color:#fff;background:#fff}
@@ -799,7 +800,7 @@ function renderMetre() {
       const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || ouvrageRelie);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}</td>
+        <td>${esc(l.designation)}${manuelle ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le texte de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}</td>
@@ -2600,6 +2601,19 @@ $('listeOuvrages').addEventListener('click', e => {
   if (o) { ouvrirModal(); ouvrirOuvrage(o); }
 });
 
+// Texte d'une ligne saisie à la main (jamais une ligne de calcul venant du configurateur ou d'un ouvrage relié)
+$('tableMetre').addEventListener('click', e => {
+  const b = e.target.closest('[data-desig]');
+  if (!b) return;
+  const L = lignesDe(courantId);
+  const l = L.find(x => x.uid === b.dataset.desig);
+  if (!l) return;
+  const texte = prompt('Texte de la ligne (laisser vide pour garder l\'ancien) :', l.designation);
+  if (texte === null || !texte.trim()) return;
+  l.designation = texte.trim();
+  sauverLignes(courantId, L);
+  renderMetre();
+});
 $('tableMetre').addEventListener('click', e => {
   const b = e.target.closest('[data-sup]');
   if (!b) return;
