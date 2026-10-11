@@ -1674,9 +1674,10 @@ function projetCalcul(p) {
 // Grandeurs calculées à partir du dessin (fiche projet et configurateur), utilisées par les ouvrages « qte »
 // Dimensions des semelles filantes = dimensions de la fouille en tranchée validée dans le métré (terrassement)
 function semellesDuTerrassement(c) {
-  const l = lignesDe(c.id).find(x => String(x.designation || '').indexOf(DES_FOND_FOUILLE) === 0 && x.valeurs && num(x.valeurs.cote1) > 0);
-  if (!l) return { sem_lin: '', sem_larg: '', sem_haut: '', fond_semelle: 0 };
-  const L = num(l.valeurs.cote1), W = num(l.valeurs.cote2), H = num(l.valeurs.cote3);
+  // Dimensions lues directement dans le configurateur (rigoles du terrassement), sans passer par le métré
+  const p = projetDe(c), r = projetCalcul(p);
+  if (!(num((p.fond || {}).rigLin) > 0)) return { sem_lin: '', sem_larg: '', sem_haut: '', fond_semelle: 0 };
+  const L = r.fondLin, W = r.fdimLarg, H = r.fdimProf;
   return { sem_lin: L, sem_larg: W, sem_haut: H, fond_semelle: L * W * H };
 }
 // Proposition de quantité pour un type de fouille : seulement s'il n'y en a qu'une (jamais de somme de plusieurs fouilles)
