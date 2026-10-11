@@ -1,4 +1,4 @@
-const CACHE = 'metre2m-v128';
+const CACHE = 'metre2m-v129';
 const FICHIERS = ['./', 'index.html', 'tableau.html', 'app.js', 'bibliotheque.json', 'generalites.json', 'generalites_renovation.json', 'generalites_extension.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -15,7 +15,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })   // demande toujours la version du serveur (pas celle gardée par le navigateur pendant ~10 min)
       .then(r => { const copie = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copie)); return r; })
       .catch(() => caches.match(e.request))
   );
