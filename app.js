@@ -790,7 +790,10 @@ function renderMetre() {
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
-      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe);
+      // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
+      const oRelie = BIB.ouvrages.find(y => y.id === l.ouvrage);
+      const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
+      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || ouvrageRelie);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
