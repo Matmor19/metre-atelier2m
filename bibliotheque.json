@@ -291,6 +291,30 @@
         }
       ],
       "version": 1,
+      "qte": null
+    },
+    {
+      "id": "OUV-0874",
+      "lot": "terrassement-vrd",
+      "designation": "Fouille pour trou divers (cuve de récupération)",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Épaisseur ou hauteur (m)"
+        }
+      ],
+      "version": 1,
       "qte": "cuve_fouille"
     },
     {
@@ -9917,7 +9941,7 @@
     {
       "id": "OUV-0549",
       "lot": "gros-oeuvre",
-      "designation": "Escalier béton quart tournant en béton armé",
+      "designation": "Escalier quart tournant balancé en béton armé",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -9927,7 +9951,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 3,
+      "version": 6,
       "mesure": "nombre"
     },
     {
@@ -15908,9 +15932,9 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "mesure": "nombre"
     }
   ],
-  "revision": 38
+  "revision": 39
 }
