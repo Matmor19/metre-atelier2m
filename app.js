@@ -297,13 +297,15 @@ function detail(l) {
 const TXT_SURFACE = 'Surface mesurée suivant plan';
 function detailHtml(l) {
   const v = l.valeurs || {};
+  // Texte du détail corrigé à la main (ligne sans formule de cotes)
+  if (l.detailTexte && !avecFormule(l)) return esc(l.detailTexte);
   // Plateforme saisie en surface × hauteur : surface mesurée suivant plan, puis × hauteur
   if (v.src === TXT_SURFACE && v.cote1 && v.cote3) {
     const nb = num(v.nombre) > 0 ? num(v.nombre) : 1;
     return (nb !== 1 ? esc(fmt(nb)) + ' × ' : '') + esc(TXT_SURFACE) + ' ' + esc(fmt(num(v.cote1))) + ' m² × hauteur ' + esc(fmt(num(v.cote3))) + ' m';
   }
   if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
-  if (v.src) return esc(v.src);
+  if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
     const c = COTE_COULEUR[categorieCote(m.nom)];
@@ -800,10 +802,10 @@ function renderMetre() {
       const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || ouvrageRelie);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}${sansFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le texte de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
+        <td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
-        <td class="detail">${detailHtml(l)}</td>
+        <td class="detail">${detailHtml(l)}${!avecFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le détail de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
         <td><select class="choix" data-choix-prix="${esc(l.uid)}" title="Prix à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px">${optionsPrix(l, avecPrix)}</select>${l.prix === 'devis' && devisDe((BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).prix_indicatif || {}).length ? `<select class="choix" data-choix-devis="${esc(l.uid)}" title="Devis à utiliser" style="width:100%;min-height:30px;padding:2px 4px;font-size:12px;margin-top:4px">${optionsDevis(l, avecPrix)}</select>` : ''}</td>
         ${avecPrix ? `<td class="pu">${pu != null ? fmt(pu) : '—'}</td><td class="mt">${mt != null ? fmt(mt) : '—'}</td>` : ''}
         <td class="act"><button class="btn small danger" data-sup="${esc(l.uid)}" title="Supprimer">✕</button></td>
@@ -2601,9 +2603,11 @@ $('listeOuvrages').addEventListener('click', e => {
   if (o) { ouvrirModal(); ouvrirOuvrage(o); }
 });
 
-// Texte modifiable seulement si la ligne n'a pas de formule de cotes (L × l, L × H, L × l × h…)
-function sansFormule(l) {
-  return !['cote1', 'cote2', 'cote3'].some(k => l.valeurs && String(l.valeurs[k] ?? '').trim() !== '');
+// Formule de cotes affichée dans Détail (L × l, L × H…) : ligne verrouillée. Texte (src, plan) : modifiable.
+function avecFormule(l) {
+  const v = l.valeurs || {};
+  if (v.src || v.mode === 'plan') return false;
+  return ['cote1', 'cote2', 'cote3'].some(k => String(v[k] ?? '').trim() !== '');
 }
 // Texte d'une ligne sans formule (jamais une ligne avec formule de cotes)
 $('tableMetre').addEventListener('click', e => {
@@ -2612,9 +2616,11 @@ $('tableMetre').addEventListener('click', e => {
   const L = lignesDe(courantId);
   const l = L.find(x => x.uid === b.dataset.desig);
   if (!l) return;
-  const texte = prompt('Texte de la ligne (laisser vide pour garder l\'ancien) :', l.designation);
-  if (texte === null || !texte.trim()) return;
-  l.designation = texte.trim();
+  const tmp = document.createElement('div');
+  tmp.innerHTML = detailHtml(l);
+  const texte = prompt('Détail de cette ligne (laisser vide pour revenir au texte automatique) :', l.detailTexte || tmp.textContent.trim());
+  if (texte === null) return;
+  if (texte.trim()) l.detailTexte = texte.trim(); else delete l.detailTexte;
   sauverLignes(courantId, L);
   renderMetre();
 });
