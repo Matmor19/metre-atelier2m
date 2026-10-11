@@ -1039,26 +1039,46 @@ function revueConfigurateur() {
   try { genererElec(); genererPlat(); ficheVersMetre(); }
   finally { var col = _revueCollecte; _revueCollecte = null; }
   const existantes = lignesDe(courantId);
-  const dejaLa = l => existantes.some(x => x.uid === l.uid || (x.ouvrage === l.ouvrage && x.designation === l.designation));
+  const cleL = l => l.ouvrage + '|' + l.designation;
+  // Lignes venant du configurateur (les lignes saisies à la main ne sont jamais touchées)
+  const estAuto = l => !!(l.projet || l.auto || l.plat || l.qteAuto);
+  const dejaLa = l => existantes.some(x => x.uid === l.uid || (!estAuto(x) && cleL(x) === cleL(l)));
+  const reste = {};
+  for (const x of existantes) if (estAuto(x)) (reste[cleL(x)] = reste[cleL(x)] || []).push(x);
+  const sig = v => ['nombre', 'cote1', 'cote2', 'cote3'].map(k => num(v && v[k])).join('|');
   const props = [], vus = new Set();
   for (const L of Object.values(col)) for (const l of L) {
-    if (!l.ouvrage || dejaLa(l)) continue;
-    const cle = l.ouvrage + '|' + l.designation;
-    if (vus.has(cle)) continue;
-    vus.add(cle); props.push(l);
+    if (!l.ouvrage) continue;
+    // Une ligne déjà présente dans le métré (même numéro) n'est pas une nouvelle proposition
+    if (existantes.some(x => x.uid === l.uid)) continue;
+    const cle = cleL(l);
+    if (vus.has(cle + JSON.stringify(l.valeurs))) continue;
+    vus.add(cle + JSON.stringify(l.valeurs));
+    const ex = reste[cle] && reste[cle].shift();
+    if (ex) {
+      // Ligne déjà au métré : mise à jour seulement si la quantité ou les cotes ont changé
+      if (sig(ex.valeurs) !== sig(l.valeurs) || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9) props.push({ maj: ex, neuf: l });
+      continue;
+    }
+    if (dejaLa(l)) continue;
+    props.push({ neuf: l });
   }
   let h = `<h2 style="margin:0 0 6px;font-size:18px">Revue complète avant édition</h2>`;
   if (!props.length) {
-    h += `<p class="muted">Rien à ajouter : tout ce que vous avez saisi dans le configurateur est déjà dans le métré, ou il n'y a rien à calculer.</p>`;
+    h += `<p class="muted">Rien à ajouter ni à mettre à jour : le métré correspond déjà au configurateur.</p>`;
   } else {
-    h += `<p class="muted" style="font-size:13px">Cochez les lignes à ajouter au métré. Les lignes non cochées ne seront pas ajoutées.</p>`;
+    h += `<p class="muted" style="font-size:13px">Cochez les lignes à ajouter ou à mettre à jour. Les lignes non cochées ne changent pas.</p>`;
     const par = {};
-    props.forEach((l, i) => { (par[l.lot] = par[l.lot] || []).push([l, i]); });
+    props.forEach((it, i) => { (par[it.neuf.lot] = par[it.neuf.lot] || []).push([it, i]); });
     for (const [lot, items] of Object.entries(par)) {
       h += `<h3 style="font-size:14px;margin:12px 0 4px">${esc(libLot(lot))}</h3>`;
-      for (const [l, i] of items) {
+      for (const [it, i] of items) {
+        const l = it.neuf;
+        const libelle = it.maj
+          ? `Mettre à jour : ${esc(l.designation)} <span class="muted">(${fmt(num(it.maj.quantite))} → ${fmt(num(l.quantite))} ${esc(l.unite)})</span>`
+          : esc(l.designation);
         h += `<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;font-size:14px">
-          <input type="checkbox" data-rev="${i}" style="margin-top:3px"><span style="flex:1">${esc(l.designation)}</span>
+          <input type="checkbox" data-rev="${i}" style="margin-top:3px"><span style="flex:1">${libelle}</span>
           <span class="muted" style="white-space:nowrap">${l.quantite ? fmt(Number(l.quantite)) + ' ' + esc(l.unite) : 'à saisir'}</span></label>`;
       }
     }
@@ -1070,11 +1090,14 @@ function revueConfigurateur() {
   if ($('revFermer')) $('revFermer').onclick = fermer;
   if ($('revAjouter')) $('revAjouter').onclick = () => {
     const coches = [...document.querySelectorAll('[data-rev]')].filter(x => x.checked).map(x => props[+x.dataset.rev]);
-    const L = lignesDe(courantId).concat(coches);
+    // Mise à jour : la ligne existante garde sa place et son numéro, seules les valeurs changent
+    const maj = new Map(coches.filter(it => it.maj).map(it => [it.maj.uid, it.neuf]));
+    const L = lignesDe(courantId).map(x => maj.has(x.uid) ? Object.assign({}, maj.get(x.uid), { uid: x.uid, cree: x.cree }) : x)
+      .concat(coches.filter(it => !it.maj).map(it => it.neuf));
     sauverLignes(courantId, L);
     renderMetre();
     fermer();
-    if ($('cfgStatut')) $('cfgStatut').textContent = coches.length + ' ligne(s) ajoutée(s) au métré après revue.';
+    if ($('cfgStatut')) $('cfgStatut').textContent = coches.length + ' ligne(s) ajoutée(s) ou mise(s) à jour au métré après revue.';
   };
 }
 if ($('btnRevue')) $('btnRevue').addEventListener('click', revueConfigurateur);
