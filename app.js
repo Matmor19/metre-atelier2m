@@ -3109,6 +3109,239 @@ async function imprimerPdf(type) {
   w.document.close();
 }
 
+/* ============ CDPGF à remplir : PDF avec cases de prix et calculs (lu par Adobe Acrobat Reader) ============ */
+const PDFLIB_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+const ACROBAT_URL = 'https://get.adobe.com/fr/reader/';
+// Fonctions de calcul écrites dans le PDF (JavaScript lu par Acrobat)
+const PDF_CALC_AIDE = "function n(v){var x=parseFloat(String(v==null?'':v).replace(/\\s/g,'').replace(',','.'));return isNaN(x)?0:x;}"
+  + "function f(x){return (Math.round(x*100)/100).toFixed(2).replace('.',',');}";
+function chargerPdfLib() {
+  return new Promise((ok, ko) => {
+    if (window.PDFLib) return ok(window.PDFLib);
+    const s = document.createElement('script');
+    s.src = PDFLIB_URL;
+    s.onload = () => ok(window.PDFLib);
+    s.onerror = () => ko(new Error('pdf-lib'));
+    document.head.appendChild(s);
+  });
+}
+// Les polices PDF standard n'acceptent que certains caractères : les autres deviennent « ? »
+function texteFormulaire(s) {
+  return String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/\s+/g, ' ')
+    .replace(/[^ -~ -ÿ–—‘’“”•…€]/g, '?');
+}
+function decoupeTexte(s, police, taille, largeur) {
+  const mots = texteFormulaire(s).split(' ').filter(Boolean);
+  const lignes = [];
+  let cur = '';
+  for (const m of mots) {
+    const essai = cur ? cur + ' ' + m : m;
+    if (!cur || police.widthOfTextAtSize(essai, taille) <= largeur) cur = essai;
+    else { lignes.push(cur); cur = m; }
+  }
+  if (cur) lignes.push(cur);
+  return lignes.length ? lignes : [''];
+}
+const fmtQte = q => String(Math.round(Number(q || 0) * 1000) / 1000).replace('.', ',');
+const nomFichierPdf = s => String(s || 'metre').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+async function pdfCdpgfFormulaire() {
+  let PL;
+  try { PL = await chargerPdfLib(); }
+  catch (e) { alert('Export impossible : la bibliothèque PDF se charge depuis internet. Vérifiez la connexion, puis réessayez.'); return; }
+  const d = donneesDocument();
+  const lots = d.lots.filter(l => l.lignes.length);
+  if (!lots.length) { alert('Aucune ligne dans ce métré.'); return; }
+  const { PDFDocument, StandardFonts, rgb, PDFName, PDFHexString, PDFBool, TextAlignment } = PL;
+  const doc = await PDFDocument.create();
+  const helv = await doc.embedFont(StandardFonts.Helvetica);
+  const helvB = await doc.embedFont(StandardFonts.HelveticaBold);
+  const form = doc.getForm();
+  const W = 595.28, H = 841.89, M = 40, BAS = 58, LARG = W - 2 * M;
+  const ORANGE = rgb(0xE0 / 255, 0x78 / 255, 0x38 / 255), GRIS = rgb(0.42, 0.42, 0.42), NOIR = rgb(0.17, 0.17, 0.17);
+  const CREME = rgb(1, 0.98, 0.95), GRIS_CLAIR = rgb(0.92, 0.92, 0.92), BLANC = rgb(1, 1, 1), TRAIT = rgb(0.85, 0.85, 0.85);
+  const C = { n: 34, des: 217, qte: 52, unite: 30, pu: 62, mont: 68, tva: 52 };
+  const X = {};
+  let acc = M;
+  for (const k of ['n', 'des', 'qte', 'unite', 'pu', 'mont', 'tva']) { X[k] = acc; acc += C[k]; }
+  let page, y, contexteTable = false;
+  const ordreCalcul = [];
+  const nouvellePage = () => { page = doc.addPage([W, H]); y = H - M; };
+  const ecrire = (s, x, yy, taille, police, couleur) => page.drawText(texteFormulaire(s), { x, y: yy, size: taille, font: police || helv, color: couleur || NOIR });
+  const ecrireDroite = (s, xFin, yy, taille, police, couleur) => {
+    const t = texteFormulaire(s);
+    page.drawText(t, { x: xFin - (police || helv).widthOfTextAtSize(t, taille), y: yy, size: taille, font: police || helv, color: couleur || NOIR });
+  };
+  const enteteTable = () => {
+    const h = 18;
+    page.drawRectangle({ x: M, y: y - h, width: LARG, height: h, color: ORANGE });
+    const titres = { n: 'N°', des: 'Désignation', qte: 'Quantité', unite: 'Unité', pu: 'P.U. HT', mont: 'Montant HT', tva: 'TVA %' };
+    for (const k of Object.keys(titres)) ecrire(titres[k], X[k] + 3, y - 12, 8, helvB, BLANC);
+    y -= h + 2;
+  };
+  // Paragraphe avec retour à la ligne automatique et saut de page
+  const ligne = (s, x, largeur, taille, police, couleur) => {
+    const il = taille * 1.35;
+    for (const t of decoupeTexte(s, police || helv, taille, largeur)) {
+      if (y - il < BAS) { nouvellePage(); if (contexteTable) enteteTable(); }
+      y -= il;
+      ecrire(t, x, y, taille, police, couleur);
+    }
+  };
+  const champ = (nom, x, yy, w, h, opts) => {
+    const f = form.createTextField(nom);
+    f.addToPage(page, { x, y: yy, width: w, height: h, borderColor: ORANGE, borderWidth: 0.5, backgroundColor: opts.fond || CREME });
+    f.setFontSize(9);
+    f.setAlignment(opts.align === undefined ? TextAlignment.Right : opts.align);
+    if (opts.valeur) f.setText(opts.valeur);
+    if (opts.lecture) f.enableReadOnly();
+    return f;
+  };
+  // Script de calcul attaché à un champ (exécuté par Acrobat à chaque modification)
+  const calcul = (f, js) => {
+    const widget = f.acroField.getWidgets()[0];
+    const act = doc.context.obj({});
+    act.set(PDFName.of('S'), PDFName.of('JavaScript'));
+    act.set(PDFName.of('JS'), PDFHexString.fromText(PDF_CALC_AIDE + js));
+    const aa = doc.context.obj({});
+    aa.set(PDFName.of('C'), act);
+    widget.dict.set(PDFName.of('AA'), aa);
+    ordreCalcul.push(f.acroField.ref);
+  };
+
+  // ---- Page de garde ----
+  nouvellePage();
+  contexteTable = false;
+  let logo = null;
+  try { logo = await doc.embedPng(await (await fetch(new URL('logo.png', location.href).href, { cache: 'no-cache' })).arrayBuffer()); } catch (e) {}
+  if (logo) { const s = logo.scaleToFit(150, 46); page.drawImage(logo, { x: M, y: y - s.height, width: s.width, height: s.height }); }
+  else ecrire(ATELIER.nom, M, y - 20, 18, helvB, ORANGE);
+  ecrireDroite(ATELIER.adresse, W - M, y - 10, 8, helv, GRIS);
+  ecrireDroite(ATELIER.tel + ' · ' + ATELIER.mail, W - M, y - 22, 8, helv, GRIS);
+  ecrireDroite(ATELIER.web, W - M, y - 34, 8, helv, GRIS);
+  y -= 58;
+  page.drawRectangle({ x: M, y: y - 3, width: LARG, height: 3, color: ORANGE });
+  y -= 36;
+  ecrire('CDPGF À REMPLIR', M, y, 9, helvB, ORANGE);
+  y -= 26;
+  ecrire(d.titre, M, y, 22, helvB, NOIR);
+  y -= 22;
+  ecrire('Établi le ' + d.date, M, y, 9, helv, GRIS);
+  y -= 26;
+  const cl = d.client || {};
+  const dl = (chantiers.find(x => x.id === courantId) || {}).dateLimite;
+  const infos = [['Nom', cl.nom], ['Référence', cl.ref], ['Adresse du chantier', cl.cadr], ['Nature du projet', cl.nat],
+    ['Réponse attendue avant le', dl ? new Date(dl + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '']];
+  const largeurLabel = Math.max(...infos.map(([k]) => helvB.widthOfTextAtSize(k + ' : ', 9))) + 8;
+  for (const [k, v] of infos) if (v) { ecrire(k + ' : ', M, y, 9, helvB, GRIS); ecrire(v, M + largeurLabel, y, 9, helv, NOIR); y -= 14; }
+  y -= 24;
+  ecrire('Lots concernés', M, y, 10, helvB, ORANGE);
+  y -= 16;
+  for (const lot of lots) ligne(lot.num + ' · ' + lot.nom + ' (' + lot.lignes.length + (lot.lignes.length > 1 ? ' lignes)' : ' ligne)'), M + 10, LARG - 10, 9, helv, NOIR);
+  y -= 26;
+  ecrire("Mode d'emploi", M, y, 10, helvB, ORANGE);
+  y -= 16;
+  ligne('1. Ce document se remplit avec Adobe Acrobat Reader, gratuit : ' + ACROBAT_URL, M, LARG, 9, helv, NOIR);
+  ligne("2. Il ne fonctionne qu'avec ce logiciel : le calcul des montants et des totaux n'est pas fait par les lecteurs de navigateur.", M, LARG, 9, helv, NOIR);
+  ligne('3. Remplissez uniquement les cases « P.U. HT » (prix unitaire) et « TVA % » de chaque ligne. Les quantités sont figées.', M, LARG, 9, helv, NOIR);
+  ligne('4. Les montants, les totaux HT, la TVA et le total TTC se calculent automatiquement.', M, LARG, 9, helv, NOIR);
+  ligne('5. Une fois rempli, enregistrez le fichier (Fichier > Enregistrer) avant de le renvoyer.', M, LARG, 9, helv, NOIR);
+
+  // ---- Une section par lot ----
+  lots.forEach((lot, k) => {
+    nouvellePage();
+    contexteTable = true;
+    ecrire('ATELIER 2M · CDPGF · ' + d.titre, M, y - 9, 7.5, helv, GRIS);
+    y -= 26;
+    ecrire('Lot ' + lot.num + ' · ' + lot.nom, M, y - 16, 16, helvB, NOIR);
+    y -= 30;
+    if (lot.gen) {
+      const g = genDuLot(lot.id);
+      if (g) {
+        ligne('Généralités : ' + g.titre, M, LARG, 9, helvB, ORANGE);
+        for (const sct of g.sections) {
+          ligne(sct.titre, M, LARG, 8, helvB, NOIR);
+          for (const p of sct.points) ligne('• ' + p, M + 8, LARG - 8, 7.6, helv, GRIS);
+        }
+        y -= 6;
+      }
+    }
+    enteteTable();
+    const noms = [];
+    lot.lignes.forEach((l, i) => {
+      const des = decoupeTexte(l.designation, helvB, 8.5, C.des - 8);
+      const det = l.detail ? decoupeTexte(l.detail, helv, 7.2, C.des - 8) : [];
+      const rh = Math.max(24, 8 + des.length * 10.5 + det.length * 8.8 + 4);
+      if (y - rh < BAS) { nouvellePage(); enteteTable(); }
+      const bas = y - rh;
+      page.drawLine({ start: { x: M, y: bas }, end: { x: M + LARG, y: bas }, thickness: 0.5, color: TRAIT });
+      ecrire(l.num, X.n + 3, y - 11, 8, helvB, ORANGE);
+      des.forEach((t, j) => ecrire(t, X.des + 3, y - 11 - j * 10.5, 8.5, helvB, NOIR));
+      det.forEach((t, j) => ecrire(t, X.des + 3, y - 11 - des.length * 10.5 - 2 - j * 8.8, 7.2, helv, GRIS));
+      ecrire(l.unite, X.unite + 4, bas + rh / 2 - 3, 8, helv, NOIR);
+      const fy = bas + (rh - 15) / 2;
+      const nq = `L${k}_${i}_Q`, nu = `L${k}_${i}_PU`, nm = `L${k}_${i}_M`, nt = `L${k}_${i}_T`;
+      champ(nq, X.qte + 2, fy, C.qte - 4, 15, { valeur: fmtQte(l.quantite), lecture: true, fond: GRIS_CLAIR });
+      champ(nu, X.pu + 2, fy, C.pu - 4, 15, {});
+      const fm = champ(nm, X.mont + 2, fy, C.mont - 4, 15, { fond: GRIS_CLAIR });
+      champ(nt, X.tva + 2, fy, C.tva - 4, 15, { align: TextAlignment.Center });
+      noms.push({ q: nq, pu: nu, m: nm, t: nt, fm });
+      y = bas;
+    });
+    // Montant de chaque ligne : quantité × prix unitaire
+    for (const o of noms) {
+      calcul(o.fm, `var pv=String(getField("${o.pu}").value).replace(/\\s/g,'');if(pv===''){event.value='';}else{event.value=f(n(getField("${o.q}").value)*n(getField("${o.pu}").value));}`);
+    }
+    // Totaux du lot
+    if (y - 110 < BAS) { nouvellePage(); enteteTable(); }
+    y -= 8;
+    ecrire('Total HT du lot', X.des + 3, y - 12, 9, helvB, NOIR);
+    const fHT = champ(`L${k}_HT`, X.mont + 2, y - 15, C.mont - 4, 15, { fond: GRIS_CLAIR });
+    y -= 22;
+    const somme = noms.map(o => `if(String(getField("${o.m}").value).replace(/\\s/g,'')!==''){s+=n(getField("${o.m}").value);}`).join('');
+    calcul(fHT, `var s=0;${somme}event.value=f(s);`);
+    const fTVA = [1, 2, 3].map(t => {
+      ecrire(`TVA ${t} : taux (case TVA %) et montant de la TVA`, X.des + 3, y - 12, 8, helv, NOIR);
+      const ftx = champ(`L${k}_TX${t}`, X.tva + 2, y - 15, C.tva - 4, 15, { align: TextAlignment.Center });
+      const fmt = champ(`L${k}_MT${t}`, X.mont + 2, y - 15, C.mont - 4, 15, { fond: GRIS_CLAIR });
+      y -= 22;
+      return { t, ftx, fmt };
+    });
+    for (const o of fTVA) {
+      const cumuls = noms.map(q => `if(String(getField("${q.t}").value).replace(/\\s/g,'')!==''&&n(getField("${q.t}").value)===r&&String(getField("${q.m}").value).replace(/\\s/g,'')!==''){s+=n(getField("${q.m}").value);}`).join('');
+      calcul(o.fmt, `var tx=String(getField("L${k}_TX${o.t}").value).replace(/\\s/g,'');if(tx===''){event.value='';}else{var r=n(tx),s=0;${cumuls}event.value=f(s*r/100);}`);
+    }
+    ecrire('Total TTC du lot', X.des + 3, y - 12, 9, helvB, NOIR);
+    const fTTC = champ(`L${k}_TTC`, X.mont + 2, y - 15, C.mont - 4, 15, { fond: GRIS_CLAIR });
+    y -= 22;
+    calcul(fTTC, `event.value=f(n(getField("L${k}_HT").value)${fTVA.map(o => `+n(getField("L${k}_MT${o.t}").value)`).join('')});`);
+    y -= 8;
+    ligne('Indiquez les prix unitaires HT et le taux de TVA de chaque ligne. Les montants et les totaux se calculent automatiquement dans Adobe Acrobat Reader.', M, LARG, 7.5, helv, GRIS);
+  });
+
+  // Pied de page : numéro de page et rappel du logiciel
+  const pages = doc.getPages();
+  pages.forEach((p, i) => {
+    p.drawText(texteFormulaire(`Page ${i + 1} / ${pages.length} · Calculs : Adobe Acrobat Reader (gratuit) ${ACROBAT_URL}`), { x: M, y: 24, size: 6.8, font: helv, color: GRIS });
+  });
+  // Ordre des calculs : montants, puis TVA, puis totaux
+  const CO = doc.context.obj([]);
+  ordreCalcul.forEach(r => CO.push(r));
+  form.acroForm.dict.set(PDFName.of('CO'), CO);
+  form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
+  form.updateFieldAppearances(helv);
+
+  const octets = await doc.save();
+  const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CDPGF_a_remplir_' + nomFichierPdf(d.titre) + '.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 // Taille de l'image de la page de garde, en % de la hauteur de la page (réglage, 20 % par défaut)
 function tailleImagePG() {
   const n = parseInt(lsGet('pg_pct', 20), 10);
@@ -3241,6 +3474,8 @@ $('btnPdf').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="b
 $('btnPrix').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnFeuille">Feuille de métré (par lot)</button> <button class="btn small sec" id="btnCdpgf">CDPGF (par lot)</button>');
 $('btnFeuille').onclick = () => imprimerPdf('feuille');
 $('btnCdpgf').onclick = () => imprimerPdf('cdpgf');
+$('btnCdpgf').insertAdjacentHTML('afterend', ' <button class="btn small sec" id="btnCdpgfPdf">CDPGF à remplir (PDF)</button>');
+$('btnCdpgfPdf').onclick = pdfCdpgfFormulaire;
 
 
 $('btnPrix').insertAdjacentHTML('afterend', ' <select id="selTravaux" title="Type de travaux : détermine les généralités" style="min-height:30px;padding:2px 6px;font-size:12px"><option value="neuf">Construction neuve</option><option value="renovation">Rénovation</option><option value="extension">Extension</option></select>');
