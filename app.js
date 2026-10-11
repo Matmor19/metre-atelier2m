@@ -1854,17 +1854,23 @@ function majQuantitesAuto(c) {
   const ctx = ctxQuantites(c);
   const L = lignesDe(courantId);
   let change = false;
+  const garde = [];
   for (const l of L) {
-    if (!l.qteAuto) continue;
+    if (!l.qteAuto) { garde.push(l); continue; }
     const o = BIB.ouvrages.find(x => x.id === l.ouvrage);
     const valeurs = qteValeur(o, ctx);
-    if (!valeurs) continue;
+    if (!valeurs) {
+      // Plus de source dans le configurateur (mur supprimé, finition changée, valeur effacée) : la ligne issue du configurateur est retirée
+      if (o) { change = true; continue; }
+      garde.push(l); continue;
+    }
     const avant = JSON.stringify([l.valeurs, l.quantite]);
     l.valeurs = valeurs;
     l.quantite = calcul(o, valeurs);
     if (JSON.stringify([l.valeurs, l.quantite]) !== avant) change = true;
+    garde.push(l);
   }
-  if (change) sauverLignes(courantId, L);
+  if (change) sauverLignes(courantId, garde);
 }
 function sauverFiche(c) { lsSet('chantiers', chantiers); marquerChantier(c.id); synchroConfig(); }
 function ouvrirFiche() { ouvrirConfig(); }
