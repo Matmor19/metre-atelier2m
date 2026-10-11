@@ -3145,9 +3145,6 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
       <label for="b_mesure">Mode de métré (cotes demandées)</label><select id="b_mesure" name="mesure">${optionsMesure(v.unite, v.mesure)}</select>
       <label for="b_lie">Reprend les cotes de l'ouvrage (liaison permanente)</label>
       <select id="b_lie" name="lie"><option value="">— aucun —</option>${BIB.ouvrages.filter(x => !x.supprime && (!o || x.id !== o.id)).slice().sort((a, b) => a.designation.localeCompare(b.designation, 'fr')).map(x => `<option value="${esc(x.id)}" ${o && o.liePar === x.id ? 'selected' : ''}>${esc(x.designation)} · ${esc(x.id)}</option>`).join('')}</select>
-      <label for="b_lieconf">Ou reprend les cotes du configurateur</label>
-      <select id="b_lieconf" name="lieconf"><option value="">— aucun —</option>${SOURCES_CONFIG.map(x => `<option value="${esc(x.cle)}" ${o && o.lieConfig === x.cle ? 'selected' : ''}>${esc(x.libelle)}</option>`).join('')}</select>
-      <button type="button" class="btn sec" id="bChoixConf" style="margin-top:6px">Choisir dans le configurateur</button>
       ${blocCotes}
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
@@ -3182,13 +3179,6 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
   $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
   $('b_unite').addEventListener('change', () => { $('b_mesure').innerHTML = optionsMesure($('b_unite').value, null); });
   if (o && $('bSupprOuv')) $('bSupprOuv').onclick = () => supprimerOuvrage(o.id);
-  $('bChoixConf').onclick = () => {
-    if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
-    window.CHOIX_CONF = { mode: 'source', ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft: capturerBrouillon() };
-    fermer();
-    ouvrirConfig();
-    activerBandeauChoix('Cliquez sur la case à reprendre (massif ou fouille en rigoles).');
-  };
   document.querySelectorAll('[data-lien]').forEach(b => b.onclick = () => {
     if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
     const cle = b.dataset.lien, ch = champsBib(v.unite).find(x => x.cle === cle);
@@ -3215,8 +3205,8 @@ function reouvrirFormulaire(o, lotChoisi, liens, brouillon) {
   formulaireOuvrage(o, lotChoisi, liens, brouillon);
   const f = $('fBib');
   for (const [k, val] of Object.entries(brouillon || {})) { if (f.elements[k] && k !== 'lieconf' && k !== 'lie') f.elements[k].value = val; }
-  f.elements.lieconf.value = (brouillon && brouillon.lieconf) || '';
-  f.elements.lie.value = (brouillon && brouillon.lie) || '';
+  if (f.elements.lieconf) f.elements.lieconf.value = (brouillon && brouillon.lieconf) || '';
+  if (f.elements.lie) f.elements.lie.value = (brouillon && brouillon.lie) || '';
 }
 
 // Choix dans le configurateur : bandeau en bas, clic sur la case, retour à la fiche
@@ -3251,8 +3241,7 @@ function retourBibliotheque(src, lien) {
   formulaireOuvrage(o, ch.lot);
   const f = $('fBib');
   for (const [k, v] of Object.entries(ch.draft)) { if (f.elements[k] && k !== 'lieconf' && k !== 'lie') f.elements[k].value = v; }
-  if (src) { f.elements.lieconf.value = src; f.elements.lie.value = ''; }
-  else { f.elements.lieconf.value = ch.draft.lieconf || ''; f.elements.lie.value = ch.draft.lie || ''; }
+  if (f.elements.lie) f.elements.lie.value = ch.draft.lie || '';
 }
 // Clic dans le configurateur pendant le choix
 document.addEventListener('click', e => {
@@ -3320,7 +3309,7 @@ function enregistrerOuvrage(id) {
   const mesure = f.elements.mesure ? f.elements.mesure.value : '';
   const rappel = f.elements.rappel ? f.elements.rappel.value.trim() : '';
   const lie = f.elements.lie ? f.elements.lie.value : '';
-  const lieConf = f.elements.lieconf ? f.elements.lieconf.value : '';
+  const lieConf = '';   // ancien choix « source configurateur » : remplacé par les cotes reliées une à une
   const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
   let prix = null;
   if (!effacer) {
