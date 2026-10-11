@@ -1353,7 +1353,7 @@ const ALIM_VOLET = 'Alimentation volet roulant électrique';
 const FICHE_LOTS_MUR = ['gros-oeuvre', 'ossature-bois', 'isolation-thermique', 'doublages-cloisons-plafonds', 'revetements-muraux', 'peinture-finitions'];
 const DES_FOND_FOUILLE = 'Fouilles en tranchée pour semelles filantes';
 const DES_FOND_SEMELLE = 'Semelles filantes en béton armé';
-const FICHE_FONDS_DEF = { largeur: '0.5', hauteur: '0.4', profondeur: '0.8' };
+const FICHE_FONDS_DEF = { largeur: '0.5', hauteur: '0.4' };
 
 function projetDe(c) {
   if (!c.projet) c.projet = { epaisseur: 30, murs: [], ouvertures: [], toiture: { type: 'deux-pans', surface: 0, pente: 30, couverture: '' }, choix: { murs: '', tableaux: '', finition: '' }, fond: Object.assign({}, FICHE_FONDS_DEF) };
@@ -1420,7 +1420,7 @@ function projetCalcul(p) {
   const rig = num(f.rigLin) > 0;
   r.fondLin = rig ? num(f.rigLin) : r.linP;
   r.fdimLarg = rig && num(f.rigLarg) > 0 ? num(f.rigLarg) : num(f.largeur);
-  r.fdimProf = num(f.rigHt);  // profondeur de fouille = HT de la rigole (plus de champ « sans rigoles »)
+  r.fdimProf = num(f.rigHt);  // hauteur de fouille = HT de la rigole
   // Hauteur de semelle : avec des rigoles, c'est la HT du terrassement (hauteur de fouille).
   r.semHaut = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.hauteur);
   r.semelle = r.fondLin * r.fdimLarg * r.semHaut;
