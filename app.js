@@ -789,9 +789,25 @@ function majLignesDepuisConfigurateur(c) {
     sauverLignes(c.id, nouvelles);
   } finally { _majConfigEnCours = false; }
 }
+// Texte des lignes reprises de la bibliothèque : mis à jour quand l'ouvrage est renommé dans la bibliothèque.
+// Les lignes du configurateur (libellé calculé, « – Pièce ») gardent leur texte.
+function rafraichirDesignations(id) {
+  if (_revueCollecte || !id || !BIB) return;
+  const L = lignesDe(id);
+  let change = false;
+  const nouvelles = L.map(l => {
+    if (!l.ouvrage || l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return l;
+    const o = BIB.ouvrages.find(x => x.id === l.ouvrage && !x.supprime);
+    if (!o || !o.designation || o.designation === l.designation) return l;
+    change = true;
+    return Object.assign({}, l, { designation: o.designation });
+  });
+  if (change) sauverLignes(id, nouvelles);
+}
 function renderMetre() {
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
+  rafraichirDesignations(courantId);
   majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
   majLignesLiees(courantId);
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
