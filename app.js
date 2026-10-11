@@ -24,7 +24,8 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre .gen-s{margin-top:6px}
     table.metre .gen-sec ul{margin:2px 0 0;padding-left:18px}
     table.metre .gen-sec li{margin:1px 0}
-    table.metre .poignee{cursor:grab;touch-action:none;user-select:none;color:var(--mut);padding:0 10px 0 2px;font-size:16px;letter-spacing:-2px}
+    table.metre .poignee{cursor:grab;touch-action:none;user-select:none;color:var(--mut);display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-10px 4px -10px -8px;font-size:24px;line-height:1;letter-spacing:-3px;border-radius:8px}
+    table.metre .poignee:active{background:rgba(31,58,95,.12)}
     table.metre tr.lot.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
     table.metre tr.lot.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
     table.metre tr.ligne.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
