@@ -577,8 +577,49 @@ function optionsDevis(l, montants) {
 // Réglage « Afficher les prix » (désactivé par défaut) : contrôle le tableau et les exports
 function prixAffiches() { return lsGet('prix', false) === true; }
 
+// Mise à jour automatique : les lignes déjà au métré qui correspondent à un ouvrage du configurateur
+// sont mises à jour sur place (même place, même numéro). Rien n'est ajouté ni supprimé ici.
+let _majConfigEnCours = false;
+function majLignesDepuisConfigurateur(c) {
+  if (!c || _majConfigEnCours || !BIB) return;
+  _majConfigEnCours = true;
+  try {
+    const L = lignesDe(c.id);
+    if (!L.length) return;
+    const col = {};
+    _revueCollecte = {};
+    try { genererElec(); genererPlat(); ficheVersMetre(); }
+    finally { Object.assign(col, _revueCollecte); _revueCollecte = null; }
+    const cleL = l => l.ouvrage + '|' + l.designation;
+    const sig = v => ['nombre', 'cote1', 'cote2', 'cote3'].map(k => num(v && v[k])).join('|');
+    const uids = new Set(L.map(x => x.uid));
+    // Propositions du configurateur qui ne sont pas des copies des lignes déjà présentes
+    const vus = new Set(), fresh = [];
+    for (const arr of Object.values(col)) for (const l of arr) {
+      if (!l.ouvrage || uids.has(l.uid)) continue;
+      const k = cleL(l) + JSON.stringify(l.valeurs);
+      if (vus.has(k)) continue;
+      vus.add(k); fresh.push(l);
+    }
+    const pool = {};
+    for (const x of L) if (x.ouvrage) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
+    const remplacer = new Map();
+    for (const l of fresh) {
+      const ex = pool[cleL(l)] && pool[cleL(l)].shift();
+      if (!ex) continue;
+      if (sig(ex.valeurs) !== sig(l.valeurs) || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet) {
+        // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur
+        remplacer.set(ex.uid, Object.assign({}, ex, { valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
+      }
+    }
+    if (!remplacer.size) return;
+    const nouvelles = L.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x);
+    sauverLignes(c.id, nouvelles);
+  } finally { _majConfigEnCours = false; }
+}
 function renderMetre() {
   if (!courantId || !BIB) return;
+  majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
@@ -1031,6 +1072,7 @@ function synchroConfig() {
   clearTimeout(_synchroT);
   _synchroT = setTimeout(() => {
     majQuantitesAuto(chantiers.find(x => x.id === courantId));
+    majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
     if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur enregistré. Rien n\'est ajouté au métré : saisissez vos lignes, puis utilisez « Revue complète avant édition ».';
   }, 300);
 }
