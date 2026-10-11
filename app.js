@@ -2860,7 +2860,7 @@ function renderBiblio() {
   const liste = ouvragesLibres().filter(o => (!lot || o.lot === lot) && (!q || o.designation.toLowerCase().includes(q)));
   $('biblioListe').innerHTML = liste.map(o => {
     const p = o.prix_indicatif;
-    return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px">${esc(libLot(o.lot))}</div></span>
+    return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px">${esc(libLot(o.lot))} · ${esc(o.id)}</div></span>
       <span class="tag">${esc(o.unite)} · ${p && (p.moyen != null || p.unique != null) ? fmt(p.moyen != null ? p.moyen : p.unique) + ' € HT' : 'sans prix'}</span></div>`;
   }).join('') || '<p class="muted" style="padding:12px">Aucun ouvrage.</p>';
   // Ouvrages supprimés (restaurables) : en bas de la liste
@@ -2892,7 +2892,7 @@ function formulaireOuvrage(o, lotChoisi) {
   const p = (o && o.prix_indicatif) || {};
   const devis = devisDe(p);
   const val = x => (x != null ? String(Math.round(x * 100) / 100).replace('.', ',') : '');
-  $('sheet').innerHTML = `<h2 style="margin:0 0 6px;font-size:18px">${o ? 'Modifier l\'ouvrage' : 'Nouvel ouvrage'}</h2>
+  $('sheet').innerHTML = `<h2 style="margin:0 0 6px;font-size:18px">${o ? 'Modifier l\'ouvrage' : 'Nouvel ouvrage'}</h2>${o ? `<p class="muted" style="font-size:13px;margin:0 0 8px">Numéro : <strong>${esc(o.id)}</strong></p>` : ''}
     <form id="fBib">
       <label for="b_des">Désignation</label><input id="b_des" name="designation" required value="${esc(v.designation)}">
       <label for="b_lot">Lot</label><select id="b_lot" name="lot">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === v.lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select>
