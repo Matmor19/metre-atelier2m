@@ -714,6 +714,12 @@ function majLignesDepuisConfigurateur(c) {
     const cleL = l => l.ouvrage + '|' + String(l.designation || '').replace(/\s*\(rigoles\)$/, '');
     const sig = v => ['nombre', 'cote1', 'cote2', 'cote3'].map(k => num(v && v[k])).join('|');
     const uids = new Set(L.map(x => x.uid));
+    // Lignes du configurateur (sans quantité automatique) que le configurateur ne produit plus : retirées de CE chantier
+    const produitesC = new Set();
+    for (const arr of Object.values(col)) for (const l of arr) if (l.ouvrage && !uids.has(l.uid)) produitesC.add(cleL(l));
+    const sansSource = new Set(L.filter(x => (x.projet || x.auto || x.plat) && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x))).map(x => x.uid));
+    const Lk = sansSource.size ? L.filter(x => !sansSource.has(x.uid)) : L;
+    if (sansSource.size) sauverLignes(c.id, Lk);
     // Propositions du configurateur qui ne sont pas des copies des lignes déjà présentes
     const vus = new Set(), fresh = [];
     for (const arr of Object.values(col)) for (const l of arr) {
@@ -723,7 +729,7 @@ function majLignesDepuisConfigurateur(c) {
       vus.add(k); fresh.push(l);
     }
     const pool = {};
-    for (const x of L) if (x.ouvrage) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
+    for (const x of Lk) if (x.ouvrage) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
     const remplacer = new Map();
     for (const l of fresh) {
       const ex = pool[cleL(l)] && pool[cleL(l)].shift();
@@ -734,7 +740,7 @@ function majLignesDepuisConfigurateur(c) {
       }
     }
     if (!remplacer.size) return;
-    const nouvelles = L.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x);
+    const nouvelles = Lk.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x);
     sauverLignes(c.id, nouvelles);
   } finally { _majConfigEnCours = false; }
 }
