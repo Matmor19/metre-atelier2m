@@ -3160,7 +3160,8 @@ function renderBiblio() {
   if (supprimes.length) {
     $('biblioListe').innerHTML += `<details style="padding:0 12px 12px"><summary class="muted">Supprimés (${supprimes.length})</summary>` +
       supprimes.map(o => `<div class="ouv" style="padding:8px 0"><span>${esc(o.designation)}</span>
-        <button class="btn small sec" data-restaurer-ouv="${esc(o.id)}">Restaurer</button></div>`).join('') + '</details>';
+        <button class="btn small sec" data-restaurer-ouv="${esc(o.id)}">Restaurer</button></div>`).join('')
+      + `<div style="margin-top:10px"><button class="btn small danger" data-purger-ouv>Supprimer définitivement ces ouvrages (${supprimes.length})</button></div></details>`;
   }
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
@@ -3400,7 +3401,8 @@ function enregistrerOuvrage(id) {
     o.version = (o.version || 1) + 1;
     if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
   } else {
-    const n = Math.max(0, ...BIB.ouvrages.map(o => parseInt(o.id.slice(4), 10))) + 1;
+    const n = Math.max(BIB.prochainNumero || 0, 0, ...BIB.ouvrages.map(o => parseInt(o.id.slice(4), 10))) + 1;
+    BIB.prochainNumero = n;
     const o = { id: 'OUV-' + String(n).padStart(4, '0'), lot, designation: des, unite, type: 'commun', saisie: 'metre', champs: (mesure ? champsPourMode(unite, mesure) : champsBib(unite)), version: 1 };
     if (mesure) o.mesure = mesure;
     if (rappel) o.rappel = rappel;
@@ -3445,6 +3447,15 @@ $('biblioListe').addEventListener('click', e => {
   if (r) {
     const o = BIB.ouvrages.find(x => x.id === r.dataset.restaurerOuv);
     if (o) { o.supprime = false; o.version = (o.version || 1) + 1; sauverBibliotheque(); renderBiblio(); }
+    return;
+  }
+  if (e.target.closest('[data-purger-ouv]')) {
+    const nb = BIB.ouvrages.filter(o => o.supprime).length;
+    if (!nb || !confirm(nb + ' ouvrage(s) seront supprimés définitivement de la bibliothèque (plus restaurables). Continuer ?')) return;
+    // Les numéros ne sont jamais réutilisés : on garde le plus grand numéro déjà attribué
+    BIB.prochainNumero = Math.max(BIB.prochainNumero || 0, ...BIB.ouvrages.map(o => parseInt(o.id.slice(4), 10) || 0));
+    BIB.ouvrages = BIB.ouvrages.filter(o => !o.supprime);
+    sauverBibliotheque(); renderBiblio();
     return;
   }
   const b = e.target.closest('[data-edit]');

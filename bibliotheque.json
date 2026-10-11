@@ -125,38 +125,6 @@
       "version": 1
     },
     {
-      "id": "OUV-0002",
-      "lot": "installation-chantier",
-      "designation": "Branchements provisoires eau et électricité",
-      "unite": "forfait",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre (1 pour un forfait)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
-      "id": "OUV-0003",
-      "lot": "installation-chantier",
-      "designation": "Bennes à gravats",
-      "unite": "u",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
       "id": "OUV-0004",
       "lot": "installation-chantier",
       "designation": "Clôture de chantier",
@@ -480,22 +448,6 @@
         }
       ],
       "version": 1
-    },
-    {
-      "id": "OUV-0020",
-      "lot": "terrassement-vrd",
-      "designation": "Cuve enterrée de récupération d'eaux pluviales",
-      "unite": "u",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre"
-        }
-      ],
-      "version": 1,
-      "supprime": true
     },
     {
       "id": "OUV-0021",
@@ -5630,22 +5582,6 @@
       "version": 1
     },
     {
-      "id": "OUV-0306",
-      "lot": "cuisine",
-      "designation": "Linéaire d'ameublement",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
       "id": "OUV-0307",
       "lot": "cuisine",
       "designation": "Électroménager complet",
@@ -9377,30 +9313,6 @@
       "version": 1
     },
     {
-      "id": "OUV-0517",
-      "lot": "terrassement-vrd",
-      "designation": "Décapage de terre végétale",
-      "unite": "m³",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        },
-        {
-          "cle": "cote2",
-          "libelle": "Largeur (m)"
-        },
-        {
-          "cle": "cote3",
-          "libelle": "Épaisseur ou hauteur (m)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
       "id": "OUV-0518",
       "lot": "terrassement-vrd",
       "designation": "Fouilles en rigoles pour fondations (linéaire, HT et largeur saisis dans le configurateur)",
@@ -9415,30 +9327,6 @@
       ],
       "version": 1,
       "qte": "rig_ml"
-    },
-    {
-      "id": "OUV-0519",
-      "lot": "terrassement-vrd",
-      "designation": "Fouilles en pleine masse (sous-sol ou vide sanitaire)",
-      "unite": "m³",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        },
-        {
-          "cle": "cote2",
-          "libelle": "Largeur (m)"
-        },
-        {
-          "cle": "cote3",
-          "libelle": "Épaisseur ou hauteur (m)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
     },
     {
       "id": "OUV-0520",
@@ -9487,38 +9375,6 @@
       ],
       "version": 1,
       "qte": "cuve_evac"
-    },
-    {
-      "id": "OUV-0522",
-      "lot": "terrassement-vrd",
-      "designation": "Drainage périphérique (tuyau et gravier)",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
-      "id": "OUV-0523",
-      "lot": "terrassement-vrd",
-      "designation": "Canalisation eaux usées PVC Ø 100",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
     },
     {
       "id": "OUV-0524",
@@ -9730,22 +9586,6 @@
       "version": 1
     },
     {
-      "id": "OUV-0537",
-      "lot": "gros-oeuvre",
-      "designation": "Semelle filante béton armé",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 2,
-      "supprime": true
-    },
-    {
       "id": "OUV-0538",
       "lot": "gros-oeuvre",
       "designation": "Longrine béton armé",
@@ -9914,38 +9754,6 @@
         }
       ],
       "version": 1
-    },
-    {
-      "id": "OUV-0547",
-      "lot": "gros-oeuvre",
-      "designation": "Chaînage horizontal béton",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 2,
-      "supprime": true
-    },
-    {
-      "id": "OUV-0548",
-      "lot": "gros-oeuvre",
-      "designation": "Chaînage vertical béton (raidisseur)",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 2,
-      "supprime": true
     },
     {
       "id": "OUV-0549",
@@ -13108,22 +12916,6 @@
       "version": 1
     },
     {
-      "id": "OUV-0728",
-      "lot": "reception-fin-chantier",
-      "designation": "Test d'étanchéité à l'air (forfait)",
-      "unite": "forfait",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre (1 pour un forfait)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
-    },
-    {
       "id": "OUV-0729",
       "lot": "reception-fin-chantier",
       "designation": "Essais de mise en route des équipements",
@@ -13182,22 +12974,6 @@
         }
       ],
       "version": 1
-    },
-    {
-      "id": "OUV-0733",
-      "lot": "reception-fin-chantier",
-      "designation": "Attestation Consuel",
-      "unite": "forfait",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre (1 pour un forfait)"
-        }
-      ],
-      "version": 1,
-      "supprime": true
     },
     {
       "id": "OUV-0734",
@@ -15945,5 +15721,6 @@
       "mesure": "nombre"
     }
   ],
-  "revision": 42
+  "revision": 43,
+  "prochainNumero": 874
 }
