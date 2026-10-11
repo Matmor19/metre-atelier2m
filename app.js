@@ -1497,7 +1497,10 @@ function ctxQuantites(c) {
     // Fouilles et semelles : seulement si des rigoles sont saisies dans le terrassement (sinon rien n'est proposé)
     fond_fouille: rigOk ? r.fouille : '',
     // Semelles isolées : nombre de massifs de fondation saisis dans le terrassement (0 = aucun, rien n'est proposé)
-    semi_nb: p.fond.pleine === 'massif' ? num(p.fond.massifNb) : 0,
+    semi_nb: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'massif' && num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0 ? num(e.nb) : 0), 0),
+    // Volumes des fouilles en pleine masse saisies dans le configurateur (pour proposer la quantité dans le métré)
+    massif_m3: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'massif' && num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0 ? num(e.nb) * num(e.L) * num(e.l) * num(e.h) : 0), 0),
+    plat_m3: pleinesDe(p.fond).reduce((a, e) => a + (e.usage === 'plateforme' && num(e.s) > 0 && num(e.h) > 0 ? (num(e.nb) > 0 ? num(e.nb) : 1) * num(e.s) * num(e.h) : 0), 0),
     fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
     // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
@@ -1585,7 +1588,8 @@ const SRC_QTE = {
   elev_net: 'murs, surface nette (ouvertures de plus de 2 m² déduites)', finit_net: 'surface nette des murs',
   soub_s: 'murs de soubassement', plan_hourdis: 'plancher à hourdis', plan_dalle: 'dalle de compression (surface × épaisseur)',
   fond_semelle: 'semelles filantes (linéaire × largeur × hauteur)', cuve_fouille: 'fouille de la cuve',
-  cuve_remblai: 'remblai de la cuve', cuve_evac: 'évacuation des terres de la cuve'
+  cuve_remblai: 'remblai de la cuve', cuve_evac: 'évacuation des terres de la cuve',
+  massif_m3: 'fouilles pour massifs de fondation (terrassement)', plat_m3: 'fouilles en pleine masse, plateforme (terrassement)'
 };
 const SRC_SURF = new Set(['surface_terrain', 'surface_facades', 'surface_plancher', 'surface_pieces', 'surface_emprise',
   'surface_soubassement', 'surface_toiture', 'surface_toiture_plan']);

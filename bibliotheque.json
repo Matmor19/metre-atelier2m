@@ -267,7 +267,8 @@
           "libelle": "Épaisseur ou hauteur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "qte": "plat_m3"
     },
     {
       "id": "OUV-0010",
@@ -291,7 +292,7 @@
         }
       ],
       "version": 1,
-      "qte": null
+      "qte": "massif_m3"
     },
     {
       "id": "OUV-0874",
@@ -15936,5 +15937,5 @@
       "mesure": "nombre"
     }
   ],
-  "revision": 40
+  "revision": 41
 }
