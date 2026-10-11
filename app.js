@@ -370,7 +370,7 @@ function remplirLots() {
 function renderOuvrages() {
   const q = $('recherche').value.trim().toLowerCase();
   const liste = BIB.ouvrages.filter(o => !o.supprime && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
-  const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)}</span><span class="tag">${esc(o.unite)}</span></div>`).join('');
+  const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)} <span class="muted" style="font-size:12px">· ${esc(o.id)}</span></span><span class="tag">${esc(o.unite)}</span></div>`).join('');
   $('listeOuvrages').innerHTML = (lignes || '<p class="muted" style="padding:12px">Aucun ouvrage trouvé dans ce lot.</p>')
     + '<div style="padding:12px"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button></div>';
 }
@@ -2860,7 +2860,7 @@ function renderBiblio() {
   const liste = ouvragesLibres().filter(o => (!lot || o.lot === lot) && (!q || o.designation.toLowerCase().includes(q)));
   $('biblioListe').innerHTML = liste.map(o => {
     const p = o.prix_indicatif;
-    return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px">${esc(libLot(o.lot))} · ${esc(o.id)}</div></span>
+    return `<div class="ouv" data-edit="${esc(o.id)}"><span>${esc(o.designation)}<div class="muted" style="font-size:12px"><strong>${esc(o.id)}</strong> · ${esc(libLot(o.lot))}</div></span>
       <span class="tag">${esc(o.unite)} · ${p && (p.moyen != null || p.unique != null) ? fmt(p.moyen != null ? p.moyen : p.unique) + ' € HT' : 'sans prix'}</span></div>`;
   }).join('') || '<p class="muted" style="padding:12px">Aucun ouvrage.</p>';
   // Ouvrages supprimés (restaurables) : en bas de la liste
