@@ -1456,8 +1456,12 @@ function semellesDuTerrassement(c) {
 }
 // Proposition de quantité pour un type de fouille : seulement s'il n'y en a qu'une (jamais de somme de plusieurs fouilles)
 function uneSeuleFouille(fd, usage, valide, valeur) {
+  const e = fouilleUnique(fd, usage, valide);
+  return e ? valeur(e) : 0;
+}
+function fouilleUnique(fd, usage, valide) {
   const es = pleinesDe(fd).filter(e => e.usage === usage && valide(e));
-  return es.length === 1 ? valeur(es[0]) : 0;
+  return es.length === 1 ? es[0] : null;
 }
 function ctxQuantites(c) {
   const p = projetDe(c), r = projetCalcul(p), pieces = piecesDe(c);
@@ -1506,6 +1510,8 @@ function ctxQuantites(c) {
     semi_nb: uneSeuleFouille(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0, e => num(e.nb)),
     // Volumes des fouilles en pleine masse saisies dans le configurateur (pour proposer la quantité dans le métré)
     massif_m3: uneSeuleFouille(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0, e => num(e.nb) * num(e.L) * num(e.l) * num(e.h)),
+    massif_dims: (() => { const e = fouilleUnique(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0);
+      return e ? { nb: num(e.nb), L: num(e.L), l: num(e.l), h: num(e.h) } : null; })(),
     plat_m3: uneSeuleFouille(p.fond, 'plateforme', e => num(e.s) > 0 && num(e.h) > 0, e => (num(e.nb) > 0 ? num(e.nb) : 1) * num(e.s) * num(e.h)),
     fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
@@ -1613,6 +1619,8 @@ function qteValeur(o, ctx) {
   if (o.sin && String(ctx[o.sin.cle]) === String(o.sin.val)) return null;
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
+  // Massif : calcul à partir de nombre, longueur, largeur, hauteur (affichés dans le détail, sans libellé)
+  if (o.qte === 'massif_m3') { const d = ctx.massif_dims; return d ? { nombre: String(d.nb), cote1: String(d.L), cote2: String(d.l), cote3: String(d.h) } : null; }
   if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
   if (o.qte === 'semi_nb') return { nombre: String(v), src: 'Nombre de massifs de fondation (terrassement)' };
   if (o.qte === 'fond_semelle') return { nombre: '1', cote1: String(ctx.sem_lin), cote2: String(ctx.sem_larg), cote3: String(ctx.sem_haut) };
@@ -1982,7 +1990,7 @@ function ficheVersMetre() {
       ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_) });  // une ligne par massif, sans addition
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
-      if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_) });
+      if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: 'Calcul suivant plan : fouilles en pleine masse, plateforme (terrassement)' });
     } else if (e.usage === 'divers') {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
     }
