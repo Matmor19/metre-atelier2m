@@ -1442,6 +1442,13 @@ function projetCalcul(p) {
   return r;
 }
 // Grandeurs calculées à partir du dessin (fiche projet et configurateur), utilisées par les ouvrages « qte »
+// Dimensions des semelles filantes = dimensions de la fouille en tranchée validée dans le métré (terrassement)
+function semellesDuTerrassement(c) {
+  const l = lignesDe(c.id).find(x => String(x.designation || '').indexOf(DES_FOND_FOUILLE) === 0 && x.valeurs && num(x.valeurs.cote1) > 0);
+  if (!l) return { sem_lin: '', sem_larg: '', sem_haut: '', fond_semelle: 0 };
+  const L = num(l.valeurs.cote1), W = num(l.valeurs.cote2), H = num(l.valeurs.cote3);
+  return { sem_lin: L, sem_larg: W, sem_haut: H, fond_semelle: L * W * H };
+}
 function ctxQuantites(c) {
   const p = projetDe(c), r = projetCalcul(p), pieces = piecesDe(c);
   const surfPieces = pieces.reduce((a, x) => a + num(x.surf) * (num(x.nb) || 1), 0);
@@ -1484,8 +1491,9 @@ function ctxQuantites(c) {
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     fond_fouille: r.fouille,
     fond_lin: r.fondLin, fond_larg: r.fdimLarg, fond_prof: r.fdimProf,
-    sem_lin: r.fondLin, sem_larg: r.fdimLarg, sem_haut: r.semHaut,
-    fond_semelle: r.semelle,
+    // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
+    // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
+    ...semellesDuTerrassement(c),
     drain_ml: (p.murs || []).reduce((a, m) => a + num(m.longueur), 0),
     decap_m2: num(p.terrain.decap),
     res_eau_ml: num(p.terrain.resEau),
