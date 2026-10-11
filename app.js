@@ -590,8 +590,23 @@ function prixAffiches() { return lsGet('prix', false) === true; }
 // Mise à jour automatique : les lignes déjà au métré qui correspondent à un ouvrage du configurateur
 // sont mises à jour sur place (même place, même numéro). Rien n'est ajouté ni supprimé ici.
 let _majConfigEnCours = false;
+// Nettoyage du libellé « (rigoles) » : ne dépend pas de la reconnaissance des lignes
+function nettoyerSuffixeRigoles(id) {
+  if (_revueCollecte || !id) return;
+  const L = lignesDe(id);
+  let ch = false;
+  const N = L.map(x => {
+    if (typeof x.designation === 'string' && /\s*\(rigoles\)$/.test(x.designation)) {
+      ch = true;
+      return Object.assign({}, x, { designation: x.designation.replace(/\s*\(rigoles\)$/, '') });
+    }
+    return x;
+  });
+  if (ch) sauverLignes(id, N);
+}
 function majLignesDepuisConfigurateur(c) {
-  if (!c || _majConfigEnCours || !BIB) return;
+  // Jamais pendant une revue (la revue a sa propre collecte)
+  if (!c || _majConfigEnCours || _revueCollecte || !BIB) return;
   _majConfigEnCours = true;
   try {
     const L = lignesDe(c.id);
@@ -630,6 +645,7 @@ function majLignesDepuisConfigurateur(c) {
 }
 function renderMetre() {
   if (!courantId || !BIB) return;
+  nettoyerSuffixeRigoles(courantId);
   majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   const L = lignesDe(courantId);
