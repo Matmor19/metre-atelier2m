@@ -15722,7 +15722,7 @@
       "mesure": "nombre"
     },
     {
-      "id": "OUV-0874",
+      "id": "OUV-0875",
       "lot": "terrassement-vrd",
       "designation": "Tranchée et gaine électrique (pose comprise) – électricité",
       "unite": "ml",
@@ -15739,6 +15739,6 @@
       "qte": "res_elec_ml"
     }
   ],
-  "revision": 45,
+  "revision": 46,
   "prochainNumero": 875
 }
