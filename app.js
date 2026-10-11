@@ -1416,8 +1416,13 @@ function projetCalcul(p) {
   // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente
   r.toiture = num(p.toiture.surfCouv) > 0 ? num(p.toiture.surfCouv) : (pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S);
   const f = p.fond || FICHE_FONDS_DEF;
-  r.semelle = r.linP * num(f.largeur) * num(f.hauteur);
-  r.fouille = r.linP * num(f.largeur) * num(f.profondeur);
+  // Si des rigoles sont saisies (bloc Terrassement), leur linéaire, largeur et HT servent aux semelles et fouilles
+  const rig = num(f.rigLin) > 0;
+  r.fondLin = rig ? num(f.rigLin) : r.linP;
+  r.fdimLarg = rig && num(f.rigLarg) > 0 ? num(f.rigLarg) : num(f.largeur);
+  r.fdimProf = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.profondeur);
+  r.semelle = r.fondLin * r.fdimLarg * num(f.hauteur);
+  r.fouille = r.fondLin * r.fdimLarg * r.fdimProf;
   // Soubassement : murs porteurs × hauteur du soubassement
   r.soubS = r.linP * num((p.soub || {}).hauteur);
   // Plancher bas
@@ -1476,7 +1481,8 @@ function ctxQuantites(c) {
     couverture: p.toiture.type === 'plat' ? '' : couvDe(p.toiture),
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     fond_fouille: r.fouille,
-    fond_lin: r.linP, fond_larg: num((p.fond || FICHE_FONDS_DEF).largeur), fond_prof: num((p.fond || FICHE_FONDS_DEF).profondeur),
+    fond_lin: r.fondLin, fond_larg: r.fdimLarg, fond_prof: r.fdimProf,
+    sem_lin: r.fondLin, sem_larg: r.fdimLarg, sem_haut: num((p.fond || FICHE_FONDS_DEF).hauteur),
     fond_semelle: r.semelle,
     drain_ml: (p.murs || []).reduce((a, m) => a + num(m.longueur), 0),
     decap_m2: num(p.terrain.decap),
@@ -1578,6 +1584,7 @@ function qteValeur(o, ctx) {
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
   if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
+  if (o.qte === 'fond_semelle') return { nombre: '1', cote1: String(ctx.sem_lin), cote2: String(ctx.sem_larg), cote3: String(ctx.sem_haut) };
   if (o.unite === 'm²' && SRC_SURF.has(o.qte) || o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan', src: srcTxt(o.qte) };
   if (o.unite === 'm²' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(2), cote2: '1', src: srcTxt(o.qte) };
   if (o.unite === 'm³' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(3), cote2: '1', cote3: '1', src: srcTxt(o.qte) };
@@ -1700,6 +1707,7 @@ function ficheRendre() {
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Calcul sur les murs cochés « Porteur ».</p>
 `;
   const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
+    <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
       ${champ('Linéaire de rigoles (ml)', inp('data-k="fond" data-champ="rigLin" inputmode="decimal"', fd.rigLin || ''))}
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
@@ -1901,9 +1909,11 @@ function ficheVersMetre() {
   };
   // Fondations
   const fdim = p.fond || FICHE_FONDS_DEF;
-  ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes (murs porteurs)',
-    { nombre: '1', cote1: String(r.linP), cote2: String(num(fdim.largeur)), cote3: String(num(fdim.profondeur)) });
-  ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé (murs porteurs)', null, SRC_QTE.fond_semelle);
+  const origineFond = num(fdim.rigLin) > 0 ? 'rigoles' : 'murs porteurs';
+  ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
+    { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
+  ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
+    { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(num(fdim.hauteur)) });
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
   ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement', null, SRC_QTE.soub_s);
   ajouter('Membrane de protection et drainage Delta-MS sur mur de soubassement', r.soubS, 'Membrane Delta-MS sur mur de soubassement', null, SRC_QTE.soub_s);
@@ -1959,7 +1969,7 @@ function ouvrirOuvrage(o, precedent, message) {
   // Cases de cotes vierges : la quantité proposée par le configurateur (déjà calculée) est utilisée si rien n'est saisi
   // Cases remplies seulement avec ce que le configurateur fournit : dimensions (fouille), surface (plan) ou quantité
   // Dimensions du configurateur (fouille) ou surface (plan) : reprises. Total calculé : cases vides, la quantité est proposée.
-  const dimsConfig = !!auto && (o.qte === 'fond_fouille' || auto.mode === 'plan');
+  const dimsConfig = !!auto && (o.qte === 'fond_fouille' || o.qte === 'fond_semelle' || auto.mode === 'plan');
   const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? {} : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
