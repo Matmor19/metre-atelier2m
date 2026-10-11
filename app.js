@@ -277,6 +277,7 @@ function detail(l) {
 }
 // Version colorée (écran et impressions) : chaque cote a sa couleur
 function detailHtml(l) {
+  if (l.valeurs && l.valeurs.mode === 'plan') return `Surface mesurée sur plan : ${fmt(num(l.valeurs.cote1))} m²`;
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
     const c = COTE_COULEUR[categorieCote(m.nom)];
@@ -1557,6 +1558,7 @@ function qteValeur(o, ctx) {
   if (o.sin && String(ctx[o.sin.cle]) === String(o.sin.val)) return null;
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
+  if (o.unite === 'm²' && o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan' };
   if (o.unite === 'm²') return { nombre: '1', cote1: v.toFixed(2), cote2: '1' };
   if (o.unite === 'm³') return { nombre: '1', cote1: v.toFixed(3), cote2: '1', cote3: '1' };
   if (o.unite === 'ml') return { nombre: '1', cote1: v.toFixed(2) };
@@ -1939,6 +1941,9 @@ function ouvrirOuvrage(o, precedent, message) {
   if (o.rappel) h += `<div class="card" style="margin:10px 0 0;background:#fdf4ee;border-color:#E07838"><strong style="font-size:13px">Rappel de mesure</strong><div style="margin-top:4px;white-space:pre-line">${esc(o.rappel)}</div></div>`;
   if (message) h += `<div class="ok" style="margin-top:10px">${esc(message)}</div>`;
   h += `<form id="fOuv">`;
+  const modeInit = precedent ? precedent.mode : (auto && auto.mode);
+  if (o.unite === 'm²') h += `<label for="fMesure">Mesure</label>
+      <select id="fMesure" name="mesure"><option value="lxl" ${modeInit === 'plan' ? '' : 'selected'}>Longueur × largeur</option><option value="plan" ${modeInit === 'plan' ? 'selected' : ''}>Surface mesurée sur plan (forme quelconque)</option></select>`;
   for (const ch of champs) {
     h += `<label for="c_${ch.cle}">${esc(ch.libelle)}</label>
       <input id="c_${ch.cle}" name="${ch.cle}" ${ch.texte ? '' : 'inputmode="decimal"'} value="${esc(v[ch.cle] ?? '')}">`;
@@ -1956,19 +1961,32 @@ function ouvrirOuvrage(o, precedent, message) {
   const sansCotes = vals => champs.every(ch => ch.texte || String(vals[ch.cle] ?? '').trim() === '');
   const maj = () => {
     const vv0 = lireForm(f, champs);
-    const q = auto && !precedent && sansCotes(vv0) ? calcul(o, auto) : calcul(o, vv0);
+    const estPlan = !!f.elements.mesure && f.elements.mesure.value === 'plan';
+    const q = auto && !precedent && sansCotes(vv0) ? calcul(o, auto) : calcul(o, estPlan ? { ...vv0, cote2: '1' } : vv0);
     let t = `Quantité : ${fmt(q)} ${o.unite}`;
     const vv = lireForm(f, champs);
     if (o.saisie === 'menuiseries' && num(vv.largeur_cm) && num(vv.hauteur_cm))
       t += ` · surface ${fmt(num(vv.nombre || 1) * num(vv.largeur_cm) * num(vv.hauteur_cm) / 10000)} m²`;
     $('apercu').textContent = t;
   };
+  // Mode « surface mesurée sur plan » : une seule case (surface), la deuxième cote est fixée à 1
+  const majMesure = () => {
+    if (!f.elements.mesure) return;
+    const plan = f.elements.mesure.value === 'plan';
+    const l1 = document.querySelector('label[for="c_cote1"]'), l2 = document.querySelector('label[for="c_cote2"]');
+    if (l1) l1.textContent = plan ? 'Surface mesurée sur plan (m²)' : (champs.find(c => c.cle === 'cote1') || {}).libelle;
+    if (l2) l2.style.display = plan ? 'none' : '';
+    if (f.elements.cote2) { f.elements.cote2.style.display = plan ? 'none' : ''; if (plan) f.elements.cote2.value = ''; }
+  };
+  if (f.elements.mesure) f.elements.mesure.addEventListener('change', () => { majMesure(); maj(); });
+  majMesure();
   f.addEventListener('input', maj);
   maj();
   f.addEventListener('submit', e => {
     e.preventDefault();
     let vals = lireForm(f, champs);
     if (auto && !precedent && sansCotes(vals)) vals = { ...auto };   // quantité du configurateur, sans rien inventer
+    else if (f.elements.mesure && f.elements.mesure.value === 'plan') { vals.cote2 = '1'; vals.mode = 'plan'; }
     const manque = champs.filter(ch => !ch.texte && String(vals[ch.cle] ?? '').trim() === '');
     if (manque.length) { $('apercu').textContent = 'Quantité à saisir : ' + manque.map(ch => ch.libelle).join(', ') + '.'; return; }
     const q = calcul(o, vals);
