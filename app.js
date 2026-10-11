@@ -1420,7 +1420,7 @@ function projetCalcul(p) {
   const rig = num(f.rigLin) > 0;
   r.fondLin = rig ? num(f.rigLin) : r.linP;
   r.fdimLarg = rig && num(f.rigLarg) > 0 ? num(f.rigLarg) : num(f.largeur);
-  r.fdimProf = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.profondeur);
+  r.fdimProf = num(f.rigHt);  // profondeur de fouille = HT de la rigole (plus de champ « sans rigoles »)
   // Hauteur de semelle : avec des rigoles, c'est la HT du terrassement (hauteur de fouille).
   r.semHaut = rig && num(f.rigHt) > 0 ? num(f.rigHt) : num(f.hauteur);
   r.semelle = r.fondLin * r.fdimLarg * r.semHaut;
@@ -1719,12 +1719,11 @@ function ficheRendre() {
   // Règle : pas de semelle filante béton armé sans fouille en rigole (bloc 1 Terrassement).
   const contenuFond = rigoleActive ? '' : `<p style="font-size:13px;color:#6b5a7a;margin:0">Pas de semelles filantes sans fouille en rigole : renseignez d'abord le linéaire, la largeur et la HT dans le bloc 1 Terrassement.</p>
 `; const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
-    <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
+    <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Sans linéaire de rigoles, il n'y a ni fouille ni semelles filantes dans le gros œuvre. La largeur et la HT saisies ici servent aux semelles et à la fouille.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">
       ${champ('Linéaire de rigoles (ml)', inp('data-k="fond" data-champ="rigLin" inputmode="decimal"', fd.rigLin || ''))}
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
-      ${champ('Profondeur de fouille (m), sans rigoles', inp('data-k="fond" data-champ="profondeur" inputmode="decimal"', fd.profondeur))}
     </div>`;
   const contenuPlancher = (() => {
     const pl = p.plancher;
