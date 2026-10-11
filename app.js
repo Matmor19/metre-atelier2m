@@ -1094,6 +1094,31 @@ function genererPlat() {
   if (uniques.length) msg += ' À compléter : ' + uniques.join(' ; ') + '.';
   return msg;
 }
+// Après suppression d'une pièce : retire du métré de CE chantier les lignes que le configurateur produisait et qui n'ont plus de source.
+// Les lignes saisies à la main ne sont jamais touchées ; les autres chantiers ne sont pas concernés.
+function retirerLignesSansSource(c) {
+  if (!c || !BIB) return 0;
+  const L = lignesDe(c.id);
+  if (!L.some(x => x.projet || x.auto || x.plat || x.qteAuto)) return 0;
+  _revueCollecte = {};
+  try { genererElec(); genererPlat(); ficheVersMetre(); }
+  finally { var col = _revueCollecte; _revueCollecte = null; }
+  const cleL = l => l.ouvrage + '|' + String(l.designation || '').replace(/\s*\(rigoles\)$/, '');
+  // Seules les lignes NOUVELLES comptent : le générateur remet aussi les lignes déjà au métré (même numéro), qui ne prouvent rien
+  const numeros = new Set(L.map(x => x.uid));
+  const produites = new Set();
+  for (const arr of Object.values(col)) for (const l of arr) if (l.ouvrage && !numeros.has(l.uid)) produites.add(cleL(l));
+  const ctx = ctxQuantites(c);
+  const garde = L.filter(l => {
+    if (!(l.projet || l.auto || l.plat || l.qteAuto)) return true;      // saisie à la main : gardée
+    if (produites.has(cleL(l))) return true;                             // encore produite par le configurateur
+    if (l.qteAuto) { const o = BIB.ouvrages.find(x => x.id === l.ouvrage); if (o && qteValeur(o, ctx)) return true; }
+    return false;                                                        // plus de source : retirée
+  });
+  const retires = L.length - garde.length;
+  if (retires) sauverLignes(c.id, garde);
+  return retires;
+}
 function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
@@ -1336,7 +1361,7 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   if (del) {
     const parts = del.dataset.pldel.split(':');
     const L = piecesDe(c);
-    if (parts.length === 1) L.splice(parseInt(parts[0], 10), 1);
+    if (parts.length === 1) { L.splice(parseInt(parts[0], 10), 1); retirerLignesSansSource(c); }
     else L[parseInt(parts[0], 10)][parts[1]].splice(parseInt(parts[2], 10), 1);
     sauverPlat(c); ouvrirConfigurateur(); return;
   }
