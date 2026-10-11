@@ -81,7 +81,9 @@ function doPost(e) {
         var dos = dossierMetre_();
         var actuelle = lireJson_(dos, FICHIER_BIBLIO, null);
         var nouvelle = data.bibliotheque;
-        if (actuelle && (nouvelle.ouvrages || []).length < (actuelle.ouvrages || []).length) {
+        // Seuls les ouvrages actifs comptent (les ouvrages supprimés peuvent être purgés)
+        var actifs = function (b) { return (b && b.ouvrages || []).filter(function (o) { return !o.supprime; }).length; };
+        if (actuelle && actifs(nouvelle) < actifs(actuelle)) {
           return reponse_({ ok: false, erreur: 'refus : bibliothèque réduite' });
         }
         ecrireJson_(dos, FICHIER_BIBLIO, nouvelle);

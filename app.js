@@ -3127,6 +3127,34 @@ $('btnSauverReglages').onclick = () => {
   envoyerPropositions();
 };
 
+// Récupérer la bibliothèque telle qu'elle est sur le Drive (remplace la copie de cet appareil)
+$('btnRecupBib').onclick = async () => {
+  if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
+  if (!confirm('La bibliothèque de cet appareil sera remplacée par celle du Drive. Les modifications faites ici et non envoyées seront perdues. Continuer ?')) return;
+  try {
+    const j = await post({ action: 'lire_bibliotheque' });
+    if (!j.ok || !j.bibliotheque || !j.bibliotheque.ouvrages) { alert('Le Drive n\'a pas renvoyé de bibliothèque.'); return; }
+    BIB = j.bibliotheque; lsSet('bib', BIB); lsSet('bib_modifiee', false);
+    remplirLots(); renderOuvrages(); renderBiblio();
+    alert('Bibliothèque récupérée du Drive (révision ' + (BIB.revision || '?') + ').');
+  } catch (e) { alert('Récupération impossible pour le moment (réseau).'); }
+};
+
+// Prendre la version livrée avec l'application (bibliotheque.json) et l'envoyer sur le Drive
+$('btnFichierBib').onclick = async () => {
+  if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
+  if (!confirm('La bibliothèque de cet appareil et celle du Drive seront remplacées par la version livrée avec l\'application. Continuer ?')) return;
+  try {
+    const r = await fetch('bibliotheque.json', { cache: 'no-cache' });
+    const fichier = await r.json();
+    const j = await post({ action: 'sauver_bibliotheque', bibliotheque: fichier });
+    if (!j.ok) { alert('Refus du Drive : ' + (j.erreur || 'erreur inconnue') + '. Rien n\'a été modifié.'); return; }
+    BIB = fichier; lsSet('bib', BIB); lsSet('bib_modifiee', false);
+    remplirLots(); renderOuvrages(); renderBiblio();
+    alert('Version livrée (révision ' + (BIB.revision || '?') + ') envoyée sur le Drive.');
+  } catch (e) { alert('Envoi impossible pour le moment (réseau).'); }
+};
+
 $('btnEnvoiBib').onclick = async () => {
   if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
   try {
