@@ -776,7 +776,8 @@ function renderMetre() {
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
-      h += `<tr class="ligne" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
+      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto);
+      h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td>
@@ -795,6 +796,8 @@ function renderMetre() {
       <td class="mt">${fmt(total)} €</td><td></td></tr></tfoot>`;
   }
   h += '</table>';
+  const nbManuelles = lignesDe(courantId).filter(l => !(l.projet || l.auto || l.plat || l.qteAuto)).length;
+  if (nbManuelles) h = `<p class="legende-manuel"><span class="pastille"></span> Surbrillance : lignes saisies à la main (les autres viennent du configurateur)</p>` + h;
   $('tableMetre').innerHTML = h;
 }
 

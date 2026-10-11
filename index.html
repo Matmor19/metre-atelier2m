@@ -62,6 +62,11 @@ td.num{text-align:right;white-space:nowrap}
 .hidden{display:none!important}
 body[data-page="tableau"] .hdr{display:none}
 @media (min-width:700px){.modal{align-items:center}.sheet{border-radius:16px}}
+/* Saisies à la main : surbrillance à l'écran seulement (jamais à l'impression) */
+tr.ligne-manuelle td{background:rgba(245,170,40,.25)}
+.legende-manuel{font-size:12px;margin:6px 0;display:flex;align-items:center;gap:6px}
+.legende-manuel span.pastille{display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(245,170,40,.25);border:1px solid rgba(245,170,40,.8)}
+@media print{tr.ligne-manuelle td{background:none !important}.legende-manuel{display:none !important}}
 </style>
 </head>
 <body data-page="saisie">
