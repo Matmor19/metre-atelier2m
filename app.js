@@ -946,22 +946,23 @@ function ouvrirConfigurateur(message) {
     <input id="plH" inputmode="decimal" value="${esc(P.hauteur)}">
     <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px"><input type="checkbox" id="plPeint" ${P.peintPortes ? 'checked' : ''} style="width:auto;height:auto;margin:0"> Portes peintes sur place (sinon fournies prépeintes)</label>
     <h3 style="margin:14px 0 4px;font-size:15px">Ajouter une pièce</h3>
-    <div class="row">
-      <select id="plType" style="flex:1">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option>${esc(t)}</option>`).join('')}</select>
-      <select id="plQual" style="width:130px">${ELEC_QUALIFS.map(q => `<option value="${esc(q)}">${q || '(aucun)'}</option>`).join('')}</select>
+    <p class="muted" style="margin:0 0 8px">Remplissez les cases utiles, puis appuyez sur « Ajouter ou mettre à jour la pièce ». Une case vide reste vide : rien n'est calculé à sa place.</p>
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <div style="flex:2;min-width:180px"><label for="plType" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Type de pièce</label><select id="plType" style="width:100%">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
+      <div style="flex:1;min-width:140px"><label for="plQual" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Numéro ou nom (si plusieurs pièces du même type)</label><select id="plQual" style="width:100%">${ELEC_QUALIFS.map(q => `<option value="${esc(q)}">${q || '(aucun)'}</option>`).join('')}</select></div>
     </div>
-    <div class="row" style="margin-top:6px">
-      <input id="plNb" inputmode="numeric" value="1" placeholder="Nombre" style="width:90px">
-      <input id="plSurf" inputmode="decimal" placeholder="Surface (m²)" style="flex:1">
-      <input id="plPerim" inputmode="decimal" placeholder="Périmètre (ml, facultatif)" style="flex:1">
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <div style="flex:1;min-width:120px"><label for="plNb" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Nombre de pièces identiques</label><input id="plNb" inputmode="numeric" value="1"></div>
+      <div style="flex:1;min-width:120px"><label for="plSurf" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Surface (m²)</label><input id="plSurf" inputmode="decimal" placeholder="ex. 12"></div>
+      <div style="flex:1;min-width:120px"><label for="plPerim" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Périmètre (ml), facultatif</label><input id="plPerim" inputmode="decimal" placeholder="calculé si vide"></div>
     </div>
-    <div class="row" style="margin-top:6px">
-      <input id="plL" inputmode="decimal" placeholder="Longueur (m)" style="flex:1">
-      <input id="plLa" inputmode="decimal" placeholder="Largeur (m)" style="flex:1">
+    <p class="muted" style="margin:10px 0 4px"><strong>Pièce rectangulaire ?</strong> Au lieu de la surface, vous pouvez saisir la longueur et la largeur : la surface (longueur × largeur) et le périmètre (2 × (longueur + largeur)) se calculent tout seuls. Exemple : 3 m sur 2 m donnent 6 m² et 10 ml.</p>
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <div style="flex:1;min-width:120px"><label for="plL" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Longueur (m)</label><input id="plL" inputmode="decimal"></div>
+      <div style="flex:1;min-width:120px"><label for="plLa" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Largeur (m)</label><input id="plLa" inputmode="decimal"></div>
     </div>
-    <p class="muted" style="margin:2px 0 0">Longueur et largeur donnent la surface et le périmètre exacts.</p>
-    <select id="plSol" style="width:100%;margin-top:6px">${opt(platSols())}</select>
-    <div class="row" style="margin-top:6px"><button type="button" class="btn sec" id="plAjPiece">Ajouter ou mettre à jour la pièce</button></div>
+    <div style="margin-top:8px"><label for="plSol" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Revêtement de sol</label><select id="plSol" style="width:100%">${opt(platSols())}</select></div>
+    <div class="row" style="margin-top:10px"><button type="button" class="btn sec" id="plAjPiece">Ajouter ou mettre à jour la pièce</button></div>
     <h3 style="margin:14px 0 0;font-size:15px">Pièces et leurs murs</h3>
     ${pieces.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
     </div>`;
