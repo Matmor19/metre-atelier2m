@@ -3128,7 +3128,7 @@ $('btnSauverReglages').onclick = () => {
 };
 
 // Récupérer la bibliothèque telle qu'elle est sur le Drive (remplace la copie de cet appareil)
-$('btnRecupBib').onclick = async () => {
+if ($('btnRecupBib')) $('btnRecupBib').onclick = async () => {
   if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
   if (!confirm('La bibliothèque de cet appareil sera remplacée par celle du Drive. Les modifications faites ici et non envoyées seront perdues. Continuer ?')) return;
   try {
@@ -3141,7 +3141,7 @@ $('btnRecupBib').onclick = async () => {
 };
 
 // Prendre la version livrée avec l'application (bibliotheque.json) et l'envoyer sur le Drive
-$('btnFichierBib').onclick = async () => {
+if ($('btnFichierBib')) $('btnFichierBib').onclick = async () => {
   if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
   if (!confirm('La bibliothèque de cet appareil et celle du Drive seront remplacées par la version livrée avec l\'application. Continuer ?')) return;
   try {
