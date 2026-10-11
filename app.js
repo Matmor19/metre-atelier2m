@@ -1703,11 +1703,13 @@ function ficheRendre() {
   // Longueur des semelles : calculée (pas saisie), à partir des rigoles si elles sont renseignées, sinon des murs porteurs
   const lonSemelles = projetCalcul(p).fondLin;
   const rigoleActive = num(fd.rigLin) > 0;
+  // Avec des rigoles, longueur et largeur viennent du terrassement : affichées, non ressaisies. La hauteur de semelle (béton) reste à saisir.
+  const ro = (lib, val) => champ(lib, inp('readonly tabindex="-1" style="background:#eef2f7"', val, '100%'));
   const contenuFond = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      ${champ('Longueur (m), calculée', inp('readonly tabindex="-1" style="background:#eef2f7"', fmt(lonSemelles).replace(/\s/g, ''), '100%'))}
-      ${champ('Largeur de semelle (m)', inp('data-k="fond" data-champ="largeur" inputmode="decimal"', fd.largeur))}
-      ${champ('Hauteur de semelle (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Longueur = ${rigoleActive ? 'linéaire des rigoles (bloc 1 Terrassement)' : 'murs cochés « Porteur »'}. La profondeur de fouille se saisit dans le bloc 1 Terrassement.</p>
+      ${ro(rigoleActive ? 'Longueur (m), depuis le terrassement' : 'Longueur (m), calculée', fmt(lonSemelles).replace(/\s/g, ''))}
+      ${rigoleActive ? ro('Largeur (m), depuis le terrassement', fd.rigLarg || '') : champ('Largeur de semelle (m)', inp('data-k="fond" data-champ="largeur" inputmode="decimal"', fd.largeur))}
+      ${champ('Hauteur de semelle, béton (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
+    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">${rigoleActive ? 'Longueur et largeur reprises des rigoles du bloc 1 Terrassement (non ressaisies ici).' : 'Longueur calculée sur les murs cochés « Porteur ».'} La profondeur de fouille sans rigoles se saisit dans le bloc 1 Terrassement.</p>
 `;
   const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
