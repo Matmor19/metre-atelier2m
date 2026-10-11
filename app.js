@@ -800,7 +800,7 @@ function renderMetre() {
       const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || ouvrageRelie);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}${manuelle ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le texte de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
+        <td>${esc(l.designation)}${sansFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le texte de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}</td>
@@ -2601,7 +2601,11 @@ $('listeOuvrages').addEventListener('click', e => {
   if (o) { ouvrirModal(); ouvrirOuvrage(o); }
 });
 
-// Texte d'une ligne saisie à la main (jamais une ligne de calcul venant du configurateur ou d'un ouvrage relié)
+// Texte modifiable seulement si la ligne n'a pas de formule de cotes (L × l, L × H, L × l × h…)
+function sansFormule(l) {
+  return !['cote1', 'cote2', 'cote3'].some(k => l.valeurs && String(l.valeurs[k] ?? '').trim() !== '');
+}
+// Texte d'une ligne sans formule (jamais une ligne avec formule de cotes)
 $('tableMetre').addEventListener('click', e => {
   const b = e.target.closest('[data-desig]');
   if (!b) return;
