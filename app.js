@@ -954,15 +954,21 @@ function ouvrirConfigurateur(message) {
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
       ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
-      ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
+      ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) + (finTxt(x.fin, x.ral) ? ' · ' + esc(finTxt(x.fin, x.ral)) : '') : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
       <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
         <label style="display:block;font-size:14px;margin:4px 0">Type</label><select id="pl_${i}_menus_type" style="width:100%">${Object.entries(FICHE_OUV).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
         <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" value="1"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Largeur (m)</label><input id="pl_${i}_menus_l" inputmode="decimal" placeholder="ex. 1,20"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Hauteur (m)</label><input id="pl_${i}_menus_h" inputmode="decimal" placeholder="ex. 1,35"></div></div>
-        <label style="display:block;font-size:14px;margin:4px 0">Matériau</label><select id="pl_${i}_menus_mat" style="width:100%">${Object.entries(FICHE_MAT).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Matériau</label><select id="pl_${i}_menus_mat" style="width:100%">${optionsListe(matsPour('ouvrant'), 'PVC')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Finition</label><select id="pl_${i}_menus_fin" style="width:100%">${optionsListe(finsPour('PVC'), 'std')}</select>
+        <select id="pl_${i}_menus_ral" style="width:100%;display:none;margin-top:4px">${ralOptions('')}</select>
         <label style="display:block;font-size:14px;margin:4px 0">Volet</label><select id="pl_${i}_menus_volet" style="width:100%">${Object.entries(FICHE_VOLET).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
-        <label style="display:block;font-size:14px;margin:4px 0">Matériau du volet battant</label><select id="pl_${i}_menus_matvolet" style="width:100%"><option value="alu">Aluminium</option><option value="bois">Bois</option></select>
+        <div id="pl_${i}_menus_volbox" style="display:none;border-left:3px solid #E07838;padding-left:8px;margin:4px 0">
+          <label style="display:block;font-size:14px;margin:4px 0">Matériau du volet</label><select id="pl_${i}_menus_matvolet" style="width:100%">${optionsListe(matsPour('ouvrant'), 'alu')}</select>
+          <label style="display:block;font-size:14px;margin:4px 0">Finition du volet</label><select id="pl_${i}_menus_finvolet" style="width:100%">${optionsListe(finsPour('alu'), 'std')}</select>
+          <select id="pl_${i}_menus_ralvolet" style="width:100%;display:none;margin-top:4px">${ralOptions('')}</select>
+        </div>
         <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label><select id="pl_${i}_menus_appui" style="width:100%">${Object.entries(APPUI_LIB).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
         <div style="margin:6px 0"><label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_elec" style="width:auto;height:auto"> Volet roulant motorisé</label>
         <label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_securit" style="width:auto;height:auto"> Verre sécurit</label>
@@ -1112,7 +1118,7 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
       const g = id => { const el = document.getElementById(pre + id); return el ? el.value.trim() : ''; };
       const ck = id => { const el = document.getElementById(pre + id); return !!(el && el.checked); };
       if (g('type') && g('l') && g('h')) {
-        menusDe(p).push({ id: 'm' + uid(), type: g('type'), nb: g('nb') || '1', largeur: g('l'), hauteur: g('h'), materiau: g('mat'), volet: g('volet') || 'aucun', matvolet: g('matvolet'), electrique: ck('elec'), securit: ck('securit'), opaque: ck('opaque'), appui: g('appui') });
+        menusDe(p).push({ id: 'm' + uid(), type: g('type'), nb: g('nb') || '1', largeur: g('l'), hauteur: g('h'), materiau: g('mat'), fin: g('fin'), ral: g('ral'), volet: g('volet') || 'aucun', matvolet: g('matvolet'), finvolet: g('finvolet'), ralvolet: g('ralvolet'), electrique: ck('elec'), securit: ck('securit'), opaque: ck('opaque'), appui: g('appui') });
       }
     } else if (cat === 'fenetres' || cat === 'ouvertures') {
       if (v(pre + 'l') && v(pre + 'h')) {
@@ -1159,6 +1165,23 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   ouvrirConfigurateur();
 });
 // Modification directe d'une pièce (nombre, surface, périmètre, sol) ou de la hauteur
+// Options qui dépendent du choix : matériau selon le type, finition selon le matériau, RAL selon la finition
+if ($('vConfig')) $('vConfig').addEventListener('change', e => {
+  const m = e.target.id && e.target.id.match(/^pl_(\d+)_menus_(type|mat|fin|volet|matvolet|finvolet|ral|ralvolet)$/);
+  if (!m) return;
+  const g = s => document.getElementById('pl_' + m[1] + '_menus_' + s);
+  const ajuste = (sel, liste, defaut) => { const v = sel.value; sel.innerHTML = optionsListe(liste, liste.some(([k]) => k === v) ? v : defaut); };
+  if (m[2] === 'type' || m[2] === 'mat') {
+    ajuste(g('mat'), matsPour(g('type').value), 'PVC');
+    ajuste(g('fin'), finsPour(g('mat').value), g('mat').value === 'bois' ? 'brut' : 'std');
+  }
+  if (m[2] === 'matvolet' || m[2] === 'finvolet') {
+    ajuste(g('finvolet'), finsPour(g('matvolet').value), g('matvolet').value === 'bois' ? 'brut' : 'std');
+  }
+  if (m[2] === 'volet') g('volbox').style.display = g('volet').value === 'aucun' ? 'none' : '';
+  if (m[2] === 'ral' || m[2] === 'fin' || m[2] === 'mat' || m[2] === 'type') g('ral').style.display = g('fin').value === 'ral' ? '' : 'none';
+  if (m[2] === 'finvolet' || m[2] === 'matvolet' || m[2] === 'volet') g('ralvolet').style.display = g('finvolet').value === 'ral' ? '' : 'none';
+});
 if ($('vConfig')) $('vConfig').addEventListener('change', e => {
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   if (e.target.id === 'plPeint') { platDe(c).peintPortes = e.target.checked; sauverPlat(c); return; }
@@ -1180,6 +1203,24 @@ if ($('vConfig')) $('vConfig').addEventListener('change', e => {
 /* ============ Fiche projet (dimensions et calculs) ============ */
 const FICHE_OUV = { 'ouvrant': 'Ouvrant à la française', 'oscillo': 'Oscillo-battant', 'coulissant': 'Coulissant', 'porte': 'Porte', 'porte-fenetre': 'Porte-fenêtre' };
 const FICHE_MAT = { 'PVC': 'PVC', 'alu': 'Aluminium', 'bois': 'Bois' };
+const RAL_LISTE = [["RAL 1000", "Green beige"], ["RAL 1001", "Beige"], ["RAL 1002", "Sand yellow"], ["RAL 1003", "Signal yellow"], ["RAL 1004", "Golden yellow"], ["RAL 1005", "Honey yellow"], ["RAL 1006", "Maize yellow"], ["RAL 1007", "Daffodil yellow"], ["RAL 1011", "Brown beige"], ["RAL 1012", "Lemon yellow"], ["RAL 1013", "Oyster white"], ["RAL 1014", "Ivory"], ["RAL 1015", "Light ivory"], ["RAL 1016", "Sulfur yellow"], ["RAL 1017", "Saffron yellow"], ["RAL 1018", "Zinc yellow"], ["RAL 1019", "Grey beige"], ["RAL 1020", "Olive yellow"], ["RAL 1021", "Colza yellow"], ["RAL 1023", "Traffic yellow"], ["RAL 1024", "Ochre yellow"], ["RAL 1026", "Luminous yellow"], ["RAL 1027", "Curry"], ["RAL 1028", "Melon yellow"], ["RAL 1032", "Broom yellow"], ["RAL 1033", "Dahlia yellow"], ["RAL 1034", "Pastel yellow"], ["RAL 1035", "Pearl beige"], ["RAL 1036", "Pearl gold"], ["RAL 1037", "Sun yellow"], ["RAL 2000", "Yellow orange"], ["RAL 2001", "Red orange"], ["RAL 2002", "Blood orange"], ["RAL 2003", "Pastel orange"], ["RAL 2004", "Pure orange"], ["RAL 2005", "Luminous orange"], ["RAL 2007", "Luminous bright orange"], ["RAL 2008", "Bright red orange"], ["RAL 2009", "Traffic orange"], ["RAL 2010", "Signal orange"], ["RAL 2011", "Deep orange"], ["RAL 2012", "Salmon orange"], ["RAL 2013", "Pearl orange"], ["RAL 3000", "Flame red"], ["RAL 3001", "Signal red"], ["RAL 3002", "Carmine red"], ["RAL 3003", "Ruby red"], ["RAL 3004", "Purple red"], ["RAL 3005", "Wine red"], ["RAL 3007", "Black red"], ["RAL 3009", "Oxide red"], ["RAL 3011", "Brown red"], ["RAL 3012", "Beige red"], ["RAL 3013", "Tomato red"], ["RAL 3014", "Antique pink"], ["RAL 3015", "Light pink"], ["RAL 3016", "Coral red"], ["RAL 3017", "Rose"], ["RAL 3018", "Strawberry red"], ["RAL 3020", "Traffic red"], ["RAL 3022", "Salmon pink"], ["RAL 3024", "Luminous red"], ["RAL 3026", "Luminous bright red"], ["RAL 3027", "Raspberry red"], ["RAL 3028", "Pure red"], ["RAL 3031", "Orient red"], ["RAL 3032", "Pearl ruby red"], ["RAL 3033", "Pearl pink"], ["RAL 4001", "Red lilac"], ["RAL 4002", "Red violet"], ["RAL 4003", "Heather violet"], ["RAL 4004", "Claret violet"], ["RAL 4005", "Blue lilac"], ["RAL 4006", "Traffic purple"], ["RAL 4007", "Purple violet"], ["RAL 4008", "Signal violet"], ["RAL 4009", "Pastel violet"], ["RAL 4010", "Telemagenta"], ["RAL 4011", "Pearl violet"], ["RAL 4012", "Pearl blackberry"], ["RAL 5000", "Violet blue"], ["RAL 5001", "Green blue"], ["RAL 5002", "Ultramarine blue"], ["RAL 5003", "Sapphire blue"], ["RAL 5004", "Black blue"], ["RAL 5005", "Signal blue"], ["RAL 5007", "Brilliant blue"], ["RAL 5008", "Grey blue"], ["RAL 5009", "Azure blue"], ["RAL 5010", "Gentian blue"], ["RAL 5011", "Steel blue"], ["RAL 5012", "Light blue"], ["RAL 5013", "Cobalt blue"], ["RAL 5014", "Pigeon blue"], ["RAL 5015", "Sky blue"], ["RAL 5017", "Traffic blue"], ["RAL 5018", "Turquoise blue"], ["RAL 5019", "Capri blue"], ["RAL 5020", "Ocean blue"], ["RAL 5021", "Water blue"], ["RAL 5022", "Night blue"], ["RAL 5023", "Distant blue"], ["RAL 5024", "Pastel blue"], ["RAL 5025", "Pearl gentian"], ["RAL 5026", "Pearl night blue"], ["RAL 6000", "Patina green"], ["RAL 6001", "Emerald green"], ["RAL 6002", "Leaf green"], ["RAL 6003", "Olive green"], ["RAL 6004", "Blue green"], ["RAL 6005", "Moss green"], ["RAL 6006", "Grey olive"], ["RAL 6007", "Bottle green"], ["RAL 6008", "Brown green"], ["RAL 6009", "Fir green"], ["RAL 6010", "Grass green"], ["RAL 6011", "Reseda green"], ["RAL 6012", "Black green"], ["RAL 6013", "Reed green"], ["RAL 6014", "Yellow olive"], ["RAL 6015", "Black olive"], ["RAL 6016", "Turquoise green"], ["RAL 6017", "May green"], ["RAL 6018", "Yellow green"], ["RAL 6019", "Pastel green"], ["RAL 6020", "Chromium green"], ["RAL 6021", "Pale green"], ["RAL 6022", "Brown olive"], ["RAL 6024", "Traffic green"], ["RAL 6025", "Fern green"], ["RAL 6026", "Opal green"], ["RAL 6027", "Light green"], ["RAL 6028", "Pine green"], ["RAL 6029", "Mint green"], ["RAL 6031", "Bronze green"], ["RAL 6032", "Signal green"], ["RAL 6033", "Mint turquoise"], ["RAL 6034", "Pastel turquoise"], ["RAL 6035", "Pearl green"], ["RAL 6036", "Pearl opal green"], ["RAL 6037", "Pure green"], ["RAL 6038", "Luminous green"], ["RAL 6039", "Fibrous green"], ["RAL 7000", "Squirrel grey"], ["RAL 7001", "Silver grey"], ["RAL 7002", "Olive grey"], ["RAL 7003", "Moss grey"], ["RAL 7004", "Signal grey"], ["RAL 7005", "Mouse grey"], ["RAL 7006", "Beige grey"], ["RAL 7008", "Khaki grey"], ["RAL 7009", "Green grey"], ["RAL 7010", "Tarpaulin grey"], ["RAL 7011", "Iron grey"], ["RAL 7012", "Basalt grey"], ["RAL 7013", "Brown grey or NATO olive"], ["RAL 7015", "Slate grey"], ["RAL 7016", "Anthracite grey"], ["RAL 7021", "Black grey"], ["RAL 7022", "Umbra grey"], ["RAL 7023", "Concrete grey"], ["RAL 7024", "Graphite grey"], ["RAL 7026", "Granite grey"], ["RAL 7030", "Stone grey"], ["RAL 7031", "Blue grey"], ["RAL 7032", "Pebble grey"], ["RAL 7033", "Cement grey"], ["RAL 7034", "Yellow grey"], ["RAL 7035", "Light grey"], ["RAL 7036", "Platinum grey"], ["RAL 7037", "Dusty grey"], ["RAL 7038", "Agate grey"], ["RAL 7039", "Quartz grey"], ["RAL 7040", "Window grey"], ["RAL 7042", "Traffic grey A"], ["RAL 7043", "Traffic grey B"], ["RAL 7044", "Silk grey"], ["RAL 7045", "Telegrey 1"], ["RAL 7046", "Telegrey 2"], ["RAL 7047", "Telegrey 4"], ["RAL 7048", "Pearl mouse grey"], ["RAL 8000", "Green brown"], ["RAL 8001", "Ochre brown"], ["RAL 8002", "Signal brown"], ["RAL 8003", "Clay brown"], ["RAL 8004", "Copper brown"], ["RAL 8007", "Fawn brown"], ["RAL 8008", "Olive brown"], ["RAL 8011", "Nut brown"], ["RAL 8012", "Red brown"], ["RAL 8014", "Sepia brown"], ["RAL 8015", "Chestnut brown"], ["RAL 8016", "Mahogany brown"], ["RAL 8017", "Chocolate brown"], ["RAL 8019", "Grey brown"], ["RAL 8022", "Black brown"], ["RAL 8023", "Orange brown"], ["RAL 8024", "Beige brown"], ["RAL 8025", "Pale brown"], ["RAL 8028", "Terra brown"], ["RAL 8029", "Pearl copper"], ["RAL 9001", "Cream"], ["RAL 9002", "Grey white"], ["RAL 9003", "Signal white"], ["RAL 9004", "Signal black"], ["RAL 9005", "Jet black"], ["RAL 9006", "White aluminium"], ["RAL 9007", "Grey aluminium"], ["RAL 9010", "Pure white"], ["RAL 9011", "Graphite black"], ["RAL 9012", "Clean room white"], ["RAL 9016", "Traffic white"], ["RAL 9017", "Traffic black"], ["RAL 9018", "Papyrus white"], ["RAL 9022", "Pearl light grey"], ["RAL 9023", "Pearl dark grey"]];
+// Matériaux possibles selon le type (le coulissant n'existe pas en bois)
+function matsPour(type) {
+  return type === 'coulissant' ? [['PVC', 'PVC'], ['alu', 'Aluminium']] : [['PVC', 'PVC'], ['alu', 'Aluminium'], ['bois', 'Bois']];
+}
+// Finitions : bois = brut, teinté ou RAL ; PVC / alu = standard (blanc) ou RAL
+function finsPour(mat) {
+  return mat === 'bois' ? [['brut', 'Bois brut'], ['teinte', 'Bois teinté'], ['ral', 'Couleur RAL']] : [['std', 'Standard (blanc)'], ['ral', 'Couleur RAL']];
+}
+function optionsListe(liste, val) { return liste.map(([k, t]) => `<option value="${k}" ${k === val ? 'selected' : ''}>${t}</option>`).join(''); }
+function ralOptions(val) { return '<option value="">— choisir la couleur —</option>' + RAL_LISTE.map(([k, t]) => `<option value="${k}" ${k === val ? 'selected' : ''}>${k} · ${t}</option>`).join(''); }
+// Texte ajouté à la désignation et à l'affichage : finition et couleur RAL
+function finTxt(fin, ral) {
+  if (fin === 'brut') return 'bois brut';
+  if (fin === 'teinte') return 'bois teinté';
+  if (fin === 'ral') return ral ? ral : 'couleur RAL à choisir';
+  return '';
+}
 const FICHE_VOLET = { 'aucun': 'Pas de volet', 'battant': 'Volet battant', 'roulant': 'Volet roulant' };
 const FICHE_TOIT = { 'deux-pans': 'Deux pans', 'monopente': 'Monopente', 'plat': 'Toit plat (pente minimale 3,5 %)' };
 // Choix de la fiche : « — à choisir — » par défaut, rien n'est proposé tant que vous n'avez pas choisi
@@ -1580,7 +1621,7 @@ function ficheRendre() {
     || '<p style="color:#6b5a7a">Aucun mur. Ajoutez un mur par segment (une hauteur par segment si elle change).</p>';
   const menusResume = (() => {
     const pcs = piecesDe(c).filter(x => menusDe(x).length);
-    const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
+    const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')}${finTxt(m.fin, m.ral) ? ' · ' + esc(finTxt(m.fin, m.ral)) : ''} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
     const anciennes = p.ouvertures.length ? `<p style="color:#b42318;font-weight:600;margin:10px 0 2px">À rattacher à une pièce (pas encore comptées dans le métré) :</p>` + p.ouvertures.map(o => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(o.nom)} · ${esc(FICHE_OUV[o.type] || o.type)} · ${num(o.largeur)} × ${num(o.hauteur)} m <button type="button" class="btn small danger" data-action="delouv" data-id="${o.id}">Supprimer</button></div>`).join('') : '';
     return (lignes || '<p class="muted">Aucune menuiserie saisie. Saisissez-les dans chaque pièce, bloc B.</p>') + anciennes;
   })();
@@ -1864,10 +1905,12 @@ function ficheVersMetre() {
     const dims = `${fmt(num(o.largeur))} × ${fmt(num(o.hauteur))} m`;
     const opts = [o.securit ? 'verre sécurit' : '', o.opaque ? 'verre opaque' : ''].filter(Boolean).join(', ');
     const ouv = MENU_DESIG[o.type] && MENU_DESIG[o.type][o.materiau];
-    ajouter(ouv, q, `${lieu} – ${FICHE_OUV[o.type]} ${FICHE_MAT[o.materiau]} ${dims}${opts ? ' – ' + opts : ''}`);
-    if (o.volet === 'battant') ajouter(VOLET_DESIG['battant-' + (o.matvolet || 'alu')], q, `Volet battant ${o.matvolet === 'bois' ? 'bois' : 'aluminium'} – ${lieu}`);
+    const finM = finTxt(o.fin, o.ral);
+    ajouter(ouv, q, `${lieu} – ${FICHE_OUV[o.type]} ${FICHE_MAT[o.materiau]}${finM ? ' ' + finM : ''} ${dims}${opts ? ' – ' + opts : ''}`);
+    const finV = finTxt(o.finvolet, o.ralvolet), matV = FICHE_MAT[o.matvolet || 'alu'] + (finV ? ' ' + finV : '');
+    if (o.volet === 'battant') ajouter(VOLET_DESIG['battant-' + (o.matvolet || 'alu')], q, `Volet battant ${matV} – ${lieu}`);
     if (o.volet === 'roulant') {
-      ajouter(VOLET_DESIG.roulant, q, `Volet roulant – ${lieu}`);
+      ajouter(VOLET_DESIG.roulant, q, `Volet roulant ${matV} – ${lieu}`);
       if (o.electrique) ajouter(ALIM_VOLET, q, `Alimentation volet roulant – ${lieu}`);
     }
   }
