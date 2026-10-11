@@ -234,7 +234,7 @@ function calcul(o, v) {
 // Champs affichés pour un ouvrage du catalogue
 function champsDe(o) {
   // Ouvrage lié à un autre : pas de « Nombre », les cotes viennent de l'ouvrage source
-  const c = o.champs.filter(x => !(o.liePar && x.cle === 'nombre')).map(x => ({ ...x }));
+  const c = o.champs.filter(x => !((o.liePar || o.lieConfig) && x.cle === 'nombre')).map(x => ({ ...x }));
   if (o.saisie === 'menuiseries') {
     c.push({ cle: 'largeur_cm', libelle: 'Largeur (cm)' },
            { cle: 'hauteur_cm', libelle: 'Hauteur (cm)' },
@@ -604,6 +604,25 @@ function prixAffiches() { return lsGet('prix', false) === true; }
 // Mise à jour automatique : les lignes déjà au métré qui correspondent à un ouvrage du configurateur
 // sont mises à jour sur place (même place, même numéro). Rien n'est ajouté ni supprimé ici.
 let _majConfigEnCours = false;
+// Sources « configurateur » possibles pour les cotes d'un ouvrage (L, l, h)
+const SOURCES_CONFIG = [
+  { cle: 'massif_m3', libelle: 'Massif de fondation (longueur, largeur, hauteur)' },
+  { cle: 'fond_fouille', libelle: 'Fouille en tranchée des semelles filantes (rigoles)' },
+  { cle: 'fond_semelle', libelle: 'Semelles filantes béton armé (rigoles)' }
+];
+// Cotes (cote1..3) d'un ouvrage lié : configurateur, ou dernière ligne de l'ouvrage source. Null si rien.
+function coteSource(o, id, uidExclu) {
+  if (o.lieConfig) {
+    const c = chantiers.find(x => x.id === id);
+    if (!c) return null;
+    const v = qteValeur({ qte: o.lieConfig, unite: o.unite }, ctxQuantites(c));
+    return v && v.cote1 != null && v.cote1 !== '' ? { nombre: v.nombre ?? '1', cote1: v.cote1, cote2: v.cote2 ?? '', cote3: v.cote3 ?? '' } : null;
+  }
+  if (!o.liePar) return null;
+  const src = lignesDe(id).slice().reverse().find(y => y.ouvrage === o.liePar && y.uid !== uidExclu);
+  if (!src || !src.valeurs || src.valeurs.cote1 == null || src.valeurs.cote1 === '') return null;
+  return { cote1: src.valeurs.cote1, cote2: src.valeurs.cote2 ?? '', cote3: src.valeurs.cote3 ?? '' };
+}
 // Liaison permanente : une ligne dont l'ouvrage « reprend les cotes » d'un autre suit les cotes de sa dernière ligne
 function majLignesLiees(id) {
   if (!id || !BIB || _revueCollecte) return;
@@ -612,17 +631,17 @@ function majLignesLiees(id) {
     let change = false;
     L = L.map(x => {
       const o = BIB.ouvrages.find(y => y.id === x.ouvrage);
-      if (!o || !o.liePar || o.liePar === o.id) return x;
-      const src = L.slice().reverse().find(y => y.ouvrage === o.liePar && y.uid !== x.uid);
-      if (!src || !src.valeurs || src.valeurs.cote1 == null || src.valeurs.cote1 === '') return x;
+      if (!o || !(o.liePar || o.lieConfig) || o.liePar === o.id) return x;
+      const cs = coteSource(o, id, x.uid);
+      if (!cs) return x;
       const nv = Object.assign({}, x.valeurs);
       delete nv.src; delete nv.mode;
-      nv.nombre = '1';   // pas de nombre sur un ouvrage lié
-      ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = src.valeurs[k] != null ? src.valeurs[k] : ''; });
+      nv.nombre = cs.nombre != null ? cs.nombre : '1';   // nombre : celui du configurateur, sinon 1
+      ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = cs[k] != null ? cs[k] : ''; });
       const q = calcul(o, nv);
       if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) return x;
       change = true; ch = true;
-      return Object.assign({}, x, { valeurs: nv, quantite: q, lienDe: o.liePar });
+      return Object.assign({}, x, { valeurs: nv, quantite: q, lienDe: o.liePar || o.lieConfig });
     });
     if (!change) break;
   }
@@ -2197,10 +2216,7 @@ function ouvrirOuvrage(o, precedent, message) {
   const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   // Ouvrage lié : cotes reprises de la dernière ligne de l'ouvrage source (dans ce chantier)
   let compteLie = null;
-  if (o.liePar && !precedent) {
-    const src = lignesDe(courantId).slice().reverse().find(y => y.ouvrage === o.liePar && y.valeurs && y.valeurs.cote1 != null && y.valeurs.cote1 !== '');
-    if (src) compteLie = { cote1: src.valeurs.cote1, cote2: src.valeurs.cote2 ?? '', cote3: src.valeurs.cote3 ?? '' };
-  }
+  if ((o.liePar || o.lieConfig) && !precedent) compteLie = coteSource(o, courantId, null);
   const v = precedent || compteLie || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul suivant plan : |^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
@@ -3093,6 +3109,8 @@ function formulaireOuvrage(o, lotChoisi) {
       <label for="b_mesure">Mode de métré (cotes demandées)</label><select id="b_mesure" name="mesure">${optionsMesure(v.unite, v.mesure)}</select>
       <label for="b_lie">Reprend les cotes de l'ouvrage (liaison permanente)</label>
       <select id="b_lie" name="lie"><option value="">— aucun —</option>${BIB.ouvrages.filter(x => !x.supprime && (!o || x.id !== o.id)).slice().sort((a, b) => a.designation.localeCompare(b.designation, 'fr')).map(x => `<option value="${esc(x.id)}" ${o && o.liePar === x.id ? 'selected' : ''}>${esc(x.designation)} · ${esc(x.id)}</option>`).join('')}</select>
+      <label for="b_lieconf">Ou reprend les cotes du configurateur</label>
+      <select id="b_lieconf" name="lieconf"><option value="">— aucun —</option>${SOURCES_CONFIG.map(x => `<option value="${esc(x.cle)}" ${o && o.lieConfig === x.cle ? 'selected' : ''}>${esc(x.libelle)}</option>`).join('')}</select>
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
       <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 2 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
@@ -3154,6 +3172,7 @@ function enregistrerOuvrage(id) {
   const mesure = f.elements.mesure ? f.elements.mesure.value : '';
   const rappel = f.elements.rappel ? f.elements.rappel.value.trim() : '';
   const lie = f.elements.lie ? f.elements.lie.value : '';
+  const lieConf = f.elements.lieconf ? f.elements.lieconf.value : '';
   const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
   let prix = null;
   if (!effacer) {
@@ -3172,6 +3191,7 @@ function enregistrerOuvrage(id) {
     if (mesure) o.mesure = mesure; else delete o.mesure;
     if (rappel) o.rappel = rappel; else delete o.rappel;
     if (lie && lie !== o.id) o.liePar = lie; else delete o.liePar;
+    if (lieConf) o.lieConfig = lieConf; else delete o.lieConfig;
     o.designation = des; o.lot = lot; o.unite = unite;
     o.version = (o.version || 1) + 1;
     if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
@@ -3181,6 +3201,7 @@ function enregistrerOuvrage(id) {
     if (mesure) o.mesure = mesure;
     if (rappel) o.rappel = rappel;
     if (lie) o.liePar = lie;
+    if (lieConf) o.lieConfig = lieConf;
     if (prix) o.prix_indicatif = prix;
     BIB.ouvrages.push(o);
   }
