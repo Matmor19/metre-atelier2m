@@ -616,7 +616,12 @@ function valeurLien(c, l) {
   if (!c || !l) return undefined;
   const p = projetDe(c);
   if (l.k === 'epais') return p.epaisseur;
-  if (l.k === 'piece') { const pc = piecesDe(c)[l.idx]; return pc ? pc[l.champ] : undefined; }
+  if (l.k === 'piece') {
+    // Liaison par nom (type + numéro ou nom) : chaque chantier retrouve sa propre pièce ; sinon ancienne liaison par position
+    const liste = piecesDe(c);
+    const pc = l.type !== undefined ? liste.find(x => x.type === l.type && (x.qualif || '') === (l.qualif || '')) : liste[l.idx];
+    return pc ? pc[l.champ] : undefined;
+  }
   if (l.k === 'mur') { const m = (p.murs || []).find(x => x.id === l.id); return m ? m[l.champ] : undefined; }
   if (l.k === 'ouv') { const x = (p.ouvertures || []).find(y => y.id === l.id); return x ? x[l.champ] : undefined; }
   if (l.k === 'pleine') { const e = pleinesDe(p.fond).find(y => y.id === l.id); return e ? e[l.champ] : undefined; }
@@ -1089,21 +1094,6 @@ function genererPlat() {
   if (uniques.length) msg += ' À compléter : ' + uniques.join(' ; ') + '.';
   return msg;
 }
-// Liens « case de pièce » : après la suppression de la pièce n°idx, les liens vers les pièces suivantes reculent d'un cran ; ceux vers la pièce supprimée sont retirés
-function decalerLiensPieces(idx) {
-  let retires = 0;
-  for (const o of (BIB && BIB.ouvrages) || []) {
-    if (!o.cotes) continue;
-    for (const k of Object.keys(o.cotes)) {
-      const l = o.cotes[k];
-      if (!l || l.k !== 'piece') continue;
-      if (l.idx === idx) { delete o.cotes[k]; retires++; }
-      else if (l.idx > idx) l.idx -= 1;
-    }
-  }
-  if (retires) lsSet('bib', BIB);
-  return retires;
-}
 function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
@@ -1346,14 +1336,7 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   if (del) {
     const parts = del.dataset.pldel.split(':');
     const L = piecesDe(c);
-    if (parts.length === 1) {
-      const idxSupp = parseInt(parts[0], 10);
-      L.splice(idxSupp, 1);
-      const retires = decalerLiensPieces(idxSupp);
-      sauverPlat(c); ouvrirConfigurateur();
-      if (retires) alert(`Pièce supprimée : ${retires} cote(s) reliée(s) à cette pièce ont été retirées de la bibliothèque. Refaites le lien si besoin.`);
-      return;
-    }
+    if (parts.length === 1) L.splice(parseInt(parts[0], 10), 1);
     else L[parseInt(parts[0], 10)][parts[1]].splice(parseInt(parts[2], 10), 1);
     sauverPlat(c); ouvrirConfigurateur(); return;
   }
@@ -3298,8 +3281,8 @@ document.addEventListener('click', e => {
       const [i, champ] = t.dataset.plrow.split(':');
       const c = chantiers.find(x => x.id === courantId);
       const pc = c ? piecesDe(c)[parseInt(i, 10)] : null;
-      lien = { k: 'piece', idx: parseInt(i, 10), champ };
-      titre = 'Pièce « ' + ((pc && (pc.nom || pc.type)) || ('n°' + (parseInt(i, 10) + 1))) + ' »';
+      lien = pc ? { k: 'piece', type: pc.type, qualif: pc.qualif || '', champ } : { k: 'piece', idx: parseInt(i, 10), champ };
+      titre = 'Pièce « ' + ((pc && nomPiece(pc)) || ('n°' + (parseInt(i, 10) + 1))) + ' »';
     } else {
       lien = { k: t.dataset.k, champ: t.dataset.champ || '' };
       if (t.dataset.id) lien.id = t.dataset.id;
