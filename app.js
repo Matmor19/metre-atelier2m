@@ -953,7 +953,7 @@ function ouvrirConfigurateur(message) {
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
       ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
-      ${subListe(menusDe(p), i, 'menus', x => `${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}`)}
+      ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
       <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
         <label style="display:block;font-size:14px;margin:4px 0">Type</label><select id="pl_${i}_menus_type" style="width:100%">${Object.entries(FICHE_OUV).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
         <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" value="1"></div>
@@ -1124,6 +1124,13 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
     sauverPlat(c); ouvrirConfigurateur(); return;
   }
   // Suppression d'une pièce (« i ») ou d'un élément de pièce (« i:cat:k »)
+  const vm = e.target.closest('[data-valider-menu]');
+  if (vm) {
+    const [i, k] = vm.dataset.validerMenu.split(':').map(x => parseInt(x, 10));
+    const pc = piecesDe(c)[i]; const m = pc && menusDe(pc)[k];
+    if (m) { const msg = validerMenu(c, pc, m); $('cfgStatut').textContent = msg; }
+    return;
+  }
   const del = e.target.closest('[data-pldel]');
   if (del) {
     const parts = del.dataset.pldel.split(':');
@@ -1319,6 +1326,25 @@ function projetDe(c) {
 // Calculs : murs moins ouvertures de plus de 2 m², tableaux (2 côtés × hauteur × épaisseur),
 // toiture développée, fondations (murs porteurs × dimensions de la semelle et de la fouille)
 const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
+// Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
+function validerMenu(c, pc, m) {
+  const lieu = nomPiece(pc);
+  const dims = `${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m`;
+  _revueCollecte = {};
+  let col;
+  try { ficheVersMetre(); } finally { col = _revueCollecte; _revueCollecte = null; }
+  const propres = (col[c.id] || []).filter(l => l.lot === 'menuiseries-exterieures' && (
+    (l.designation.startsWith(lieu + ' – ' + FICHE_OUV[m.type]) && l.designation.includes(dims)) ||
+    (l.designation.endsWith(' – ' + lieu) && (m.volet === 'battant' || m.volet === 'roulant'))));
+  const L = lignesDe(c.id);
+  const dejaLa = l => L.some(x => x.uid === l.uid || (x.ouvrage === l.ouvrage && x.designation === l.designation));
+  const nouvelles = propres.filter(l => !dejaLa(l));
+  if (!propres.length) return 'Cette menuiserie ne donne aucune ligne : vérifiez le type, la largeur et la hauteur.';
+  if (!nouvelles.length) return 'Cette menuiserie est déjà dans le métré.';
+  sauverLignes(c.id, L.concat(nouvelles));
+  renderMetre();
+  return nouvelles.length + ' ligne(s) de la menuiserie ajoutée(s) au métré.';
+}
 function piecesCourantes() {
   const c = chantiers.find(x => x.id === courantId);
   return c ? piecesDe(c) : [];
