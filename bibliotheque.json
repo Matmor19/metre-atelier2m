@@ -13411,7 +13411,7 @@
       "version": 1
     },
     {
-      "id": "OUV-0756",
+      "id": "OUV-0876",
       "lot": "menuiseries-interieures",
       "designation": "Façade de placard battante (m²)",
       "unite": "m²",
@@ -13427,7 +13427,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2
     },
     {
       "id": "OUV-0756",
@@ -15739,6 +15739,6 @@
       "qte": "res_elec_ml"
     }
   ],
-  "revision": 46,
-  "prochainNumero": 875
+  "revision": 47,
+  "prochainNumero": 876
 }
