@@ -374,10 +374,16 @@ function dupliquerChantier(id) {
   ouvrirChantier(nouveau.id);
 }
 
+// Lot choisi dans la saisie : en surbrillance orange
+function colorerLot() {
+  const s = $('selLot'); if (!s) return;
+  s.style.background = '#E07838'; s.style.color = '#fff'; s.style.borderColor = '#E07838'; s.style.fontWeight = '700';
+}
 function remplirLots() {
   $('selLot').innerHTML = BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
   if (!lotCourant) lotCourant = BIB.lots[0].id;
   $('selLot').value = lotCourant;
+  colorerLot();
 }
 
 function renderOuvrages() {
@@ -2423,7 +2429,7 @@ $('ongletTableau').onclick = ouvrirTableau;
 $('ongletSaisie2').onclick = () => window.open('index.html', 'metre2m-saisie');
 $('ongletTableau2').onclick = () => route('tableau');
 
-$('selLot').onchange = e => { lotCourant = e.target.value; renderOuvrages(); };
+$('selLot').onchange = e => { lotCourant = e.target.value; colorerLot(); renderOuvrages(); };
 $('recherche').oninput = renderOuvrages;
 
 $('listeOuvrages').addEventListener('click', e => {
