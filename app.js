@@ -3257,6 +3257,7 @@ async function pdfCdpgfFormulaire() {
   ligne('3. Remplissez uniquement les cases « P.U. HT » (prix unitaire) et « TVA % » de chaque ligne. Les quantités sont figées.', M, LARG, 9, helv, NOIR);
   ligne('4. Les montants, les totaux HT, la TVA et le total TTC se calculent automatiquement.', M, LARG, 9, helv, NOIR);
   ligne('5. Une fois rempli, enregistrez le fichier (Fichier > Enregistrer) avant de le renvoyer.', M, LARG, 9, helv, NOIR);
+  ligne('Les taux de TVA du lot (TVA 1, 2 et 3) sont affichés en haut de chaque lot : ils sont repris automatiquement de la colonne « TVA % ».', M, LARG, 9, helv, NOIR);
 
   // ---- Une section par lot ----
   lots.forEach((lot, k) => {
@@ -3266,6 +3267,16 @@ async function pdfCdpgfFormulaire() {
     y -= 26;
     ecrire('Lot ' + lot.num + ' · ' + lot.nom, M, y - 16, 16, helvB, NOIR);
     y -= 30;
+    // Taux de TVA du lot, repris des lignes (même calcul que plus bas)
+    ecrire('Taux de TVA du lot :', M, y - 12, 9, helvB, ORANGE);
+    const topTVA = [1, 2, 3].map(t => {
+      const xx = M + 125 + (t - 1) * 118;
+      ecrire(`TVA ${t} :`, xx, y - 12, 9, helvB, NOIR);
+      const f = champ(`L${k}_TOP${t}`, xx + 44, y - 15, 40, 15, { align: TextAlignment.Center, fond: GRIS_CLAIR });
+      ecrire('%', xx + 88, y - 12, 9, helv, NOIR);
+      return f;
+    });
+    y -= 26;
     if (lot.gen) {
       const g = genDuLot(lot.id);
       if (g) {
@@ -3323,6 +3334,7 @@ async function pdfCdpgfFormulaire() {
     for (const o of fTVA) {
       calcul(o.ftx, `var r=[];${listeTaux}event.value=(r.length>=${o.t})?String(r[${o.t - 1}]).replace('.',','):'';`);
     }
+    topTVA.forEach((f, i) => calcul(f, `var r=[];${listeTaux}event.value=(r.length>=${i + 1})?String(r[${i}]).replace('.',','):'';`));
     for (const o of fTVA) {
       const cumuls = noms.map(q => `if(String(getField("${q.t}").value).replace(/\\s/g,'')!==''&&n(getField("${q.t}").value)===r&&String(getField("${q.m}").value).replace(/\\s/g,'')!==''){s+=n(getField("${q.m}").value);}`).join('');
       calcul(o.fmt, `var tx=String(getField("L${k}_TX${o.t}").value).replace(/\\s/g,'');if(tx===''){event.value='';}else{var r=n(tx),s=0;${cumuls}event.value=f(s*r/100);}`);
