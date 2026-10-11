@@ -83,6 +83,19 @@ async function post(corps) {
   return r.json();
 }
 
+// Ajoute les ouvrages de soutènement et de muret s'ils manquent (copie du téléphone comprise)
+function assurerOuvragesSoutenement() {
+  if (!BIB || !Array.isArray(BIB.ouvrages)) return;
+  let change = false;
+  for (const t of SOUT_TYPES) {
+    if (BIB.ouvrages.some(o => o.id === t.idOuv)) continue;
+    BIB.ouvrages.push({ id: t.idOuv, lot: t.lot, designation: t.designation, unite: 'm²', type: 'commun', saisie: 'metre', mesure: 'lxh', champs: champsPourMode('m²', 'lxh'), version: 1 });
+    change = true;
+  }
+  const plusGrand = Math.max(BIB.prochainNumero || 0, ...BIB.ouvrages.map(o => parseInt(String(o.id).slice(4), 10) || 0));
+  if (plusGrand > (BIB.prochainNumero || 0)) { BIB.prochainNumero = plusGrand; change = true; }
+  if (change) lsSet('bib', BIB);
+}
 async function chargerBibliotheque() {
   try {
     const r = await fetch('bibliotheque.json', { cache: 'no-cache' });
@@ -92,6 +105,7 @@ async function chargerBibliotheque() {
   }
   // Modifications faites dans l'application et pas encore envoyées sur Drive : elles prévalent
   if (lsGet('bib_modifiee', false) && lsGet('bib', null)) BIB = lsGet('bib', null);
+  assurerOuvragesSoutenement();
   // Généralités par lot (texte fixe). Hors ligne : dernière copie connue.
   try {
     const g = await fetch('generalites.json', { cache: 'no-cache' });
@@ -297,6 +311,12 @@ function detail(l) {
 const TXT_SURFACE = 'Surface mesurée suivant plan';
 // Ouverture déduite des murs à partir de cette surface (m²), partout dans le calcul et les libellés
 const SEUIL_DEDUCTION = 1.5;
+// Murs de soutènement et muret de jardin : surface nette (longueur × hauteur), aucune ouverture déduite
+const SOUT_TYPES = [
+  { id: 'beton', nom: 'Mur de soutènement béton armé', idOuv: 'OUV-0881', designation: 'Mur de soutènement béton armé (surface nette)', lot: 'terrassement-vrd' },
+  { id: 'aggl', nom: 'Mur de soutènement en aggloméré de ciment', idOuv: 'OUV-0882', designation: 'Mur de soutènement en aggloméré de ciment (surface nette)', lot: 'terrassement-vrd' },
+  { id: 'muret', nom: 'Muret de jardin', idOuv: 'OUV-0883', designation: 'Muret de jardin (surface nette)', lot: 'amenagement-exterieur' }
+];
 function detailHtml(l) {
   const v = l.valeurs || {};
   // Texte du détail corrigé à la main (ligne sans formule de cotes)
@@ -1617,6 +1637,7 @@ function projetDe(c) {
   if (!c.projet) c.projet = { epaisseur: '', murs: [], ouvertures: [], toiture: { type: '', surface: '', pente: '', couverture: '' }, choix: { murs: '', tableaux: '', finition: '' }, fond: Object.assign({}, FICHE_FONDS_DEF) };
   if (!c.projet.fond) c.projet.fond = Object.assign({}, FICHE_FONDS_DEF);
   if (!c.projet.equip) c.projet.equip = {};
+  if (!c.projet.soutenement) c.projet.soutenement = [];
   if (!c.projet.cuisine) c.projet.cuisine = { bas: '', haut: '', plan: '', plan_ml: '' };
   if (!c.projet.chantier) c.projet.chantier = { eau: '', elec: '', base: '', grue: '', bennes: '', bennesTri: '' };
   if (c.projet.choix.finition === undefined) c.projet.choix.finition = '';
@@ -1960,6 +1981,12 @@ function ficheRendre() {
       <label style="font-size:12px;padding-bottom:8px"><input type="checkbox" data-k="mur" data-id="${m.id}" data-champ="porteur" ${m.porteur !== false ? 'checked' : ''}> Porteur</label>
       <button type="button" class="btn small danger" data-action="delmur" data-id="${m.id}">✕</button></div>`).join('')
     || '<p style="color:#6b5a7a">Aucun mur. Ajoutez un mur par segment (une hauteur par segment si elle change).</p>';
+  const sout = (p.soutenement || []).map((s, i) => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;align-items:end;margin-bottom:6px">
+      ${champ('Type', `<select data-k="sout" data-id="${s.id}" data-champ="type">${SOUT_TYPES.map(t => `<option value="${t.id}" ${s.type === t.id ? 'selected' : ''}>${esc(t.nom)}</option>`).join('')}</select>`)}
+      ${champ('Longueur (m)', inp(`data-k="sout" data-id="${s.id}" data-champ="longueur" inputmode="decimal"`, s.longueur))}
+      ${champ('Hauteur (m)', inp(`data-k="sout" data-id="${s.id}" data-champ="hauteur" inputmode="decimal"`, s.hauteur))}
+      <div style="grid-column:1/-1;text-align:right"><button type="button" class="btn small danger" data-action="delsout" data-id="${s.id}">Supprimer</button></div></div>`).join('')
+    || '<p style="color:#6b5a7a">Aucun mur de soutènement ni muret de jardin.</p>';
   const menusResume = (() => {
     const pcs = piecesDe(c).filter(x => menusDe(x).length);
     const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')}${finTxt(m.fin, m.ral) ? ' · ' + esc(finTxt(m.fin, m.ral)) : ''} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
@@ -2083,6 +2110,7 @@ function ficheRendre() {
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal" placeholder="ex. 30"', p.epaisseur, '160px')))}
     ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
+    ${carte('Murs de soutènement et murets (surface nette, aucune ouverture déduite)', sout + '<button type="button" class="btn sec" data-action="addsout" style="margin-top:6px">+ Ajouter un mur de soutènement ou muret</button>')}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
     ${carte('Plancher bas', contenuPlancher)}
@@ -2154,6 +2182,7 @@ function ficheChange(e) {
   const champ = t.dataset.champ;
   if (k === 'epais') p.epaisseur = val;
   else if (k === 'mur') { const m = p.murs.find(x => x.id === t.dataset.id); if (m) m[champ] = val; }
+  else if (k === 'sout') { const s = p.soutenement.find(x => x.id === t.dataset.id); if (s) s[champ] = val; }
   else if (k === 'ouv') { const o = p.ouvertures.find(x => x.id === t.dataset.id); if (o) o[champ] = val; }
   else if (k === 'toit') p.toiture[champ] = val;
   else if (k === 'fond') p.fond[champ] = val;
@@ -2206,6 +2235,8 @@ function ficheClick(e) {
   const p = projetDe(c), a = b.dataset.action;
   if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
+  else if (a === 'addsout') p.soutenement.push({ id: 's' + uid(), type: 'beton', longueur: '', hauteur: '' });
+  else if (a === 'delsout') p.soutenement = p.soutenement.filter(x => x.id !== b.dataset.id);
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
   else if (a === 'addpleine') pleinesDe(p.fond).push({ id: 'p' + uid(), usage: 'massif', nb: '', L: '', l: '', h: '' });
   else if (a === 'delpleine') p.fond.pleines = pleinesDe(p.fond).filter(e => e.id !== b.dataset.id);
@@ -2238,6 +2269,15 @@ function ficheVersMetre() {
              qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined });
     nb++;
   };
+  // Murs de soutènement et murets : surface nette = longueur × hauteur, sans déduction d'ouvertures
+  (p.soutenement || []).forEach((s, i) => {
+    const t = SOUT_TYPES.find(x => x.id === s.type) || SOUT_TYPES[0];
+    const ouv = BIB.ouvrages.find(x => x.id === t.idOuv && !x.supprime);
+    if (!ouv) { manquants.push(t.nom); return; }
+    const L_ = num(s.longueur), H_ = num(s.hauteur);
+    if (!(L_ > 0 && H_ > 0)) return;
+    ajouter(ouv.designation, L_ * H_, `${ouv.designation} – n°${i + 1}`, { nombre: '1', cote1: String(L_), cote2: String(H_) });
+  });
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
   // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
