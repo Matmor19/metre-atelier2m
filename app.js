@@ -1355,6 +1355,8 @@ const DES_FOND_FOUILLE = 'Fouilles en tranchée pour semelles filantes';
 const DES_FOND_SEMELLE = 'Semelles filantes en béton armé';
 const DES_MASSIF = 'Fouille pour puits ou massif de fondation';
 const DES_SEMELLE_ISO = 'Semelles isolées en béton armé';
+const DES_PLATEFORME = 'Fouille en pleine masse (dallage, plateforme)';
+const DES_DIVERS = 'Fouille pour trou divers';
 const FICHE_FONDS_DEF = { largeur: '0.5', hauteur: '0.4' };
 
 function projetDe(c) {
@@ -1650,6 +1652,14 @@ function ficheListeFinition() {
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 function lotTitre(t) { return `<h2 class="lot-titre">${t}</h2>`; }
+// Fouilles en pleine masse : liste (plusieurs lignes possibles). Ancien choix unique converti.
+function pleinesDe(fd) {
+  if (!Array.isArray(fd.pleines)) {
+    fd.pleines = fd.pleine ? [{ id: 'p1', usage: fd.pleine, nb: fd.massifNb || '', L: fd.massifL || '', l: fd.massifLarg || '', h: fd.massifH || '' }] : [];
+    delete fd.pleine; delete fd.massifNb; delete fd.massifL; delete fd.massifLarg; delete fd.massifH;
+  }
+  return fd.pleines;
+}
 function ficheRendre() {
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c);
@@ -1730,14 +1740,19 @@ function ficheRendre() {
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
     </div>
-    <p style="font-size:13px;margin:12px 0 4px"><strong>Fouille en pleine masse</strong></p>
-    ${champ('Usage', `<select data-k="fond" data-champ="pleine" style="width:100%">${[['', 'Aucune'], ['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(fd.pleine || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
-    ${fd.pleine === 'massif' ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-top:6px">
-      ${champ('Nombre de massifs', inp('data-k="fond" data-champ="massifNb" inputmode="decimal"', fd.massifNb || ''))}
-      ${champ('Longueur (m)', inp('data-k="fond" data-champ="massifL" inputmode="decimal"', fd.massifL || ''))}
-      ${champ('Largeur (m)', inp('data-k="fond" data-champ="massifLarg" inputmode="decimal"', fd.massifLarg || ''))}
-      ${champ('Hauteur (m)', inp('data-k="fond" data-champ="massifH" inputmode="decimal"', fd.massifH || ''))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Chaque massif crée une fouille dans le terrassement et une semelle isolée dans le gros œuvre, avec les mêmes dimensions.</p>` : (fd.pleine === 'plateforme' || fd.pleine === 'divers' ? `<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Cet usage sera branché à l'étape suivante.</p>` : '')}
+    <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
+    <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
+    ${pleinesDe(fd).map(e => `<div style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
+      ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
+        ${champ('Nombre (massifs)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))}
+        ${champ('Longueur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="L" inputmode="decimal"`, e.L || ''))}
+        ${champ('Largeur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="l" inputmode="decimal"`, e.l || ''))}
+        ${champ('Hauteur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="h" inputmode="decimal"`, e.h || ''))}
+      </div>
+      <button type="button" class="btn small danger" data-action="delpleine" data-id="${esc(e.id)}" style="margin-top:6px">✕ Supprimer cette fouille</button>
+    </div>`).join('')}
+    <button type="button" class="btn sec" data-action="addpleine" style="margin-top:8px">+ Ajouter une fouille en pleine masse</button>
     </div>`;
   const contenuPlancher = (() => {
     const pl = p.plancher;
@@ -1856,6 +1871,7 @@ function ficheChange(e) {
   else if (k === 'ouv') { const o = p.ouvertures.find(x => x.id === t.dataset.id); if (o) o[champ] = val; }
   else if (k === 'toit') p.toiture[champ] = val;
   else if (k === 'fond') p.fond[champ] = val;
+  else if (k === 'pleine') { const e = pleinesDe(p.fond).find(x => x.id === t.dataset.id); if (e) e[champ] = val; }
   else if (k === 'soub') p.soub[champ] = val;
   else if (k === 'terr') p.terrain[champ] = val;
   else if (k === 'plan') p.plancher[champ] = val;
@@ -1905,6 +1921,8 @@ function ficheClick(e) {
   if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
+  else if (a === 'addpleine') pleinesDe(p.fond).push({ id: 'p' + uid(), usage: 'massif', nb: '', L: '', l: '', h: '' });
+  else if (a === 'delpleine') p.fond.pleines = pleinesDe(p.fond).filter(e => e.id !== b.dataset.id);
   sauverFiche(c);
   ficheRendre();
 }
@@ -1937,15 +1955,22 @@ function ficheVersMetre() {
   const fdim = p.fond || FICHE_FONDS_DEF;
   const origineFond = 'rigoles';
   if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
-  // Massifs de fondation : fouille (terrassement) + semelles isolées (gros œuvre), mêmes dimensions
-  if (fdim.pleine === 'massif') {
-    const nbM = num(fdim.massifNb), lM = num(fdim.massifL), lgM = num(fdim.massifLarg), hM = num(fdim.massifH);
-    if (nbM > 0 && lM > 0 && lgM > 0 && hM > 0) {
-      ajouter(DES_MASSIF, nbM * lM * lgM * hM, undefined,
-        { nombre: String(nbM), cote1: String(lM), cote2: String(lgM), cote3: String(hM) });
-      ajouter(DES_SEMELLE_ISO, nbM, undefined, { nombre: String(nbM) });
+  // Fouilles en pleine masse : une ligne par fouille saisie dans le configurateur
+  let nbSemelles = 0;
+  for (const e of pleinesDe(fdim)) {
+    const L_ = num(e.L), l_ = num(e.l), h_ = num(e.h), n_ = num(e.nb);
+    const dims = { cote1: String(L_), cote2: String(l_), cote3: String(h_) };
+    if (e.usage === 'massif') {
+      if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
+      ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
+      nbSemelles += n_;
+    } else if (e.usage === 'plateforme') {
+      if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_PLATEFORME, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
+    } else if (e.usage === 'divers') {
+      if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
     }
   }
+  if (nbSemelles > 0) ajouter(DES_SEMELLE_ISO, nbSemelles, undefined, { nombre: String(nbSemelles) });
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,

@@ -296,7 +296,7 @@
     {
       "id": "OUV-0874",
       "lot": "terrassement-vrd",
-      "designation": "Fouille pour trou divers (cuve de récupération)",
+      "designation": "Fouille pour trou divers",
       "unite": "m³",
       "type": "commun",
       "saisie": "metre",
@@ -314,7 +314,7 @@
           "libelle": "Épaisseur ou hauteur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "cuve_fouille"
     },
     {
@@ -15936,5 +15936,5 @@
       "mesure": "nombre"
     }
   ],
-  "revision": 39
+  "revision": 40
 }
