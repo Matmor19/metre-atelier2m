@@ -3564,11 +3564,7 @@
         }
       ],
       "version": 1,
-      "qte": "ml_appuis",
-      "si": {
-        "cle": "appuis_fen",
-        "val": "alu"
-      }
+      "qte": "ml_appuis_alu"
     },
     {
       "id": "OUV-0185",
@@ -15859,11 +15855,7 @@
         }
       ],
       "version": 1,
-      "qte": "ml_appuis",
-      "si": {
-        "cle": "appuis_fen",
-        "val": "acier"
-      }
+      "qte": "ml_appuis_acier"
     },
     {
       "id": "OUV-0871",
@@ -15879,11 +15871,7 @@
         }
       ],
       "version": 1,
-      "qte": "ml_appuis",
-      "si": {
-        "cle": "appuis_fen",
-        "val": "beton"
-      }
+      "qte": "ml_appuis_beton"
     },
     {
       "id": "OUV-0872",
@@ -15899,12 +15887,8 @@
         }
       ],
       "version": 1,
-      "qte": "ml_appuis",
-      "si": {
-        "cle": "appuis_fen",
-        "val": "beton-pierre"
-      }
+      "qte": "ml_appuis_beton_pierre"
     }
   ],
-  "revision": 36
+  "revision": 37
 }

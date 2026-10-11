@@ -775,6 +775,32 @@ function porteAuto(largeur) {
   let l = num(largeur); if (l > 10) l = l / 100;
   return l >= 0.83 ? 'Bloc-porte fin de chantier 83×204' : l >= 0.73 ? 'Bloc-porte fin de chantier 73×204' : 'Bloc-porte fin de chantier 63×204';
 }
+// Menuiseries extérieures (fenêtres, portes-fenêtres, portes d'entrée) rattachées à une pièce
+function menusDe(piece) {
+  if (!piece.menus) piece.menus = [];
+  // Ancien format (fenêtres saisies en simple nombre et dimensions) : converti en menuiseries
+  if (piece.fenetres && piece.fenetres.length) {
+    for (const f of piece.fenetres) piece.menus.push({ id: 'm' + uid(), type: 'ouvrant', nb: f.nb || '1', largeur: f.largeur || '', hauteur: f.hauteur || '', materiau: '', volet: 'aucun', matvolet: '', electrique: false, securit: false, opaque: false, appui: '' });
+    piece.fenetres = [];
+  }
+  return piece.menus;
+}
+// Liste à plat de toutes les menuiseries du chantier, avec leur pièce et leur nombre total
+function menusCalcul(c) {
+  const L = [];
+  for (const pc of piecesDe(c)) for (const m of menusDe(pc)) L.push({ piece: pc, m, nb: (num(m.nb) || 1) * (num(pc.nb) || 1) });
+  return L;
+}
+// Appuis de fenêtre : longueur par type d'appui, pris dans chaque menuiserie
+function appuisCtx(c) {
+  const out = { ml_appuis_beton: 0, ml_appuis_beton_pierre: 0, ml_appuis_alu: 0, ml_appuis_acier: 0 };
+  for (const x of menusCalcul(c)) {
+    if (!['ouvrant', 'oscillo', 'coulissant'].includes(x.m.type)) continue;
+    const k = 'ml_appuis_' + String(x.m.appui || '').replace('-', '_');
+    if (k in out) out[k] += num(x.m.largeur) * x.nb;
+  }
+  return out;
+}
 function piecesDe(c) {
   c.elec = c.elec || { pieces: [] };
   c.elec.pieces = c.elec.pieces || [];
@@ -826,7 +852,7 @@ function genererPlat() {
     const doubBrut = doub.reduce((a, x) => a + num(x.ml) * H * nb, 0);
     const brut = cloiBrut + doubBrut;
     let ded = 0, dedAll = 0;
-    for (const x of [...(p.portes || []), ...(p.fenetres || []), ...(p.ouvertures || []), ...(p.placards || [])]) {
+    for (const x of [...(p.portes || []), ...menusDe(p), ...(p.ouvertures || []), ...(p.placards || [])]) {
       const une = num(x.largeur) * num(x.hauteur);   // surface d'une ouverture
       const total = une * (num(x.nb) || 1) * nb;
       dedAll += total;   // peinture : toutes les ouvertures sont déduites
@@ -926,8 +952,21 @@ function ouvrirConfigurateur(message) {
       <div class="row" style="margin-top:4px"><select id="pl_${i}_doublages_type" style="flex:1">${opt(platDoublages())}</select><input id="pl_${i}_doublages_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:doublages">+ Doublage</button></div>
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
-      ${subListe(p.fenetres || [], i, 'fenetres', x => `Fenêtre · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:180px">Fenêtre (déduite des murs si ≥ 2 m²)</span><input id="pl_${i}_fenetres_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_fenetres_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_fenetres_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:fenetres">+ Fenêtre</button></div>
+      ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
+      ${subListe(menusDe(p), i, 'menus', x => `${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}`)}
+      <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
+        <label style="display:block;font-size:14px;margin:4px 0">Type</label><select id="pl_${i}_menus_type" style="width:100%">${Object.entries(FICHE_OUV).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" value="1"></div>
+        <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Largeur (m)</label><input id="pl_${i}_menus_l" inputmode="decimal" placeholder="ex. 1,20"></div>
+        <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Hauteur (m)</label><input id="pl_${i}_menus_h" inputmode="decimal" placeholder="ex. 1,35"></div></div>
+        <label style="display:block;font-size:14px;margin:4px 0">Matériau</label><select id="pl_${i}_menus_mat" style="width:100%">${Object.entries(FICHE_MAT).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Volet</label><select id="pl_${i}_menus_volet" style="width:100%">${Object.entries(FICHE_VOLET).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Matériau du volet battant</label><select id="pl_${i}_menus_matvolet" style="width:100%"><option value="alu">Aluminium</option><option value="bois">Bois</option></select>
+        <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label><select id="pl_${i}_menus_appui" style="width:100%">${Object.entries(APPUI_LIB).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <div style="margin:6px 0"><label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_elec" style="width:auto;height:auto"> Volet roulant motorisé</label>
+        <label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_securit" style="width:auto;height:auto"> Verre sécurit</label>
+        <label style="font-size:14px"><input type="checkbox" id="pl_${i}_menus_opaque" style="width:auto;height:auto"> Verre opaque</label></div>
+        <button type="button" class="btn sec small" data-pladd="${i}:menus">+ Ajouter cette menuiserie</button></div>
       ${subListe(p.ouvertures || [], i, 'ouvertures', x => `Ouverture libre · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:180px">Ouverture libre (passage)</span><input id="pl_${i}_ouvertures_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_ouvertures_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_ouvertures_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:ouvertures">+ Ouverture</button></div>
       ${subListe(p.placards || [], i, 'placards', x => `Placard · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
@@ -1047,7 +1086,7 @@ function ajouterPiece(c, p) {
   const L = piecesDe(c);
   const deja = L.find(x => x.type === p.type && (x.qualif || '') === (p.qualif || ''));
   if (deja) Object.assign(deja, p);
-  else L.push(Object.assign(p, { equip: [], cloisons: [], doublages: [], portes: [], fenetres: [], ouvertures: [], placards: [] }));
+  else L.push(Object.assign(p, { equip: [], cloisons: [], doublages: [], portes: [], menus: [], ouvertures: [], placards: [] }));
 }
 if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   const c = chantiers.find(x => x.id === courantId);
@@ -1067,6 +1106,12 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
       if (v(pre + 'type')) {
         p.equip = p.equip || [];
         p.equip.push({ type: v(pre + 'type'), nb: v(pre + 'nb') || '1' });
+      }
+    } else if (cat === 'menus') {
+      const g = id => { const el = document.getElementById(pre + id); return el ? el.value.trim() : ''; };
+      const ck = id => { const el = document.getElementById(pre + id); return !!(el && el.checked); };
+      if (g('type') && g('l') && g('h')) {
+        menusDe(p).push({ id: 'm' + uid(), type: g('type'), nb: g('nb') || '1', largeur: g('l'), hauteur: g('h'), materiau: g('mat'), volet: g('volet') || 'aucun', matvolet: g('matvolet'), electrique: ck('elec'), securit: ck('securit'), opaque: ck('opaque'), appui: g('appui') });
       }
     } else if (cat === 'fenetres' || cat === 'ouvertures') {
       if (v(pre + 'l') && v(pre + 'h')) {
@@ -1273,22 +1318,27 @@ function projetDe(c) {
 }
 // Calculs : murs moins ouvertures de plus de 2 m², tableaux (2 côtés × hauteur × épaisseur),
 // toiture développée, fondations (murs porteurs × dimensions de la semelle et de la fouille)
+const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
+function piecesCourantes() {
+  const c = chantiers.find(x => x.id === courantId);
+  return c ? piecesDe(c) : [];
+}
 function projetCalcul(p) {
   const e = num(p.epaisseur) / 100;
   const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, semelle: 0, fouille: 0 };
   for (const m of p.murs) {
     const brut = num(m.longueur) * num(m.hauteur);
-    const ded = p.ouvertures.filter(o => o.mur === m.id).reduce((s, o) => { const a = num(o.largeur) * num(o.hauteur); return s + (a >= 2 ? a : 0); }, 0);
-    r.murs.push({ m, brut, ded });
+    r.murs.push({ m, brut, ded: 0 });
     r.brut += brut;
     if (m.porteur !== false) r.linP += num(m.longueur);
   }
-  for (const o of p.ouvertures) {
-    const aire = num(o.largeur) * num(o.hauteur);
-    const tab = 2 * num(o.hauteur) * e;
-    if (aire >= 2) r.deduit += aire;
+  // Menuiseries rattachées aux pièces : chacune compte pour son nombre (nb × pièces identiques)
+  for (const x of menusCalcul(piecesCourantes())) {
+    const aire = num(x.m.largeur) * num(x.m.hauteur);
+    const tab = 2 * num(x.m.hauteur) * e * x.nb;
+    if (aire >= 2) r.deduit += aire * x.nb;
     r.tableaux += tab;
-    r.ouvs.push({ o, aire, tab, deduit: aire >= 2 });
+    r.ouvs.push({ o: { nom: nomPiece(x.piece) + ' · ' + FICHE_OUV[x.m.type] }, aire, tab, deduit: aire >= 2, nb: x.nb });
   }
   r.net = Math.max(0, r.brut - r.deduit);
   const pente = p.toiture.type === 'plat' ? (num(p.toiture.pente) || 3.5) : num(p.toiture.pente);
@@ -1331,8 +1381,7 @@ function ctxQuantites(c) {
     ml_egout: num(p.toiture.egout),
     ml_rive: num(p.toiture.rive),
     // Menuiseries : appuis de fenêtre = largeur des fenêtres (ouvrant, oscillo, coulissant ; pas les portes)
-    ml_appuis: p.ouvertures.filter(o => ['ouvrant','oscillo','coulissant'].includes(o.type)).reduce((a, o) => a + num(o.largeur), 0),
-    appuis_fen: p.choix.appuis_fen || '',
+    ...appuisCtx(chantiers.find(x => x.id === courantId)),
     // Installation de chantier : clôture = périmètre moins 3 m de passage voiture
     cloture_ml: Math.max(0, num(p.terrain.perimetre) - 3),
     chan_eau: p.chantier.eau || '',
@@ -1502,28 +1551,12 @@ function ficheRendre() {
       <label style="font-size:12px;padding-bottom:8px"><input type="checkbox" data-k="mur" data-id="${m.id}" data-champ="porteur" ${m.porteur !== false ? 'checked' : ''}> Porteur</label>
       <button type="button" class="btn small danger" data-action="delmur" data-id="${m.id}">✕</button></div>`).join('')
     || '<p style="color:#6b5a7a">Aucun mur. Ajoutez un mur par segment (une hauteur par segment si elle change).</p>';
-  const ouvs = p.ouvertures.map(o => `<div style="border:1px dashed #c9b8dc;border-radius:8px;padding:8px;margin-bottom:8px">
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:6px">
-        ${champ('Nom', inp(`data-k="ouv" data-id="${o.id}" data-champ="nom"`, o.nom))}
-        ${champ('Sur le mur', sel2(`data-k="ouv" data-id="${o.id}" data-champ="mur"`, p.murs.map(m => [m.id, m.nom]), o.mur))}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        ${champ('Type', sel2(`data-k="ouv" data-id="${o.id}" data-champ="type"`, Object.entries(FICHE_OUV), o.type))}
-        ${champ('Largeur (m)', inp(`data-k="ouv" data-id="${o.id}" data-champ="largeur" inputmode="decimal"`, o.largeur))}
-        ${champ('Hauteur (m)', inp(`data-k="ouv" data-id="${o.id}" data-champ="hauteur" inputmode="decimal"`, o.hauteur))}
-        ${champ('Matériau', sel2(`data-k="ouv" data-id="${o.id}" data-champ="materiau"`, Object.entries(FICHE_MAT), o.materiau))}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:end">
-        ${champ('Volet', sel2(`data-k="ouv" data-id="${o.id}" data-champ="volet"`, Object.entries(FICHE_VOLET), o.volet))}
-        ${o.volet === 'battant' ? champ('Matériau du volet', sel2(`data-k="ouv" data-id="${o.id}" data-champ="matvolet"`, [['bois', 'Bois'], ['alu', 'Aluminium']], o.matvolet)) : '<div></div>'}
-        ${o.volet === 'roulant' ? `<label style="font-size:13px"><input type="checkbox" data-k="ouv" data-id="${o.id}" data-champ="electrique" ${o.electrique ? 'checked' : ''}> Électrique (motorisé)</label>` : '<div></div>'}
-      </div>
-      <div style="margin-top:6px;font-size:13px">
-        <label><input type="checkbox" data-k="ouv" data-id="${o.id}" data-champ="securit" ${o.securit ? 'checked' : ''}> Verre sécurit</label>
-        &nbsp;&nbsp;<label><input type="checkbox" data-k="ouv" data-id="${o.id}" data-champ="opaque" ${o.opaque ? 'checked' : ''}> Verre opaque</label>
-        &nbsp;&nbsp;<button type="button" class="btn small danger" data-action="delouv" data-id="${o.id}">Supprimer</button>
-      </div></div>`).join('')
-    || '<p style="color:#6b5a7a">Aucune menuiserie. Ajoutez-les une à une.</p>';
+  const menusResume = (() => {
+    const pcs = piecesDe(c).filter(x => menusDe(x).length);
+    const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
+    const anciennes = p.ouvertures.length ? `<p style="color:#b42318;font-weight:600;margin:10px 0 2px">À rattacher à une pièce (pas encore comptées dans le métré) :</p>` + p.ouvertures.map(o => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(o.nom)} · ${esc(FICHE_OUV[o.type] || o.type)} · ${num(o.largeur)} × ${num(o.hauteur)} m <button type="button" class="btn small danger" data-action="delouv" data-id="${o.id}">Supprimer</button></div>`).join('') : '';
+    return (lignes || '<p class="muted">Aucune menuiserie saisie. Saisissez-les dans chaque pièce, bloc B.</p>') + anciennes;
+  })();
   const toit = p.toiture;
   const plat = toit.type === 'plat';
   const choix = (attrs, entries, val) => sel2(attrs, [CHOIX_VIDE, ...entries], val || '');
@@ -1627,8 +1660,7 @@ function ficheRendre() {
     ${carte('Plancher bas', contenuPlancher)}
     ${carte('Matériaux et finitions (utilisés dans le métré)', champ('Matériau des murs (élévation)', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.murs)}</select>`)
       + champ('Finition extérieure (enduit, bardage, peinture…)', `<select data-k="choix" data-champ="finition" style="width:100%;padding:6px">${optListe(ficheListeFinition(), p.choix.finition)}</select>`)
-      + champ('Tableaux de menuiseries', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.tableaux)}</select>`)
-      + champ('Appuis de fenêtre', `<select data-k="choix" data-champ="appuis_fen" style="width:100%;padding:6px">${['', 'beton', 'beton-pierre', 'alu', 'acier'].map(v => `<option value="${v}" ${(p.choix.appuis_fen || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', beton: 'Béton', 'beton-pierre': 'Béton ton pierre', alu: 'Aluminium', acier: 'Acier laqué 75/100e' }[v]}</option>`).join('')}</select>`))}
+      + champ('Tableaux de menuiseries', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.tableaux)}</select>`))}
     </div>
     <div class="bloc">${lotTitre('3. Charpente')}
     ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
@@ -1637,7 +1669,7 @@ function ficheRendre() {
     ${carte('Couverture, égouts, faîtage, gouttières, descentes', contenuCouv)}
     </div>
     <div class="bloc">${lotTitre('5. Menuiserie extérieure')}
-    ${carte('Menuiseries (fenêtres, portes)', ouvs + '<button type="button" class="btn sec" data-action="addouv">+ Ajouter une menuiserie</button>')}
+    ${carte('Menuiseries extérieures : résumé (lecture seule, à saisir dans chaque pièce, bloc B)', menusResume)}
     </div>
     <div class="bloc">${lotTitre('6. Isolation')}
     ${carte('Isolation', contenuIso)}
@@ -1735,7 +1767,6 @@ function ficheClick(e) {
   if (a === 'kanbanSurface') { kanbanSurface(c); return; }
   if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
-  else if (a === 'addouv') p.ouvertures.push({ id: 'o' + uid(), nom: 'Menuiserie ' + (p.ouvertures.length + 1), mur: p.murs[0] ? p.murs[0].id : '', type: 'ouvrant', largeur: '', hauteur: '', materiau: 'PVC', volet: 'aucun', matvolet: 'alu', electrique: false, securit: false, opaque: false });
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
   sauverFiche(c);
   ficheRendre();
@@ -1790,15 +1821,16 @@ function ficheVersMetre() {
   ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)');
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat'); }
   else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture);
-  for (const o of p.ouvertures) {
+  for (const x of menusCalcul(c)) {
+    const o = x.m, q = x.nb, lieu = nomPiece(x.piece);
     const dims = `${fmt(num(o.largeur))} × ${fmt(num(o.hauteur))} m`;
     const opts = [o.securit ? 'verre sécurit' : '', o.opaque ? 'verre opaque' : ''].filter(Boolean).join(', ');
     const ouv = MENU_DESIG[o.type] && MENU_DESIG[o.type][o.materiau];
-    ajouter(ouv, 1, `${o.nom} – ${FICHE_OUV[o.type]} ${FICHE_MAT[o.materiau]} ${dims}${opts ? ' – ' + opts : ''}`);
-    if (o.volet === 'battant') ajouter(VOLET_DESIG['battant-' + (o.matvolet || 'alu')], 1, `Volet battant ${o.matvolet === 'bois' ? 'bois' : 'aluminium'} – ${o.nom}`);
+    ajouter(ouv, q, `${lieu} – ${FICHE_OUV[o.type]} ${FICHE_MAT[o.materiau]} ${dims}${opts ? ' – ' + opts : ''}`);
+    if (o.volet === 'battant') ajouter(VOLET_DESIG['battant-' + (o.matvolet || 'alu')], q, `Volet battant ${o.matvolet === 'bois' ? 'bois' : 'aluminium'} – ${lieu}`);
     if (o.volet === 'roulant') {
-      ajouter(VOLET_DESIG.roulant, 1, `Volet roulant – ${o.nom}`);
-      if (o.electrique) ajouter(ALIM_VOLET, 1, `Alimentation volet roulant – ${o.nom}`);
+      ajouter(VOLET_DESIG.roulant, q, `Volet roulant – ${lieu}`);
+      if (o.electrique) ajouter(ALIM_VOLET, q, `Alimentation volet roulant – ${lieu}`);
     }
   }
   sauverLignes(courantId, L);
