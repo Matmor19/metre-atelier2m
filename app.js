@@ -3258,9 +3258,16 @@ function retourBibliotheque(src, lien) {
 document.addEventListener('click', e => {
   if (!window.CHOIX_CONF) return;
   if (window.CHOIX_CONF.mode === 'cote') {
-    const t = e.target.closest('input[data-k][data-champ]');
-    if (!t || t.getAttribute('inputmode') !== 'decimal') return;   // seulement les cases numériques
     e.preventDefault(); e.stopPropagation();
+    // Clic sur le libellé d'une case : on prend la case qui est juste à côté
+    let cliquee = e.target;
+    if (cliquee.tagName === 'LABEL' && cliquee.parentElement) cliquee = cliquee.parentElement.querySelector('[data-k][data-champ]') || cliquee;
+    const t = cliquee.closest ? cliquee.closest('[data-k][data-champ]') : null;
+    if (!t) { if ($('bandeauTexte')) $('bandeauTexte').textContent = 'Cliquez sur une case de saisie du configurateur (une case à remplir).'; return; }
+    if (t.tagName !== 'INPUT' || t.type === 'checkbox' || t.type === 'radio') {
+      if ($('bandeauTexte')) $('bandeauTexte').textContent = 'Cette case n\'est pas un nombre : cliquez une case où l\'on tape une valeur.';
+      return;
+    }
     const lab = t.parentElement && t.parentElement.querySelector('label');
     const libChamp = lab ? lab.textContent.trim() : t.dataset.champ;
     let titre = '';
