@@ -422,7 +422,7 @@
     {
       "id": "OUV-0018",
       "lot": "terrassement-vrd",
-      "designation": "Canalisation eau potable multicouche (tranchée)",
+      "designation": "Canalisation eau potable multicouche (tranchée, pose comprise)",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -432,7 +432,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "res_eau_ml"
     },
     {
@@ -15739,6 +15739,6 @@
       "qte": "res_elec_ml"
     }
   ],
-  "revision": 44,
+  "revision": 45,
   "prochainNumero": 875
 }
