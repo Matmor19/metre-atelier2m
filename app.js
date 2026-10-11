@@ -679,9 +679,14 @@ function majLignesLiees(id) {
       Object.assign(nv, fromCotes);   // cotes reliées une à une : elles l'emportent
       if (nv.nombre == null || nv.nombre === '') nv.nombre = '1';
       const q = calcul(o, nv);
-      if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) return x;
+      const marque = o.liePar || o.lieConfig || o.id;   // marque la ligne comme liée (même si ses valeurs ne changent pas)
+      if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) {
+        if (x.lienDe === marque) return x;
+        ch = true;
+        return Object.assign({}, x, { lienDe: marque });
+      }
       change = true; ch = true;
-      return Object.assign({}, x, { valeurs: nv, quantite: q, lienDe: o.liePar || o.lieConfig });
+      return Object.assign({}, x, { valeurs: nv, quantite: q, lienDe: marque });
     });
     if (!change) break;
   }
@@ -785,7 +790,7 @@ function renderMetre() {
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
-      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien);
+      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe);
       h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
