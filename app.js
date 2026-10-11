@@ -600,7 +600,8 @@ function majLignesDepuisConfigurateur(c) {
     _revueCollecte = {};
     try { genererElec(); genererPlat(); ficheVersMetre(); }
     finally { Object.assign(col, _revueCollecte); _revueCollecte = null; }
-    const cleL = l => l.ouvrage + '|' + l.designation;
+    // Ancien suffixe « (rigoles) » ignoré : les anciennes lignes restent reconnues
+    const cleL = l => l.ouvrage + '|' + String(l.designation || '').replace(/\s*\(rigoles\)$/, '');
     const sig = v => ['nombre', 'cote1', 'cote2', 'cote3'].map(k => num(v && v[k])).join('|');
     const uids = new Set(L.map(x => x.uid));
     // Propositions du configurateur qui ne sont pas des copies des lignes déjà présentes
@@ -619,7 +620,7 @@ function majLignesDepuisConfigurateur(c) {
       if (!ex) continue;
       if (sig(ex.valeurs) !== sig(l.valeurs) || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet) {
         // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur
-        remplacer.set(ex.uid, Object.assign({}, ex, { valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
+        remplacer.set(ex.uid, Object.assign({}, ex, { designation: l.designation, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
       }
     }
     if (!remplacer.size) return;
@@ -2057,7 +2058,6 @@ function ficheVersMetre() {
   };
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
-  const origineFond = 'rigoles';
   // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
   for (const e of pleinesDe(fdim)) {
     const L_ = num(e.L), l_ = num(e.l), h_ = num(e.h), n_ = num(e.nb);
@@ -2075,13 +2075,13 @@ function ficheVersMetre() {
   }
   // Semelles filantes et fouilles en tranchée : seulement si des rigoles sont saisies
   if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
-  ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
+  ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes',
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
   const sf = semellesDuTerrassement(c);
   const cotesSem = sf.sem_lin > 0 ? { cote1: String(sf.sem_lin), cote2: String(sf.sem_larg), cote3: String(sf.sem_haut) }
     : { cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) };
-  ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
+  ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé',
     { nombre: '1', ...cotesSem });
   }
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
