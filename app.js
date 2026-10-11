@@ -277,7 +277,8 @@ function detail(l) {
 }
 // Version colorée (écran et impressions) : chaque cote a sa couleur
 function detailHtml(l) {
-  if (l.valeurs && l.valeurs.mode === 'plan') return `Surface mesurée sur plan : ${fmt(num(l.valeurs.cote1))} m²`;
+  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src);
+  if (l.valeurs && l.valeurs.mode === 'plan') return 'Surface mesurée sur plan : ' + fmt(num(l.valeurs.cote1)) + ' m²';
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
     const c = COTE_COULEUR[categorieCote(m.nom)];
@@ -574,7 +575,7 @@ function optionsDevis(l, montants) {
 function prixAffiches() { return lsGet('prix', false) === true; }
 
 function renderMetre() {
-  if (!courantId) return;
+  if (!courantId || !BIB) return;
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
   const nums = numeroLignes(courantId);
@@ -883,7 +884,7 @@ function genererPlat() {
     if (!o) { manquants.push(des); continue; }
     ajouterLotSiAbsent(courantId, o.lot);
     // Quantité selon l'unité : m² = surface, ml = longueur, u = nombre
-    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1' }
+    const valeurs = o.unite === 'm²' ? { nombre: '1', cote1: q.toFixed(2), cote2: '1', src: 'Calcul du configurateur : surfaces des pièces saisies' }
       : o.unite === 'ml' ? { nombre: '1', cote1: q.toFixed(2) }
       : { nombre: String(Math.round(q)) };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
@@ -1552,6 +1553,23 @@ function penteBande(p) {
   return pente < 30 ? '<30' : pente <= 45 ? '30-45' : '>45';
 }
 // Valeurs de saisie d'un ouvrage à partir de sa source de quantité (null si l'ouvrage n'en a pas)
+// Mention affichée dans le détail du métré pour une quantité calculée par le configurateur
+const SRC_QTE = {
+  surface_terrain: 'surface du terrain', surface_facades: 'surface des façades', surface_plancher: 'surface de plancher',
+  surface_pieces: 'surface des pièces', surface_emprise: 'emprise au sol', surface_soubassement: 'surface du soubassement',
+  surface_toiture: 'surface de toiture (pente comprise)', surface_toiture_plan: 'surface de toiture (projection)',
+  elev_net: 'murs, surface nette (ouvertures de plus de 2 m² déduites)', finit_net: 'surface nette des murs',
+  soub_s: 'murs de soubassement', plan_hourdis: 'plancher à hourdis', plan_dalle: 'dalle de compression (surface × épaisseur)',
+  fond_semelle: 'semelles filantes (linéaire × largeur × hauteur)', cuve_fouille: 'fouille de la cuve',
+  cuve_remblai: 'remblai de la cuve', cuve_evac: 'évacuation des terres de la cuve'
+};
+const SRC_SURF = new Set(['surface_terrain', 'surface_facades', 'surface_plancher', 'surface_pieces', 'surface_emprise',
+  'surface_soubassement', 'surface_toiture', 'surface_toiture_plan']);
+function srcTxt(qte) {
+  if (qte === 'decap_m2') return 'Surface mesurée sur plan';
+  if (SRC_SURF.has(qte)) return 'Surface du configurateur : ' + (SRC_QTE[qte] || qte);
+  return 'Calcul du configurateur : ' + (SRC_QTE[qte] || 'quantité calculée');
+}
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
   // Variante : l'ouvrage ne vaut que si la condition de la fiche est remplie (si : égal, sin : différent)
@@ -1560,7 +1578,9 @@ function qteValeur(o, ctx) {
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
   if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
-  if (o.unite === 'm²' && o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan' };
+  if (o.unite === 'm²' && SRC_SURF.has(o.qte) || o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan', src: srcTxt(o.qte) };
+  if (o.unite === 'm²' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(2), cote2: '1', src: srcTxt(o.qte) };
+  if (o.unite === 'm³' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(3), cote2: '1', cote3: '1', src: srcTxt(o.qte) };
   if (o.unite === 'm²') return { nombre: '1', cote1: v.toFixed(2), cote2: '1' };
   if (o.unite === 'm³') return { nombre: '1', cote1: v.toFixed(3), cote2: '1', cote3: '1' };
   if (o.unite === 'ml') return { nombre: '1', cote1: v.toFixed(2) };
@@ -1867,12 +1887,13 @@ function ficheVersMetre() {
     if (unite === 'ml') return { nombre: '1', cote1: q.toFixed(2) };
     return { nombre: String(q) };
   };
-  const ajouter = (des, q, designation, valeursFixes) => {
+  const ajouter = (des, q, designation, valeursFixes, src) => {
     if (!des) { if (q > 0) manquants.push('(choix non fait)'); return; }
     const o = BIB.ouvrages.find(x => !x.supprime && x.designation === des);
     if (!o) { manquants.push(des); return; }
     if (!(q > 0)) return;
     const valeurs = valeursFixes || valeursPour(o.unite, q);
+    if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
     ajouterLotSiAbsent(courantId, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString() });
@@ -1882,15 +1903,15 @@ function ficheVersMetre() {
   const fdim = p.fond || FICHE_FONDS_DEF;
   ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes (murs porteurs)',
     { nombre: '1', cote1: String(r.linP), cote2: String(num(fdim.largeur)), cote3: String(num(fdim.profondeur)) });
-  ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé (murs porteurs)');
+  ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé (murs porteurs)', null, SRC_QTE.fond_semelle);
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
-  ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement');
-  ajouter('Membrane de protection et drainage Delta-MS sur mur de soubassement', r.soubS, 'Membrane Delta-MS sur mur de soubassement');
+  ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement', null, SRC_QTE.soub_s);
+  ajouter('Membrane de protection et drainage Delta-MS sur mur de soubassement', r.soubS, 'Membrane Delta-MS sur mur de soubassement', null, SRC_QTE.soub_s);
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linP, 'Solin aluminium fixé en tête de soubassement');
   // Plancher bas
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
-    ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression');
-    ajouter('Dalle de compression béton armé (sur hourdis)', r.dalleC, 'Dalle de compression ' + num(p.plancher.ep) + ' cm');
+    ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
+    ajouter('Dalle de compression béton armé (sur hourdis)', r.dalleC, 'Dalle de compression ' + num(p.plancher.ep) + ' cm', null, SRC_QTE.plan_dalle);
   }
   if (p.plancher.type === 'solivage' && r.plS > 0 && r.solives > 0) {
     const ret = p.plancher.retombee;
@@ -1901,11 +1922,11 @@ function ficheVersMetre() {
     ajouter('Support de parquet : OSB 21 mm', r.plS, 'OSB 21 mm support de revêtement de sol');
   }
   // Élévation, finition, tableaux, toiture
-  ajouter(p.choix.murs, r.net, 'Élévation des murs (ouvertures de plus de 2 m² déduites)');
-  ajouter(p.choix.finition, r.net, 'Finition des murs (surface nette)');
-  ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)');
-  if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat'); }
-  else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture);
+  ajouter(p.choix.murs, r.net, 'Élévation des murs (ouvertures de plus de 2 m² déduites)', null, SRC_QTE.elev_net);
+  ajouter(p.choix.finition, r.net, 'Finition des murs (surface nette)', null, SRC_QTE.finit_net);
+  ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
+  else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
   for (const x of menusCalcul(c)) {
     const o = x.m, q = x.nb, lieu = nomPiece(x.piece);
     const dims = `${fmt(num(o.largeur))} × ${fmt(num(o.hauteur))} m`;
@@ -1937,11 +1958,12 @@ function ouvrirOuvrage(o, precedent, message) {
   const auto = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
   // Cases de cotes vierges : la quantité proposée par le configurateur (déjà calculée) est utilisée si rien n'est saisi
   // Cases remplies seulement avec ce que le configurateur fournit : dimensions (fouille), surface (plan) ou quantité
+  // Dimensions du configurateur (fouille) ou surface (plan) : reprises. Total calculé : cases vides, la quantité est proposée.
   const dimsConfig = !!auto && (o.qte === 'fond_fouille' || auto.mode === 'plan');
-  const compte = !auto ? {} : dimsConfig ? { ...auto } : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
+  const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? {} : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
-    + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur (${esc(o.qte.replace(/_/g, ' '))}). Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
+    + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
   h += `
     <div class="muted">${esc(libLot(o.lot))} · unité : ${esc(o.unite)}</div>`;
   if (o.rappel) h += `<div class="card" style="margin:10px 0 0;background:#fdf4ee;border-color:#E07838"><strong style="font-size:13px">Rappel de mesure</strong><div style="margin-top:4px;white-space:pre-line">${esc(o.rappel)}</div></div>`;
