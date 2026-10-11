@@ -3197,6 +3197,17 @@ async function pdfCdpgfFormulaire() {
     if (opts.lecture) f.enableReadOnly();
     return f;
   };
+  // Case de saisie réservée aux nombres : Acrobat refuse les lettres
+  const saisieNombre = f => {
+    const widget = f.acroField.getWidgets()[0];
+    const act = doc.context.obj({});
+    act.set(PDFName.of('S'), PDFName.of('JavaScript'));
+    act.set(PDFName.of('JS'), PDFHexString.fromText("AFNumber_Keystroke(2,0,0,0,'',true);"));
+    const aa = doc.context.obj({});
+    aa.set(PDFName.of('K'), act);
+    widget.dict.set(PDFName.of('AA'), aa);
+    return f;
+  };
   // Script de calcul attaché à un champ (exécuté par Acrobat à chaque modification)
   const calcul = (f, js) => {
     const widget = f.acroField.getWidgets()[0];
@@ -3282,9 +3293,9 @@ async function pdfCdpgfFormulaire() {
       const fy = bas + (rh - 15) / 2;
       const nq = `L${k}_${i}_Q`, nu = `L${k}_${i}_PU`, nm = `L${k}_${i}_M`, nt = `L${k}_${i}_T`;
       champ(nq, X.qte + 2, fy, C.qte - 4, 15, { valeur: fmtQte(l.quantite), lecture: true, fond: GRIS_CLAIR });
-      champ(nu, X.pu + 2, fy, C.pu - 4, 15, {});
+      saisieNombre(champ(nu, X.pu + 2, fy, C.pu - 4, 15, {}));
       const fm = champ(nm, X.mont + 2, fy, C.mont - 4, 15, { fond: GRIS_CLAIR });
-      champ(nt, X.tva + 2, fy, C.tva - 4, 15, { align: TextAlignment.Center });
+      saisieNombre(champ(nt, X.tva + 2, fy, C.tva - 4, 15, { align: TextAlignment.Center }));
       noms.push({ q: nq, pu: nu, m: nm, t: nt, fm });
       y = bas;
     });
@@ -3301,12 +3312,17 @@ async function pdfCdpgfFormulaire() {
     const somme = noms.map(o => `if(String(getField("${o.m}").value).replace(/\\s/g,'')!==''){s+=n(getField("${o.m}").value);}`).join('');
     calcul(fHT, `var s=0;${somme}event.value=f(s);`);
     const fTVA = [1, 2, 3].map(t => {
-      ecrire(`TVA ${t} : taux (case TVA %) et montant de la TVA`, X.des + 3, y - 12, 8, helv, NOIR);
-      const ftx = champ(`L${k}_TX${t}`, X.tva + 2, y - 15, C.tva - 4, 15, { align: TextAlignment.Center });
+      ecrire(`TVA ${t} : taux repris des lignes et montant de la TVA`, X.des + 3, y - 12, 8, helv, NOIR);
+      const ftx = champ(`L${k}_TX${t}`, X.tva + 2, y - 15, C.tva - 4, 15, { align: TextAlignment.Center, fond: GRIS_CLAIR });
       const fmt = champ(`L${k}_MT${t}`, X.mont + 2, y - 15, C.mont - 4, 15, { fond: GRIS_CLAIR });
       y -= 22;
       return { t, ftx, fmt };
     });
+    // Taux : le 1er taux trouvé dans les lignes devient TVA 1, le 2e TVA 2, le 3e TVA 3
+    const listeTaux = noms.map(q => `if(String(getField("${q.t}").value).replace(/\\s/g,'')!==''){var v=n(getField("${q.t}").value);if(r.indexOf(v)<0){r.push(v);}}`).join('');
+    for (const o of fTVA) {
+      calcul(o.ftx, `var r=[];${listeTaux}event.value=(r.length>=${o.t})?String(r[${o.t - 1}]).replace('.',','):'';`);
+    }
     for (const o of fTVA) {
       const cumuls = noms.map(q => `if(String(getField("${q.t}").value).replace(/\\s/g,'')!==''&&n(getField("${q.t}").value)===r&&String(getField("${q.m}").value).replace(/\\s/g,'')!==''){s+=n(getField("${q.m}").value);}`).join('');
       calcul(o.fmt, `var tx=String(getField("L${k}_TX${o.t}").value).replace(/\\s/g,'');if(tx===''){event.value='';}else{var r=n(tx),s=0;${cumuls}event.value=f(s*r/100);}`);
