@@ -368,8 +368,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "res_tranchee_ml"
+      "version": 2,
+      "qte": "res_tranchee_ml",
+      "supprime": true
     },
     {
       "id": "OUV-0015",
@@ -15719,8 +15720,25 @@
       ],
       "version": 2,
       "mesure": "nombre"
+    },
+    {
+      "id": "OUV-0874",
+      "lot": "terrassement-vrd",
+      "designation": "Tranchée et gaine électrique (pose comprise) – électricité",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "supprime": false,
+      "qte": "res_elec_ml"
     }
   ],
-  "revision": 43,
-  "prochainNumero": 874
+  "revision": 44,
+  "prochainNumero": 875
 }

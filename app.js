@@ -1868,6 +1868,8 @@ function majQuantitesAuto(c) {
   for (const l of L) {
     if (!l.qteAuto) { garde.push(l); continue; }
     const o = BIB.ouvrages.find(x => x.id === l.ouvrage);
+    // Ouvrage supprimé de la bibliothèque : la ligne issue du configurateur est retirée de ce chantier
+    if (o && o.supprime) { change = true; continue; }
     const valeurs = qteValeur(o, ctx);
     if (!valeurs) {
       // Plus de source dans le configurateur (mur supprimé, finition changée, valeur effacée) : la ligne issue du configurateur est retirée
