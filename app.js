@@ -1765,7 +1765,7 @@ function ficheRendre() {
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
     ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
     ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
-    ${carte('Fondations', contenuFond)}
+    ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
     ${carte('Plancher bas', contenuPlancher)}
     ${carte('Matériaux et finitions (utilisés dans le métré)', champ('Matériau des murs (élévation)', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.murs)}</select>`)
