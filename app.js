@@ -2313,10 +2313,14 @@ function ouvrirOuvrage(o, precedent, message) {
   if (message) h += `<div class="ok" style="margin-top:10px">${esc(message)}</div>`;
   h += `<form id="fOuv">`;
   const modeInit = precedent ? precedent.mode : (auto && auto.mode);
+  // Le libellé suit le mode réel de l'ouvrage (ex. Longueur × hauteur), pas un libellé fixe
+  const nomModeOuv = (o.mesure && modeDe('m²', o.mesure) && o.mesure !== 'surface') ? modeDe('m²', o.mesure).nom : 'Longueur × largeur';
   if (o.unite === 'm²') h += `<label for="fMesure">Mesure</label>
-      <select id="fMesure" name="mesure"><option value="lxl" ${modeInit === 'plan' ? '' : 'selected'}>Longueur × largeur</option><option value="plan" ${modeInit === 'plan' ? 'selected' : ''}>Surface mesurée sur plan (forme quelconque)</option></select>`;
+      <select id="fMesure" name="mesure"><option value="lxl" ${modeInit === 'plan' ? '' : 'selected'}>${esc(nomModeOuv)}</option><option value="plan" ${modeInit === 'plan' ? 'selected' : ''}>Surface mesurée sur plan (forme quelconque)</option></select>`;
   for (const ch of champs) {
-    h += `<label for="c_${ch.cle}">${esc(ch.libelle)}</label>
+    // « Nombre » est facultatif : vide, la quantité compte 1 fois
+    const libCase = ch.cle === 'nombre' ? 'Nombre (facultatif, 1 si vide)' : ch.libelle;
+    h += `<label for="c_${ch.cle}">${esc(libCase)}</label>
       <input id="c_${ch.cle}" name="${ch.cle}" ${ch.texte ? '' : 'inputmode="decimal"'} value="${esc(v[ch.cle] ?? '')}">`;
   }
   h += `<div class="calc" id="apercu"></div>
@@ -2358,7 +2362,7 @@ function ouvrirOuvrage(o, precedent, message) {
     let vals = lireForm(f, champs);
     if (auto && !precedent && sansCotes(vals)) vals = { ...auto };   // quantité du configurateur, sans rien inventer
     else if (f.elements.mesure && f.elements.mesure.value === 'plan') { vals.cote2 = '1'; vals.mode = 'plan'; }
-    const manque = champs.filter(ch => !ch.texte && String(vals[ch.cle] ?? '').trim() === '');
+    const manque = champs.filter(ch => !ch.texte && ch.cle !== 'nombre' && String(vals[ch.cle] ?? '').trim() === '');
     if (manque.length) { $('apercu').textContent = 'Quantité à saisir : ' + manque.map(ch => ch.libelle).join(', ') + '.'; return; }
     const q = calcul(o, vals);
     if (!(q > 0)) { $('apercu').textContent = 'Quantité nulle : vérifiez les cotes.'; return; }
