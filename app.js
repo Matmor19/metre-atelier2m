@@ -1607,7 +1607,7 @@ function ctxQuantites(c) {
     massif_m3: uneSeuleFouille(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0, e => num(e.nb) * num(e.L) * num(e.l) * num(e.h)),
     massif_dims: (() => { const e = fouilleUnique(p.fond, 'massif', e => num(e.nb) > 0 && num(e.L) > 0 && num(e.l) > 0 && num(e.h) > 0);
       return e ? { nb: num(e.nb), L: num(e.L), l: num(e.l), h: num(e.h) } : null; })(),
-    plat_m3: uneSeuleFouille(p.fond, 'plateforme', e => num(e.s) > 0 && num(e.h) > 0, e => (num(e.nb) > 0 ? num(e.nb) : 1) * num(e.s) * num(e.h)),
+    plat_m3: uneSeuleFouille(p.fond, 'plateforme', e => num(e.s) > 0 && num(e.h) > 0, e => num(e.s) * num(e.h)),
     fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
     // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
@@ -1862,8 +1862,7 @@ function ficheRendre() {
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
         ${(e.usage || 'massif') === 'plateforme'
-          ? champ('Nombre', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))
-            + champ('Surface (m²)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="s" inputmode="decimal"`, e.s || ''))
+          ? champ('Surface (m²)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="s" inputmode="decimal"`, e.s || ''))
             + champ('Hauteur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="h" inputmode="decimal"`, e.h || ''))
           : champ('Nombre (massifs)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="nb" inputmode="decimal"`, e.nb || ''))
             + champ('Longueur (m)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="L" inputmode="decimal"`, e.L || ''))
@@ -2083,7 +2082,7 @@ function ficheVersMetre() {
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
       ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_), ...dims });  // une ligne par massif, reprend son détail
     } else if (e.usage === 'plateforme') {
-      const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
+      const S_ = num(e.s), H_ = num(e.h), N_ = 1;  // plateforme : toujours 1, pas de nombre
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
     } else if (e.usage === 'divers') {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
