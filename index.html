@@ -93,15 +93,17 @@ tr.ligne-manuelle td{background:rgba(245,170,40,.25)}
 
   <!-- Écran 1 : saisie (choix du lot et des ouvrages) -->
   <section id="vMetre" class="hidden">
-    <div class="row" style="margin-bottom:12px">
-      <button class="btn" id="ongletSaisie">Saisie</button>
-      <button class="btn sec" id="ongletTableau">Métré du chantier (<span id="nbLignes">0</span>)</button>
-    </div>
-    <div class="card" id="enteteSaisie" style="position:sticky;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.08)">
-      <label for="selLot">1. Lot</label>
-      <select id="selLot"></select>
-      <label for="recherche">2. Ouvrage (dans ce lot)</label>
-      <input id="recherche" placeholder="Rechercher…">
+    <div id="blocFige" style="position:sticky;z-index:4;background:var(--bg,#f4f1ec);padding-bottom:6px">
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="ongletSaisie">Saisie</button>
+        <button class="btn sec" id="ongletTableau">Métré du chantier (<span id="nbLignes">0</span>)</button>
+      </div>
+      <div class="card" id="enteteSaisie" style="margin-bottom:0;box-shadow:0 2px 6px rgba(0,0,0,.08)">
+        <label for="selLot">1. Lot</label>
+        <select id="selLot"></select>
+        <label for="recherche">2. Ouvrage (dans ce lot)</label>
+        <input id="recherche" placeholder="Rechercher…">
+      </div>
     </div>
     <div class="card" id="listeOuvrages" style="padding:0;overflow:hidden"></div>
   </section>

@@ -383,7 +383,7 @@ function dupliquerChantier(id) {
 
 // En-tête de saisie (lot + recherche) figé sous la barre du haut
 function figerEntete() {
-  const h = document.querySelector('header'), c = $('enteteSaisie');
+  const h = document.querySelector('header'), c = $('blocFige');
   if (c) c.style.top = (h ? h.offsetHeight : 0) + 'px';
 }
 window.addEventListener('resize', figerEntete);
