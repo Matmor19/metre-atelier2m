@@ -277,7 +277,7 @@ function detail(l) {
 }
 // Version colorée (écran et impressions) : chaque cote a sa couleur
 function detailHtml(l) {
-  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src.replace(/^Calcul du configurateur : /, 'Calcul suivant plan : '));
+  if (l.valeurs && l.valeurs.src) return esc(l.valeurs.src);
   if (l.valeurs && l.valeurs.mode === 'plan') return 'Surface mesurée sur plan : ' + fmt(num(l.valeurs.cote1)) + ' m²';
   let t = detailMorceaux(l).map(m => {
     const txt = (m.nom ? m.nom + ' ' : '') + esc(String(m.v));
@@ -1599,10 +1599,12 @@ const SRC_QTE = {
 };
 const SRC_SURF = new Set(['surface_terrain', 'surface_facades', 'surface_plancher', 'surface_pieces', 'surface_emprise',
   'surface_soubassement', 'surface_toiture', 'surface_toiture_plan']);
+// Quantités données directement en surface ou en volume dans le configurateur (pas de calcul à partir de L, l, h)
+const SRC_PLAN = new Set(['plat_m3']);
 function srcTxt(qte) {
   if (qte === 'decap_m2') return 'Surface mesurée sur plan';
   if (SRC_SURF.has(qte)) return 'Surface du configurateur : ' + (SRC_QTE[qte] || qte);
-  return 'Calcul suivant plan : ' + (SRC_QTE[qte] || 'quantité calculée');
+  return (SRC_PLAN.has(qte) ? 'Calcul suivant plan : ' : 'Calcul du configurateur : ') + (SRC_QTE[qte] || 'quantité calculée');
 }
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
@@ -1960,7 +1962,7 @@ function ficheVersMetre() {
     if (!o) { manquants.push(des); return; }
     if (!(q > 0)) return;
     const valeurs = valeursFixes || valeursPour(o.unite, q);
-    if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul suivant plan : ' + src;
+    if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
     ajouterLotSiAbsent(courantId, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString(),
