@@ -610,6 +610,7 @@ function valeurLien(c, l) {
   if (!c || !l) return undefined;
   const p = projetDe(c);
   if (l.k === 'epais') return p.epaisseur;
+  if (l.k === 'piece') { const pc = piecesDe(c)[l.idx]; return pc ? pc[l.champ] : undefined; }
   if (l.k === 'mur') { const m = (p.murs || []).find(x => x.id === l.id); return m ? m[l.champ] : undefined; }
   if (l.k === 'ouv') { const x = (p.ouvertures || []).find(y => y.id === l.id); return x ? x[l.champ] : undefined; }
   if (l.k === 'pleine') { const e = pleinesDe(p.fond).find(y => y.id === l.id); return e ? e[l.champ] : undefined; }
@@ -3248,32 +3249,38 @@ document.addEventListener('click', e => {
   if (!window.CHOIX_CONF) return;
   if (window.CHOIX_CONF.mode === 'cote') {
     e.preventDefault(); e.stopPropagation();
-    // Clic sur le libellé d'une case : on prend la case qui est juste à côté
+    const msg = t => { if ($('bandeauTexte')) $('bandeauTexte').textContent = t; };
+    // Clic sur le libellé : on prend la case qui est dans le même bloc
     let cliquee = e.target;
-    if (cliquee.tagName === 'LABEL' && cliquee.parentElement) cliquee = cliquee.parentElement.querySelector('[data-k][data-champ]') || cliquee;
-    const t = cliquee.closest ? cliquee.closest('[data-k][data-champ]') : null;
-    if (!t) { if ($('bandeauTexte')) $('bandeauTexte').textContent = 'Cliquez sur une case de saisie du configurateur (une case à remplir).'; return; }
-    if (t.tagName !== 'INPUT' || t.type === 'checkbox' || t.type === 'radio') {
-      if ($('bandeauTexte')) $('bandeauTexte').textContent = 'Cette case n\'est pas un nombre : cliquez une case où l\'on tape une valeur.';
-      return;
-    }
+    if (cliquee.tagName === 'LABEL' && cliquee.parentElement) cliquee = cliquee.parentElement.querySelector('input,select,textarea') || cliquee;
+    const t = cliquee.closest ? cliquee.closest('input,select,textarea') : null;
+    if (!t || !(t.dataset.k || t.dataset.plrow)) { msg('Cliquez une case de saisie du configurateur (une case où l\'on tape une valeur).'); return; }
+    if (t.tagName !== 'INPUT' || !['decimal', 'numeric'].includes(t.getAttribute('inputmode'))) { msg('Cette case n\'est pas un nombre : cliquez une case où l\'on tape une valeur.'); return; }
     const lab = t.parentElement && t.parentElement.querySelector('label');
-    const libChamp = lab ? lab.textContent.trim() : t.dataset.champ;
-    let titre = '';
-    if (t.dataset.k === 'pleine') {
-      // Fouille en pleine masse : numéro et usage de la fouille
+    const libChamp = lab ? lab.textContent.trim() : (t.dataset.champ || t.dataset.k);
+    let lien, titre = '';
+    if (t.dataset.plrow) {
+      const [i, champ] = t.dataset.plrow.split(':');
       const c = chantiers.find(x => x.id === courantId);
-      const liste = c ? pleinesDe(projetDe(c).fond) : [];
-      const i = liste.findIndex(x => x.id === t.dataset.id);
-      const usages = { massif: 'massif de fondation', plateforme: 'plateforme / dallage', divers: 'trou divers' };
-      titre = i >= 0 ? 'Fouille n°' + (i + 1) + ' (' + (usages[liste[i].usage] || liste[i].usage || 'massif de fondation') + ')' : 'Fouille en pleine masse';
+      const pc = c ? piecesDe(c)[parseInt(i, 10)] : null;
+      lien = { k: 'piece', idx: parseInt(i, 10), champ };
+      titre = 'Pièce « ' + ((pc && (pc.nom || pc.type)) || ('n°' + (parseInt(i, 10) + 1))) + ' »';
     } else {
-      const h3 = t.closest('section') && t.closest('section').querySelector('h3');
-      titre = h3 ? h3.textContent.trim() : '';
+      lien = { k: t.dataset.k, champ: t.dataset.champ || '' };
+      if (t.dataset.id) lien.id = t.dataset.id;
+      if (t.dataset.k === 'pleine') {
+        // Fouille en pleine masse : numéro et usage de la fouille
+        const c = chantiers.find(x => x.id === courantId);
+        const liste = c ? pleinesDe(projetDe(c).fond) : [];
+        const i = liste.findIndex(x => x.id === t.dataset.id);
+        const usages = { massif: 'massif de fondation', plateforme: 'plateforme / dallage', divers: 'trou divers' };
+        titre = i >= 0 ? 'Fouille n°' + (i + 1) + ' (' + (usages[liste[i].usage] || liste[i].usage || 'massif de fondation') + ')' : 'Fouille en pleine masse';
+      } else {
+        const h3 = t.closest('section') && t.closest('section').querySelector('h3');
+        titre = h3 ? h3.textContent.trim() : '';
+      }
     }
-    const parts = [titre, libChamp].filter(Boolean);
-    const lien = { k: t.dataset.k, champ: t.dataset.champ, lib: parts.join(' · ') };
-    if (t.dataset.id) lien.id = t.dataset.id;
+    lien.lib = [titre, libChamp].filter(Boolean).join(' · ');
     retourBibliotheque(null, lien);
     return;
   }
