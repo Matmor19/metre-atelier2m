@@ -1647,7 +1647,8 @@ function qteValeur(o, ctx) {
   // Massif : calcul à partir de nombre, longueur, largeur, hauteur (affichés dans le détail, sans libellé)
   if (o.qte === 'massif_m3') { const d = ctx.massif_dims; return d ? { nombre: String(d.nb), cote1: String(d.L), cote2: String(d.l), cote3: String(d.h) } : null; }
   if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
-  if (o.qte === 'semi_nb') return { nombre: String(v), src: 'Nombre de massifs de fondation (terrassement)' };
+  // Semelles isolées : même détail que le massif de fondation (nombre, longueur, largeur, hauteur)
+  if (o.qte === 'semi_nb') { const d = ctx.massif_dims; return d ? { nombre: String(d.nb), cote1: String(d.L), cote2: String(d.l), cote3: String(d.h) } : null; }
   if (o.qte === 'fond_semelle') return { nombre: '1', cote1: String(ctx.sem_lin), cote2: String(ctx.sem_larg), cote3: String(ctx.sem_haut) };
   if (o.unite === 'm²' && SRC_SURF.has(o.qte) || o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan', src: srcTxt(o.qte) };
   if (o.unite === 'm²' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(2), cote2: '1', src: srcTxt(o.qte) };
@@ -2012,7 +2013,7 @@ function ficheVersMetre() {
     if (e.usage === 'massif') {
       if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
-      ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_) });  // une ligne par massif, sans addition
+      ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_), ...dims });  // une ligne par massif, reprend son détail
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = num(e.nb) > 0 ? num(e.nb) : 1;
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
