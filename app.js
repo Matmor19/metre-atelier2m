@@ -233,7 +233,8 @@ function calcul(o, v) {
 
 // Champs affichés pour un ouvrage du catalogue
 function champsDe(o) {
-  const c = o.champs.map(x => ({ ...x }));
+  // Ouvrage lié à un autre : pas de « Nombre », les cotes viennent de l'ouvrage source
+  const c = o.champs.filter(x => !(o.liePar && x.cle === 'nombre')).map(x => ({ ...x }));
   if (o.saisie === 'menuiseries') {
     c.push({ cle: 'largeur_cm', libelle: 'Largeur (cm)' },
            { cle: 'hauteur_cm', libelle: 'Hauteur (cm)' },
@@ -616,6 +617,7 @@ function majLignesLiees(id) {
       if (!src || !src.valeurs || src.valeurs.cote1 == null || src.valeurs.cote1 === '') return x;
       const nv = Object.assign({}, x.valeurs);
       delete nv.src; delete nv.mode;
+      nv.nombre = '1';   // pas de nombre sur un ouvrage lié
       ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = src.valeurs[k] != null ? src.valeurs[k] : ''; });
       const q = calcul(o, nv);
       if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) return x;
