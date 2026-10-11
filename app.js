@@ -2066,10 +2066,7 @@ $('btnReglages').onclick = () => {
 $('btnNouveau').onclick = () => {
   const idx = $('selClient') ? $('selClient').value : '';
   const client = idx !== '' && CLIENTS[idx] ? pickClient(CLIENTS[idx]) : null;
-  if (client) {
-    const deja = metresDuClient(client.ref);
-    if (deja.length) { proposerMetre(client, deja); return; }
-  }
+  if (client) { proposerMetre(client, metresDuClient(client.ref)); return; }
   const nom = $('nomChantier').value.trim();
   if (!nom) { alert('Donnez un nom au chantier.'); return; }
   const c = { id: 'c' + uid(), nom, client };
@@ -2195,10 +2192,16 @@ function panneauClient() {
 function proposerMetre(client, deja) {
   clientEnAttente = client;
   const liste = deja.map(c => `<div class="ouv" style="min-height:0;padding:8px 0"><span><strong>${esc(c.nom)}</strong> · ${lignesDe(c.id).length} ligne(s)</span><button type="button" class="btn small" data-reprendre="${esc(c.id)}">Reprendre</button></div>`).join('');
+  const titre = deja.length
+    ? `Métrés déjà faits pour ${esc(client.nom)}${client.ref ? ' (réf. ' + esc(client.ref) + ')' : ''}`
+    : `Premier métré pour ${esc(client.nom)}${client.ref ? ' (réf. ' + esc(client.ref) + ')' : ''}`;
+  const aide = deja.length
+    ? 'Reprenez un métré existant, ou créez-en un nouveau. Donnez-lui un nom court, par exemple « garage ».'
+    : 'Donnez un nom à ce métré, par exemple « maison ». Vous pourrez en créer d\'autres ensuite pour ce même client.';
   panneauClient().innerHTML = `<div class="card" style="border:2px solid #E07838">
-    <strong>Métrés déjà faits pour ${esc(client.nom)}${client.ref ? ' (réf. ' + esc(client.ref) + ')' : ''}</strong>
+    <strong>${titre}</strong>
     ${liste}
-    <p class="muted" style="margin:10px 0 4px">Ou créer un nouveau métré pour ce client. Donnez-lui un nom court, par exemple « garage ».</p>
+    <p class="muted" style="margin:10px 0 4px">${aide}</p>
     <label for="suffixeMetre" style="display:block;font-weight:600;margin:6px 0 4px">Nom du nouveau métré</label>
     <div class="row" style="align-items:center;gap:6px"><span style="white-space:nowrap">${esc(client.nom)} – </span><input id="suffixeMetre" placeholder="ex. garage" style="flex:1"></div>
     <div class="row" style="margin-top:10px;gap:8px"><button type="button" class="btn" data-creer-metre>Créer ce métré</button><button type="button" class="btn sec" data-fermer-panneau>Annuler</button></div>
@@ -2230,16 +2233,7 @@ async function ouvrirDepuisClient(ref) {
   remplirSelectClients();
   const cl = lsGet('clients', []).find(x => String(x.ref) === String(ref));
   if (!cl) { alert('Client introuvable dans le Kanban : ' + ref); return; }
-  const deja = metresDuClient(ref);
-  if (deja.length) { route('chantiers'); renderChantiers(); proposerMetre(pickClient(cl), deja); return; }
-  let c = null;
-  if (!c) {
-    c = { id: 'c' + uid(), nom: cl.nom || ('Chantier ' + ref), client: pickClient(cl) };
-    chantiers.push(c);
-    lsSet('chantiers', chantiers);
-    marquerChantier(c.id);
-  }
-  ouvrirChantier(c.id);
+  route('chantiers'); renderChantiers(); proposerMetre(pickClient(cl), metresDuClient(ref));
 }
 
 /* ============ Documents : page de garde + métré (Excel et PDF) ============ */
