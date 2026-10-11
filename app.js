@@ -290,7 +290,7 @@ function detailHtml(l) {
 function route(nom) {
   const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio' };
   if (PAGE === 'tableau') nom = 'tableau';
-  for (const k of Object.keys(vues)) $(vues[k]).classList.toggle('hidden', k !== nom);
+  for (const k of Object.keys(vues)) { const el = $(vues[k]); if (el) el.classList.toggle('hidden', k !== nom); }
   if (nom === 'metre' || nom === 'tableau') compterLignes();
 }
 
@@ -376,6 +376,7 @@ function renderOuvrages() {
 /* ============ Lots du chantier et numérotation ============ */
 // Ordre des lots = ordre dans lequel ils ont été ajoutés au métré (pas l'ordre de la bibliothèque)
 function lotsDuChantier(id) {
+  if (!BIB) return [];
   const c = chantiers.find(x => x.id === id);
   const liste = c && Array.isArray(c.lots) ? [...c.lots] : [];
   for (const l of lignesDe(id)) if (!liste.includes(l.lot)) liste.push(l.lot);
