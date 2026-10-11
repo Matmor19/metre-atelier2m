@@ -1494,6 +1494,8 @@ function ctxQuantites(c) {
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     // Fouilles et semelles : seulement si des rigoles sont saisies dans le terrassement (sinon rien n'est proposé)
     fond_fouille: rigOk ? r.fouille : '',
+    // Semelles isolées : nombre de massifs de fondation saisis dans le terrassement (0 = aucun, rien n'est proposé)
+    semi_nb: p.fond.pleine === 'massif' ? num(p.fond.massifNb) : 0,
     fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
     // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
@@ -1598,6 +1600,7 @@ function qteValeur(o, ctx) {
   const v = ctx[o.qte];
   if (!(v > 0)) return null;
   if (o.qte === 'fond_fouille') return { nombre: '1', cote1: String(ctx.fond_lin), cote2: String(ctx.fond_larg), cote3: String(ctx.fond_prof) };
+  if (o.qte === 'semi_nb') return { nombre: String(v), src: 'Nombre de massifs de fondation (terrassement)' };
   if (o.qte === 'fond_semelle') return { nombre: '1', cote1: String(ctx.sem_lin), cote2: String(ctx.sem_larg), cote3: String(ctx.sem_haut) };
   if (o.unite === 'm²' && SRC_SURF.has(o.qte) || o.qte === 'decap_m2') return { nombre: '1', cote1: v.toFixed(2), cote2: '1', mode: 'plan', src: srcTxt(o.qte) };
   if (o.unite === 'm²' && SRC_QTE[o.qte]) return { nombre: '1', cote1: v.toFixed(2), cote2: '1', src: srcTxt(o.qte) };

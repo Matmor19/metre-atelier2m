@@ -849,7 +849,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "qte": "semi_nb"
     },
     {
       "id": "OUV-0042",
@@ -1372,17 +1373,18 @@
     {
       "id": "OUV-0067",
       "lot": "gros-oeuvre",
-      "designation": "Escalier béton droit",
+      "designation": "Escalier droit en béton armé",
       "unite": "forfait",
       "type": "maconnee",
       "saisie": "metre",
       "champs": [
         {
           "cle": "nombre",
-          "libelle": "Nombre (1 pour un forfait)"
+          "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "mesure": "forfait"
     },
     {
       "id": "OUV-0068",
@@ -9707,7 +9709,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "supprime": true
     },
     {
       "id": "OUV-0538",
@@ -9892,7 +9895,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "supprime": true
     },
     {
       "id": "OUV-0548",
@@ -9907,12 +9911,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "supprime": true
     },
     {
       "id": "OUV-0549",
       "lot": "gros-oeuvre",
-      "designation": "Escalier béton (volée)",
+      "designation": "Escalier béton quart tournant en béton armé",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -9922,7 +9927,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 3,
+      "mesure": "nombre"
     },
     {
       "id": "OUV-0550",
@@ -15888,7 +15894,23 @@
       ],
       "version": 1,
       "qte": "ml_appuis_beton_pierre"
+    },
+    {
+      "id": "OUV-0873",
+      "lot": "gros-oeuvre",
+      "designation": "Escalier quart tournant avec palier intermédiaire en béton armé",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "mesure": "nombre"
     }
   ],
-  "revision": 37
+  "revision": 38
 }
