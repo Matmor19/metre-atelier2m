@@ -1962,8 +1962,7 @@ function ficheVersMetre() {
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
   const origineFond = 'rigoles';
-  if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
-  // Fouilles en pleine masse : une ligne par fouille saisie dans le configurateur
+  // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
   let nbSemelles = 0;
   for (const e of pleinesDe(fdim)) {
     const L_ = num(e.L), l_ = num(e.l), h_ = num(e.h), n_ = num(e.nb);
@@ -1980,6 +1979,8 @@ function ficheVersMetre() {
     }
   }
   if (nbSemelles > 0) ajouter(DES_SEMELLE_ISO, nbSemelles, undefined, { nombre: String(nbSemelles) });
+  // Semelles filantes et fouilles en tranchée : seulement si des rigoles sont saisies
+  if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
