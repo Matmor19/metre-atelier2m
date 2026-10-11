@@ -1658,7 +1658,7 @@ function ficheRendre() {
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Calcul sur les murs porteurs : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête.</p>`;
   $('cfgFiche').innerHTML = `<div class="bloc">${lotTitre('A. Terrain')}
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', c.kanbanRef || '', '100%'))}</div><button type="button" class="btn sec" data-action="kanbanSurface" style="margin-bottom:2px">Reprendre la surface du Kanban</button></div>
+      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', refKanbanDe(c), '100%'))}</div></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
       ${champ('Périmètre du terrain (ml)', inp('data-k="terr" data-champ="perimetre" inputmode="decimal"', p.terrain.perimetre))}
       ${champ('Surface à décaper (m²)', inp('data-k="terr" data-champ="decap" inputmode="decimal"', p.terrain.decap || ''))}
@@ -1668,6 +1668,7 @@ function ficheRendre() {
       ${champ('Longueur électricité (ml)', inp('data-k="terr" data-champ="resElec" inputmode="decimal"', p.terrain.resElec || ''))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Sert à la clôture et aux protections du chantier.</p>`)}
     </div>`;
+  surfaceAuto(c);
   $('cfgFicheSuite').innerHTML = `    <div class="bloc">${lotTitre('0. Installation de chantier')}
     ${carte('Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Branchement provisoire d\'électricité', `<select data-k="chant" data-champ="elec" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.elec || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
@@ -1763,21 +1764,32 @@ function ficheChange(e) {
   else if (k === 'equip') { p.equip = p.equip || {}; p.equip[champ] = val; }
   else if (k === 'cuis') p.cuisine[champ] = val;
   else if (k === 'chant') p.chantier[champ] = val;
-  else if (k === 'kref') { c.kanbanRef = String(val).trim(); }
+  else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
   const refaire = (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
 const KANBAN_LECTURE = 'https://script.google.com/macros/s/AKfycbwLGYVnT9HvYgLJNzEP1QCa8b-BQw18eZ0vse2hXixZT4LwrFv3-bt4X4i--gX8eqDoKw/exec';
-function kanbanSurface(c) {
-  const msg = t => { if ($('cfgStatut')) $('cfgStatut').textContent = t; };
-  const ref = (c.kanbanRef || '').trim();
+// Référence Kanban : celle saisie, sinon celle du client Kanban choisi pour ce métré
+function refKanbanDe(c) { return (c.kanbanRef || (c.client && c.client.ref) || '').toString().trim(); }
+// Surface reprise automatiquement, une seule fois par dossier, et seulement si la surface est encore vide
+const _surfEssayee = {};
+function surfaceAuto(c) {
+  const ref = refKanbanDe(c);
+  if (!ref || projetDe(c).terrain.surface || _surfEssayee[c.id + '|' + ref]) return;
+  _surfEssayee[c.id + '|' + ref] = true;
+  kanbanSurface(c, true);
+}
+function kanbanSurface(c, silencieux) {
+  const msg = t => { if (!silencieux && $('cfgStatut')) $('cfgStatut').textContent = t; };
+  const ref = refKanbanDe(c);
   if (!ref) { msg('Saisissez d\'abord la référence du dossier Kanban (ex. 003-02-2026).'); return; }
   msg('Lecture du Kanban…');
   fetch(KANBAN_LECTURE).then(r => r.json()).then(db => {
     const card = [...(db.cards || []), ...(db.archived || [])].find(x => x.ref === ref);
     if (!card) { msg('Aucun dossier Kanban avec la référence ' + ref + '.'); return; }
+    if (projetDe(c).terrain.surface) return;
     let m2 = card.faisa && card.faisa.surface ? Math.round(card.faisa.surface) : NaN;
     if (!(m2 > 0)) m2 = parseFloat(String(card.contenance || '').replace(/\s/g, '').replace(',', '.').replace(/[^\d.]/g, ''));
     if (!(m2 > 0)) { msg('Le dossier ' + ref + ' n\'a pas de contenance enregistrée dans le Kanban.'); return; }
@@ -1791,7 +1803,6 @@ function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
-  if (a === 'kanbanSurface') { kanbanSurface(c); return; }
   if (a === 'addmur') p.murs.push({ id: 'm' + uid(), nom: 'Mur ' + (p.murs.length + 1), longueur: '', hauteur: '', porteur: true });
   else if (a === 'delmur') p.murs = p.murs.filter(m => m.id !== b.dataset.id);
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
