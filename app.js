@@ -1451,6 +1451,7 @@ function semellesDuTerrassement(c) {
 }
 function ctxQuantites(c) {
   const p = projetDe(c), r = projetCalcul(p), pieces = piecesDe(c);
+  const rigOk = num((p.fond || {}).rigLin) > 0;
   const surfPieces = pieces.reduce((a, x) => a + num(x.surf) * (num(x.nb) || 1), 0);
   return {
     surface_terrain: num(p.terrain.surface),
@@ -1489,8 +1490,9 @@ function ctxQuantites(c) {
     ml_noue: num(p.toiture.noue),
     couverture: p.toiture.type === 'plat' ? '' : couvDe(p.toiture),
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
-    fond_fouille: r.fouille,
-    fond_lin: r.fondLin, fond_larg: r.fdimLarg, fond_prof: r.fdimProf,
+    // Fouilles et semelles : seulement si des rigoles sont saisies dans le terrassement (sinon rien n'est proposé)
+    fond_fouille: rigOk ? r.fouille : '',
+    fond_lin: rigOk ? r.fondLin : '', fond_larg: rigOk ? r.fdimLarg : '', fond_prof: rigOk ? r.fdimProf : '',
     // Semelles filantes : reprises UNIQUEMENT de la ligne « Fouilles en tranchée » déjà validée dans le métré (terrassement).
     // Sans cette ligne, rien n'est proposé : la saisie demande les dimensions.
     ...semellesDuTerrassement(c),
@@ -1714,15 +1716,9 @@ function ficheRendre() {
   const lonSemelles = projetCalcul(p).fondLin;
   const rigoleActive = num(fd.rigLin) > 0;
   // Avec des rigoles, longueur, largeur et hauteur viennent du bloc Terrassement : pas de champ en double ici.
-  const contenuFond = rigoleActive
-    ? `<p style="font-size:13px;color:#6b5a7a;margin:0">Semelles filantes : longueur, largeur et hauteur reprises des rigoles du bloc 1 Terrassement (${fmt(lonSemelles).replace(/\s/g, '')} m de linéaire).</p>
-`
-    : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      ${champ('Longueur (m), calculée', inp('readonly tabindex="-1" style="background:#eef2f7"', fmt(lonSemelles).replace(/\s/g, ''), '100%'))}
-      ${champ('Largeur de semelle (m)', inp('data-k="fond" data-champ="largeur" inputmode="decimal"', fd.largeur))}
-      ${champ('Hauteur de semelle (m)', inp('data-k="fond" data-champ="hauteur" inputmode="decimal"', fd.hauteur))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Longueur calculée sur les murs cochés « Porteur ». La profondeur de fouille se saisit dans le bloc 1 Terrassement.</p>
-`;  const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
+  // Règle : pas de semelle filante béton armé sans fouille en rigole (bloc 1 Terrassement).
+  const contenuFond = rigoleActive ? '' : `<p style="font-size:13px;color:#6b5a7a;margin:0">Pas de semelles filantes sans fouille en rigole : renseignez d'abord le linéaire, la largeur et la HT dans le bloc 1 Terrassement.</p>
+`; const contenuRig = `    <p style="font-size:13px;margin:10px 0 4px"><strong>Fouilles en rigoles (linéaire saisi à la main)</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 8px">Si ce linéaire est renseigné, il remplace le linéaire des murs porteurs pour les semelles et fouilles du gros œuvre (la largeur et la HT de la rigole sont reprises aussi).</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">
       ${champ('Linéaire de rigoles (ml)', inp('data-k="fond" data-champ="rigLin" inputmode="decimal"', fd.rigLin || ''))}
@@ -1924,13 +1920,15 @@ function ficheVersMetre() {
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString() });
     nb++;
   };
-  // Fondations
+  // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
-  const origineFond = num(fdim.rigLin) > 0 ? 'rigoles' : 'murs porteurs';
+  const origineFond = 'rigoles';
+  if (!(num(fdim.rigLin) > 0)) { /* pas de semelles filantes sans terrassement en rigole */ } else {
   ajouter(DES_FOND_FOUILLE, r.fouille, `Fouilles en tranchée pour semelles filantes (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   ajouter(DES_FOND_SEMELLE, r.semelle, `Semelles filantes en béton armé (${origineFond})`,
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) });
+  }
   // Soubassement : enduit hydrofuge, membrane Delta-MS et solin aluminium en tête
   ajouter('Enduit hydrofuge sur mur de soubassement (face extérieure)', r.soubS, 'Enduit hydrofuge sur mur de soubassement', null, SRC_QTE.soub_s);
   ajouter('Membrane de protection et drainage Delta-MS sur mur de soubassement', r.soubS, 'Membrane Delta-MS sur mur de soubassement', null, SRC_QTE.soub_s);
