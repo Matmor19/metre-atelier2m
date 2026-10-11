@@ -987,7 +987,7 @@ function piecesDe(c) {
   return c.elec.pieces;
 }
 function platDe(c) {
-  if (!c.plat) c.plat = { hauteur: '2.50' };
+  if (!c.plat) c.plat = { hauteur: '' };
   return c.plat;
 }
 function platListe(re, unite, exclure) {
@@ -1008,7 +1008,7 @@ function genererPlat() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return 'Ouvrez d\'abord un chantier.';
   const P = platDe(c), pieces = piecesDe(c);
-  const H = num(P.hauteur) || 2.5;
+  const H = num(P.hauteur);
   const totaux = {}, manquants = [], puisages = [];
   const add = (des, q) => { if (des && q > 0) totaux[des] = (totaux[des] || 0) + q; };
   let dedTot = 0, murPeint = 0;
@@ -1150,18 +1150,18 @@ function ouvrirConfigurateur() {
         <label style="font-size:12px">Périmètre ml <input data-plrow="${i}:perim" inputmode="decimal" value="${esc(p.perim || '')}" placeholder="auto" style="width:80px"></label>
         <select data-plrow="${i}:sol" style="flex:1;min-width:160px">${opt(platSols(), p.sol || '')}</select>
       </div>
-      <p class="muted" style="margin:10px 0 2px">Murs (linéaire brut, hauteur ${num(P.hauteur) || 2.5} m)</p>
+      <p class="muted" style="margin:10px 0 2px">Murs (linéaire brut, hauteur ${num(P.hauteur) ? num(P.hauteur) + ' m' : 'à saisir'})</p>
       ${subListe(p.cloisons || [], i, 'cloisons', x => `Cloison · ${esc(x.type)} · ${fmt(num(x.ml))} ml`)}
       <div class="row" style="margin-top:4px"><select id="pl_${i}_cloisons_type" style="flex:1">${opt(platCloisons())}</select><input id="pl_${i}_cloisons_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:cloisons">+ Cloison</button></div>
       ${subListe(p.doublages || [], i, 'doublages', x => `Doublage · ${esc(x.type)} · ${fmt(num(x.ml))} ml`)}
       <div class="row" style="margin-top:4px"><select id="pl_${i}_doublages_type" style="flex:1">${opt(platDoublages())}</select><input id="pl_${i}_doublages_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:doublages">+ Doublage</button></div>
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
+      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
       ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
       ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) + (finTxt(x.fin, x.ral) ? ' · ' + esc(finTxt(x.fin, x.ral)) : '') : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
       <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
         <label style="display:block;font-size:14px;margin:4px 0">Type</label><select id="pl_${i}_menus_type" style="width:100%">${Object.entries(FICHE_OUV).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
-        <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" value="1"></div>
+        <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" placeholder="1"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Largeur (m)</label><input id="pl_${i}_menus_l" inputmode="decimal" placeholder="ex. 1,20"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Hauteur (m)</label><input id="pl_${i}_menus_h" inputmode="decimal" placeholder="ex. 1,35"></div></div>
         <label style="display:block;font-size:14px;margin:4px 0">Matériau</label><select id="pl_${i}_menus_mat" style="width:100%">${optionsListe(matsPour('ouvrant'), 'PVC')}</select>
@@ -1179,30 +1179,30 @@ function ouvrirConfigurateur() {
         <label style="font-size:14px"><input type="checkbox" id="pl_${i}_menus_opaque" style="width:auto;height:auto"> Verre opaque</label></div>
         <button type="button" class="btn sec small" data-pladd="${i}:menus">+ Ajouter cette menuiserie</button></div>
       ${subListe(p.ouvertures || [], i, 'ouvertures', x => `Ouverture libre · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:180px">Ouverture libre (passage)</span><input id="pl_${i}_ouvertures_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_ouvertures_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_ouvertures_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:ouvertures">+ Ouverture</button></div>
+      <div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:180px">Ouverture libre (passage)</span><input id="pl_${i}_ouvertures_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_ouvertures_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_ouvertures_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:ouvertures">+ Ouverture</button></div>
       ${subListe(p.placards || [], i, 'placards', x => `Placard · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_placards_type" style="flex:1;min-width:180px">${opt(platPlacards())}</select><input id="pl_${i}_placards_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_placards_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_placards_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:placards">+ Placard</button></div>
+      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_placards_type" style="flex:1;min-width:180px">${opt(platPlacards())}</select><input id="pl_${i}_placards_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_placards_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_placards_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:placards">+ Placard</button></div>
     </div>`;
   };
   const carteEquip = (p, i) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
         <strong>${esc(nomPiece(p))}</strong>
       ${equipOptions(p).length ? `<p class="muted" style="margin:10px 0 2px">Équipements (nombre)</p>
       ${subListe(p.equip || [], i, 'equip', x => `${esc(x.type)} × ${num(x.nb)}`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_equip_type" style="flex:1;min-width:200px">${opt(equipOptions(p))}</select><input id="pl_${i}_equip_nb" inputmode="numeric" value="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
+      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_equip_type" style="flex:1;min-width:200px">${opt(equipOptions(p))}</select><input id="pl_${i}_equip_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
     </div>`;
   $('cfgPieces').innerHTML = `<div class="bloc">${lotTitre('B. Liste des pièces de la maison (sans l\'équipement)')}
     <p class="muted">Saisissez chaque pièce une seule fois, avec ses murs, portes et placards en brut. Le calcul distingue seul les pièces d'eau d'après leur nom.</p>
     <label for="plH">Hauteur sous plafond (m)</label>
-    <input id="plH" inputmode="decimal" value="${esc(P.hauteur)}">
+    <input id="plH" inputmode="decimal" value="${esc(P.hauteur)}" placeholder="ex. 2,50">
     <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px"><input type="checkbox" id="plPeint" ${P.peintPortes ? 'checked' : ''} style="width:auto;height:auto;margin:0"> Portes peintes sur place (sinon fournies prépeintes)</label>
     <h3 style="margin:14px 0 4px;font-size:15px">Ajouter une pièce</h3>
     <p class="muted" style="margin:0 0 8px">Remplissez les cases utiles, puis appuyez sur « Ajouter ou mettre à jour la pièce ». Une case vide reste vide : rien n'est calculé à sa place.</p>
     <div class="row" style="flex-wrap:wrap;gap:8px">
-      <div style="flex:2;min-width:180px"><label for="plType" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Type de pièce</label><select id="plType" style="width:100%">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
+      <div style="flex:2;min-width:180px"><label for="plType" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Type de pièce</label><select id="plType" style="width:100%"><option value="">— à choisir —</option>${Object.keys(ELEC_PIECE_TYPES).map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
       <div style="flex:1;min-width:140px"><label for="plQual" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Numéro ou nom (si plusieurs pièces du même type)</label><select id="plQual" style="width:100%">${ELEC_QUALIFS.map(q => `<option value="${esc(q)}">${q || '(aucun)'}</option>`).join('')}</select></div>
     </div>
     <div class="row" style="flex-wrap:wrap;gap:8px">
-      <div style="flex:1;min-width:120px"><label for="plNb" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Nombre de pièces identiques</label><input id="plNb" inputmode="numeric" value="1"></div>
+      <div style="flex:1;min-width:120px"><label for="plNb" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Nombre de pièces identiques</label><input id="plNb" inputmode="numeric" placeholder="1"></div>
       <div style="flex:1;min-width:120px"><label for="plSurf" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Surface (m²)</label><input id="plSurf" inputmode="decimal" placeholder="ex. 12"></div>
       <div style="flex:1;min-width:120px"><label for="plPerim" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Périmètre (ml), facultatif</label><input id="plPerim" inputmode="decimal" placeholder="calculé si vide"></div>
     </div>
@@ -1583,18 +1583,18 @@ const DES_MASSIF = 'Fouille pour puits ou massif de fondation';
 const DES_SEMELLE_ISO = 'Semelles isolées en béton armé';
 const DES_PLATEFORME = 'Fouille en pleine masse (dallage, plateforme)';
 const DES_DIVERS = 'Fouille pour trou divers';
-const FICHE_FONDS_DEF = { largeur: '0.5', hauteur: '0.4' };
+const FICHE_FONDS_DEF = { largeur: '', hauteur: '' };
 
 function projetDe(c) {
-  if (!c.projet) c.projet = { epaisseur: 30, murs: [], ouvertures: [], toiture: { type: 'deux-pans', surface: 0, pente: 30, couverture: '' }, choix: { murs: '', tableaux: '', finition: '' }, fond: Object.assign({}, FICHE_FONDS_DEF) };
+  if (!c.projet) c.projet = { epaisseur: '', murs: [], ouvertures: [], toiture: { type: '', surface: '', pente: '', couverture: '' }, choix: { murs: '', tableaux: '', finition: '' }, fond: Object.assign({}, FICHE_FONDS_DEF) };
   if (!c.projet.fond) c.projet.fond = Object.assign({}, FICHE_FONDS_DEF);
   if (!c.projet.equip) c.projet.equip = {};
   if (!c.projet.cuisine) c.projet.cuisine = { bas: '', haut: '', plan: '', plan_ml: '' };
   if (!c.projet.chantier) c.projet.chantier = { eau: '', elec: '', base: '', grue: '', bennes: '', bennesTri: '' };
   if (c.projet.choix.finition === undefined) c.projet.choix.finition = '';
-  if (!c.projet.soub) c.projet.soub = { hauteur: '0.60' };
+  if (!c.projet.soub) c.projet.soub = { hauteur: '' };
   if (!c.projet.terrain) c.projet.terrain = { surface: '', perimetre: '' };
-  if (!c.projet.plancher) c.projet.plancher = { type: 'hourdis', surface: '', ep: '4', retombee: '220', portee: '', entraxe: '0.60' };
+  if (!c.projet.plancher) c.projet.plancher = { type: '', surface: '', ep: '', retombee: '', portee: '', entraxe: '' };
   return c.projet;
 }
 // Calculs : murs moins ouvertures de plus de 2 m², tableaux (2 côtés × hauteur × épaisseur),
@@ -1641,7 +1641,7 @@ function projetCalcul(p) {
     r.ouvs.push({ o: { nom: nomPiece(x.piece) + ' · ' + FICHE_OUV[x.m.type] }, aire, tab, deduit: aire >= 2, nb: x.nb });
   }
   r.net = Math.max(0, r.brut - r.deduit);
-  const pente = p.toiture.type === 'plat' ? (num(p.toiture.pente) || 3.5) : num(p.toiture.pente);
+  const pente = num(p.toiture.pente);
   const S = num(p.toiture.surface);
   // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente
   r.toiture = num(p.toiture.surfCouv) > 0 ? num(p.toiture.surfCouv) : (pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S);
@@ -1665,8 +1665,8 @@ function projetCalcul(p) {
   if (pl.type === 'solivage' && r.plS > 0 && num(pl.portee) > 0) {
     // Solives parallèles à la portée : nombre = largeur / entraxe + 1, longueur = portée
     const largeurPerp = r.plS / num(pl.portee);
-    const ent = num(pl.entraxe) || 0.6;
-    r.nbSol = Math.ceil(largeurPerp / ent) + 1;
+    const ent = num(pl.entraxe);
+    r.nbSol = ent > 0 ? Math.ceil(largeurPerp / ent) + 1 : 0;
     r.solives = r.nbSol * num(pl.portee);
   }
   return r;
@@ -1786,9 +1786,9 @@ function ctxQuantites(c) {
     couvertine: p.toiture.couvertine || '',
     ecran: p.toiture.ecran || '',
     iso_toit: p.toiture.isoToit || '',
-    charpente_variante: p.toiture.charpente === 'fermette' ? (p.toiture.type || 'deux-pans') + '|' + penteBande(p)
+    charpente_variante: p.toiture.charpente === 'fermette' ? (p.toiture.type || '') + '|' + penteBande(p)
       : (p.toiture.charpente === 'traditionnelle' ? 'traditionnelle' : 'aucune'),
-    toit_type: p.toiture.type || 'deux-pans',
+    toit_type: p.toiture.type || '',
     pente_bande: penteBande(p),
     linP: r.linP,
     linMurs: p.murs.reduce((a, m) => a + num(m.longueur), 0)
@@ -1941,10 +1941,10 @@ function ficheRendre() {
   const choix = (attrs, entries, val) => sel2(attrs, [CHOIX_VIDE, ...entries], val || '');
   const lot = (t) => `<h2 style="margin:20px 0 8px;padding:8px 12px;border-radius:10px;background:var(--acc);color:#fff;font-size:17px">${t}</h2>`;
   const contenuCharp = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            ${champ('Type de toiture', sel2('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
+            ${champ('Type de toiture', choix('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
             ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
             ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
-            ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"', plat && !toit.pente ? '3.5' : toit.pente))}
+            ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"' + (plat ? ' placeholder="minimum 3,5"' : ' placeholder="ex. 30"'), toit.pente))}
             ${champ('Charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), toit.charpente))}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
     </div>`;
@@ -2013,12 +2013,12 @@ function ficheRendre() {
   const contenuPlancher = (() => {
     const pl = p.plancher;
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois']], pl.type))}
+      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois']], pl.type || ''))}
       ${champ('Surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
-      ${pl.type === 'hourdis' ? champ('Épaisseur de la dalle de compression (cm)', inp('data-k="plan" data-champ="ep" inputmode="decimal"', pl.ep)) : ''}
-      ${pl.type === 'solivage' ? champ('Retombée des solives (mm)', sel2('data-k="plan" data-champ="retombee"', [['145', '145 mm'], ['175', '175 mm'], ['220', '220 mm']], pl.retombee)) : ''}
-      ${pl.type === 'solivage' ? champ('Portée des solives (m)', inp('data-k="plan" data-champ="portee" inputmode="decimal"', pl.portee)) : ''}
-      ${pl.type === 'solivage' ? champ('Entraxe des solives (m)', inp('data-k="plan" data-champ="entraxe" inputmode="decimal"', pl.entraxe)) : ''}
+      ${pl.type === 'hourdis' ? champ('Épaisseur de la dalle de compression (cm)', inp('data-k="plan" data-champ="ep" inputmode="decimal" placeholder="ex. 4"', pl.ep)) : ''}
+      ${pl.type === 'solivage' ? champ('Retombée des solives (mm)', sel2('data-k="plan" data-champ="retombee"', [CHOIX_VIDE, ['145', '145 mm'], ['175', '175 mm'], ['220', '220 mm']], pl.retombee || '')) : ''}
+      ${pl.type === 'solivage' ? champ('Portée des solives (m)', inp('data-k="plan" data-champ="portee" inputmode="decimal"', pl.portee || '')) : ''}
+      ${pl.type === 'solivage' ? champ('Entraxe des solives (m)', inp('data-k="plan" data-champ="entraxe" inputmode="decimal" placeholder="ex. 0,60"', pl.entraxe || '')) : ''}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">${pl.type === 'solivage'
       ? 'Solivage : OSB 9 mm en fond, isolant entre solives (épaisseur = retombée), OSB 21 mm support de revêtement de sol.'
       : 'Hourdis : plancher à poutrelles et hourdis, avec dalle de compression en béton.'}</p>`;
@@ -2051,7 +2051,7 @@ function ficheRendre() {
     ${carte('Fouilles en rigoles (linéaire saisi à la main)', contenuRig, 'fond_fouille')}
     </div>
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
-    ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal"', p.epaisseur, '160px')))}
+    ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal" placeholder="ex. 30"', p.epaisseur, '160px')))}
     ${carte('Murs (longueur et hauteur)', murs + '<button type="button" class="btn sec" data-action="addmur" style="margin-top:6px">+ Ajouter un mur</button>')}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Soubassement (mur au-dessus des fondations)', contenuSoub)}
