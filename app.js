@@ -11,12 +11,15 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre th.num,table.metre td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
     table.metre td.detail{font-size:12.5px;color:var(--mut)}
     table.metre td.act{text-align:center;padding-left:0;padding-right:4px}
-    table.metre tr.lot td{background:var(--line);color:var(--acc2);font-weight:700;font-size:13px;padding:8px}
-    table.metre tr.lot .muted{font-weight:400}
+    table.metre tr.lot td{background:#C0622B;color:#fff;font-weight:700;font-size:13px;padding:8px;text-transform:uppercase;letter-spacing:.02em}
+    table.metre tr.lot .muted{font-weight:400;color:#fff;opacity:.9;text-transform:none}
+    table.metre tr.lot .poignee{color:#fff}
+    table.metre tr.lot .gen-choix{color:#fff;text-transform:none}
+    table.metre tr.lot .btn{color:#C0622B;border-color:#fff;background:#fff}
     table.metre tbody tr:not(.lot):hover td{background:rgba(47,111,176,.06)}
     table.metre .btn.small{min-height:30px;padding:4px 9px}
     table.metre td.numl{font-weight:700;color:var(--acc2);white-space:nowrap}
-    table.metre tr.lot .lotnum{display:inline-block;min-width:2.2em;font-weight:700;color:var(--acc2)}
+    table.metre tr.lot .lotnum{display:inline-block;min-width:2.2em;font-weight:700;color:#fff}
     table.metre .gen-choix{display:inline-block;margin-left:12px;font-size:12px;font-weight:400;color:var(--mut);cursor:pointer;white-space:nowrap}
     table.metre .gen-choix input{width:auto;height:auto;margin:0 4px 0 0;padding:0;vertical-align:middle;accent-color:var(--acc2)}
     table.metre tr.gen td{background:#fbfaf8;font-size:13px;line-height:1.4;padding:8px 12px 10px 40px;border-bottom:1px solid var(--line,#e5e5e5)}
@@ -39,8 +42,8 @@ const PAGE = document.body.dataset.page || 'saisie';
     body[data-page="tableau"] .btn{background:#E07838}
     body[data-page="tableau"] .btn.sec{background:transparent;color:#B9561A;border-color:#E07838}
     body[data-page="tableau"] .card{border-color:#f0c9ab}
-    body[data-page="tableau"] table.metre tr.lot td{background:#fbe3d2;color:#9a4413}
-    @media (prefers-color-scheme: dark){ body[data-page="tableau"]{background:#2a1d15} body[data-page="tableau"] table.metre tr.lot td{background:#3d2a1e;color:#f5b58a} }
+    body[data-page="tableau"] table.metre tr.lot td{background:#C0622B;color:#fff}
+    @media (prefers-color-scheme: dark){ body[data-page="tableau"]{background:#2a1d15} }
   `;
   const s = document.createElement('style');
   s.textContent = css;
