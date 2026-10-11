@@ -3159,9 +3159,9 @@ function renderBiblio() {
   const supprimes = BIB.ouvrages.filter(o => o.supprime && (!lot || o.lot === lot));
   if (supprimes.length) {
     $('biblioListe').innerHTML += `<details style="padding:0 12px 12px"><summary class="muted">Supprimés (${supprimes.length})</summary>` +
-      supprimes.map(o => `<div class="ouv" style="padding:8px 0"><span>${esc(o.designation)}</span>
+      supprimes.map(o => `<div class="ouv" style="padding:8px 0"><label style="display:flex;gap:8px;align-items:center;flex:1;min-width:0"><input type="checkbox" data-purge-cb="${esc(o.id)}" style="width:auto;height:auto"><span>${esc(o.designation)}</span></label>
         <button class="btn small sec" data-restaurer-ouv="${esc(o.id)}">Restaurer</button></div>`).join('')
-      + `<div style="margin-top:10px"><button class="btn small danger" data-purger-ouv>Supprimer définitivement ces ouvrages (${supprimes.length})</button></div></details>`;
+      + `<div style="margin-top:10px"><button class="btn small danger" data-purger-ouv>Supprimer définitivement les ouvrages cochés</button></div></details>`;
   }
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
@@ -3450,11 +3450,12 @@ $('biblioListe').addEventListener('click', e => {
     return;
   }
   if (e.target.closest('[data-purger-ouv]')) {
-    const nb = BIB.ouvrages.filter(o => o.supprime).length;
-    if (!nb || !confirm(nb + ' ouvrage(s) seront supprimés définitivement de la bibliothèque (plus restaurables). Continuer ?')) return;
+    const cochés = new Set([...document.querySelectorAll('[data-purge-cb]:checked')].map(x => x.dataset.purgeCb));
+    if (!cochés.size) { alert('Cochez d\'abord les ouvrages à supprimer définitivement.'); return; }
+    if (!confirm(cochés.size + ' ouvrage(s) coché(s) seront supprimés définitivement de la bibliothèque (plus restaurables). Continuer ?')) return;
     // Les numéros ne sont jamais réutilisés : on garde le plus grand numéro déjà attribué
     BIB.prochainNumero = Math.max(BIB.prochainNumero || 0, ...BIB.ouvrages.map(o => parseInt(o.id.slice(4), 10) || 0));
-    BIB.ouvrages = BIB.ouvrages.filter(o => !o.supprime);
+    BIB.ouvrages = BIB.ouvrages.filter(o => !(o.supprime && cochés.has(o.id)));
     sauverBibliotheque(); renderBiblio();
     return;
   }
