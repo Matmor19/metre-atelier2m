@@ -271,6 +271,11 @@ function detailMorceaux(l) {
 }
 // Texte simple (exports CSV, Excel)
 function detail(l) {
+  const v0 = l.valeurs || {};
+  if (v0.src === TXT_SURFACE && v0.cote1 && v0.cote3) {
+    const nb0 = num(v0.nombre) > 0 ? num(v0.nombre) : 1;
+    return (nb0 !== 1 ? fmt(nb0) + ' × ' : '') + TXT_SURFACE + ' ' + fmt(num(v0.cote1)) + ' m² × hauteur ' + fmt(num(v0.cote3)) + ' m';
+  }
   let t = detailMorceaux(l).map(m => (m.nom ? m.nom + ' ' : '') + m.v).join(' × ');
   if (l.surface) t += ` (surface ${fmt(l.surface)} m²)`;
   return t;
@@ -280,6 +285,11 @@ function detail(l) {
 const TXT_SURFACE = 'Surface mesurée suivant plan';
 function detailHtml(l) {
   const v = l.valeurs || {};
+  // Plateforme saisie en surface × hauteur : surface mesurée suivant plan, puis × hauteur
+  if (v.src === TXT_SURFACE && v.cote1 && v.cote3) {
+    const nb = num(v.nombre) > 0 ? num(v.nombre) : 1;
+    return (nb !== 1 ? esc(fmt(nb)) + ' × ' : '') + esc(TXT_SURFACE) + ' ' + esc(fmt(num(v.cote1))) + ' m² × hauteur ' + esc(fmt(num(v.cote3))) + ' m';
+  }
   if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
   if (v.src) return esc(v.src);
   let t = detailMorceaux(l).map(m => {
