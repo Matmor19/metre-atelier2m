@@ -374,6 +374,12 @@ function dupliquerChantier(id) {
   ouvrirChantier(nouveau.id);
 }
 
+// En-tête de saisie (lot + recherche) figé sous la barre du haut
+function figerEntete() {
+  const h = document.querySelector('header'), c = $('enteteSaisie');
+  if (c) c.style.top = (h ? h.offsetHeight : 0) + 'px';
+}
+window.addEventListener('resize', figerEntete);
 // Lot choisi dans la saisie : en surbrillance orange
 function colorerLot() {
   const s = $('selLot'); if (!s) return;
@@ -387,6 +393,7 @@ function remplirLots() {
 }
 
 function renderOuvrages() {
+  figerEntete();
   const q = $('recherche').value.trim().toLowerCase();
   const liste = BIB.ouvrages.filter(o => !o.supprime && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
   const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)} <span class="muted" style="font-size:12px">· ${esc(o.id)}</span></span><span class="tag">${esc(o.unite)}</span></div>`).join('');
