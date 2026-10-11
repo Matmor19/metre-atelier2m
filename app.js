@@ -604,6 +604,28 @@ function prixAffiches() { return lsGet('prix', false) === true; }
 // Mise à jour automatique : les lignes déjà au métré qui correspondent à un ouvrage du configurateur
 // sont mises à jour sur place (même place, même numéro). Rien n'est ajouté ni supprimé ici.
 let _majConfigEnCours = false;
+// Valeur d'une case du configurateur, lue à l'adresse qu'utilise ficheChange
+const BLOC_CFG = { toit: 'toiture', fond: 'fond', soub: 'soub', terr: 'terrain', plan: 'plancher', choix: 'choix', equip: 'equip', cuis: 'cuisine', chant: 'chantier' };
+function valeurLien(c, l) {
+  if (!c || !l) return undefined;
+  const p = projetDe(c);
+  if (l.k === 'epais') return p.epaisseur;
+  if (l.k === 'mur') { const m = (p.murs || []).find(x => x.id === l.id); return m ? m[l.champ] : undefined; }
+  if (l.k === 'ouv') { const x = (p.ouvertures || []).find(y => y.id === l.id); return x ? x[l.champ] : undefined; }
+  if (l.k === 'pleine') { const e = pleinesDe(p.fond).find(y => y.id === l.id); return e ? e[l.champ] : undefined; }
+  const b = p[BLOC_CFG[l.k]];
+  return b ? b[l.champ] : undefined;
+}
+// Cotes reliées une à une à des cases du configurateur : { cote1: '0.8', … } (seulement celles qui ont une valeur)
+function valeursCotes(o, c) {
+  const out = {};
+  if (!o || !o.cotes || !c) return out;
+  for (const cle of Object.keys(o.cotes)) {
+    const v = valeurLien(c, o.cotes[cle]);
+    if (v !== undefined && v !== null && v !== '') out[cle] = String(v);
+  }
+  return out;
+}
 // Sources « configurateur » possibles pour les cotes d'un ouvrage (L, l, h)
 const SOURCES_CONFIG = [
   { cle: 'massif_m3', libelle: 'Massif de fondation (longueur, largeur, hauteur)' },
@@ -630,13 +652,18 @@ function majLignesLiees(id) {
     let change = false;
     L = L.map(x => {
       const o = BIB.ouvrages.find(y => y.id === x.ouvrage);
-      if (!o || !(o.liePar || o.lieConfig) || o.liePar === o.id) return x;
-      const cs = coteSource(o, id, x.uid);
-      if (!cs) return x;
+      if (!o || o.liePar === o.id) return x;
+      const cs = (o.liePar || o.lieConfig) ? coteSource(o, id, x.uid) : null;
+      const fromCotes = valeursCotes(o, chantiers.find(c => c.id === id));
+      if (!cs && !Object.keys(fromCotes).length) return x;
       const nv = Object.assign({}, x.valeurs);
       delete nv.src; delete nv.mode;
-      nv.nombre = cs.nombre != null ? cs.nombre : '1';   // nombre : celui du configurateur, sinon 1
-      ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = cs[k] != null ? cs[k] : ''; });
+      if (cs) {
+        nv.nombre = cs.nombre != null ? cs.nombre : '1';   // nombre : celui du configurateur, sinon 1
+        ['cote1', 'cote2', 'cote3'].forEach(k => { nv[k] = cs[k] != null ? cs[k] : ''; });
+      }
+      Object.assign(nv, fromCotes);   // cotes reliées une à une : elles l'emportent
+      if (nv.nombre == null || nv.nombre === '') nv.nombre = '1';
       const q = calcul(o, nv);
       if (JSON.stringify(nv) === JSON.stringify(x.valeurs) && Math.abs(num(q) - num(x.quantite)) < 1e-9) return x;
       change = true; ch = true;
@@ -2216,6 +2243,10 @@ function ouvrirOuvrage(o, precedent, message) {
   // Ouvrage lié : cotes reprises de la dernière ligne de l'ouvrage source (dans ce chantier)
   let compteLie = null;
   if ((o.liePar || o.lieConfig) && !precedent) compteLie = coteSource(o, courantId, null);
+  if (o.cotes && !precedent) {
+    const vc = valeursCotes(o, chantiers.find(x => x.id === courantId));
+    if (Object.keys(vc).length) compteLie = Object.assign({}, compteLie || {}, vc);
+  }
   const v = precedent || compteLie || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
     + (auto ? `<div class="ok" style="margin-top:8px">Quantité proposée depuis le configurateur${auto.src ? ' : ' + esc(auto.src.replace(/^Calcul suivant plan : |^Calcul du configurateur : |^Surface du configurateur : /, '')) : ' (' + esc(o.qte.replace(/_/g, ' ')) + ')'}. Modifiez-la si besoin : la ligne ne sera plus recalculée.</div>` : '');
@@ -3094,9 +3125,15 @@ function moyenDe(bas, haut) {
   return bas != null ? bas : (haut != null ? haut : null);
 }
 
-function formulaireOuvrage(o, lotChoisi) {
+let COTES_EDIT = {};   // liaisons des cotes en cours d'édition dans la fiche
+function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
   // Nouvel ouvrage : on reprend le lot choisi dans la bibliothèque
   const v = o || { designation: '', lot: lotChoisi || lotCourant || BIB.lots[0].id, unite: 'u' };
+  COTES_EDIT = JSON.parse(JSON.stringify(cotesInit || (o && o.cotes) || {}));
+  const blocCotes = `<div class="card" style="margin-top:10px"><strong>Cotes reliées au configurateur (case par case)</strong>
+      <p class="muted" style="margin:4px 0 6px;font-size:12px">Pour chaque cote, cliquez « Choisir », puis la case du configurateur qui donne cette valeur. Elle est reprise dans le métré et suit le configurateur.</p>
+      ${champsBib(v.unite).map(ch => { const L = COTES_EDIT[ch.cle]; return `<div class="row" style="align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0"><strong>${esc(ch.libelle)}</strong> : ${L ? esc(L.lib) : '<span class="muted">non relié</span>'}</span><button type="button" class="btn small sec" data-lien="${esc(ch.cle)}">Choisir</button>${L ? `<button type="button" class="btn small sec" data-effacer="${esc(ch.cle)}">Effacer</button>` : ''}</div>`; }).join('') || '<p class="muted" style="margin:6px 0 0">Choisissez d\'abord l\'unité : les cotes apparaîtront ici.</p>'}
+    </div>`;
   const p = (o && o.prix_indicatif) || {};
   const devis = devisDe(p);
   const val = x => (x != null ? String(Math.round(x * 100) / 100).replace('.', ',') : '');
@@ -3111,6 +3148,7 @@ function formulaireOuvrage(o, lotChoisi) {
       <label for="b_lieconf">Ou reprend les cotes du configurateur</label>
       <select id="b_lieconf" name="lieconf"><option value="">— aucun —</option>${SOURCES_CONFIG.map(x => `<option value="${esc(x.cle)}" ${o && o.lieConfig === x.cle ? 'selected' : ''}>${esc(x.libelle)}</option>`).join('')}</select>
       <button type="button" class="btn sec" id="bChoixConf" style="margin-top:6px">Choisir dans le configurateur</button>
+      ${blocCotes}
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
       <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 2 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
@@ -3146,36 +3184,69 @@ function formulaireOuvrage(o, lotChoisi) {
   if (o && $('bSupprOuv')) $('bSupprOuv').onclick = () => supprimerOuvrage(o.id);
   $('bChoixConf').onclick = () => {
     if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
-    const draft = {};
-    for (const el of $('fBib').elements) if (el.name) draft[el.name] = el.value;
-    window.CHOIX_CONF = { ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft };
+    window.CHOIX_CONF = { mode: 'source', ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft: capturerBrouillon() };
     fermer();
     ouvrirConfig();
-    activerBandeauChoix();
+    activerBandeauChoix('Cliquez sur la case à reprendre (massif ou fouille en rigoles).');
   };
+  document.querySelectorAll('[data-lien]').forEach(b => b.onclick = () => {
+    if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
+    const cle = b.dataset.lien, ch = champsBib(v.unite).find(x => x.cle === cle);
+    window.CHOIX_CONF = { mode: 'cote', cote: cle, ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft: capturerBrouillon(), liens: JSON.parse(JSON.stringify(COTES_EDIT)) };
+    fermer();
+    ouvrirConfig();
+    activerBandeauChoix('Cliquez la case du configurateur pour : ' + (ch ? ch.libelle : cle));
+  });
+  document.querySelectorAll('[data-effacer]').forEach(b => b.onclick = () => {
+    const liens = JSON.parse(JSON.stringify(COTES_EDIT)); delete liens[b.dataset.effacer];
+    reouvrirFormulaire(o, lotChoisi, liens, capturerBrouillon());
+  });
+}
+// Brouillon de la fiche (ce qui est tapé, pour ne rien perdre pendant le choix)
+function capturerBrouillon() {
+  const d = {};
+  for (const el of $('fBib').elements) if (el.name) d[el.name] = el.value;
+  return d;
+}
+// Réouvre la fiche avec le brouillon et les liaisons
+function reouvrirFormulaire(o, lotChoisi, liens, brouillon) {
+  route('biblio');
+  ouvrirModal();
+  formulaireOuvrage(o, lotChoisi, liens, brouillon);
+  const f = $('fBib');
+  for (const [k, val] of Object.entries(brouillon || {})) { if (f.elements[k] && k !== 'lieconf' && k !== 'lie') f.elements[k].value = val; }
+  f.elements.lieconf.value = (brouillon && brouillon.lieconf) || '';
+  f.elements.lie.value = (brouillon && brouillon.lie) || '';
 }
 
-// Choix d'une source dans le configurateur : bandeau en bas, clic sur la case, retour à la fiche
-function activerBandeauChoix() {
+// Choix dans le configurateur : bandeau en bas, clic sur la case, retour à la fiche
+function activerBandeauChoix(texte) {
   let b = $('bandeauChoix');
   if (!b) {
     b = document.createElement('div');
     b.id = 'bandeauChoix';
     b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:60;background:#E07838;color:#fff;padding:12px 16px;font-weight:600;box-shadow:0 -2px 8px rgba(0,0,0,.2)';
-    b.innerHTML = 'Cliquez sur la case à reprendre (massif ou fouille en rigoles). <button type="button" id="bAnnulChoix" class="btn sec" style="margin-left:8px;background:#fff">Annuler</button>';
+    b.innerHTML = '<span id="bandeauTexte"></span> <button type="button" id="bAnnulChoix" class="btn sec" style="margin-left:8px;background:#fff">Annuler</button>';
     document.body.appendChild(b);
-    $('bAnnulChoix').onclick = () => retourBibliotheque(null);
+    $('bAnnulChoix').onclick = () => retourBibliotheque(null, null);
   }
+  $('bandeauTexte').textContent = texte || 'Cliquez sur la case à reprendre.';
   b.style.display = 'block';
 }
-// Retour à la fiche d'ouvrage, avec ce qui était saisi et la source choisie (ou aucune si annulé)
-function retourBibliotheque(src) {
+// Retour à la fiche d'ouvrage. Mode « source » : massif ou rigoles. Mode « cote » : une cote reliée à une case.
+function retourBibliotheque(src, lien) {
   const ch = window.CHOIX_CONF;
   window.CHOIX_CONF = null;
   if ($('bandeauChoix')) $('bandeauChoix').style.display = 'none';
   if (!ch) return;
-  route('biblio');
   const o = ch.ouvId ? BIB.ouvrages.find(x => x.id === ch.ouvId) : null;
+  if (ch.mode === 'cote') {
+    const liens = ch.liens || {};
+    if (lien) liens[ch.cote] = lien;
+    reouvrirFormulaire(o, ch.lot, liens, ch.draft);
+    return;
+  }
+  route('biblio');
   ouvrirModal();
   formulaireOuvrage(o, ch.lot);
   const f = $('fBib');
@@ -3186,10 +3257,34 @@ function retourBibliotheque(src) {
 // Clic dans le configurateur pendant le choix
 document.addEventListener('click', e => {
   if (!window.CHOIX_CONF) return;
+  if (window.CHOIX_CONF.mode === 'cote') {
+    const t = e.target.closest('input[data-k][data-champ]');
+    if (!t || t.getAttribute('inputmode') !== 'decimal') return;   // seulement les cases numériques
+    e.preventDefault(); e.stopPropagation();
+    const lab = t.parentElement && t.parentElement.querySelector('label');
+    const libChamp = lab ? lab.textContent.trim() : t.dataset.champ;
+    let titre = '';
+    if (t.dataset.k === 'pleine') {
+      // Fouille en pleine masse : numéro et usage de la fouille
+      const c = chantiers.find(x => x.id === courantId);
+      const liste = c ? pleinesDe(projetDe(c).fond) : [];
+      const i = liste.findIndex(x => x.id === t.dataset.id);
+      const usages = { massif: 'massif de fondation', plateforme: 'plateforme / dallage', divers: 'trou divers' };
+      titre = i >= 0 ? 'Fouille n°' + (i + 1) + ' (' + (usages[liste[i].usage] || liste[i].usage || 'massif de fondation') + ')' : 'Fouille en pleine masse';
+    } else {
+      const h3 = t.closest('section') && t.closest('section').querySelector('h3');
+      titre = h3 ? h3.textContent.trim() : '';
+    }
+    const parts = [titre, libChamp].filter(Boolean);
+    const lien = { k: t.dataset.k, champ: t.dataset.champ, lib: parts.join(' · ') };
+    if (t.dataset.id) lien.id = t.dataset.id;
+    retourBibliotheque(null, lien);
+    return;
+  }
   const t = e.target.closest('[data-source]');
   if (!t) return;
   e.preventDefault(); e.stopPropagation();
-  retourBibliotheque(t.dataset.source);
+  retourBibliotheque(t.dataset.source, null);
 }, true);
 
 // Suppression d'un ouvrage de la bibliothèque (il reste restaurable dans « Supprimés »)
@@ -3238,6 +3333,7 @@ function enregistrerOuvrage(id) {
     if (rappel) o.rappel = rappel; else delete o.rappel;
     if (lie && lie !== o.id) o.liePar = lie; else delete o.liePar;
     if (lieConf) o.lieConfig = lieConf; else delete o.lieConfig;
+    if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT)); else delete o.cotes;
     o.designation = des; o.lot = lot; o.unite = unite;
     o.version = (o.version || 1) + 1;
     if (prix) o.prix_indicatif = prix; else delete o.prix_indicatif;
@@ -3248,6 +3344,7 @@ function enregistrerOuvrage(id) {
     if (rappel) o.rappel = rappel;
     if (lie) o.liePar = lie;
     if (lieConf) o.lieConfig = lieConf;
+    if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT));
     if (prix) o.prix_indicatif = prix;
     BIB.ouvrages.push(o);
   }
