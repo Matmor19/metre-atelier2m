@@ -2154,7 +2154,7 @@ function ouvrirOuvrage(o, precedent, message) {
   // Cases de cotes vierges : la quantité proposée par le configurateur (déjà calculée) est utilisée si rien n'est saisi
   // Cases remplies seulement avec ce que le configurateur fournit : dimensions (fouille), surface (plan) ou quantité
   // Dimensions du configurateur (fouille) ou surface (plan) : reprises. Total calculé : cases vides, la quantité est proposée.
-  const dimsConfig = !!auto && (o.qte === 'fond_fouille' || o.qte === 'fond_semelle' || auto.mode === 'plan');
+  const dimsConfig = !!auto && (o.qte === 'fond_fouille' || o.qte === 'fond_semelle' || o.qte === 'massif_m3' || o.qte === 'semi_nb' || auto.mode === 'plan');
   const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   const v = precedent || compte;
   let h = `<h2 style="margin:0 0 4px;font-size:18px">${esc(o.designation)}</h2>`
