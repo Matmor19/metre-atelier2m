@@ -2503,8 +2503,8 @@ function htmlImpression(d, logo, pg) {
     corps += `<tr class="lot"><td colspan="${nc}">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     for (const l of lot.lignes) {
-      corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
-        <td class="num">${fmt(l.quantite)}</td><td class="det">${l.detailHtml}</td>
+      corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
+        <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
     }
   }
@@ -2575,7 +2575,7 @@ function htmlImpression(d, logo, pg) {
 <section>
   <h2 class="entete-metre">Détail du métré</h2>
   <table class="metre">
-    <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th>Quantité</th><th>Détail</th>${d.avecPrix ? '<th>P.U. HT ind.</th><th>Montant HT ind.</th>' : ''}</tr></thead>
+    <thead><tr><th>N°</th><th>Désignation</th><th>Quantité</th><th>Unité</th><th>Détail</th>${d.avecPrix ? '<th>P.U. HT ind.</th><th>Montant HT ind.</th>' : ''}</tr></thead>
     <tbody>${corps}</tbody>${pied}
   </table>
 </section>
@@ -2618,8 +2618,8 @@ function htmlParLot(d, type, logo) {
     // Détail du lot (généralités en tête pour le CDPGF)
     const gen = cdpgf ? genHtml(lot.id, lot.ordre) : '';
     const lignes = lot.lignes.map(l => `<tr>
-        <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td><td>${esc(l.unite)}</td>
-        <td class="num">${fmt(l.quantite)}</td><td class="det">${l.detailHtml}</td>
+        <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
+        <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
     // Totaux : Total HT, puis trois lignes de TVA (un taux par ligne, car un projet peut mélanger plusieurs taux), puis Total TTC
     const lignesTva = [1, 2, 3].map(n => `<tr class="tva"><td colspan="7">TVA ${n} : taux ……… %  ·  montant de la TVA</td><td class="vierge"></td></tr>`).join('');
@@ -2636,7 +2636,7 @@ function htmlParLot(d, type, logo) {
       <h2 class="entete-metre">Lot ${esc(lot.num)} · ${esc(lot.nom)}</h2>
       ${gen}
       <table class="metre">
-        <thead><tr><th>N°</th><th>Désignation</th><th>Unité</th><th>Quantité</th><th>Détail</th>${cdpgf ? '<th>P.U. HT</th><th>Montant HT</th><th>TVA %</th>' : ''}</tr></thead>
+        <thead><tr><th>N°</th><th>Désignation</th><th>Quantité</th><th>Unité</th><th>Détail</th>${cdpgf ? '<th>P.U. HT</th><th>Montant HT</th><th>TVA %</th>' : ''}</tr></thead>
         <tbody>${lignes}</tbody>${pied}
       </table>
       ${mention}
@@ -2796,14 +2796,14 @@ async function exporterExcel() {
   const avecPrix = d.avecPrix;
   const nc = avecPrix ? 7 : 5;
   const lettres = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, nc);
-  const m = [['N°', 'Désignation', 'Unité', 'Quantité', 'Détail', ...(avecPrix ? ['P.U. HT ind.', 'Montant HT ind.'] : [])]];
+  const m = [['N°', 'Désignation', 'Quantité', 'Unité', 'Détail', ...(avecPrix ? ['P.U. HT ind.', 'Montant HT ind.'] : [])]];
   const lignesLot = [], lignesLigne = [];
   for (const lot of d.lots) {
     lignesLot.push(m.length);
     m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)', ...(avecPrix ? [''] : []), ...(avecPrix ? [''] : [])].slice(0, nc));
     for (const l of lot.lignes) {
       lignesLigne.push(m.length);
-      m.push([l.num, l.designation, l.unite, l.quantite, l.detail, ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
+      m.push([l.num, l.designation, l.quantite, l.unite, l.detail, ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
     }
   }
   let ligneTotal = null;
@@ -2812,7 +2812,7 @@ async function exporterExcel() {
     m.push(['', 'TOTAL INDICATIF HT (prix moyens de référence, à valider)', '', '', '', '', d.total]);
   }
   const ws2 = XL.utils.aoa_to_sheet(m);
-  ws2['!cols'] = [{ wch: 9 }, { wch: 60 }, { wch: 10 }, { wch: 12 }, { wch: 48 }, ...(avecPrix ? [{ wch: 14 }, { wch: 16 }] : [])];
+  ws2['!cols'] = [{ wch: 9 }, { wch: 60 }, { wch: 12 }, { wch: 10 }, { wch: 48 }, ...(avecPrix ? [{ wch: 14 }, { wch: 16 }] : [])];
   ws2['!merges'] = lignesLot.map(r => ({ s: { r, c: 0 }, e: { r, c: nc - 1 } }));
   for (const c of lettres) style(ws2, c + '1', { font: { bold: true, color: blanc }, fill: { fgColor: orange } });
   for (const r of lignesLot) {
