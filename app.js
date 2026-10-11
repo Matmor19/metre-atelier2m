@@ -203,7 +203,8 @@ async function envoyerPropositions() {
 // Modes de métré : même calcul que l'unité (produit des cotes), seuls les noms des cotes changent
 const MESURES = {
   'm²': [{ id: 'lxl', nom: 'Longueur × Largeur', cotes: ['Longueur', 'Largeur'] },
-         { id: 'lxh', nom: 'Longueur × Hauteur', cotes: ['Longueur', 'Hauteur'] }],
+         { id: 'lxh', nom: 'Longueur × Hauteur', cotes: ['Longueur', 'Hauteur'] },
+         { id: 'surface', nom: 'Surface (saisie directe)', cotes: ['Surface'], surface: true }],
   'm³': [{ id: 'lxlxh', nom: 'Longueur × Largeur × Hauteur', cotes: ['Longueur', 'Largeur', 'Hauteur'] }],
   'ml': [{ id: 'l', nom: 'Longueur', cotes: ['Longueur'] }],
   'u': [{ id: 'nombre', nom: 'Nombre', cotes: [] }],
@@ -217,14 +218,19 @@ function optionsMesure(unite, actuel) {
 function champsPourMode(unite, id) {
   const m = modeDe(unite, id);
   if (!m) return null;
-  return [{ cle: 'nombre', libelle: 'Nombre' }, ...m.cotes.map((c, i) => ({ cle: 'cote' + (i + 1), libelle: c + ' (m)' }))];
+  return [{ cle: 'nombre', libelle: 'Nombre' }, ...m.cotes.map((c, i) => ({ cle: 'cote' + (i + 1), libelle: m.surface ? 'Surface (m²)' : c + ' (m)' }))];
+}
+// Cases à relier pour un ouvrage : celles de son mode (sans le nombre), sinon les cotes par défaut
+function champsCotesOuv(unite, mesure) {
+  const m = mesure ? champsPourMode(unite, mesure) : null;
+  return m ? m.filter(x => x.cle !== 'nombre') : champsBib(unite);
 }
 
 function calcul(o, v) {
   const n = (v.nombre === '' || v.nombre == null) ? 1 : num(v.nombre);
   const c1 = num(v.cote1), c2 = num(v.cote2), c3 = num(v.cote3);
   switch (o.unite) {
-    case 'm²': return n * c1 * c2;
+    case 'm²': return o.mesure === 'surface' ? n * c1 : n * c1 * c2;
     case 'm³': return n * c1 * c2 * c3;
     case 'ml': return n * c1;
     default:   return n;               // u, forfait
@@ -3131,9 +3137,10 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
   // Nouvel ouvrage : on reprend le lot choisi dans la bibliothèque
   const v = o || { designation: '', lot: lotChoisi || lotCourant || BIB.lots[0].id, unite: 'u' };
   COTES_EDIT = JSON.parse(JSON.stringify(cotesInit || (o && o.cotes) || {}));
+  const mesureCour = draftRestaure && draftRestaure.mesure !== undefined ? draftRestaure.mesure : v.mesure;
   const blocCotes = `<div class="card" style="margin-top:10px"><strong>Cotes reliées au configurateur (case par case)</strong>
       <p class="muted" style="margin:4px 0 6px;font-size:12px">Pour chaque cote, cliquez « Choisir », puis la case du configurateur qui donne cette valeur. Elle est reprise dans le métré et suit le configurateur.</p>
-      ${champsBib(v.unite).map(ch => { const L = COTES_EDIT[ch.cle]; return `<div class="row" style="align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0"><strong>${esc(ch.libelle)}</strong> : ${L ? esc(L.lib) : '<span class="muted">non relié</span>'}</span><button type="button" class="btn small sec" data-lien="${esc(ch.cle)}">Choisir</button>${L ? `<button type="button" class="btn small sec" data-effacer="${esc(ch.cle)}">Effacer</button>` : ''}</div>`; }).join('') || '<p class="muted" style="margin:6px 0 0">Choisissez d\'abord l\'unité : les cotes apparaîtront ici.</p>'}
+      ${champsCotesOuv(v.unite, mesureCour).map(ch => { const L = COTES_EDIT[ch.cle]; return `<div class="row" style="align-items:center;gap:8px;margin-top:6px"><span style="flex:1;min-width:0"><strong>${esc(ch.libelle)}</strong> : ${L ? esc(L.lib) : '<span class="muted">non relié</span>'}</span><button type="button" class="btn small sec" data-lien="${esc(ch.cle)}">Choisir</button>${L ? `<button type="button" class="btn small sec" data-effacer="${esc(ch.cle)}">Effacer</button>` : ''}</div>`; }).join('') || '<p class="muted" style="margin:6px 0 0">Choisissez d\'abord l\'unité : les cotes apparaîtront ici.</p>'}
     </div>`;
   const p = (o && o.prix_indicatif) || {};
   const devis = devisDe(p);
@@ -3143,7 +3150,7 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
       <label for="b_des">Désignation</label><input id="b_des" name="designation" required value="${esc(v.designation)}">
       <label for="b_lot">Lot</label><select id="b_lot" name="lot">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === v.lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select>
       <label for="b_unite">Unité de mesure</label><select id="b_unite" name="unite">${UNITES.map(u => `<option ${u === v.unite ? 'selected' : ''}>${u}</option>`).join('')}</select>
-      <label for="b_mesure">Mode de métré (cotes demandées)</label><select id="b_mesure" name="mesure">${optionsMesure(v.unite, v.mesure)}</select>
+      <label for="b_mesure">Mode de métré (cotes demandées)</label><select id="b_mesure" name="mesure">${optionsMesure(v.unite, mesureCour)}</select>
       <label for="b_lie">Reprend les cotes de l'ouvrage (liaison permanente)</label>
       <select id="b_lie" name="lie"><option value="">— aucun —</option>${BIB.ouvrages.filter(x => !x.supprime && (!o || x.id !== o.id)).slice().sort((a, b) => a.designation.localeCompare(b.designation, 'fr')).map(x => `<option value="${esc(x.id)}" ${o && o.liePar === x.id ? 'selected' : ''}>${esc(x.designation)} · ${esc(x.id)}</option>`).join('')}</select>
       ${blocCotes}
@@ -3179,10 +3186,16 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
   $('b_haut').addEventListener('input', majMoyen);
   $('fBib').addEventListener('submit', e => { e.preventDefault(); enregistrerOuvrage(o ? o.id : null); });
   $('b_unite').addEventListener('change', () => { $('b_mesure').innerHTML = optionsMesure($('b_unite').value, null); });
+  // Changer le mode : la fiche se réaffiche avec les cases du nouveau mode (les autres liaisons sont gardées)
+  $('b_mesure').addEventListener('change', () => {
+    const ok = new Set(champsCotesOuv($('b_unite').value, $('b_mesure').value).map(x => x.cle));
+    const liens = {}; for (const k in COTES_EDIT) if (ok.has(k)) liens[k] = COTES_EDIT[k];
+    reouvrirFormulaire(o, lotChoisi, liens, capturerBrouillon());
+  });
   if (o && $('bSupprOuv')) $('bSupprOuv').onclick = () => supprimerOuvrage(o.id);
   document.querySelectorAll('[data-lien]').forEach(b => b.onclick = () => {
     if (!courantId) { alert('Ouvrez d\'abord un chantier : le configurateur sert à choisir.'); return; }
-    const cle = b.dataset.lien, ch = champsBib(v.unite).find(x => x.cle === cle);
+    const cle = b.dataset.lien, ch = champsCotesOuv(v.unite, mesureCour).find(x => x.cle === cle);
     window.CHOIX_CONF = { mode: 'cote', cote: cle, ouvId: o ? o.id : null, lot: (o && o.lot) || lotChoisi || lotCourant, draft: capturerBrouillon(), liens: JSON.parse(JSON.stringify(COTES_EDIT)) };
     fermer();
     ouvrirConfig();
