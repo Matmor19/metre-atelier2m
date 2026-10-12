@@ -1706,14 +1706,14 @@ function piecesCourantes() {
   return c ? piecesDe(c) : [];
 }
 function projetCalcul(p) {
-  const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, linSolin: 0, soubS: 0, semelle: 0, fouille: 0 };
+  const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, linSolin: 0, deltaSoub: 0, soubS: 0, semelle: 0, fouille: 0 };
   // Épaisseur du mur fini : moyenne des murs périphériques, pondérée par leur longueur
   let sEp = 0, sLong = 0;
   for (const m of p.murs) {
     const brut = surfaceMur(m);
     r.murs.push({ m, brut, ded: 0 });
     r.brut += brut;
-    if (m.cat === 'soub') { r.linSoub += num(m.longueur); if (m.finition) r.linSolin += num(m.longueur); }
+    if (m.cat === 'soub') { r.linSoub += num(m.longueur); if (m.finition) r.linSolin += num(m.longueur); if (m.finition === DELTA_SOUB) r.deltaSoub += num(m.longueur) * (num(m.hauteur) + DELTA_SOUB_PLUS); }
     else if (m.porteur !== false) r.linP += num(m.longueur);
     if ((m.cat || 'peri') === 'peri' && num(m.epMur) > 0 && num(m.longueur) > 0) { sEp += num(m.epMur) * num(m.longueur); sLong += num(m.longueur); }
   }
@@ -1743,7 +1743,8 @@ function projetCalcul(p) {
     const k = x.m.type || '';
     if (x.m.cat === 'soub') { r.parSoub[k] = (r.parSoub[k] || 0) + net; r.soubS += net; }
     else r.parType[k] = (r.parType[k] || 0) + net;
-    if (x.m.finition && net > 0) r.parFin[x.m.finition] = (r.parFin[x.m.finition] || 0) + net;
+    // La membrane Delta-MS a sa propre ligne (hauteur + 30 cm) : elle n'est pas comptée une deuxième fois comme finition
+    if (x.m.finition && net > 0 && !(x.m.cat === 'soub' && x.m.finition === DELTA_SOUB)) r.parFin[x.m.finition] = (r.parFin[x.m.finition] || 0) + net;
   }
   const pente = num(p.toiture.pente);
   const S = num(p.toiture.surface);
@@ -2011,6 +2012,9 @@ function ficheListeMur() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && FICHE_LOTS_MUR.includes(o.lot))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
+// Membrane Delta-MS : posée sur le mur de soubassement, sur sa hauteur + 30 cm
+const DELTA_SOUB = 'Membrane de protection et drainage Delta-MS sur mur de soubassement';
+const DELTA_SOUB_PLUS = 0.30;
 // Murs de la bibliothèque (lot gros œuvre) : parois en m²
 function ficheListeMurGO() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
@@ -2415,6 +2419,8 @@ function ficheVersMetre() {
   }
   // Solin en tête de soubassement : seulement sur les murs de soubassement qui ont une protection
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
+  // Membrane Delta-MS : pose sur la hauteur du soubassement + 30 cm, seulement si ce mur a cette protection
+  ajouter(DELTA_SOUB, r.deltaSoub, DELTA_SOUB, null, 'murs de soubassement (hauteur + 30 cm)');
   // Plancher bas
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
     ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
