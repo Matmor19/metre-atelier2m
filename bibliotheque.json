@@ -13637,6 +13637,78 @@
       }
     },
     {
+      "id": "OUV-0899",
+      "lot": "doublages-cloisons-plafonds",
+      "designation": "Cloison 100 mm : rail et montants 48, 2 BA13 de face",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Cloison 100 mm : rail et montants 48, 2 BA13 de face"
+      }
+    },
+    {
+      "id": "OUV-0900",
+      "lot": "doublages-cloisons-plafonds",
+      "designation": "Cloison 142 mm : rail et montants 70, 2 BA13 de face",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Cloison 142 mm : rail et montants 70, 2 BA13 de face"
+      }
+    },
+    {
+      "id": "OUV-0901",
+      "lot": "doublages-cloisons-plafonds",
+      "designation": "Cloison 150 mm : rail et montants 98, 2 BA13 de face",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Cloison 150 mm : rail et montants 98, 2 BA13 de face"
+      }
+    },
+    {
       "id": "OUV-0754",
       "lot": "doublages-cloisons-plafonds",
       "designation": "Cloison 124 mm phonique : laine minérale, BA13 deux faces",
@@ -16369,6 +16441,6 @@
       "version": 1
     }
   ],
-  "revision": 62,
-  "prochainNumero": 899
+  "revision": 63,
+  "prochainNumero": 902
 }
