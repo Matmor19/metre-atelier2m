@@ -153,7 +153,8 @@ JS_TESTS = r"""(c) => {
   pq.cloi.isol = 'OUV-0902'; genererMetreConfigurateur(cN);
   const lC = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0751');
   const lI = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0902');
-  R.platIsol = lC && lI && Math.abs(lC.quantite - lI.quantite) < 0.01 ? 1 : 0;
+  // Isolant du cloisonnement : (linéaire × hauteur − portes et façades, sans seuil) × 1,05
+  R.platIsol = lI && Math.abs(lI.quantite - (10 * 2.5 - portesEtPlacardsToutesM2(cN)) * 1.05) < 0.01 ? 1 : 0;
   pq.cloi.isol = ''; genererMetreConfigurateur(cN);
   R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0902').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
