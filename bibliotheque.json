@@ -2905,7 +2905,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloisons de distribution rail/montant 48 + BA13 deux faces"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0146",
@@ -2929,7 +2930,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloisons rail/montant 48 + BA13 avec isolant 45 mm"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0147",
@@ -3119,7 +3121,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Isolation laine de roche en cloisons phoniques"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0157",
@@ -10392,7 +10395,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison de distribution BA13 sur ossature 48"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0570",
@@ -10440,7 +10444,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison phonique double BA13 sur ossature désolidarisée"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0572",
@@ -10545,7 +10550,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison en carreaux de plâtre"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0577",
@@ -16356,6 +16362,6 @@
       "version": 1
     }
   ],
-  "revision": 56,
+  "revision": 57,
   "prochainNumero": 899
 }
