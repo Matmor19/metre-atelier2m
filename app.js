@@ -2703,11 +2703,12 @@ function marquerChantier(id) {
   marquerChantier.t = setTimeout(envoyerChantiers, 3000);
 }
 
-async function envoyerChantiers() {
-  if (!syncConfigOk()) return;
+async function envoyerChantiers(msgs) {
+  const affiche = !msgs; msgs = msgs || [];
+  if (!syncConfigOk()) { if (affiche) syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const x = syncLire();
   for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
-  let envoyes = 0;
+  const heure = () => new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   for (const id of Object.keys(x)) {
     const c = chantiers.find(y => y.id === id);
     if (!c) { if (x[id].modifie) delete x[id]; continue; }
@@ -2715,29 +2716,31 @@ async function envoyerChantiers() {
     if (c.supprime) {
       if (x[id].supprimeEnvoye && !x[id].modifie) continue;
       try {
-        const doc = Object.assign({}, c, { lignes: [] });
-        const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: null });
-        if (j.ok) x[id] = { maj: j.maj, modifie: false, supprimeEnvoye: true };
-      } catch (e) { syncEcrire(x); syncStatut('Pas de réseau : les modifications seront envoyées plus tard.'); return; }
+        const j = await post({ action: 'sauver_chantier', chantier: Object.assign({}, c, { lignes: [] }), base_maj: null });
+        if (j.ok) { x[id] = { maj: j.maj, modifie: false, supprimeEnvoye: true }; msgs.push(c.nom + ' : supprimé sur Drive'); }
+        else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
+      } catch (e) { syncEcrire(x); msgs.push('Pas de réseau pour « ' + c.nom + ' »'); if (affiche) syncStatut(msgs.join(' · ')); return; }
       continue;
     }
     if (!x[id].modifie) continue;
     const doc = Object.assign({}, c, { lignes: lignesDe(id) });
     try {
       const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: x[id].maj || null });
-      if (j.ok) { x[id] = { maj: j.maj, modifie: false }; envoyes++; }
-      else if (j.conflit) { x[id].conflit = true; syncStatut('Conflit sur « ' + c.nom + ' » : modifié ailleurs. Cliquez sur Synchroniser pour récupérer cette version.'); }
-    } catch (e) { syncEcrire(x); syncStatut('Pas de réseau : les modifications seront envoyées plus tard.'); return; }
+      if (j.ok) { x[id] = { maj: j.maj, modifie: false }; msgs.push(c.nom + ' : envoyé à ' + heure()); }
+      else if (j.conflit) { x[id].conflit = true; msgs.push(c.nom + ' : conflit (modifié ailleurs)'); }
+      else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
+    } catch (e) { syncEcrire(x); msgs.push('Pas de réseau pour « ' + c.nom + ' »'); if (affiche) syncStatut(msgs.join(' · ')); return; }
   }
   syncEcrire(x);
-  if (envoyes) syncStatut('Envoyé vers Drive à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+  if (affiche) syncStatut(msgs.length ? msgs.join(' · ') : 'Rien à envoyer : tous les chantiers sont à jour.');
 }
 
 // Récupère les chantiers modifiés sur un autre appareil (sans écraser les modifications non envoyées)
-async function recupererChantiers() {
+async function recupererChantiers(msgs) {
+  const affiche = !msgs; msgs = msgs || [];
   if (!syncConfigOk()) return;
   const liste = await post({ action: 'lister_chantiers' });
-  if (!liste.ok) { syncStatut('Refus du script : ' + (liste.erreur || 'erreur inconnue')); return; }
+  if (!liste.ok) { msgs.push('Refus du script : ' + (liste.erreur || 'erreur inconnue')); if (affiche) syncStatut(msgs.join(' · ')); return; }
   const x = syncLire();
   let recus = 0;
   for (const item of liste.chantiers) {
@@ -2750,18 +2753,20 @@ async function recupererChantiers() {
     const i = chantiers.findIndex(c => c.id === id);
     if (i >= 0) chantiers[i] = meta; else chantiers.push(meta);
     lsSet('lignes.' + id, doc.supprime ? [] : (lignes || []));
-    x[id] = { maj: doc.maj, modifie: false };
+    x[id] = { maj: doc.maj, modifie: false, supprimeEnvoye: doc.supprime ? true : undefined };
     recus++;
+    msgs.push((meta.nom || id) + (doc.supprime ? ' : supprimé (reçu de Drive)' : ' : reçu de Drive'));
   }
   lsSet('chantiers', chantiers);
   syncEcrire(x);
   if (recus) renderChantiers();
-  syncStatut(recus ? recus + ' chantier(s) reçu(s) de Drive' : 'Chantiers à jour');
+  if (affiche) syncStatut(msgs.length ? msgs.join(' · ') : 'Chantiers à jour');
 }
 
 async function synchroniserChantiers() {
   if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
-  try { await envoyerChantiers(); await recupererChantiers(); }
+  const msgs = [];
+  try { await envoyerChantiers(msgs); await recupererChantiers(msgs); syncStatut(msgs.length ? msgs.join(' · ') : 'Chantiers à jour'); }
   catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
 }
 
