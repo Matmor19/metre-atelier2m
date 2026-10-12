@@ -254,6 +254,10 @@ for _id, _des in (('OUV-0903', 'Isolant laine de verre non revêtu 60 mm'), ('OU
     _o = _par.get(_id, {})
     if _o.get('designation') == _des and not _o.get('supprime'): print(f'ok    isolant.{_id}')
     else: echecs += 1; print(f'ÉCHEC isolant.{_id} : absent')
+# Isolants retirés de la bibliothèque (demande de Mathieu) : plus aucun ouvrage à ces identifiants
+_retires_iso = ['OUV-0125', 'OUV-0126', 'OUV-0127', 'OUV-0128', 'OUV-0139', 'OUV-0155', 'OUV-0401', 'OUV-0402', 'OUV-0403', 'OUV-0559', 'OUV-0560']
+if not any(i in _par for i in _retires_iso): print('ok    isolants.retires')
+else: echecs += 1; print('ÉCHEC isolants.retires : encore présents')
 # Spots encastrés : ouvrage LED standard et version étanche IP65 pour salle de bain
 for _id, _des in (('OUV-0211', 'Spot encastré LED'), ('OUV-0898', 'Spot encastré LED étanche IP65 (salle de bain)')):
     _ok = any(o['id'] == _id and o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages'])
