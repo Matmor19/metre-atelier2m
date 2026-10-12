@@ -135,11 +135,14 @@ JS_TESTS = r"""(c) => {
   const lM2 = lsGet('lignes.' + c.id, []).find(x => x.platNv && /cloison/i.test(x.designation));
   R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
   pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
-  // Bande à joint : une ligne OUV-0157 de même surface que la ligne cloisonnement
+  // Bande à joint (case) : sans choix, aucune ligne ; avec OUV-0579 choisi, une ligne de même surface que la cloison
+  const nbJointSansChoix = lsGet('lignes.' + c.id, []).filter(x => x.platNv && /joint/i.test(x.designation)).length;
+  pq.cloi.joint = 'OUV-0579'; genererMetreConfigurateur(cN);
   const LJ = lsGet('lignes.' + c.id, []);
-  const jC = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0157' && /cloisonnement/.test(x.designation));
+  const jC = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0579' && /cloisonnement/.test(x.designation));
   const cJ = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0751');
-  R.platJoint = jC && cJ && Math.abs(jC.quantite - cJ.quantite) < 0.01 ? 1 : 0;
+  R.platJoint = jC && cJ && Math.abs(jC.quantite - cJ.quantite) < 0.01 && nbJointSansChoix === 0 ? 1 : 0;
+  pq.cloi.joint = ''; genererMetreConfigurateur(cN);
   // Isolant choisi sur la cloison : une ligne isolant de même surface que la cloison, puis retirée si on revient à « Sans isolant »
   pq.cloi.isol = 'OUV-0902'; genererMetreConfigurateur(cN);
   const lC = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0751');
@@ -149,7 +152,7 @@ JS_TESTS = r"""(c) => {
   R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0902').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
-  R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149' && !(x.ouvrage === 'OUV-0157' && /plafond/.test(x.designation))).length;
+  R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149' && !(/joint/i.test(x.designation) && /plafond/.test(x.designation))).length;
   R.peiStale = lsGet('lignes.' + c.id, []).filter(x => x.ouvrage === 'OUV-0689').length;
   platNvDe(cN).hauteur = '2.5'; peiDe(cN).hauteur = '2.5'; genererMetreConfigurateur(cN);
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99

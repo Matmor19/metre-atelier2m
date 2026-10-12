@@ -1359,7 +1359,14 @@ function isolantsPlat() {
 function optIsol(val) {
   return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
-function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '' }; q.pla = q.pla || { m2: '', ouv: '', isol: '' }; return q; }
+function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' }; return q; }
+// Bandes à joint proposées dans la case : ouvrages m² de la bibliothèque dont la désignation contient « joint » (0579 préféré)
+function jointsPlat() {
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /joint/i.test(o.designation) && o.lot === 'doublages-cloisons-plafonds');
+}
+function optJoint(val) {
+  return `<option value="">Sans bande à joint</option>` + jointsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+}
 function optPlat(re, val) {
   return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
@@ -1375,7 +1382,8 @@ function renderPlatNv() {
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
-      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>`;
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span><select data-plat="${cle}|joint" style="flex:1;min-width:200px">${optJoint(q[cle].joint)}</select></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -1389,6 +1397,7 @@ function renderPlatNv() {
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
+    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span><select data-plat="pla|joint" style="flex:1;min-width:200px">${optJoint(q.pla.joint)}</select></div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1419,11 +1428,10 @@ function portesEtPlacardsM2(c) {
   }, 0);
 }
 function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
-// Bande à joint : ouvrage fixe (OUV-0157 « Bandes à joints et ponçage BA13 », m²), ajouté automatiquement
-// sur chaque ligne cloisonnement, doublage et plafond, de même surface que la ligne. Retourne false si l'ouvrage manque.
-const OUV_BANDE_JOINT = 'OUV-0157';
-function ajouterBandeJoint(c, L, surface, titre) {
-  const oJ = BIB.ouvrages.find(x => x.id === OUV_BANDE_JOINT && !x.supprime);
+// Bande à joint : case choisie par ligne (cloisonnement, doublage, plafond). Rien n'est ajouté si la case est vide.
+// Surface : même surface que la ligne pour l'instant (formule à préciser). Retourne false si l'ouvrage choisi manque.
+function ajouterBandeJoint(c, L, idJoint, surface, titre) {
+  const oJ = BIB.ouvrages.find(x => x.id === idJoint && !x.supprime);
   if (!oJ) return false;
   ajouterLotSiAbsent(c.id, oJ.lot);
   const vJ = { nombre: '1', cote1: String(surface), cote2: '1' };
@@ -1453,7 +1461,7 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
-    if (ajouterBandeJoint(c, L, net, titre)) nb++; else manque.push('bande à joint ' + titre);
+    if (q[cle].joint) { if (ajouterBandeJoint(c, L, q[cle].joint, net, titre)) nb++; else manque.push('bande à joint ' + titre); }
     if (q[cle].isol) {
       const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
       if (!oI) manque.push('isolant ' + titre);
@@ -1475,7 +1483,7 @@ function genererPlatNv(c) {
       const v = { nombre: '1', cote1: String(m2), cote2: '1' };
       L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(m2)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
       nb++;
-      if (ajouterBandeJoint(c, L, m2, 'plafond')) nb++; else manque.push('bande à joint plafond');
+      if (q.pla.joint) { if (ajouterBandeJoint(c, L, q.pla.joint, m2, 'plafond')) nb++; else manque.push('bande à joint plafond'); }
       if (q.pla.isol) {
         const oI = BIB.ouvrages.find(x => x.id === q.pla.isol && !x.supprime);
         if (!oI) manque.push('isolant plafond');
