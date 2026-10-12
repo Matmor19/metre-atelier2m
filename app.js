@@ -1400,6 +1400,12 @@ const PLAQUES_FEU_M2 = ['3', '6', '9', '15'];
 function champPlaqueFeu(cle, val) {
   return `<div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Plus-value plaque coupe-feu</span><select data-plat="${cle}|feu" style="flex:1;min-width:200px"><option value="">— choisir —</option>${PLAQUES_FEU_M2.map(v => `<option value="${v}" ${v === String(val || '') ? 'selected' : ''}>${v} m²</option>`).join('')}</select></div>`;
 }
+// Plus-value hydrofuge du doublage : on saisit le linéaire (ml), multiplié par la hauteur de doublage
+function champMlHydroDoub(q) {
+  const ml = num(q.doub.hydro), h = num(q.hauteurDoub);
+  const res = ml > 0 && h > 0 ? `= ${fmt(ml)} ml × ${fmt(h)} m = ${fmt(ml * h)} m²` : 'saisir le linéaire et la hauteur de doublage';
+  return `<div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Plus-value plaque hydrofuge</span><input data-plat="doub|hydro" inputmode="decimal" value="${esc(q.doub.hydro || '')}" placeholder="ml" style="width:120px"><span class="muted" style="font-size:12px">${res}</span></div>`;
+}
 function renderPlatNv() {
   const host = $('cfgPlatNv');
   if (!host) return;
@@ -1413,7 +1419,7 @@ function renderPlatNv() {
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}</div>
-      ${champPlusValue(cle, 'hydro', 'Plus-value plaque hydrofuge', q[cle].hydro)}
+      ${cle === 'doub' ? champMlHydroDoub(q) : champPlusValue(cle, 'hydro', 'Plus-value plaque hydrofuge', q[cle].hydro)}
       ${champPlaqueFeu(cle, q[cle].feu)}`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Cloisonnement : hauteur sous plafond. Doublage : hauteur de doublage (peut être différente). Surface = linéaire × hauteur.</p>
