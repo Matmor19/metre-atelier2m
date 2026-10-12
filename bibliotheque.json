@@ -16203,8 +16203,98 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-0890",
+      "lot": "electricite",
+      "designation": "Digicode extérieur (clavier et alimentation)",
+      "unite": "forfait",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0891",
+      "lot": "electricite",
+      "designation": "Sonnette extérieure (bouton et carillon)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0892",
+      "lot": "electricite",
+      "designation": "Motorisation de portillon (alimentation et commande)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0893",
+      "lot": "electricite",
+      "designation": "Interrupteur à voyant témoin pour prise extérieure",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0894",
+      "lot": "electricite",
+      "designation": "Éclairage extérieur à détection de mouvement",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0895",
+      "lot": "electricite",
+      "designation": "Alimentation piscine (ligne dédiée pompe et électrolyseur)",
+      "unite": "forfait",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 52,
-  "prochainNumero": 890
+  "revision": 53,
+  "prochainNumero": 896
 }
