@@ -1360,7 +1360,8 @@ function optIsol(val) {
   return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
 function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.hauteurDoub = q.hauteurDoub || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' };
-  if (!q.doub.jointInit) { q.doub.joint = 'S * 1,9'; q.doub.jointInit = true; } q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
+  if (!q.doub.jointInit) { q.doub.joint = 'S * 1,9'; q.doub.jointInit = true; }
+  if (!q.cloi.jointInit) { q.cloi.joint = 'S * 3,8'; q.cloi.jointInit = true; } q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
   // Formule de la bande à joint du plafond : S × 3,80 (proposée une seule fois, ensuite modifiable librement)
   if (!q.pla.jointInit) { q.pla.joint = 'S * 3,8'; q.pla.jointInit = true; }
   return q; }
@@ -1447,6 +1448,15 @@ function portesEtPlacardsM2(c) {
     return a + portes + facades;
   }, 0);
 }
+// Surface (m²) de toutes les portes de passage et façades de placard, sans seuil (pour la case de formule du cloisonnement)
+function portesEtPlacardsToutesM2(c) {
+  return piecesNvDe(c).reduce((a, p) => {
+    const aireporte = (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M;
+    const portes = num(p.portes) * aireporte;
+    const facades = (p.facades || []).reduce((b, f) => (num(f.l) > 0 && num(f.h) > 0) ? b + num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : b, 0);
+    return a + portes + facades;
+  }, 0);
+}
 function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
 // Bande à joint : case choisie par ligne (cloisonnement, doublage, plafond). Rien n'est ajouté si la case est vide.
 // Surface : même surface que la ligne pour l'instant (formule à préciser). Retourne false si l'ouvrage choisi manque.
@@ -1483,8 +1493,8 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
-    // Case de formule : cloisonnement = surface nette (inchangée) ; doublage = linéaire × hauteur de doublage − toutes les menuiseries, sans seuil
-    const surfCase = cle === 'doub' ? Math.max(0, surfBrute - menuiseriesToutesM2(c)) : net;
+    // Case de formule (sans seuil) : cloisonnement = linéaire × hauteur − toutes les portes et façades ; doublage = linéaire × hauteur de doublage − toutes les menuiseries
+    const surfCase = cle === 'doub' ? Math.max(0, surfBrute - menuiseriesToutesM2(c)) : Math.max(0, surfBrute - portesEtPlacardsToutesM2(c));
     if ((q[cle].joint || '').trim()) { if (ajouterBandeJoint(c, L, q[cle].joint, surfCase, titre)) nb++; else manque.push('formule bande à joint ' + titre); }
     if (q[cle].isol) {
       const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
