@@ -245,6 +245,11 @@ for _id in _gardees:
 for _id in _retirees:
     if _id in _par and _par[_id].get('supprime'): print(f'ok    cloison.retiree.{_id}')
     else: echecs += 1; print(f'ÉCHEC cloison.retiree.{_id} : doit être marquée supprimée')
+# Isolant laine de verre non revêtu 45 mm : proposé dans la liste d'isolant de la plâtrerie
+_iso = _par.get('OUV-0902', {})
+if _iso.get('designation') == 'Isolant laine de verre non revêtu 45 mm' and not _iso.get('supprime') and "/^(Isolation|Isolant)/i" in _app:
+    print('ok    isolant.OUV-0902')
+else: echecs += 1; print('ÉCHEC isolant.OUV-0902 : absent ou non proposé')
 # Spots encastrés : ouvrage LED standard et version étanche IP65 pour salle de bain
 for _id, _des in (('OUV-0211', 'Spot encastré LED'), ('OUV-0898', 'Spot encastré LED étanche IP65 (salle de bain)')):
     _ok = any(o['id'] == _id and o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages'])

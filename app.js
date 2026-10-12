@@ -1352,7 +1352,7 @@ function genererPiecesNv(c) {
 // Les lignes produites portent platNv et sont remplacées à chaque génération.
 // Isolants proposés dans la plâtrerie : ouvrages « Isolation … » en m², hors toiture, rampants, combles, planchers, dalles et ITE
 function isolantsPlat() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /^Isolation/i.test(o.designation)
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /^(Isolation|Isolant)/i.test(o.designation)
     && !/(toiture|rampant|combles|plancher|dalle|solive|terre-plein|enterr|extérieur|chevron|poutre)/i.test(o.designation)
     && !/\bITE\b/.test(o.designation));
 }
