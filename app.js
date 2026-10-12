@@ -1374,6 +1374,14 @@ function optPlat(re, val) {
   return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
+// Cadenas des cases de formule « Bande à joint » : verrouillé par défaut (lecture seule), déverrouillable d'un clic
+function verrouJoint(q, cle) { return !(q.verrou && q.verrou[cle] === false); }
+function champJoint(q, cle, val) {
+  const v = verrouJoint(q, cle);
+  return `<span class="row" style="gap:4px;flex:1;min-width:200px;align-items:center">
+    <button type="button" class="btn" data-verrou="${cle}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="padding:2px 8px">${v ? '🔒' : '🔓'}</button>
+    <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} style="flex:1;min-width:150px"></span>`;
+}
 function renderPlatNv() {
   const host = $('cfgPlatNv');
   if (!host) return;
@@ -1386,7 +1394,7 @@ function renderPlatNv() {
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
-      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span><input data-plat="${cle}|joint" value="${esc(q[cle].joint || '')}" placeholder="formule, ex. S × 1,1" style="flex:1;min-width:200px"></div>`;
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}</div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -1400,7 +1408,7 @@ function renderPlatNv() {
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
-    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span><input data-plat="pla|joint" value="${esc(q.pla.joint || '')}" placeholder="formule, ex. S × 1,1" style="flex:1;min-width:200px"></div>
+    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, 'pla', q.pla.joint)}</div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1548,6 +1556,16 @@ if ($('btnRaz')) $('btnRaz').addEventListener('click', () => {
   if (c) remiseAZeroConfigurateur(c, true);
 });
 $('vConfig') && $('vConfig').addEventListener('click', e => {
+  const v = e.target.closest('[data-verrou]');
+  if (v) {
+    const c = chantiers.find(x => x.id === courantId);
+    if (!c) return;
+    const q = platNvDe(c); q.verrou = q.verrou || {};
+    q.verrou[v.dataset.verrou] = !verrouJoint(q, v.dataset.verrou);
+    lsSet('chantiers', chantiers); marquerChantier(c.id);
+    renderPlatNv();
+    return;
+  }
   const b = e.target.closest('[data-plat-act]');
   if (!b) return;
   const c = chantiers.find(x => x.id === courantId);
