@@ -1429,7 +1429,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `<div class="bloc">${lotTitre('E. Peinture (bloc séparé)')}
-    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc (aucune déduction). Plafond : surface en m².</p>
+    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc, moins les portes et placards peints (surface × 2). Plafond : surface en m².</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
@@ -1464,8 +1464,10 @@ function genererPeinture(c) {
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
-      // Murs : linéaire des pièces × hauteur du bloc peinture, sans aucune déduction
-      ajoute(o, { nombre: '1', cote1: String(ml), cote2: String(h) }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`);
+      // Murs : linéaire des pièces × hauteur du bloc, moins les portes et placards peints (surface × 2)
+      const deduit = portesFacadesBrutM2(c) * 2;
+      const net = Math.max(0, ml * h - deduit);
+      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes et placards peints ${fmt(deduit)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
