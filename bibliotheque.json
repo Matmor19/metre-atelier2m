@@ -10159,7 +10159,7 @@
     {
       "id": "OUV-0579",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Bande et enduit de joints sur plaques de plâtre",
+      "designation": "Bande et enduit de joints sur plaque de plâtre compris ponçage",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -10177,7 +10177,7 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Bande et enduit de joints sur plaques de plâtre"
+        "val": "Bande et enduit de joints sur plaque de plâtre compris ponçage"
       }
     },
     {
@@ -16453,6 +16453,6 @@
       "version": 1
     }
   ],
-  "revision": 81,
+  "revision": 82,
   "prochainNumero": 932
 }

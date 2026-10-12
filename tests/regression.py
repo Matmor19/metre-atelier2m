@@ -135,13 +135,13 @@ JS_TESTS = r"""(c) => {
   const lM2 = lsGet('lignes.' + c.id, []).find(x => x.platNv && /cloison/i.test(x.designation));
   R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
   pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
-  // Bande à joint (case) : sans choix, aucune ligne ; avec OUV-0579 choisi, une ligne de même surface que la cloison
+  // Bande à joint (case formule) : vide, aucune ligne ; avec « S * 1,1 », une ligne OUV-0579 = surface de la cloison × 1,1
   const nbJointSansChoix = lsGet('lignes.' + c.id, []).filter(x => x.platNv && /joint/i.test(x.designation)).length;
-  pq.cloi.joint = 'OUV-0579'; genererMetreConfigurateur(cN);
+  pq.cloi.joint = 'S * 1.1'; genererMetreConfigurateur(cN);
   const LJ = lsGet('lignes.' + c.id, []);
   const jC = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0579' && /cloisonnement/.test(x.designation));
   const cJ = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0751');
-  R.platJoint = jC && cJ && Math.abs(jC.quantite - cJ.quantite) < 0.01 && nbJointSansChoix === 0 ? 1 : 0;
+  R.platJoint = jC && cJ && Math.abs(jC.quantite - cJ.quantite * 1.1) < 0.01 && nbJointSansChoix === 0 ? 1 : 0;
   pq.cloi.joint = ''; genererMetreConfigurateur(cN);
   // Isolant choisi sur la cloison : une ligne isolant de même surface que la cloison, puis retirée si on revient à « Sans isolant »
   pq.cloi.isol = 'OUV-0902'; genererMetreConfigurateur(cN);
