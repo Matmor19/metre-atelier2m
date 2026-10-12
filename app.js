@@ -1350,7 +1350,16 @@ function genererPiecesNv(c) {
 /* ============ Bloc plâtrerie et isolation (séparé du configurateur de pièces) ============ */
 // Saisie : hauteur sous plafond, linéaire de cloisonnement et linéaire de doublage. Surface = linéaire × hauteur.
 // Les lignes produites portent platNv et sont remplacées à chaque génération.
-function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '' }; q.pla = q.pla || { m2: '', ouv: '' }; return q; }
+// Isolants proposés dans la plâtrerie : ouvrages « Isolation … » en m², hors toiture, rampants, combles, planchers, dalles et ITE
+function isolantsPlat() {
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /^Isolation/i.test(o.designation)
+    && !/(toiture|rampant|combles|plancher|dalle|solive|terre-plein|enterr|extérieur|chevron|poutre)/i.test(o.designation)
+    && !/\bITE\b/.test(o.designation));
+}
+function optIsol(val) {
+  return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+}
+function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '' }; q.pla = q.pla || { m2: '', ouv: '', isol: '' }; return q; }
 function optPlat(re, val) {
   return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
@@ -1365,7 +1374,8 @@ function renderPlatNv() {
       <strong style="font-size:13px;min-width:120px">${titre}</strong>
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
-      <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>`;
+      <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -1378,6 +1388,7 @@ function renderPlatNv() {
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
+    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1431,6 +1442,16 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
+    if (q[cle].isol) {
+      const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
+      if (!oI) manque.push('isolant ' + titre);
+      else {
+        ajouterLotSiAbsent(c.id, oI.lot);
+        const vI = { nombre: '1', cote1: String(net), cote2: '1' };
+        L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(net)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+        nb++;
+      }
+    }
   }
   // Plafond : saisi directement en m², sans hauteur
   const m2 = num(q.pla.m2);
@@ -1442,6 +1463,16 @@ function genererPlatNv(c) {
       const v = { nombre: '1', cote1: String(m2), cote2: '1' };
       L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(m2)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
       nb++;
+      if (q.pla.isol) {
+        const oI = BIB.ouvrages.find(x => x.id === q.pla.isol && !x.supprime);
+        if (!oI) manque.push('isolant plafond');
+        else {
+          ajouterLotSiAbsent(c.id, oI.lot);
+          const vI = { nombre: '1', cote1: String(m2), cote2: '1' };
+          L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – plafond, ${fmt(m2)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+          nb++;
+        }
+      }
     }
   }
   sauverLignes(c.id, L);

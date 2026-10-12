@@ -135,6 +135,13 @@ JS_TESTS = r"""(c) => {
   const lM2 = lsGet('lignes.' + c.id, []).find(x => x.platNv && /cloison/i.test(x.designation));
   R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
   pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
+  // Isolant choisi sur la cloison : une ligne isolant de même surface que la cloison, puis retirée si on revient à « Sans isolant »
+  pq.cloi.isol = 'OUV-0126'; genererMetreConfigurateur(cN);
+  const lC = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0751');
+  const lI = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0126');
+  R.platIsol = lC && lI && Math.abs(lC.quantite - lI.quantite) < 0.01 ? 1 : 0;
+  pq.cloi.isol = ''; genererMetreConfigurateur(cN);
+  R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0126').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149').length;
@@ -168,6 +175,8 @@ JS_TESTS = r"""(c) => {
 
 ATTENDU = {
     'platM2Ok': 1,
+    'platIsol': 1,
+    'platIsolRetire': 0,
     'installation': 'OUV-0484=1 OUV-0485=1 OUV-0486=1 OUV-0487=1 OUV-0488=1 OUV-0492=1',
     'fouille': 1.5,
     'semelle': 1.5,
