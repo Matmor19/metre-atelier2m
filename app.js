@@ -2023,8 +2023,6 @@ const DELTA_SOUB = 'Membrane de protection et drainage Delta-MS sur mur de souba
 const DELTA_SOUB_PLUS = 0.30;
 // Enduit hydrofuge : seul cas qui déclenche automatiquement le solin et la pose Delta-MS
 const HYDRO_SOUB = 'Enduit hydrofuge sur mur de soubassement (face extérieure)';
-// Lot du métré pour certaines lignes du configurateur (la bibliothèque n'est pas modifiée)
-const LOT_CONFIG = { 'Solin en aluminium fixé en tête de mur de soubassement': 'gros-oeuvre' };
 // Murs de la bibliothèque (lot gros œuvre) : parois en m²
 function ficheListeMurGO() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
@@ -2387,7 +2385,7 @@ function ficheVersMetre() {
     if (!(q > 0)) return;
     const valeurs = valeursFixes || valeursPour(o.unite, q);
     if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
-    const lot = LOT_CONFIG[des] || o.lot;
+    const lot = o.lot;
     ajouterLotSiAbsent(courantId, lot);
     L.push({ uid: uid(), lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString(),

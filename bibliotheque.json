@@ -13959,7 +13959,7 @@
     },
     {
       "id": "OUV-0771",
-      "lot": "couverture-zinguerie",
+      "lot": "gros-oeuvre",
       "designation": "Solin en aluminium fixé en tête de mur de soubassement",
       "unite": "ml",
       "type": "commun",
@@ -16070,6 +16070,6 @@
       "version": 3
     }
   ],
-  "revision": 48,
+  "revision": 49,
   "prochainNumero": 880
 }
