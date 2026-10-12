@@ -1089,17 +1089,19 @@ const PNV_APPAREIL = [
 const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-porte fin de chantier 73×204', '83': 'Bloc-porte fin de chantier 83×204', '93': 'Bloc-porte fin de chantier 93×204', '103': 'Bloc-porte fin de chantier 103×204' };
 // Sens d'ouverture des portes de passage (information, ne modifie aucun ouvrage)
 const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
-// Spots encastrés : surface (m²) couverte par 1 spot, d'après la fiche « nombre de spots » (valeur médiane de la plage)
-// Couloir / entrée 2 à 3 m² → 2,5 ; chambre / séjour 2 à 2,5 m² → 2,25 ; cuisine / bureau 1 à 1,5 m² → 1,25 ; salle de bains 1 m²
-const SPOT_M2 = { 'Entrée / dégagement': 2.5, 'Chambre': 2.25, 'Séjour': 2.25, 'Cuisine': 1.25, 'Bureau': 1.25, 'Salle de bains': 1 };
+// Spots encastrés, formule de la fiche : Surface (m²) × Lux recommandés = Lumens totaux ; Lumens totaux ÷ Lumens par spot = nombre de spots (arrondi au supérieur)
+// Lux recommandés : valeur médiane de la plage de la fiche (couloir 50-100, chambre/salon 100-200, cuisine/bureau 300-500, salle de bains 200-500)
+const SPOT_LUX = { 'Entrée / dégagement': 75, 'Chambre': 150, 'Séjour': 150, 'Cuisine': 400, 'Bureau': 400, 'Salle de bains': 350 };
+// Lumens émis par un spot : 450 lm, valeur de l'exemple de la fiche (salon 20 m² → 7 à 8 spots)
+const SPOT_LUMENS = 450;
 // Éclairage du plafond d'une pièce : 'spots' seulement si la pièce a une règle de spots, sinon point lumineux
 function eclairagePiece(p) {
-  return p.eclairage === 'spots' && SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''] ? 'spots' : 'point';
+  return p.eclairage === 'spots' && SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? 'spots' : 'point';
 }
 function nbSpots(p) {
-  const m2 = SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''];
+  const lux = SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''];
   const surf = num(p.surf);
-  return m2 && surf > 0 ? Math.ceil(surf / m2) : 0;
+  return lux && surf > 0 ? Math.ceil(surf * lux / SPOT_LUMENS) : 0;
 }
 function piecesNvDe(c) {
   c.elec = c.elec || { pieces: [] };
@@ -1210,7 +1212,7 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Passage libre sans porte ml (déduit des plinthes) <input data-nv="${esc(p.id)}|passage" inputmode="decimal" value="${esc(p.passage || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
+      ${SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
       ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
