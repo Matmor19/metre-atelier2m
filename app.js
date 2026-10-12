@@ -783,6 +783,19 @@ function nettoyerSuffixeRigoles(id) {
   });
   if (ch) sauverLignes(id, N);
 }
+// Clé de reconnaissance d'une ligne du configurateur (ouvrage + libellé, sans le suffixe « (rigoles) »)
+function cleLigneConfig(l) {
+  return l.ouvrage + '|' + String(l.designation || '').replace(/\s*\(rigoles\)$/, '');
+}
+// Saisie à la main d'un ouvrage déjà produit par le configurateur : la saisie prend sa place (une seule ligne).
+// Renvoie la ligne du configurateur remplacée, false si l'utilisateur annule, null s'il n'y a rien à remplacer.
+function remplacementConfig(L, o, precedent) {
+  if (precedent) return null;
+  const auto = L.find(x => x.ouvrage === o.id && !x.vrd && (x.projet || x.auto || x.plat || x.qteAuto));
+  if (!auto) return null;
+  const ok = confirm('Cet ouvrage est déjà produit par le configurateur sur ce chantier. Remplacer cette ligne par votre saisie ? Le configurateur ne la recréera plus.\n\nOK = remplacer · Annuler = ne rien ajouter');
+  return ok ? auto : false;
+}
 function majLignesDepuisConfigurateur(c) {
   // Jamais pendant une revue (la revue a sa propre collecte)
   if (!c || _majConfigEnCours || _revueCollecte || !BIB) return;
@@ -816,6 +829,8 @@ function majLignesDepuisConfigurateur(c) {
     for (const x of Lk) if (x.ouvrage && estAutoC(x)) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
     const remplacer = new Map(), ajouts = [];
     for (const l of fresh) {
+      // Ligne du configurateur remplacée par une saisie à la main : on ne la recrée pas
+      if (Lk.some(x => x.repris && x.repris === cleL(l))) continue;
       const ex = pool[cleL(l)] && pool[cleL(l)].shift();
       // Nouvelle ligne du configurateur : ajoutée tout de suite au métré
       if (!ex) { ajouts.push(l); continue; }
@@ -2615,8 +2630,12 @@ function ouvrirOuvrage(o, precedent, message) {
     // Ligne liée à la configuration seulement si la quantité proposée n'a pas été modifiée
     const proposee = !precedent && cc ? qteValeur(o, ctxQuantites(cc)) : null;
     const memeValeur = proposee && Object.keys(proposee).every(k => vals[k] === undefined || num(proposee[k]) === num(vals[k]));
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
-             valeurs: vals, quantite: q, surface, cree: new Date().toISOString(), qteAuto: memeValeur ? o.qte : undefined, lien: lienConfig || undefined });
+    const nouv = { uid: uid(), lot: o.lot, ouvrage: o.id, designation: o.designation, unite: o.unite,
+             valeurs: vals, quantite: q, surface, cree: new Date().toISOString(), qteAuto: memeValeur ? o.qte : undefined, lien: lienConfig || undefined };
+    const remp = remplacementConfig(L, o, precedent);
+    if (remp === false) { $('apercu').textContent = 'Non ajoutée : la ligne du configurateur est conservée.'; return; }
+    if (remp) { nouv.uid = remp.uid; nouv.cree = remp.cree; delete nouv.qteAuto; nouv.repris = cleLigneConfig(remp); L[L.indexOf(remp)] = nouv; }
+    else L.push(nouv);
     sauverLignes(courantId, L);
     renderMetre();
     // La fenêtre se ferme après la validation (un clic de moins)
