@@ -89,7 +89,7 @@ JS_TESTS = r"""(c) => {
   R.veilleMessage = /veille/.test(retourElec);
   const cN = chantiers.find(x => x.id === c.id);
   piecesNvDe(cN).push({ id: 'pn-test', nom: 'Chambre test', surf: '15', revet: 'OUV-0274', portes: '1',
-    perim: '15.5', porteType: '83', placard: '2', menus: [{ l: '100', h: '100', nb: '1' }, { l: '180', h: '210', nb: '1', type: 'baie' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
+    perim: '15.5', porteType: '83', placard: '2', menus: [{ l: '100', h: '100', nb: '1' }, { l: '180', h: '210', nb: '1', ouv: 'OUV-0172' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
   genererPiecesNv(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);

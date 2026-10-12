@@ -1083,6 +1083,11 @@ function piecesNvDe(c) {
   return c.elec.piecesNv;
 }
 function ouvrageParDesig(des) { return BIB.ouvrages.find(o => o.designation === des && !o.supprime); }
+// Portes et baies de la bibliothèque « Menuiseries extérieures » : elles sont déduites du linéaire de plinthes
+function menusPorteBaie() {
+  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Porte|Baie)/i.test(o.designation));
+}
+function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
   if (!host) return;
@@ -1107,7 +1112,7 @@ function renderPiecesNv() {
       <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
       <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
-      <select data-nv="${esc(p.id)}|menu|${k}|type" style="min-width:110px"><option value="fenetre" ${m.type !== 'baie' ? 'selected' : ''}>Fenêtre</option><option value="baie" ${m.type === 'baie' ? 'selected' : ''}>Baie</option></select>
+      <select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:180px"><option value="">Fenêtre (châssis)</option>${menusPorteBaie().map(o => `<option value="${esc(o.id)}" ${o.id === m.ouv ? 'selected' : ''}>${esc(o.designation)}</option>`).join('')}</select>
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
@@ -1149,7 +1154,7 @@ function genererPiecesNv(c) {
     if (num(p.perim) > 0) {
       // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard
       const largeurPorte = num(p.porteType || '83') / 100;
-      const baies = (p.menus || []).filter(m => m.type === 'baie' && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
+      const baies = (p.menus || []).filter(m => estPorteBaie(m) && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
       const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - num(p.placard) - baies);
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
@@ -1164,7 +1169,7 @@ function genererPiecesNv(c) {
     for (const m of (p.menus || [])) {
       const n = num(m.nb) || 1;
       if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
-      const desM = m.type === 'baie' ? 'Baie vitrée coulissante PVC 2 vantaux' : MENU_DESIG.ouvrant.PVC;
+      const desM = estPorteBaie(m) ? BIB.ouvrages.find(o => o.id === m.ouv).designation : MENU_DESIG.ouvrant.PVC;
       const o = ouvrageParDesig(desM);
       if (!o) { manque.push(desM); continue; }
       const v = { nombre: String(n) };
