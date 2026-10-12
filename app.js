@@ -1647,6 +1647,13 @@ const DES_RES_EAU = 'Canalisation eau potable multicouche (tranchée, pose compr
 const DES_RES_EU = 'Canalisation PVC EU ou EV (tranchée, pose comprise) – diamètre à préciser';
 const DES_RES_EP = 'Canalisation PVC EP vers réseau ou infiltration (tranchée, pose comprise) – diamètre à préciser';
 const DES_RES_ELEC = 'Tranchée et gaine électrique (pose comprise) – électricité';
+// Installation de chantier saisie dans « Chantier » du configurateur
+const DES_BASE_VIE = 'Base vie (bungalow ou conteneur) : mise en place et repli';
+const DES_BRANCH_EAU = "Branchement provisoire d'eau de chantier";
+const DES_BRANCH_ELEC = "Branchement provisoire d'électricité de chantier";
+const DES_GRUE = 'Grue de chantier (mise en place)';
+const DES_BENNE = 'Benne à gravats (location et enlèvement)';
+const DES_BENNE_TRI = 'Benne à déchets triés (location et enlèvement)';
 const DES_DIVERS = 'Fouille pour trou divers';
 const FICHE_FONDS_DEF = { largeur: '', hauteur: '' };
 
@@ -2415,6 +2422,14 @@ function ficheVersMetre() {
   ajouter(DES_RES_EU, num(p.terrain.resEu));
   ajouter(DES_RES_EP, num(p.terrain.resEp));
   ajouter(DES_RES_ELEC, num(p.terrain.resElec));
+  // Installation de chantier, selon « Chantier » du configurateur (forfaits oui/non, nombre de bennes)
+  const ch = p.chantier || {};
+  ajouter(DES_BRANCH_EAU, ch.eau === 'oui' ? 1 : 0);
+  ajouter(DES_BRANCH_ELEC, ch.elec === 'oui' ? 1 : 0);
+  ajouter(DES_BASE_VIE, ch.base === 'oui' ? 1 : 0);
+  ajouter(DES_GRUE, ch.grue === 'oui' ? 1 : 0);
+  ajouter(DES_BENNE, num(ch.bennes));
+  ajouter(DES_BENNE_TRI, num(ch.bennesTri));
   // Soubassement : chaque mur avec son matériau ; solin en tête sur son linéaire
   for (const [t, surf] of Object.entries(r.parSoub || {})) {
     if (!(surf > 0)) continue;
@@ -2805,7 +2820,7 @@ async function synchroniserChantiers(manuelle = false) {
 
 // Bouton « Synchroniser les chantiers » sur la liste des chantiers
 function preparerSynchro() {
-  if ($('btnSynchro') || !$('listeChantiers')) return;
+  if (PAGE === 'tableau' || $('btnSynchro') || !$('listeChantiers')) return;   // la page du métré a sa propre barre (identifiants uniques)
   $('listeChantiers').insertAdjacentHTML('beforebegin', `<div class="row" style="margin-bottom:12px;align-items:center">
     <button class="btn sec small" id="btnSynchro" style="flex:0 0 auto">Synchroniser les chantiers</button>
     <div id="syncBarre" hidden style="width:180px;height:14px;background:var(--line);border-radius:6px;overflow:hidden;flex:0 0 auto"><div id="syncRempli" style="height:100%;width:0;background:var(--ok);transition:width .3s"></div></div>
