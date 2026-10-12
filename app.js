@@ -864,9 +864,10 @@ function rafraichirDesignations(id) {
     if (!l.ouvrage) return l;
     const o = BIB.ouvrages.find(x => x.id === l.ouvrage && !x.supprime);
     if (!o) return l;
-    // Lot : celui de la bibliothèque (une ligne créée avant un changement de lot est mise à jour)
+    // Lot : celui de la bibliothèque (une ligne créée avant un changement de lot est mise à jour),
+    // sauf les lignes du bloc plâtrerie : leur lot est décidé par le configurateur (isolant avec son doublage ou cloison)
     let nl = l;
-    if (o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
+    if (!l.platNv && o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
     if (!o.designation || o.designation === l.designation) return nl;
     change = true;
