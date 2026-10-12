@@ -1400,7 +1400,7 @@ if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () =>
 // Chaque case vidée envoie son événement « change » : les gestionnaires enregistrent le vide dans les données.
 // Les lignes du métré générées par ces cases sont ensuite retirées ; les lignes saisies à la main restent.
 function remiseAZeroConfigurateur(c, demander = true) {
-  if (demander && !confirm('Toutes les cases remplies du configurateur seront vidées. Les lignes saisies à la main restent. Continuer ?')) return;
+  if (demander && !confirm('Mise à zéro totale : toutes les pièces, la plâtrerie et la peinture du configurateur seront effacées, ainsi que leurs lignes au métré. Les lignes saisies à la main restent. Continuer ?')) return;
   const f = $('vConfig');
   if (f) {
     f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
@@ -1409,10 +1409,15 @@ function remiseAZeroConfigurateur(c, demander = true) {
       el.dispatchEvent(new Event('change', { bubbles: true }));
     });
   }
-  const msg = genererMetreConfigurateur(c);
+  // Mise à zéro totale : on efface aussi les lignes du tableau (pièces) et les blocs plâtrerie et peinture
+  c.elec = c.elec || { pieces: [] };
+  c.elec.piecesNv = [];
+  c.platNv = {};
+  c.peinture = {};
+  const msg = genererMetreConfigurateur(c);   // plus rien à générer : les lignes pièces, plâtrerie et peinture sont retirées
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderPiecesNv(); renderPlatNv(); renderPeinture();
-  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur remis à zéro. ' + msg;
+  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur mis à zéro. ' + msg;
 }
 if ($('btnRaz')) $('btnRaz').addEventListener('click', () => {
   const c = chantiers.find(x => x.id === courantId);

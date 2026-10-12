@@ -141,7 +141,7 @@ JS_TESTS = r"""(c) => {
   renderPiecesNv(); renderPlatNv(); renderPeinture();
   remiseAZeroConfigurateur(cN, false);
   R.raz = { plat: (platNvDe(cN).hauteur === '' && platNvDe(cN).cloi.ml === '') ? 1 : 0,
-    pieces: ((piecesNvDe(cN).find(p => p.id === 'pn-test') || {}).surf === '') ? 1 : 0,
+    pieces: piecesNvDe(cN).length === 0 ? 1 : 0,
     pei: peiDe(cN).hauteur === '' ? 1 : 0,
     lignesPlat: lsGet('lignes.' + c.id, []).filter(x => x.platNv).length };
   return R;
