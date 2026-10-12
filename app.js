@@ -369,7 +369,7 @@ function detailHtml(l) {
   if (v.src && /^(Calcul du configurateur : )?murs, surface nette/.test(v.src)) {
     const c = chantiers.find(x => x.id === courantId);
     const typeLigne = v.typeMur || '';
-    const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];
+    const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
     const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures déduites' : ''}`).join(' ; ');
     return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
