@@ -13615,7 +13615,7 @@
     {
       "id": "OUV-0753",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 100 mm : rail et montants 98, BA13 deux faces",
+      "designation": "Cloison 124 mm : rail et montants 98, BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -13639,7 +13639,7 @@
     {
       "id": "OUV-0754",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 100 mm phonique : laine minérale, BA13 deux faces",
+      "designation": "Cloison 124 mm phonique : laine minérale, BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16365,6 +16365,6 @@
       "version": 1
     }
   ],
-  "revision": 59,
+  "revision": 60,
   "prochainNumero": 899
 }
