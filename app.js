@@ -1410,6 +1410,8 @@ function peiDe(c) {
 }
 // Hauteur utilisée : celle du bloc peinture, à défaut celle du bloc plâtrerie
 function peiHauteur(c) { return num(peiDe(c).hauteur) || num(platNvDe(c).hauteur); }
+// Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
+function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val) {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
@@ -1427,7 +1429,7 @@ function renderPeinture() {
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Murs</strong>
-      <label style="font-size:12px">Linéaire ml <input data-pei="murs|ml" inputmode="decimal" value="${esc(q.murs.ml || '')}" style="width:80px"></label>
+      <span style="font-size:13px">Linéaire repris des pièces : ${fmt(peiLineaire(c))} ml</span>
       <select data-pei="murs|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv)}</select></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
@@ -1447,7 +1449,7 @@ function genererPeinture(c) {
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', peiNv: true, cree: new Date().toISOString() });
     nb++;
   };
-  const ml = num(q.murs.ml);
+  const ml = peiLineaire(c);
   if (ml > 0) {
     if (!(h > 0)) return 'Saisissez la hauteur sous plafond (bloc peinture ou plâtrerie).';
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);

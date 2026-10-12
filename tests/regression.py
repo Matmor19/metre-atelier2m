@@ -155,7 +155,7 @@ ATTENDU = {
     'platPla': {'quantite': 12},
     'platDoub': {'quantite': 21.22},
     'platCloi': {'quantite': 18.51},
-    'pei': {'murs': 14.73, 'plafond': 12},
+    'pei': {'murs': 28.48, 'plafond': 12},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
