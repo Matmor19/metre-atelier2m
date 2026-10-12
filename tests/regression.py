@@ -250,6 +250,10 @@ _iso = _par.get('OUV-0902', {})
 if _iso.get('designation') == 'Isolant laine de verre non revêtu 45 mm' and not _iso.get('supprime') and "/^(Isolation|Isolant)/i" in _app:
     print('ok    isolant.OUV-0902')
 else: echecs += 1; print('ÉCHEC isolant.OUV-0902 : absent ou non proposé')
+for _id, _des in (('OUV-0903', 'Isolant laine de verre non revêtu 60 mm'), ('OUV-0904', 'Isolant laine de verre non revêtu 85 mm')):
+    _o = _par.get(_id, {})
+    if _o.get('designation') == _des and not _o.get('supprime'): print(f'ok    isolant.{_id}')
+    else: echecs += 1; print(f'ÉCHEC isolant.{_id} : absent')
 # Spots encastrés : ouvrage LED standard et version étanche IP65 pour salle de bain
 for _id, _des in (('OUV-0211', 'Spot encastré LED'), ('OUV-0898', 'Spot encastré LED étanche IP65 (salle de bain)')):
     _ok = any(o['id'] == _id and o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages'])
