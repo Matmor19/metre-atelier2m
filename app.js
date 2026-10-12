@@ -2691,6 +2691,12 @@ function ouvrirChantier(id) {
 // Par chantier, on garde : maj (version connue sur Drive) et modifie (modifications pas encore envoyées)
 function syncLire() { return lsGet('sync', {}); }
 function syncEcrire(x) { lsSet('sync', x); }
+// Barre d'avancement de la synchronisation (visible pendant l'envoi et la réception)
+function syncAvance(fait, total, libelle) {
+  const b = $('syncBarre'); if (b) { b.hidden = false; b.max = Math.max(total, 1); b.value = fait; }
+  syncStatut(libelle + ' ' + fait + ' / ' + total + '…');
+}
+function syncFinBarre() { const b = $('syncBarre'); if (b) b.hidden = true; }
 function syncStatut(texte) { const e = $('syncStatut'); if (e) { e.style.whiteSpace = 'pre-line'; e.textContent = texte; } }
 function syncConfigOk() { return !!(lsGet('url', '') && lsGet('jeton', '')); }
 
@@ -2710,7 +2716,10 @@ async function envoyerChantiers(msgs) {
   const x = syncLire();
   for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
   const heure = () => new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  for (const id of Object.keys(x)) {
+  const idsSync = Object.keys(x); let fait = 0;
+  if (affiche) syncAvance(0, idsSync.length, 'Envoi');
+  for (const id of idsSync) {
+    fait++; if (affiche) syncAvance(fait, idsSync.length, 'Envoi');
     const c = chantiers.find(y => y.id === id);
     if (!c) { if (x[id].modifie) delete x[id]; continue; }
     // Chantier supprimé : sa version « supprimée » est envoyée une seule fois, sans contrôle de conflit
@@ -2750,8 +2759,10 @@ async function recupererChantiers(msgs) {
   if (!liste.ok) { msgs.push('Refus du script : ' + (liste.erreur || 'erreur inconnue')); if (affiche) syncStatut(msgs.join(' · ')); return; }
   const x = syncLire();
   let recus = 0;
+  let vus = 0;
   for (const item of liste.chantiers) {
     const id = item.id;
+    vus++; if (affiche) syncAvance(vus, liste.chantiers.length, 'Réception');
     if (x[id] && x[id].modifie) continue;
     const j = await post({ action: 'lire_chantier', id });
     const doc = j.ok ? j.chantier : null;
@@ -2773,6 +2784,7 @@ async function recupererChantiers(msgs) {
 async function synchroniserChantiers() {
   if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const msgs = [];
+  syncAvance(0, 1, 'Démarrage');
   try {
     await envoyerChantiers(msgs); await recupererChantiers(msgs);
     // Un état pour chaque chantier affiché (les chantiers supprimés ne sont pas affichés)
@@ -2781,6 +2793,7 @@ async function synchroniserChantiers() {
     const globaux = msgs.filter(m => !affiches.some(c => m.startsWith(c.nom + ' :')));
     syncStatut([...globaux, ...affiches.map(etat)].join('\n'));
   } catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
+  finally { syncFinBarre(); }
 }
 
 // Bouton « Synchroniser les chantiers » sur la liste des chantiers
@@ -2788,6 +2801,7 @@ function preparerSynchro() {
   if ($('btnSynchro') || !$('listeChantiers')) return;
   $('listeChantiers').insertAdjacentHTML('beforebegin', `<div class="row" style="margin-bottom:12px;align-items:center">
     <button class="btn sec small" id="btnSynchro" style="flex:0 0 auto">Synchroniser les chantiers</button>
+    <progress id="syncBarre" max="1" value="0" hidden style="width:120px;flex:0 0 auto"></progress>
     <span class="muted" id="syncStatut"></span></div>`);
   $('btnSynchro').onclick = synchroniserChantiers;
 }
