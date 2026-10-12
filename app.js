@@ -1361,7 +1361,9 @@ function optIsol(val) {
 }
 function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.hauteurDoub = q.hauteurDoub || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' };
   if (!q.doub.jointInit) { q.doub.joint = 'S * 1,9'; q.doub.jointInit = true; }
-  if (!q.cloi.jointInit) { q.cloi.joint = 'S * 3,8'; q.cloi.jointInit = true; } q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
+  if (!q.cloi.jointInit) { q.cloi.joint = 'S * 3,8'; q.cloi.jointInit = true; }
+  q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
+  for (const k of ['cloi', 'doub', 'pla']) { q[k].hydro = q[k].hydro || ''; q[k].feu = q[k].feu || ''; }
   // Formule de la bande à joint du plafond : S × 3,80 (proposée une seule fois, ensuite modifiable librement)
   if (!q.pla.jointInit) { q.pla.joint = 'S * 3,8'; q.pla.jointInit = true; }
   return q; }
@@ -1384,6 +1386,10 @@ function champJoint(q, cle, val) {
     <button type="button" class="btn" data-verrou="${cle}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="padding:2px 8px">${v ? '🔒' : '🔓'}</button>
     <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} class="${v ? 'joint-verrouille' : ''}" style="flex:1;min-width:150px"></span>`;
 }
+// Plus-values plaque hydrofuge et plaque coupe-feu : une case de formule chacune, sous la bande à joint
+function champPlusValue(cle, sous, titre, val) {
+  return `<div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">${titre}</span><input data-plat="${cle}|${sous}" value="${esc(val || '')}" placeholder="formule" style="flex:1;min-width:200px"></div>`;
+}
 function renderPlatNv() {
   const host = $('cfgPlatNv');
   if (!host) return;
@@ -1396,7 +1402,9 @@ function renderPlatNv() {
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
-      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}</div>`;
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}</div>
+      ${champPlusValue(cle, 'hydro', 'Plus-value plaque hydrofuge', q[cle].hydro)}
+      ${champPlusValue(cle, 'feu', 'Plus-value plaque coupe-feu', q[cle].feu)}`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Cloisonnement : hauteur sous plafond. Doublage : hauteur de doublage (peut être différente). Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -1411,6 +1419,8 @@ function renderPlatNv() {
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, 'pla', q.pla.joint)}</div>
+    ${champPlusValue('pla', 'hydro', 'Plus-value plaque hydrofuge', q.pla.hydro)}
+    ${champPlusValue('pla', 'feu', 'Plus-value plaque coupe-feu', q.pla.feu)}
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
 }
