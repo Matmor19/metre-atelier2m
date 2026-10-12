@@ -348,7 +348,7 @@ function detail(l) {
 // Détail d'une surface donnée en m² : seulement ce texte
 const TXT_SURFACE = 'Surface mesurée suivant plan';
 // Ouverture déduite des murs à partir de cette surface (m²), partout dans le calcul et les libellés
-const SEUIL_DEDUCTION = 1.5;
+const SEUIL_DEDUCTION = 1;
 // Murs de soutènement et muret de jardin : surface nette (longueur × hauteur), aucune ouverture déduite
 const SOUT_TYPES = [
   { id: 'beton', nom: 'Mur de soutènement béton armé', idOuv: 'OUV-0881', designation: 'Mur de soutènement béton armé (surface nette)', lot: 'terrassement-vrd' },
@@ -371,7 +371,7 @@ function detailHtml(l) {
     const typeLigne = v.typeMur || '';
     const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
-    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures égales ou supérieures à 1,50 m² déduites' : ''}`).join(' ; ');
+    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures égales ou supérieures à 1 m² déduites' : ''}`).join(' ; ');
     return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
@@ -1173,7 +1173,7 @@ function genererPlat() {
     // Équipements sanitaires et de cuisine (nombre saisi × nombre de pièces)
     // Chaque équipement reste une ligne par pièce, pour savoir où il se trouve
     for (const x of p.equip || []) puisages.push({ des: x.type, q: (num(x.nb) || 1) * nb, piece: nom });
-    // Murs bruts : linéaire × hauteur. Ouvertures (portes, fenêtres, passages libres) de plus de 1,50 m² déduites
+    // Murs bruts : linéaire × hauteur. Ouvertures (portes, fenêtres, passages libres) de 1 m² ou plus déduites
     // proportionnellement des cloisons et doublages de la pièce. En pièce d'eau, tout passe en hydrofuge.
     const cloi = p.cloisons || [], doub = p.doublages || [];
     const cloiBrut = cloi.reduce((a, x) => a + num(x.ml) * H * nb, 0);
@@ -1184,7 +1184,7 @@ function genererPlat() {
       const une = num(x.largeur) * num(x.hauteur);   // surface d'une ouverture
       const total = une * (num(x.nb) || 1) * nb;
       dedAll += total;   // peinture : toutes les ouvertures sont déduites
-      if (une >= SEUIL_DEDUCTION) ded += total;   // plâtrerie : seules les ouvertures de 1,50 m² ou plus (une à une)
+      if (une >= SEUIL_DEDUCTION) ded += total;   // plâtrerie : seules les ouvertures de 1 m² ou plus (une à une)
     }
     ded = Math.min(ded, brut);
     dedTot += ded;
@@ -1246,7 +1246,7 @@ function genererPlat() {
   let msg = nb + ' ligne(s) plâtrerie, sols, plinthes, portes et équipements générée(s).';
   const estimees = pieces.filter(p => num(p.surf) > 0 && !piecePerimExact(p) && !(num(p.perim) > 0)).map(p => nomPiece(p));
   if (estimees.length) msg += ' Périmètre estimé (saisissez longueur et largeur pour un calcul exact) : ' + estimees.join(', ') + '.';
-  if (dedTot > 0) msg += ' Ouvertures de 1,50 m² ou plus déduites des murs : ' + fmt(dedTot) + ' m².';
+  if (dedTot > 0) msg += ' Ouvertures de 1 m² ou plus déduites des murs : ' + fmt(dedTot) + ' m².';
   const uniques = manquants.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.length) msg += ' À compléter : ' + uniques.join(' ; ') + '.';
   return msg;
@@ -1709,7 +1709,7 @@ function projetDe(c) {
   if (!c.projet.plancher) c.projet.plancher = { type: '', surface: '', ep: '', retombee: '', portee: '', entraxe: '' };
   return c.projet;
 }
-// Calculs : murs moins ouvertures de plus de 1,50 m², tableaux (2 côtés × hauteur × épaisseur),
+// Calculs : murs moins ouvertures de 1 m² ou plus, tableaux (2 côtés × hauteur × épaisseur),
 // toiture développée, fondations (murs porteurs × dimensions de la semelle et de la fouille)
 const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
 // Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
@@ -2312,7 +2312,7 @@ function ficheResume() {
   const ligne = (a, b, gras) => `<tr><td style="padding:4px 0;${gras ? 'font-weight:700' : ''}">${a}</td><td style="text-align:right;padding:4px 0;${gras ? 'font-weight:700;color:#6a1b9a' : ''}">${b}</td></tr>`;
   $('ficheResume').innerHTML = `<table style="width:100%;border-collapse:collapse">
     ${ligne('Murs (longueur × hauteur)', fmt(r.brut) + ' m²')}
-    ${ligne('Ouvertures égales ou supérieures à 1,50 m² déduites', '− ' + fmt(r.deduit) + ' m²')}
+    ${ligne('Ouvertures égales ou supérieures à 1 m² déduites', '− ' + fmt(r.deduit) + ' m²')}
     ${ligne('Élévation nette des murs (finition)', fmt(r.net) + ' m²', true)}
     ${ligne('Tableaux de menuiseries (2 côtés × hauteur × épaisseur)', fmt(r.tableaux) + ' m²', true)}
     ${ligne('Toiture (surface développée)', fmt(r.toiture) + ' m²', true)}
@@ -3852,7 +3852,7 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
       ${blocCotes}
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
-      <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 1,50 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
+      <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 1 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
       <div class="card" style="margin-top:12px">
         <strong>Prix indicatifs HT (€)</strong>
         <div class="row" style="margin-top:8px">

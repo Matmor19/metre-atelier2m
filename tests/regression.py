@@ -79,7 +79,7 @@ JS_TESTS = r"""(c) => {
   const lElev = L.find(x => x.ouvrage === 'OUV-0048' && /^(Calcul du configurateur : )?murs, surface nette/.test((x.valeurs || {}).src || ''));
   const lSoub = L.find(x => x.ouvrage === 'OUV-0048' && /murs de soubassement/.test((x.valeurs || {}).src || ''));
   const txtElev = lElev ? (() => { const d = document.createElement('div'); d.innerHTML = detailHtml(lElev); return d.textContent; })() : '';
-  R.detailElev = { soubCite: /soubassement/i.test(txtElev), periCite: /Mur périphérique/.test(txtElev), quantite: lElev ? lElev.quantite : null, regleDeduction: /égales ou supérieures à 1,50 m² déduites/.test(txtElev) };
+  R.detailElev = { soubCite: /soubassement/i.test(txtElev), periCite: /Mur périphérique/.test(txtElev), quantite: lElev ? lElev.quantite : null, regleDeduction: /égales ou supérieures à 1 m² déduites/.test(txtElev) };
   R.soubQuantite = lSoub ? lSoub.quantite : null;
   // Ordre des lots : installation de chantier en premier
   R.premierLot = lotsDuChantier(c.id)[0] ? (lotsDuChantier(c.id)[0].id || lotsDuChantier(c.id)[0]) : null;
