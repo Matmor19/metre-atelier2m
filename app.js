@@ -1087,7 +1087,7 @@ function renderPiecesNv() {
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
   const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <input data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce" style="flex:1;font-weight:700">
+      <select data-nv="${esc(p.id)}|nom" style="flex:1;font-weight:700"><option value="">— à choisir —</option>${Object.keys(ELEC_PIECE_TYPES).map(t => `<option ${t === p.nom ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
       <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
     </div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
@@ -1179,7 +1179,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   if (!c) return;
   const [act, id, k] = b.dataset.nvAct.split(':');
   const liste = piecesNvDe(c);
-  if (act === 'add') liste.push({ id: 'pn' + uid(), nom: 'Pièce ' + (liste.length + 1), surf: '', revet: '', menus: [], portes: '', app: {} });
+  if (act === 'add') liste.push({ id: 'pn' + uid(), nom: '', surf: '', revet: '', menus: [], portes: '', app: {} });
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
   else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
