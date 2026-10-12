@@ -2706,12 +2706,14 @@ function marquerChantier(id) {
 async function envoyerChantiers() {
   if (!syncConfigOk()) return;
   const x = syncLire();
-  for (const c of chantiers) if (!x[c.id]) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois
+  for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
   let envoyes = 0;
   for (const id of Object.keys(x)) {
     if (!x[id].modifie) continue;
     const c = chantiers.find(y => y.id === id);
     if (!c) { delete x[id]; continue; }
+    // Chantier supprimé sur cet appareil : on ne l'envoie plus et son conflit n'est pas signalé
+    if (c.supprime) { x[id] = { maj: x[id].maj, modifie: false }; continue; }
     const doc = Object.assign({}, c, { lignes: lignesDe(id) });
     try {
       const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: x[id].maj || null });
