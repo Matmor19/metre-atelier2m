@@ -89,7 +89,7 @@ JS_TESTS = r"""(c) => {
   R.veilleMessage = /veille/.test(retourElec);
   const cN = chantiers.find(x => x.id === c.id);
   piecesNvDe(cN).push({ id: 'pn-test', nom: 'Chambre test', surf: '15', revet: 'OUV-0274', portes: '1',
-    perim: '15.5', porteType: '83', placard: '2', menus: [{ l: '100', h: '100', nb: '1' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
+    perim: '15.5', porteType: '83', placard: '2', menus: [{ l: '100', h: '100', nb: '1' }, { l: '180', h: '210', nb: '1', type: 'baie' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
   genererPiecesNv(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);
@@ -101,7 +101,7 @@ JS_TESTS = r"""(c) => {
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
   ficheVersMetre();
   const elev = lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0048' && /murs, surface nette/.test((x.valeurs || {}).src || ''));
-  R.elevApresFenetre = elev ? elev.quantite : null;
+  R.elevApresFenetre = elev ? Math.round(elev.quantite * 100) / 100 : null;
   const tabl = lsGet('lignes.' + c.id, []).find(x => x.designation === 'Tableaux de menuiseries (2 côtés)');
   R.tableauxAuto = tabl ? Math.round(tabl.quantite * 100) / 100 : null;
   R.tableauxDesig = tabl ? tabl.ouvrage : null;
@@ -129,12 +129,12 @@ ATTENDU = {
     'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100, 'regleDeduction': True},
     'soubQuantite': 10,
     'veilleAucuneAuto': 0,
-    'elevApresFenetre': 99,
-    'tableauxAuto': 0.66,
+    'elevApresFenetre': 95.22,
+    'tableauxAuto': 2.05,
     'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
-    'pieceNv': {'n': 8, 'nApresRegeneration': 8, 'plinthes': 12.67, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
+    'pieceNv': {'n': 9, 'nApresRegeneration': 9, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
 }
 
 echecs = 0

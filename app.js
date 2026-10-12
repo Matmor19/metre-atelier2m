@@ -1107,6 +1107,7 @@ function renderPiecesNv() {
       <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
       <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
+      <select data-nv="${esc(p.id)}|menu|${k}|type" style="min-width:110px"><option value="fenetre" ${m.type !== 'baie' ? 'selected' : ''}>Fenêtre</option><option value="baie" ${m.type === 'baie' ? 'selected' : ''}>Baie</option></select>
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
@@ -1148,7 +1149,8 @@ function genererPiecesNv(c) {
     if (num(p.perim) > 0) {
       // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard
       const largeurPorte = num(p.porteType || '83') / 100;
-      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - num(p.placard));
+      const baies = (p.menus || []).filter(m => m.type === 'baie' && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
+      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - num(p.placard) - baies);
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
       else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
@@ -1162,8 +1164,9 @@ function genererPiecesNv(c) {
     for (const m of (p.menus || [])) {
       const n = num(m.nb) || 1;
       if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
-      const o = ouvrageParDesig(MENU_DESIG.ouvrant.PVC);
-      if (!o) { manque.push(MENU_DESIG.ouvrant.PVC); continue; }
+      const desM = m.type === 'baie' ? 'Baie vitrée coulissante PVC 2 vantaux' : MENU_DESIG.ouvrant.PVC;
+      const o = ouvrageParDesig(desM);
+      if (!o) { manque.push(desM); continue; }
       const v = { nombre: String(n) };
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
