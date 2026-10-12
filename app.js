@@ -1103,6 +1103,10 @@ function appDefaut(p, cle) {
   if (p.app && p.app[cle] !== undefined && p.app[cle] !== '') return String(p.app[cle]);
   const regle = ELEC_PIECE_TYPES[p.nom] || '';
   const surf = num(p.surf);
+  // Sans surface saisie, les prises qui dépendent de la surface restent vides (pas de valeur devinée)
+  const surfVide = String(p.surf ?? '').trim() === '';
+  const fixe = ['Chambre', 'Bureau', 'Salle de bains', 'Salle d\'eau', 'WC'];
+  if (cle === 'prises' && surfVide && !fixe.includes(regle)) return '';
   if (cle === 'points') return '1';            // 1 point de centre par pièce
   // allumage : simple pour cuisine, dressing, salle de bains, salle d'eau, WC ; aucun pour chambre, séjour, couloir (va-et-vient)
   // va-et-vient : couloir, chambre, séjour (1 point chacun) ; cuisine (1 en plus du simple)
