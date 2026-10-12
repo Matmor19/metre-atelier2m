@@ -65,11 +65,14 @@ body[data-page="tableau"] .hdr{display:none}
 /* Saisies à la main : surbrillance à l'écran seulement (jamais à l'impression) */
 tr.ligne-lie td{background:rgba(142,108,200,.22)}
 tr.ligne-manuelle td{background:rgba(232,160,40,.28)}
+tr.ligne-option td{background:rgba(40,150,220,.22)}
 .legende-manuel{font-size:12px;margin:6px 0;display:flex;align-items:center;gap:6px}
 .legende-manuel span.pastille{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.25)}
 .legende-manuel span.pastille-lie{background:rgba(142,108,200,.22)}
 .legende-manuel span.pastille-manuel{background:rgba(232,160,40,.28)}
-@media print{tr.ligne-lie td,tr.ligne-manuelle td{background:none !important}.legende-manuel{display:none !important}}
+.legende-manuel span.pastille-option{background:rgba(40,150,220,.22)}
+#vConfig select.option-piece.rempli{background:#9fd3f5!important;color:#10202e!important}
+@media print{tr.ligne-lie td,tr.ligne-manuelle td,tr.ligne-option td{background:none !important}.legende-manuel{display:none !important}}
 </style>
 </head>
 <body data-page="saisie">

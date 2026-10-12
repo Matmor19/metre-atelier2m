@@ -886,7 +886,7 @@ function rafraichirDesignations(id) {
 // - ambre : ligne saisie à la main
 // - rien : lignes produites directement par le configurateur ou reprises telles quelles
 function surbrillanceLigne(l) {
-  if (l.pieceNv) return '';   // produite par le configurateur de pièces : pas de couleur
+  if (l.pieceNv) return l.pieceOption ? 'ligne-option' : '';   // configurateur de pièces : norme NF C 15-100 sans couleur, option ajoutée en bleu
   const oRelie = BIB && BIB.ouvrages ? BIB.ouvrages.find(y => y.id === l.ouvrage) : null;
   const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
   if (l.vrd || l.lienDe) return 'ligne-lie';
@@ -958,8 +958,9 @@ function renderMetre() {
   }
   h += '</table>';
   const surb = lignesDe(courantId).map(surbrillanceLigne);
-  const nbLiees = surb.filter(x => x === 'ligne-lie').length, nbManuelles = surb.filter(x => x === 'ligne-manuelle').length;
-  if (nbLiees || nbManuelles) h = `<p class="legende-manuel">${nbLiees ? '<span class="pastille pastille-lie"></span> ajouté à cause d\'une autre ligne ' : ''}${nbManuelles ? '<span class="pastille pastille-manuel"></span> saisi à la main' : ''}</p>` + h;
+  const nbLiees = surb.filter(x => x === 'ligne-lie').length, nbManuelles = surb.filter(x => x === 'ligne-manuelle').length, nbOptions = surb.filter(x => x === 'ligne-option').length;
+  const legOpt = nbOptions ? '<span class="pastille pastille-option"></span> option ajoutée en plus de la norme NF C 15-100 ' : '';
+  if (nbOptions || nbLiees || nbManuelles) h = `<p class="legende-manuel">${legOpt}${nbLiees ? '<span class="pastille pastille-lie"></span> ajouté à cause d\'une autre ligne ' : ''}${nbManuelles ? '<span class="pastille pastille-manuel"></span> saisi à la main' : ''}</p>` + h;
   $('tableMetre').innerHTML = h;
 }
 
@@ -1213,7 +1214,7 @@ function renderPiecesNv() {
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
-      ${eclairagePiece(p) === 'spots' ? `<label style="font-size:12px">Plafonnier en plus, commandé par va-et-vient <select data-nv="${esc(p.id)}|plafVV" style="min-width:160px"><option value="">Non</option><option value="oui" ${p.plafVV === 'oui' ? 'selected' : ''}>Oui</option></select></label>` : ''}
+      ${eclairagePiece(p) === 'spots' ? `<label style="font-size:12px">Plafonnier en plus, commandé par va-et-vient <select class="option-piece" data-nv="${esc(p.id)}|plafVV" style="min-width:160px"><option value="">Non</option><option value="oui" ${p.plafVV === 'oui' ? 'selected' : ''}>Oui</option></select></label>` : ''}
       ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
@@ -1232,9 +1233,9 @@ function genererPiecesNv(c) {
   const L = lignesDe(c.id).filter(l => !l.pieceNv);
   const manque = [];
   let nb = 0;
-  const ajoute = (o, valeurs, q, designation, pieceId) => {
+  const ajoute = (o, valeurs, q, designation, pieceId, option) => {
     ajouterLotSiAbsent(c.id, o.lot);
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, cree: new Date().toISOString() });
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, cree: new Date().toISOString() });
     nb++;
   };
   for (const p of pcs) {
@@ -1288,9 +1289,9 @@ function genererPiecesNv(c) {
       const oPl = ouvrageParDesig('Point lumineux plafonnier');
       const oVV = ouvrageParDesig('Interrupteur va-et-vient (point)');
       if (!oPl) manque.push('Point lumineux plafonnier');
-      else { const v = { nombre: '1' }; ajoute(oPl, v, calcul(oPl, v), `${oPl.designation} (plafonnier avec spots) – ${nom}`, p.id); }
+      else { const v = { nombre: '1' }; ajoute(oPl, v, calcul(oPl, v), `${oPl.designation} (plafonnier avec spots) – ${nom}`, p.id, true); }
       if (!oVV) manque.push('Interrupteur va-et-vient (point)');
-      else { const v = { nombre: '1' }; ajoute(oVV, v, calcul(oVV, v), `${oVV.designation} (commande du plafonnier) – ${nom}`, p.id); }
+      else { const v = { nombre: '1' }; ajoute(oVV, v, calcul(oVV, v), `${oVV.designation} (commande du plafonnier) – ${nom}`, p.id, true); }
     }
     for (const a of PNV_APPAREIL) {
       if (a.cle === 'points' && eclairagePiece(p) === 'spots') continue;
