@@ -236,15 +236,15 @@ for _t in ('63', '73', '83', '93', '103'):
     if _ok: print(f'ok    porte.{_t}')
     else: echecs += 1; print(f'ÉCHEC porte.{_t} : ouvrage ou correspondance absent')
 # Cloisons : une seule référence par type voulu ; cloisons sans isolant séparé ; doublons retirés (marqués « supprimé », rien d'effacé)
-_gardees = ['OUV-0751', 'OUV-0752', 'OUV-0753', 'OUV-0148', 'OUV-0899', 'OUV-0900', 'OUV-0901']
-_retirees = ['OUV-0145', 'OUV-0146', 'OUV-0156', 'OUV-0569', 'OUV-0571', 'OUV-0576', 'OUV-0570', 'OUV-0758', 'OUV-0577', 'OUV-0754', 'OUV-0756', 'OUV-0757', 'OUV-0759']
+_gardees = ['OUV-0751', 'OUV-0752', 'OUV-0753', 'OUV-0148', 'OUV-0899', 'OUV-0900', 'OUV-0901', 'OUV-0051', 'OUV-0056']
+_retirees = ['OUV-0075', 'OUV-0145', 'OUV-0146', 'OUV-0147', 'OUV-0569', 'OUV-0570', 'OUV-0571', 'OUV-0576', 'OUV-0577', 'OUV-0754', 'OUV-0756', 'OUV-0757', 'OUV-0758', 'OUV-0759']
 _par = {o['id']: o for o in _bib['ouvrages']}
 for _id in _gardees:
     if _id in _par and not _par[_id].get('supprime'): print(f'ok    cloison.{_id}')
     else: echecs += 1; print(f'ÉCHEC cloison.{_id} : doit rester active')
 for _id in _retirees:
-    if _id in _par and _par[_id].get('supprime'): print(f'ok    cloison.retiree.{_id}')
-    else: echecs += 1; print(f'ÉCHEC cloison.retiree.{_id} : doit être marquée supprimée')
+    if _id not in _par: print(f'ok    cloison.retiree.{_id}')
+    else: echecs += 1; print(f'ÉCHEC cloison.retiree.{_id} : doit être retirée de la bibliothèque')
 # Isolant laine de verre non revêtu 45 mm : proposé dans la liste d'isolant de la plâtrerie
 _iso = _par.get('OUV-0902', {})
 if _iso.get('designation') == 'Isolant laine de verre non revêtu 45 mm' and not _iso.get('supprime') and "/^(Isolation|Isolant)/i" in _app:
