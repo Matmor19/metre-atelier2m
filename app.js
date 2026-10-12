@@ -391,6 +391,9 @@ function route(nom) {
   const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio' };
   if (PAGE === 'tableau') nom = 'tableau';
   for (const k of Object.keys(vues)) { const el = $(vues[k]); if (el) el.classList.toggle('hidden', k !== nom); }
+  // Onglet en surbrillance : le métré et le tableau d'un chantier appartiennent à « Chantiers »
+  const onglet = { chantiers: 'btnChantiers', metre: 'btnChantiers', tableau: 'btnChantiers', config: 'btnConfig', reglages: 'btnReglages' };
+  ['btnChantiers', 'btnConfig', 'btnReglages'].forEach(id => { const b = $(id); if (b) b.classList.toggle('actif', onglet[nom] === id); });
   if (nom === 'metre' || nom === 'tableau') compterLignes();
 }
 
@@ -400,8 +403,10 @@ function compterLignes() {
   $('nbLignes2').textContent = n;
 }
 
+// Métré du chantier : affiché dans la même fenêtre (plus de nouvelle fenêtre)
 function ouvrirTableau() {
-  window.open('tableau.html', 'metre2m-tableau');
+  renderMetre();
+  route('tableau');
 }
 
 function renderChantiers() {
@@ -3757,7 +3762,7 @@ $('listeChantiers').addEventListener('click', e => {
 
 $('ongletSaisie').onclick = () => route('metre');
 $('ongletTableau').onclick = ouvrirTableau;
-$('ongletSaisie2').onclick = () => window.open('index.html', 'metre2m-saisie');
+$('ongletSaisie2').onclick = () => route('metre');
 $('ongletTableau2').onclick = () => route('tableau');
 
 $('selLot').onchange = e => { lotCourant = e.target.value; colorerLot(); renderOuvrages(); };
