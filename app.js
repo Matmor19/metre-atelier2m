@@ -1296,12 +1296,17 @@ function renderPlatNv() {
       <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
     ${ligne('cloi', 'Cloisonnement', /^Cloison/i)}
     ${ligne('doub', 'Doublage', /^Doublage/i)}
+    <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (toutes les fenêtres, portes-fenêtres, baies et portes d'entrée saisies dans les pièces).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
+}
+// Surface (m²) de toutes les menuiseries extérieures saisies dans les pièces : fenêtres, portes-fenêtres, baies, portes d'entrée
+function menuiseriesExtM2(c) {
+  return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => b + (num(m.l) > 0 && num(m.h) > 0 ? num(m.l) * num(m.h) / 10000 * (num(m.nb) || 1) : 0), 0), 0);
 }
 function genererPlatNv(c) {
   const q = platNvDe(c);
@@ -1315,8 +1320,16 @@ function genererPlatNv(c) {
     const o = BIB.ouvrages.find(x => x.id === q[cle].ouv && !x.supprime);
     if (!o) { manque.push(titre); continue; }
     ajouterLotSiAbsent(c.id, o.lot);
-    const v = { nombre: '1', cote1: String(ml), cote2: String(h) };
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    if (cle === 'doub') {
+      // Doublage : surface brute (linéaire × hauteur) moins toutes les menuiseries extérieures
+      const ded = menuiseriesExtM2(c);
+      const net = Math.max(0, ml * h - ded);
+      const v = { nombre: '1', cote1: String(net), cote2: '1' };
+      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins menuiseries extérieures ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    } else {
+      const v = { nombre: '1', cote1: String(ml), cote2: String(h) };
+      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    }
     nb++;
   }
   // Plafond : saisi directement en m², sans hauteur
