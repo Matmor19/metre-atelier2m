@@ -205,7 +205,7 @@ async function synchroBibliotheque() {
       if (!lotCourant) lotCourant = BIB.lots[0].id;
       remplirLots(); renderOuvrages();
       // Sur la page du métré, les lignes reprennent les textes de la bibliothèque reçue du Drive
-      if (PAGE === 'tableau' && courantId) renderMetre();
+      actualiserMetre();
     }
   } catch (e) { /* pas de réseau : on garde la copie locale */ }
 }
@@ -1315,6 +1315,7 @@ function synchroConfig() {
   _synchroT = setTimeout(() => {
     majQuantitesAuto(chantiers.find(x => x.id === courantId));
     majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
+    actualiserMetre();
     if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur enregistré. Les lignes calculées sont ajoutées automatiquement au métré.';
   }, 300);
 }
@@ -4014,6 +4015,15 @@ $('biblioListe').addEventListener('click', e => {
   const o = BIB.ouvrages.find(x => x.id === b.dataset.edit);
   if (o) { ouvrirModal(); formulaireOuvrage(o); }
 });
+
+/* ============ Mise à jour de la fiche métré ============ */
+// Appelée dès que le configurateur ou la bibliothèque change, et quand on revient sur la fiche métré
+function actualiserMetre() {
+  if (PAGE !== 'tableau' || !courantId || !BIB || _revueCollecte) return;
+  renderMetre();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) actualiserMetre(); });
+window.addEventListener('focus', actualiserMetre);
 
 /* ============ Synchro entre les deux fenêtres ============ */
 window.addEventListener('storage', e => {
