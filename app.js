@@ -2017,7 +2017,7 @@ function ficheListeMurGO() {
 }
 // Finitions : recherche dans toute la bibliothèque (m²)
 function ficheListeFinition() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|doublage|carrelage|faïence|papier|tapisserie|lambris|vêture|finition/i.test(o.designation))
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Protections des murs enterrés (soubassement) : toute la bibliothèque (m²)
