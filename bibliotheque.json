@@ -3702,6 +3702,38 @@
       "qte": "des::Bloc-porte fin de chantier 63×204"
     },
     {
+      "id": "OUV-0896",
+      "lot": "menuiseries-interieures",
+      "designation": "Bloc-porte fin de chantier 93×204",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "qte": "des::Bloc-porte fin de chantier 93×204"
+    },
+    {
+      "id": "OUV-0897",
+      "lot": "menuiseries-interieures",
+      "designation": "Bloc-porte fin de chantier 103×204",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "qte": "des::Bloc-porte fin de chantier 103×204"
+    },
+    {
       "id": "OUV-0193",
       "lot": "menuiseries-interieures",
       "designation": "Porte à galandage pour cloison 72 mm",
@@ -16309,6 +16341,6 @@
       "version": 1
     }
   ],
-  "revision": 54,
-  "prochainNumero": 896
+  "revision": 55,
+  "prochainNumero": 898
 }

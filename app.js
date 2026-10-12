@@ -1086,7 +1086,9 @@ const PNV_APPAREIL = [
   { cle: 'sechelinge', libelle: 'Sèche-linge (16 A)', des: 'Circuit spécialisé sèche-linge 16 A' },
   { cle: 'chauffeau', libelle: 'Chauffe-eau (20 A)', des: 'Circuit spécialisé chauffe-eau 20 A' }
 ];
-const PNV_PORTES = { '83': 'Bloc-porte fin de chantier 83×204', '73': 'Bloc-porte fin de chantier 73×204' };
+const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-porte fin de chantier 73×204', '83': 'Bloc-porte fin de chantier 83×204', '93': 'Bloc-porte fin de chantier 93×204', '103': 'Bloc-porte fin de chantier 103×204' };
+// Sens d'ouverture des portes de passage (information, ne modifie aucun ouvrage)
+const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
 function piecesNvDe(c) {
   c.elec = c.elec || { pieces: [] };
   c.elec.piecesNv = c.elec.piecesNv || [];
@@ -1182,7 +1184,8 @@ function renderPiecesNv() {
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
-      <select data-nv="${esc(p.id)}|porteType" style="min-width:130px"><option value="83" ${(p.porteType || '83') === '83' ? 'selected' : ''}>83 × 204</option><option value="73" ${p.porteType === '73' ? 'selected' : ''}>73 × 204</option></select>
+      <select data-nv="${esc(p.id)}|porteType" style="min-width:130px">${['63', '73', '83', '93', '103'].map(t => `<option value="${t}" ${(p.porteType || '83') === t ? 'selected' : ''}>${t} × 204</option>`).join('')}</select>
+      <select data-nv="${esc(p.id)}|porteSens" style="min-width:150px"><option value="">Sens d'ouverture</option>${Object.keys(PNV_SENS_PORTE).map(k => `<option value="${k}" ${p.porteSens === k ? 'selected' : ''}>${PNV_SENS_PORTE[k]}</option>`).join('')}</select>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
     ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">

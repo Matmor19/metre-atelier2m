@@ -198,6 +198,14 @@ for cle, att in ATTENDU.items():
         echecs += 1; print(f'ÉCHEC {cle} : attendu {att!r}, obtenu {got!r}')
     else:
         print(f'ok    {cle}')
+# Portes de passage : tailles 63/73/83/93/103 présentes et ouvrages disponibles dans la bibliothèque
+_bib = json.load(open(os.path.join(ROOT, 'bibliotheque.json'), encoding='utf-8'))
+_app = open(os.path.join(ROOT, 'app.js'), encoding='utf-8').read()
+for _t in ('63', '73', '83', '93', '103'):
+    _des = f'Bloc-porte fin de chantier {_t}×204'
+    _ok = any(o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages']) and f"'{_t}': '{_des}'" in _app
+    if _ok: print(f'ok    porte.{_t}')
+    else: echecs += 1; print(f'ÉCHEC porte.{_t} : ouvrage ou correspondance absent')
 if erreurs:
     echecs += len(erreurs); print('ERREURS JS :', erreurs)
 print('\nRésultat :', 'TOUT EST OK' if echecs == 0 else f'{echecs} échec(s) — ne pas publier')
