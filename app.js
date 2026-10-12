@@ -858,9 +858,16 @@ function rafraichirDesignations(id) {
     if (restants.length !== c.lots.length) { c.lots = restants; lsSet('chantiers', chantiers); marquerChantier(id); }
   }
 }
-// Ligne liée : issue du configurateur, d'un lien bibliothèque, ou d'un ouvrage relié (fondation VRD incluse)
-function ligneLiee(l) {
-  return !!(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || l.vrd);
+// Surbrillance d'une ligne du métré :
+// - mauve : ligne ajoutée automatiquement à cause d'une autre (semelle liée à une fouille, ouvrage lié à une case du configurateur)
+// - ambre : ligne saisie à la main
+// - rien : lignes produites directement par le configurateur ou reprises telles quelles
+function surbrillanceLigne(l) {
+  const oRelie = BIB && BIB.ouvrages ? BIB.ouvrages.find(y => y.id === l.ouvrage) : null;
+  const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
+  if (l.vrd || l.lienDe) return 'ligne-lie';
+  const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || ouvrageRelie);
+  return manuelle ? 'ligne-manuelle' : '';
 }
 
 function renderMetre() {
@@ -907,10 +914,7 @@ function renderMetre() {
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
       // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
-      const oRelie = BIB.ouvrages.find(y => y.id === l.ouvrage);
-      const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
-      const liee = ligneLiee(l) || ouvrageRelie;
-      h += `<tr class="ligne ${liee ? 'ligne-lie' : 'ligne-manuelle'}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
+      h += `<tr class="ligne ${surbrillanceLigne(l)}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td>
@@ -929,9 +933,9 @@ function renderMetre() {
       <td class="mt">${fmt(total)} €</td><td></td></tr></tfoot>`;
   }
   h += '</table>';
-  const nbManuelles = lignesDe(courantId).filter(l => !ligneLiee(l)).length;
-  const nbLiees = lignesDe(courantId).filter(l => ligneLiee(l)).length;
-  if (nbManuelles || nbLiees) h = `<p class="legende-manuel"><span class="pastille pastille-lie"></span> lignes liées au configurateur ou à la bibliothèque <span class="pastille pastille-manuel"></span> lignes saisies à la main</p>` + h;
+  const surb = lignesDe(courantId).map(surbrillanceLigne);
+  const nbLiees = surb.filter(x => x === 'ligne-lie').length, nbManuelles = surb.filter(x => x === 'ligne-manuelle').length;
+  if (nbLiees || nbManuelles) h = `<p class="legende-manuel">${nbLiees ? '<span class="pastille pastille-lie"></span> ajouté à cause d\'une autre ligne ' : ''}${nbManuelles ? '<span class="pastille pastille-manuel"></span> saisi à la main' : ''}</p>` + h;
   $('tableMetre').innerHTML = h;
 }
 
