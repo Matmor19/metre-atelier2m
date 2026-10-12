@@ -110,6 +110,7 @@ JS_TESTS = r"""(c) => {
     hotte: n1.filter(x => x.ouvrage === 'OUV-0888').length };
   platNvDe(cN).hauteur = '2.5'; platNvDe(cN).cloi = { ml: '10', ouv: 'OUV-0751' }; platNvDe(cN).doub = { ml: '10', ouv: 'OUV-0761' }; platNvDe(cN).pla = { m2: '12', ouv: 'OUV-0149' }; genererPlatNv(cN);
   R.platDoub = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0761') || {}).quantite || 0) * 100) / 100 };
+  R.platCloi = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0751') || {}).quantite || 0) * 100) / 100 };
   R.platPla = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0149') || {}).quantite || 0) * 100) / 100 };
   R.plat = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.platNv) || {}).quantite || 0) * 100) / 100 };
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
@@ -148,9 +149,10 @@ ATTENDU = {
     'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
-    'plat': {'quantite': 25},
+    'plat': {'quantite': 18.51},
     'platPla': {'quantite': 12},
     'platDoub': {'quantite': 21.22},
+    'platCloi': {'quantite': 18.51},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
