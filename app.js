@@ -2422,7 +2422,7 @@ function ficheVersMetre() {
   // La semelle béton (gros œuvre) n'est plus créée ici : elle suit la ligne de fouille, voir alignerFondations()
   }
   // Décapage et réseaux en tranchée, selon les champs du configurateur (Terrain). Pas de clôture : elle se lie à la main.
-  ajouter(DES_DECAP, num(p.terrain.decap), undefined, null, 'surface à décaper (configurateur, Terrain)');
+  { const dec = num(p.terrain.decap); ajouter(DES_DECAP, dec, undefined, { nombre: '1', cote1: dec.toFixed(2), cote2: '1', src: TXT_SURFACE }); }
   ajouter(DES_RES_EAU, num(p.terrain.resEau));
   ajouter(DES_RES_EU, num(p.terrain.resEu));
   ajouter(DES_RES_EP, num(p.terrain.resEp));
