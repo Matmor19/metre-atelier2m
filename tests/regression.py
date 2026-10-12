@@ -136,7 +136,7 @@ ATTENDU = {
     'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
-    'pieceNv': {'rjBureau': 1, 'n': 10, 'nApresRegeneration': 10, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
+    'pieceNv': {'rjBureau': 1, 'n': 12, 'nApresRegeneration': 12, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
 }
 
 echecs = 0

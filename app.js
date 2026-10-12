@@ -1087,10 +1087,22 @@ function ouvrageParDesig(des) { return BIB.ouvrages.find(o => o.designation === 
 function menusPorteBaie() {
   return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Porte|Baie)/i.test(o.designation));
 }
-// Prise RJ45 : 1 par chambre et par bureau par défaut (saisie manuelle prioritaire)
-function rjDefaut(p) {
-  if (p.app && p.app.rj45 !== undefined && p.app.rj45 !== '') return p.app.rj45;
-  return (p.nom === 'Chambre' || p.nom === 'Bureau') ? '1' : '';
+// Appareillage par défaut d'une pièce, d'après les repères NF C 15-100 (infographie Legrand « Les prises de courant »).
+// Une valeur saisie à la main prime toujours.
+function appDefaut(p, cle) {
+  if (p.app && p.app[cle] !== undefined && p.app[cle] !== '') return String(p.app[cle]);
+  const regle = ELEC_PIECE_TYPES[p.nom] || '';
+  const surf = num(p.surf);
+  if (cle === 'rj45') return (p.nom === 'Chambre' || p.nom === 'Bureau') ? '1' : '';
+  if (cle === 'points') return '1';            // 1 point de centre par pièce
+  if (cle === 'interrup') return '1';          // au moins 1 point d'allumage (près de chaque accès)
+  // prises : séjour 5 (< 28 m²) ou 7 (≥ 28 m²) + 2 supplémentaires près des RJ45 ; chambre 3 ; cuisine 3 (< 4 m²) ou 6
+  // autres pièces de plus de 4 m² : 1 ; salles d'eau, salles de bains et WC : aucune prise dans les volumes
+  if (regle === 'Séjour') return String((surf >= 28 ? 7 : 5) + 2);
+  if (regle === 'Chambre') return '3';
+  if (regle === 'Cuisine') return String(surf > 4 ? 6 : 3);
+  if (regle === 'Salle de bains' || regle === 'Salle d\'eau' || regle === 'WC') return '0';
+  return surf > 4 ? '1' : '0';
 }
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
 function renderPiecesNv() {
@@ -1126,7 +1138,7 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Façade placard ml <input data-nv="${esc(p.id)}|placard" inputmode="decimal" value="${esc(p.placard || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(a.cle === 'rj45' ? rjDefaut(p) : ((p.app || {})[a.cle] || ''))}" style="width:60px"></label>`).join('')}
+      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
     </div></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
@@ -1181,7 +1193,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
     for (const a of PNV_APPAREIL) {
-      const n = num(a.cle === 'rj45' ? rjDefaut(p) : (p.app || {})[a.cle]);
+      const n = num(appDefaut(p, a.cle));
       if (!(n > 0)) continue;
       const o = ouvrageParDesig(a.des);
       if (!o) { manque.push(a.des); continue; }
