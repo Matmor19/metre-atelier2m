@@ -801,14 +801,27 @@ function rafraichirDesignations(id) {
   if (_revueCollecte || !id || !BIB) return;
   const L = lignesDe(id);
   let change = false;
+  const lotsAvant = new Set();
   const nouvelles = L.map(l => {
-    if (!l.ouvrage || l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return l;
+    if (!l.ouvrage) return l;
     const o = BIB.ouvrages.find(x => x.id === l.ouvrage && !x.supprime);
-    if (!o || !o.designation || o.designation === l.designation) return l;
+    if (!o) return l;
+    // Lot : celui de la bibliothèque (une ligne créée avant un changement de lot est mise à jour)
+    let nl = l;
+    if (o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
+    if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
+    if (!o.designation || o.designation === l.designation) return nl;
     change = true;
-    return Object.assign({}, l, { designation: o.designation });
+    return Object.assign({}, nl, { designation: o.designation });
   });
   if (change) sauverLignes(id, nouvelles);
+  // Lot d'origine qui n'a plus aucune ligne : retiré de la liste des lots du chantier
+  const c = chantiers.find(x => x.id === id);
+  if (c && Array.isArray(c.lots) && lotsAvant.size) {
+    const encore = new Set(nouvelles.map(x => x.lot));
+    const restants = c.lots.filter(x => !(lotsAvant.has(x) && !encore.has(x)));
+    if (restants.length !== c.lots.length) { c.lots = restants; lsSet('chantiers', chantiers); marquerChantier(id); }
+  }
 }
 function renderMetre() {
   if (!courantId || !BIB) return;
