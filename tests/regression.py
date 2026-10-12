@@ -121,7 +121,10 @@ JS_TESTS = r"""(c) => {
     circuitsCuisine: n1.filter(x => ['OUV-0882', 'OUV-0883', 'OUV-0884'].includes(x.ouvrage)).length,
     circuitsCellier: n1.filter(x => ['OUV-0885', 'OUV-0886', 'OUV-0887'].includes(x.ouvrage)).length,
     hotte: n1.filter(x => x.ouvrage === 'OUV-0888').length };
-  platNvDe(cN).hauteur = '2.5'; platNvDe(cN).cloi = { ml: '10', ouv: 'OUV-0751' }; platNvDe(cN).doub = { ml: '10', ouv: 'OUV-0761' }; platNvDe(cN).pla = { m2: '12', ouv: 'OUV-0149' }; genererPlatNv(cN);
+  platNvDe(cN).hauteur = '2.5'; platNvDe(cN).hauteurDoub = '2.5'; platNvDe(cN).cloi = { ml: '10', ouv: 'OUV-0751' }; platNvDe(cN).doub = { ml: '10', ouv: 'OUV-0761' }; platNvDe(cN).pla = { m2: '12', ouv: 'OUV-0149' }; genererPlatNv(cN);
+  // Case de formule du doublage : (linéaire × hauteur de doublage − toutes les menuiseries, sans seuil) × 1,9
+  const jD = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0579' && /doublage/.test(x.designation));
+  R.doubJoint = jD && Math.abs(jD.quantite - (10 * 2.5 - menuiseriesToutesM2(cN)) * 1.9) < 0.01 ? 1 : 0;
   R.platDoub = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0761') || {}).quantite || 0) * 100) / 100 };
   peiDe(cN).hauteur = '2.5'; peiDe(cN).murs = { ml: '10', ouv: 'OUV-0689' }; peiDe(cN).plafond = { m2: '12', ouv: 'OUV-0690' }; genererPeinture(cN);
   R.peiPF = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0691') || {}).quantite || 0) * 100) / 100 };
@@ -151,12 +154,12 @@ JS_TESTS = r"""(c) => {
   pq.cloi.isol = ''; genererMetreConfigurateur(cN);
   R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0902').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
-  platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
+  platNvDe(cN).hauteur = ''; platNvDe(cN).hauteurDoub = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
   R.platJointPla = (function () { const cc = {}; const qq = platNvDe(cc); return qq.pla.joint === 'S * 3,8' && qq.pla.jointInit === true ? 1 : 0; })();
   R.verrouDefaut = (function () { const qq = platNvDe({}); return verrouJoint(qq, 'cloi') && verrouJoint(qq, 'doub') && verrouJoint(qq, 'pla') ? 1 : 0; })();
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149' && !(/joint/i.test(x.designation) && /plafond/.test(x.designation))).length;
   R.peiStale = lsGet('lignes.' + c.id, []).filter(x => x.ouvrage === 'OUV-0689').length;
-  platNvDe(cN).hauteur = '2.5'; peiDe(cN).hauteur = '2.5'; genererMetreConfigurateur(cN);
+  platNvDe(cN).hauteur = '2.5'; platNvDe(cN).hauteurDoub = '2.5'; peiDe(cN).hauteur = '2.5'; genererMetreConfigurateur(cN);
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
   ficheVersMetre();
   const elev = lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0048' && /murs, surface nette/.test((x.valeurs || {}).src || ''));
@@ -189,6 +192,7 @@ ATTENDU = {
     'platJoint': 1,
     'platJointPla': 1,
     'verrouDefaut': 1,
+    'doubJoint': 1,
     'platIsolRetire': 0,
     'installation': 'OUV-0484=1 OUV-0485=1 OUV-0486=1 OUV-0487=1 OUV-0488=1 OUV-0492=1',
     'fouille': 1.5,
