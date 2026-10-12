@@ -1510,6 +1510,35 @@ function genererPlatNv(c) {
   const sansHauteur = !(h > 0) && ['cloi', 'doub'].some(k => num(q[k].ml) > 0 && !(num(q[k].m2) > 0));
   const L = lignesDe(c.id).filter(l => !l.platNv);   // les anciennes lignes sont toujours retirées
   const manque = []; let nb = 0;
+  // Ajoute une ligne au métré pour un ouvrage donné, en m², avec la surface indiquée (cote1)
+  const ajouteM2 = (o, designation, surface) => {
+    ajouterLotSiAbsent(c.id, o.lot);
+    const v = { nombre: '1', cote1: String(surface), cote2: '1' };
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    nb++;
+  };
+  // Plus-value plaque (hydrofuge, acoustique) saisie en ml : plaques de 1,20 m arrondies au-dessus, × hauteur
+  const PLAQUE_ML = 1.2;
+  const plusValueMl = (ml, hh) => {
+    const n = ml > 0 && hh > 0 ? Math.ceil(ml / PLAQUE_ML) : 0;
+    return { n, surf: n * PLAQUE_ML * hh, hh };
+  };
+  const ouvPlusValue = id => BIB.ouvrages.find(x => x.id === id && !x.supprime);
+  const ouvHydro = 'OUV-0948', ouvFeu = 'OUV-0949', ouvAcou = 'OUV-0950';
+  const ajouteMlPlus = (idOuv, nomPV, titre, ml, hh) => {
+    const pv = plusValueMl(ml, hh);
+    if (!(pv.surf > 0)) return;
+    const o = ouvPlusValue(idOuv);
+    if (!o) { manque.push(nomPV + ' ' + titre); return; }
+    ajouteM2(o, `${o.designation} – ${titre} : ${pv.n} plaques × ${fmt(PLAQUE_ML)} m × ${fmt(hh)} m = ${fmt(pv.surf)} m²`, pv.surf);
+  };
+  const ajouteFeu = (titre, valeur) => {
+    const m2 = num(valeur);
+    if (!(m2 > 0)) return;
+    const o = ouvPlusValue(ouvFeu);
+    if (!o) { manque.push('plus-value coupe-feu ' + titre); return; }
+    ajouteM2(o, `${o.designation} – ${titre}, ${fmt(m2)} m²`, m2);
+  };
   for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
     const ml = num(q[cle].ml), m2s = num(q[cle].m2);
     const hk = cle === 'doub' ? num(q.hauteurDoub) : h;   // le doublage a sa propre hauteur
@@ -1519,7 +1548,7 @@ function genererPlatNv(c) {
     const o = BIB.ouvrages.find(x => x.id === q[cle].ouv && !x.supprime);
     if (!o) { manque.push(titre); continue; }
     ajouterLotSiAbsent(c.id, o.lot);
-    // Déduction : doublage = menuiseries extérieures de 1,50 m² et plus ; cloisonnement = portes de passage et façades de placard de 1,50 m² et plus
+    // 1. Type d'ouvrage : déduction doublage = menuiseries extérieures de 1,50 m² et plus ; cloisonnement = portes et façades de 1,50 m² et plus
     const ded = cle === 'doub' ? menuiseriesExtM2(c) : portesEtPlacardsM2(c);
     const net = Math.max(0, surfBrute - ded);
     const libDed = cle === 'doub' ? 'menuiseries de 1,50 m² et plus' : 'portes et façades de placard de 1,50 m² et plus';
@@ -1527,21 +1556,25 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
-    // Case de formule (sans seuil) : cloisonnement = linéaire × hauteur − toutes les portes et façades ; doublage = linéaire × hauteur de doublage − toutes les menuiseries
-    const surfCase = cle === 'doub' ? Math.max(0, surfBrute - menuiseriesToutesM2(c)) : Math.max(0, surfBrute - portesEtPlacardsToutesM2(c));
-    if ((q[cle].joint || '').trim()) { if (ajouterBandeJoint(c, L, q[cle].joint, surfCase, titre)) nb++; else manque.push('formule bande à joint ' + titre); }
+    // 2. Isolant : surface brute − toutes les déductions (sans seuil), × 1,05
     if (q[cle].isol) {
       const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
       if (!oI) manque.push('isolant ' + titre);
       else {
-        ajouterLotSiAbsent(c.id, oI.lot);
-        // Isolant : surface brute − toutes les déductions (sans seuil), × 1,05
         const surfIsol = Math.max(0, surfBrute - (cle === 'doub' ? menuiseriesToutesM2(c) : portesEtPlacardsToutesM2(c)));
+        ajouterLotSiAbsent(c.id, oI.lot);
         const vI = { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
         L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² × 1,05 = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
         nb++;
       }
     }
+    // 3. Bande à joint : formule sans seuil (cloisonnement = linéaire × hauteur − portes et façades ; doublage = − menuiseries)
+    const surfCase = cle === 'doub' ? Math.max(0, surfBrute - menuiseriesToutesM2(c)) : Math.max(0, surfBrute - portesEtPlacardsToutesM2(c));
+    if ((q[cle].joint || '').trim()) { if (ajouterBandeJoint(c, L, q[cle].joint, surfCase, titre)) nb++; else manque.push('formule bande à joint ' + titre); }
+    // 4. Plus-values : hydrofuge, puis acoustique (cloisonnement), puis coupe-feu
+    ajouteMlPlus(ouvHydro, 'plus-value hydrofuge', titre, num(q[cle].hydro), hk);
+    if (cle === 'cloi') ajouteMlPlus(ouvAcou, 'plus-value acoustique', titre, num(q.cloi.acou), hk);
+    ajouteFeu(titre, q[cle].feu);
   }
   // Plafond : saisi directement en m², sans hauteur
   const m2 = num(q.pla.m2);
@@ -1550,21 +1583,33 @@ function genererPlatNv(c) {
     if (!o) manque.push('plafond');
     else {
       ajouterLotSiAbsent(c.id, o.lot);
+      // 1. Type d'ouvrage (surface du plafond, sans déduction)
       const v = { nombre: '1', cote1: String(m2), cote2: '1' };
       L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(m2)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
       nb++;
-      if ((q.pla.joint || '').trim()) { if (ajouterBandeJoint(c, L, q.pla.joint, m2, 'plafond')) nb++; else manque.push('formule bande à joint plafond'); }
+      // 2. Isolant : surface du plafond × 1,05
       if (q.pla.isol) {
         const oI = BIB.ouvrages.find(x => x.id === q.pla.isol && !x.supprime);
         if (!oI) manque.push('isolant plafond');
         else {
           ajouterLotSiAbsent(c.id, oI.lot);
-          // Isolant du plafond : surface du plafond (aucune déduction), × 1,05
           const vI = { nombre: '1', cote1: String(m2 * 1.05), cote2: '1' };
           L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – plafond, ${fmt(m2)} m² × 1,05 = ${fmt(m2 * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
           nb++;
         }
       }
+      // 3. Bande à joint : surface du plafond
+      if ((q.pla.joint || '').trim()) { if (ajouterBandeJoint(c, L, q.pla.joint, m2, 'plafond')) nb++; else manque.push('formule bande à joint plafond'); }
+      // 4. Plus-values : hydrofuge (formule, S = surface des salles d'eau et de bain), puis coupe-feu
+      if ((q.pla.hydro || '').trim()) {
+        const oH = ouvPlusValue(ouvHydro);
+        const sEau = surfacePiecesEau(c);
+        const rH = resultatFormuleJoint(q.pla.hydro, sEau);
+        if (!(rH > 0)) { /* rien à ajouter : surface des salles d'eau nulle ou formule incorrecte */ if (rH === null) manque.push('formule plus-value hydrofuge plafond'); }
+        else if (!oH) manque.push('plus-value hydrofuge plafond');
+        else ajouteM2(oH, `${oH.designation} – plafond salles d'eau et de bain, ${fmt(rH)} m²`, rH);
+      }
+      ajouteFeu('plafond', q.pla.feu);
     }
   }
   sauverLignes(c.id, L);

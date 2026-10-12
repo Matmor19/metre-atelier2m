@@ -160,6 +160,12 @@ JS_TESTS = r"""(c) => {
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; platNvDe(cN).hauteurDoub = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
   R.platJointPla = (function () { const cc = {}; const qq = platNvDe(cc); return qq.pla.joint === 'S * 3,8' && qq.pla.jointInit === true ? 1 : 0; })();
+  // Plus-value hydrofuge du cloisonnement : 11 ml → 10 plaques × 1,20 m × hauteur 2,50 m = 30 m² (OUV-0948)
+  const hSauve = platNvDe(cN).hauteur; platNvDe(cN).hauteur = '2.5';
+  platNvDe(cN).cloi.hydro = '11'; genererMetreConfigurateur(cN);
+  const pvH = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0948' && /cloisonnement/.test(x.designation));
+  R.pvHydroCloi = pvH && Math.abs(pvH.quantite - 30) < 0.01 ? 1 : 0;
+  platNvDe(cN).cloi.hydro = ''; platNvDe(cN).hauteur = hSauve; genererMetreConfigurateur(cN);
   R.verrouDefaut = (function () { const qq = platNvDe({}); return verrouJoint(qq, 'cloi') && verrouJoint(qq, 'doub') && verrouJoint(qq, 'pla') ? 1 : 0; })();
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149' && !(/joint/i.test(x.designation) && /plafond/.test(x.designation))).length;
   R.peiStale = lsGet('lignes.' + c.id, []).filter(x => x.ouvrage === 'OUV-0689').length;
@@ -198,6 +204,7 @@ ATTENDU = {
     'verrouDefaut': 1,
     'doubJoint': 1,
     'cloiJoint': 1,
+    'pvHydroCloi': 1,
     'platIsolRetire': 0,
     'installation': 'OUV-0484=1 OUV-0485=1 OUV-0486=1 OUV-0487=1 OUV-0488=1 OUV-0492=1',
     'fouille': 1.5,
