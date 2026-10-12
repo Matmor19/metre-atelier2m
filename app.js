@@ -1295,7 +1295,7 @@ function renderPlatNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
     ${ligne('cloi', 'Cloisonnement', /^Cloison/i)}
-    <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement : ${fmt(portesEtPlacardsM2(c))} m².</p>
+    <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement (1,50 m² et plus) : ${fmt(portesEtPlacardsM2(c))} m².</p>
     ${ligne('doub', 'Doublage', /^Doublage/i)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (fenêtres, portes-fenêtres, baies et portes d'entrée d'au moins 1,50 m²).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
@@ -1305,26 +1305,33 @@ function renderPlatNv() {
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
 }
-// Seuil de déduction du doublage : une menuiserie n'est déduite que si elle fait au moins 1,50 m²
-const SEUIL_DOUBLAGE = 1.5;
+// Seuil de déduction de la plâtrerie (doublage et cloisons) : une ouverture n'est déduite que si elle fait au moins 1,50 m²
+const SEUIL_PLATRERIE = 1.5;
 // Surface (m²) des menuiseries extérieures saisies dans les pièces (fenêtres, portes-fenêtres, baies, portes d'entrée) qui atteignent le seuil
 function menuiseriesExtM2(c) {
   return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => {
     if (!(num(m.l) > 0 && num(m.h) > 0)) return b;
     const aire = num(m.l) * num(m.h) / 10000;
-    return b + (aire >= SEUIL_DOUBLAGE ? aire * (num(m.nb) || 1) : 0);
+    return b + (aire >= SEUIL_PLATRERIE ? aire * (num(m.nb) || 1) : 0);
   }, 0), 0);
 }
 // Hauteur standard des portes de passage (bloc-porte fin de chantier 204 cm)
 const HAUTEUR_PORTE_M = 2.04;
-// Surface (m²) des portes de passage et des façades de placard saisies dans les pièces : déduites du cloisonnement, sans seuil
+// Surface (m²) des portes de passage et des façades de placard saisies dans les pièces, déduites du cloisonnement
+// seulement si chaque élément fait au moins 1,50 m² (égal ou supérieur)
 function portesEtPlacardsM2(c) {
   return piecesNvDe(c).reduce((a, p) => {
-    const portes = num(p.portes) * (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M;
-    const facades = (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0);
+    const aireporte = (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M;
+    const portes = aireporteOk(aireporte) ? num(p.portes) * aireporte : 0;
+    const facades = (p.facades || []).reduce((b, f) => {
+      if (!(num(f.l) > 0 && num(f.h) > 0)) return b;
+      const aire = num(f.l) * num(f.h) / 10000;
+      return b + (aire >= SEUIL_PLATRERIE ? aire * (num(f.nb) || 1) : 0);
+    }, 0);
     return a + portes + facades;
   }, 0);
 }
+function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
 function genererPlatNv(c) {
   const q = platNvDe(c);
   const h = num(q.hauteur);
@@ -1348,7 +1355,7 @@ function genererPlatNv(c) {
       const ded = portesEtPlacardsM2(c);
       const net = Math.max(0, ml * h - ded);
       const v = { nombre: '1', cote1: String(net), cote2: '1' };
-      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes et façades de placard ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes et façades de placard de 1,50 m² et plus : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     } else {
       const v = { nombre: '1', cote1: String(ml), cote2: String(h) };
       L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
