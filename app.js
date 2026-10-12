@@ -1408,8 +1408,8 @@ function peiDe(c) {
   q.plafond = q.plafond || { m2: '', ouv: 'OUV-0690' };
   return q;
 }
-// Hauteur utilisée : celle du bloc peinture, à défaut celle du bloc plâtrerie
-function peiHauteur(c) { return num(peiDe(c).hauteur) || num(platNvDe(c).hauteur); }
+// Hauteur : seulement celle saisie dans le bloc peinture (jamais celle de la plâtrerie)
+function peiHauteur(c) { return num(peiDe(c).hauteur); }
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val) {
@@ -1423,7 +1423,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `<div class="bloc">${lotTitre('E. Peinture (bloc séparé)')}
-    <p class="muted">Murs : linéaire × hauteur, moins les menuiseries, portes et façades d'au moins 1,50 m². Plafond : surface en m².</p>
+    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc (aucune déduction). Plafond : surface en m².</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
@@ -1435,7 +1435,6 @@ function renderPeinture() {
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" style="width:80px"></label>
       <select data-pei="plafond|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture plafond/i, q.plafond.ouv)}</select></div>
-    <p class="muted" style="font-size:13px;margin:6px 0 0">Déduit des murs : ${fmt(menuiseriesExtM2(c) + portesEtPlacardsM2(c))} m² (menuiseries, portes et façades d'au moins 1,50 m²).</p>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-pei-act="gen">Ajouter au métré</button></div>
     <p id="peiStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1451,13 +1450,12 @@ function genererPeinture(c) {
   };
   const ml = peiLineaire(c);
   if (ml > 0) {
-    if (!(h > 0)) return 'Saisissez la hauteur sous plafond (bloc peinture ou plâtrerie).';
+    if (!(h > 0)) return 'Saisissez la hauteur sous plafond du bloc peinture pour les murs.';
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
-      const ded = menuiseriesExtM2(c) + portesEtPlacardsM2(c);
-      const net = Math.max(0, ml * h - ded);
-      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins ouvertures ${fmt(ded)} m²`);
+      // Murs : linéaire des pièces × hauteur du bloc peinture, sans aucune déduction
+      ajoute(o, { nombre: '1', cote1: String(ml), cote2: String(h) }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`);
     }
   }
   const m2 = num(q.plafond.m2);
