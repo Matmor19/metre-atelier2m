@@ -1099,6 +1099,7 @@ function renderPiecesNv() {
     </div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
       <label style="font-size:12px">Surface au sol m² <input data-nv="${esc(p.id)}|surf" inputmode="decimal" value="${esc(p.surf || '')}" style="width:90px"></label>
+      <label style="font-size:12px">Linéaire ml <input data-nv="${esc(p.id)}|perim" inputmode="decimal" value="${esc(p.perim || '')}" style="width:90px"></label>
       <select data-nv="${esc(p.id)}|revet" style="flex:1;min-width:180px">${optRev(p.revet)}</select>
     </div>
     <div style="margin-top:8px"><strong style="font-size:13px">Menuiseries extérieures</strong></div>
