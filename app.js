@@ -2012,7 +2012,7 @@ function ficheListeMur() {
 }
 // Murs de la bibliothèque (lot gros œuvre) : parois en m²
 function ficheListeMurGO() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|voile|élévation|banché|maçonnerie|cloison|paroi|parement/i.test(o.designation))
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Finitions : recherche dans toute la bibliothèque (m²)
