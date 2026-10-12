@@ -1076,7 +1076,7 @@ const PNV_APPAREIL = [
   { cle: 'interrup', libelle: 'Interrupteurs simples', des: 'Interrupteur simple' },
   { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' }
 ];
-const PNV_PORTE = 'Bloc-porte fin de chantier 83×204';
+const PNV_PORTES = { '83': 'Bloc-porte fin de chantier 83×204', '73': 'Bloc-porte fin de chantier 73×204' };
 function piecesNvDe(c) {
   c.elec = c.elec || { pieces: [] };
   c.elec.piecesNv = c.elec.piecesNv || [];
@@ -1109,8 +1109,10 @@ function renderPiecesNv() {
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
-    <div style="margin-top:8px"><strong style="font-size:13px">Portes fin de chantier 83×204</strong>
-      <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:70px;margin-left:8px"></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
+      <select data-nv="${esc(p.id)}|porteType" style="min-width:130px"><option value="83" ${(p.porteType || '83') === '83' ? 'selected' : ''}>83 × 204</option><option value="73" ${p.porteType === '73' ? 'selected' : ''}>73 × 204</option></select>
+      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Façade placard ml <input data-nv="${esc(p.id)}|placard" inputmode="decimal" value="${esc(p.placard || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc((p.app || {})[a.cle] || '')}" style="width:60px"></label>`).join('')}
@@ -1144,13 +1146,17 @@ function genererPiecesNv(c) {
     }
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
+      // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard
+      const largeurPorte = num(p.porteType || '83') / 100;
+      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - num(p.placard));
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
-      else { const v = { nombre: '1', cote1: String(num(p.perim)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+      else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
     }
     if (num(p.portes) > 0) {
-      const o = ouvrageParDesig(PNV_PORTE);
-      if (!o) manque.push(PNV_PORTE);
+      const desPorte = PNV_PORTES[p.porteType || '83'];
+      const o = ouvrageParDesig(desPorte);
+      if (!o) manque.push(desPorte);
       else { const v = { nombre: String(num(p.portes)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
     }
     for (const m of (p.menus || [])) {
