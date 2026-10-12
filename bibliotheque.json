@@ -13918,6 +13918,63 @@
       "version": 1
     },
     {
+      "id": "OUV-0913",
+      "lot": "isolation-thermique",
+      "designation": "Isolant cellulose soufflée Isowatt 300 mm (R 7)",
+      "unite": "m²",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0914",
+      "lot": "isolation-thermique",
+      "designation": "Isolant cellulose soufflée Isowatt 350 mm (R 8)",
+      "unite": "m²",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0915",
+      "lot": "isolation-thermique",
+      "designation": "Isolant cellulose soufflée Isowatt 435 mm (R 10)",
+      "unite": "m²",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
       "id": "OUV-0754",
       "lot": "doublages-cloisons-plafonds",
       "designation": "Cloison 124 mm phonique : laine minérale, BA13 deux faces",
@@ -16650,6 +16707,6 @@
       "version": 1
     }
   ],
-  "revision": 70,
-  "prochainNumero": 913
+  "revision": 71,
+  "prochainNumero": 916
 }
