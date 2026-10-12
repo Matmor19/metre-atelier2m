@@ -13975,6 +13975,25 @@
       "version": 1
     },
     {
+      "id": "OUV-0916",
+      "lot": "isolation-thermique",
+      "designation": "Isolant panneau laine de bois 40 mm (R 1,11)",
+      "unite": "m²",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
       "id": "OUV-0754",
       "lot": "doublages-cloisons-plafonds",
       "designation": "Cloison 124 mm phonique : laine minérale, BA13 deux faces",
@@ -16707,6 +16726,6 @@
       "version": 1
     }
   ],
-  "revision": 73,
-  "prochainNumero": 916
+  "revision": 74,
+  "prochainNumero": 917
 }
