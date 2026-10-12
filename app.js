@@ -491,7 +491,9 @@ function lotsDuChantier(id) {
   const c = chantiers.find(x => x.id === id);
   const liste = c && Array.isArray(c.lots) ? [...c.lots] : [];
   for (const l of lignesDe(id)) if (!liste.includes(l.lot)) liste.push(l.lot);
-  return liste.filter(lid => BIB.lots.some(x => x.id === lid));
+  // Ordre des lots = ordre de la bibliothèque (l'installation de chantier est en haut)
+  const rang = lid => BIB.lots.findIndex(x => x.id === lid);
+  return liste.filter(lid => BIB.lots.some(x => x.id === lid)).sort((a, b) => rang(a) - rang(b));
 }
 function sauverLotsDuChantier(id, liste) {
   const c = chantiers.find(x => x.id === id);
@@ -887,7 +889,7 @@ function renderMetre() {
     const vide = ls.length === 0;
     const aGen = !!genDuLot(lotId);
     const coche = aGen && genActif(courantId, lotId);
-    h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="${nc}"><span class="poignee" data-glisser="${esc(lotId)}" title="Glisser pour déplacer le lot">⋮⋮</span><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
+    h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="${nc}"><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
       <span class="muted">(${vide ? 'aucune ligne' : ls.length + ' ligne' + (ls.length > 1 ? 's' : '')})</span>
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
