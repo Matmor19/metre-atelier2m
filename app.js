@@ -2704,6 +2704,7 @@ function marquerChantier(id) {
 }
 
 async function envoyerChantiers(msgs) {
+  const explicite = !!msgs;   // lancé par le bouton « Synchroniser » (et non en arrière-plan)
   const affiche = !msgs; msgs = msgs || [];
   if (!syncConfigOk()) { if (affiche) syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const x = syncLire();
@@ -2727,7 +2728,14 @@ async function envoyerChantiers(msgs) {
     try {
       const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: x[id].maj || null });
       if (j.ok) { x[id] = { maj: j.maj, modifie: false }; msgs.push(c.nom + ' : envoyé à ' + heure()); }
-      else if (j.conflit) { x[id].conflit = true; msgs.push(c.nom + ' : conflit (modifié ailleurs)'); }
+      else if (j.conflit) {
+        // Conflit : seulement sur demande explicite, l'utilisateur choisit de garder la version du téléphone
+        if (explicite && confirm('Drive a une autre version de « ' + c.nom + ' ».\n\nGarder la version de ce téléphone et l\'envoyer sur Drive à la place ?')) {
+          const j2 = await post({ action: 'sauver_chantier', chantier: doc, base_maj: null });
+          if (j2.ok) { x[id] = { maj: j2.maj, modifie: false }; msgs.push(c.nom + ' : envoyé à ' + heure() + ' (version du téléphone gardée)'); }
+          else msgs.push(c.nom + ' : refus (' + (j2.erreur || 'réponse inattendue') + ')');
+        } else { x[id].conflit = true; msgs.push(c.nom + ' : conflit (modifié ailleurs)'); }
+      }
       else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
     } catch (e) { syncEcrire(x); msgs.push('Pas de réseau pour « ' + c.nom + ' »'); if (affiche) syncStatut(msgs.join(' · ')); return; }
   }
