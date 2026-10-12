@@ -1461,8 +1461,8 @@ function renderPlatNv() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = platNvDe(c);
   const R = resultatsPlat(c, q);
-  const ligne = (cle, titre, re, extra = '') => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
-      <strong style="font-size:13px;min-width:120px;color:#e07b1a">${titre}</strong>${extra}
+  const ligne = (cle, titre, re, extra = '') => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;background:rgba(224,123,26,0.55);border-radius:6px;padding:6px 8px;">
+      <strong style="font-size:15px;min-width:120px;color:#fff;font-weight:600">${titre}</strong>${extra}
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
@@ -1479,8 +1479,8 @@ function renderPlatNv() {
     <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement (1,50 m² et plus) : ${fmt(portesEtPlacardsM2(c))} m².</p>
     ${ligne('doub', 'Doublage', /^(Doublage|Système Optima|Rail montant doublé)/i, `<label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label>`)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (fenêtres, portes-fenêtres, baies et portes d'entrée d'au moins 1,50 m²).</p>
-    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
-      <strong style="font-size:13px;min-width:120px">Plafond</strong>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;background:rgba(224,123,26,0.55);border-radius:6px;padding:6px 8px;">
+      <strong style="font-size:15px;min-width:120px;color:#fff;font-weight:600">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
       <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;color:#e6b800;font-weight:600">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
