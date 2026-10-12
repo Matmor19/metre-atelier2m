@@ -13591,7 +13591,7 @@
     {
       "id": "OUV-0752",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 90 mm : rail et montants 70, BA13 deux faces",
+      "designation": "Cloison 96 mm : rail et montants 70, BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16365,6 +16365,6 @@
       "version": 1
     }
   ],
-  "revision": 60,
+  "revision": 61,
   "prochainNumero": 899
 }
