@@ -1272,6 +1272,73 @@ function genererPiecesNv(c) {
   if (uniques.length) msg += ' Non trouvées dans la bibliothèque : ' + uniques.join(' ; ') + '.';
   return msg;
 }
+/* ============ Bloc plâtrerie et isolation (séparé du configurateur de pièces) ============ */
+// Saisie : hauteur sous plafond, linéaire de cloisonnement et linéaire de doublage. Surface = linéaire × hauteur.
+// Les lignes produites portent platNv et sont remplacées à chaque génération.
+function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', ouv: '' }; q.doub = q.doub || { ml: '', ouv: '' }; return q; }
+function optPlat(re, val) {
+  return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
+    .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+}
+function renderPlatNv() {
+  const host = $('cfgPlatNv');
+  if (!host) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c || !BIB) { host.innerHTML = ''; return; }
+  const q = platNvDe(c);
+  const ligne = (cle, titre, re) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
+      <strong style="font-size:13px;min-width:120px">${titre}</strong>
+      <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
+      <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>`;
+  host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
+    <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
+      <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
+    ${ligne('cloi', 'Cloisonnement', /^Cloison/i)}
+    ${ligne('doub', 'Doublage', /^Doublage/i)}
+    <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
+    <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
+}
+function genererPlatNv(c) {
+  const q = platNvDe(c);
+  const h = num(q.hauteur);
+  if (!(h > 0)) return 'Saisissez d\'abord la hauteur sous plafond.';
+  const L = lignesDe(c.id).filter(l => !l.platNv);
+  const manque = []; let nb = 0;
+  for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
+    const ml = num(q[cle].ml);
+    if (!(ml > 0)) continue;
+    const o = BIB.ouvrages.find(x => x.id === q[cle].ouv && !x.supprime);
+    if (!o) { manque.push(titre); continue; }
+    ajouterLotSiAbsent(c.id, o.lot);
+    const v = { nombre: '1', cote1: String(ml), cote2: String(h) };
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    nb++;
+  }
+  sauverLignes(c.id, L);
+  renderMetre();
+  if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de ' + manque.join(' et ') + '.';
+  return nb ? nb + ' ligne(s) plâtrerie au métré.' : 'Saisissez au moins un linéaire.';
+}
+$('vConfig') && $('vConfig').addEventListener('click', e => {
+  const b = e.target.closest('[data-plat-act]');
+  if (!b) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const msg = genererPlatNv(c);
+  if ($('platStatut')) $('platStatut').textContent = msg;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+});
+$('vConfig') && $('vConfig').addEventListener('change', e => {
+  const t = e.target.closest('[data-plat]');
+  if (!t) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const q = platNvDe(c);
+  const [cle, sous] = t.dataset.plat.split('|');
+  if (cle === 'hauteur') q.hauteur = t.value; else q[cle][sous] = t.value;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+});
 function majPieceNv(c, cle, val) {
   const [id, champ, k, sous] = cle.split('|');
   const p = piecesNvDe(c).find(x => x.id === id);
@@ -1297,7 +1364,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   lsSet('chantiers', chantiers); marquerChantier(c.id);
-  renderPiecesNv();
+  renderPiecesNv(); renderPlatNv();
 });
 $('vConfig') && $('vConfig').addEventListener('change', e => {
   const t = e.target.closest('[data-nv]');
@@ -1530,7 +1597,7 @@ function retirerLignesSansSource(c) {
 function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
-  renderPiecesNv();
+  renderPiecesNv(); renderPlatNv();
   const P = platDe(c), pieces = piecesDe(c);
   const opt = (liste, val) => `<option value="">— choisir —</option>` + liste.map(d => `<option ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const optPortes = () => `<option value="">— choisir —</option><option>${esc(PORTE_AUTO)}</option>` + platPortes().map(d => `<option>${esc(d)}</option>`).join('');
