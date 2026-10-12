@@ -36,13 +36,14 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 
 ## Appareillage par pièce (bloc C, mise à jour)
 - Repères par défaut d'après le fichier « appareillage » fourni par Mathieu (et non le texte officiel) :
-  - Séjour : prises 5 (moins de 28 m²) ou 7, plus 2 ; RJ45 2 ; prise TV 1.
+  - Séjour : prises 5 (moins de 28 m²) ou 7 ; RJ45 2 (coin TV) ; prise TV 1.
   - Chambre : prises 3 ; RJ45 1.
   - Bureau : prises 3 ; RJ45 1.
-  - Cuisine : prises 6 ; RJ45 1 ; prise hotte 1 (à 1,80 m) ; circuits spécialisés plaque de cuisson 32 A, four 16 A, lave-vaisselle 16 A (1 chacun).
-  - Salle de bains et salle d'eau : prises 1 ; WC : 0.
+  - Cuisine : prises 3 (4 m² ou moins) ou 6 (plus de 4 m², dont 4 au-dessus du plan de travail) ; RJ45 1 ; prise hotte 1 (à 1,80 m) ; circuits spécialisés plaque de cuisson 32 A, four 16 A, lave-vaisselle 16 A (1 chacun).
+  - Salle de bains et salle d'eau : prise 1 + prise rasoir 1 (transformateur 20-50 VA, hors volume de sécurité) ; WC : 0 (la prise est dans le couloir).
   - Buanderie / cellier : prises 1 si plus de 4 m² ; circuits spécialisés lave-linge 16 A, sèche-linge 16 A, chauffe-eau 20 A (1 chacun).
   - Autres pièces : prises 1 si plus de 4 m² ; points lumineux 1 ; interrupteurs 1.
 - Une valeur saisie à la main prime toujours.
 - Lignes de bibliothèque ajoutées : OUV-0882 à OUV-0888 (circuits spécialisés et prise hotte).
 - Tests : cuisine (3 circuits + hotte), cellier (3 circuits), 27 lignes au total pour le jeu de test.
+- Capture Google (tableau prises/éclairage/TV) utilisée pour corriger : cuisine selon la surface, séjour sans prise en plus (les 2 sont des RJ45), prise rasoir en salle de bains. Ligne ajoutée : OUV-0889 (prise rasoir).

@@ -16188,8 +16188,23 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-0889",
+      "lot": "electricite",
+      "designation": "Prise rasoir (transformateur 20-50 VA, hors volume de sécurité)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 51,
-  "prochainNumero": 889
+  "revision": 52,
+  "prochainNumero": 890
 }

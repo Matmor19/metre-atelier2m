@@ -1075,6 +1075,7 @@ const PNV_APPAREIL = [
   { cle: 'rj45', libelle: 'Prise RJ45', des: 'Prise RJ45 (réseau)' },
   { cle: 'interrup', libelle: 'Interrupteurs simples', des: 'Interrupteur simple' },
   { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' },
+  { cle: 'rasoir', libelle: 'Prise rasoir', des: 'Prise rasoir (transformateur 20-50 VA, hors volume de sécurité)' },
   { cle: 'tv', libelle: 'Prise TV', des: 'Prise TV' },
   { cle: 'hotte', libelle: 'Prise hotte', des: 'Prise hotte 16 A (à 1,80 m)' },
   { cle: 'plaque', libelle: 'Plaque de cuisson (32 A)', des: 'Circuit spécialisé plaque de cuisson 32 A' },
@@ -1110,11 +1111,12 @@ function appDefaut(p, cle) {
   // gros appareils : une ligne spécialisée par appareil (cuisine ; buanderie / cellier)
   if (cle === 'plaque' || cle === 'four' || cle === 'lvaisselle') return regle === 'Cuisine' ? '1' : '';
   if (cle === 'llinge' || cle === 'sechelinge' || cle === 'chauffeau') return regle === 'Buanderie / cellier' ? '1' : '';
-  // prises : séjour 5 (< 28 m²) ou 7 (≥ 28 m²) + 2 supplémentaires ; chambre 3 ; bureau 3 ; cuisine 6 (dont 4 sur plan de travail)
+  // prises : séjour 5 (< 28 m²) ou 7 (≥ 28 m²) ; chambre 3 ; bureau 3 ; cuisine 3 (≤ 4 m²) ou 6 (> 4 m², dont 4 au-dessus du plan de travail)
   // salle de bains et salle d'eau : 1 prise hors volumes ; WC : aucune ; autres pièces de plus de 4 m² : 1
-  if (regle === 'Séjour') return String((surf >= 28 ? 7 : 5) + 2);
+  if (cle === 'rasoir') return (regle === 'Salle de bains' || regle === 'Salle d\'eau') ? '1' : '';
+  if (regle === 'Séjour') return String(surf >= 28 ? 7 : 5);
   if (regle === 'Chambre' || regle === 'Bureau') return '3';
-  if (regle === 'Cuisine') return '6';
+  if (regle === 'Cuisine') return surf > 4 ? '6' : '3';
   if (regle === 'Salle de bains' || regle === 'Salle d\'eau') return '1';
   if (regle === 'WC') return '0';
   return surf > 4 ? '1' : '0';
