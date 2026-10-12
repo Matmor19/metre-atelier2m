@@ -10576,7 +10576,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison en briques de plâtre"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0578",
@@ -16364,6 +16365,6 @@
       "version": 1
     }
   ],
-  "revision": 58,
+  "revision": 59,
   "prochainNumero": 899
 }
