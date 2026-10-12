@@ -2691,7 +2691,7 @@ function ouvrirChantier(id) {
 // Par chantier, on garde : maj (version connue sur Drive) et modifie (modifications pas encore envoyées)
 function syncLire() { return lsGet('sync', {}); }
 function syncEcrire(x) { lsSet('sync', x); }
-function syncStatut(texte) { const e = $('syncStatut'); if (e) e.textContent = texte; }
+function syncStatut(texte) { const e = $('syncStatut'); if (e) { e.style.whiteSpace = 'pre-line'; e.textContent = texte; } }
 function syncConfigOk() { return !!(lsGet('url', '') && lsGet('jeton', '')); }
 
 // Appelé après chaque modification d'un chantier ou de ses lignes : envoi rapide
@@ -2718,9 +2718,8 @@ async function envoyerChantiers(msgs) {
       if (x[id].supprimeEnvoye && !x[id].modifie) continue;
       try {
         const j = await post({ action: 'sauver_chantier', chantier: Object.assign({}, c, { lignes: [] }), base_maj: null });
-        if (j.ok) { x[id] = { maj: j.maj, modifie: false, supprimeEnvoye: true }; msgs.push(c.nom + ' : supprimé sur Drive'); }
-        else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
-      } catch (e) { syncEcrire(x); msgs.push('Pas de réseau pour « ' + c.nom + ' »'); if (affiche) syncStatut(msgs.join(' · ')); return; }
+        if (j.ok) x[id] = { maj: j.maj, modifie: false, supprimeEnvoye: true };
+      } catch (e) { syncEcrire(x); msgs.push('Pas de réseau : envoi différé'); if (affiche) syncStatut(msgs.join('\n')); return; }
       continue;
     }
     if (!x[id].modifie) continue;
@@ -2737,10 +2736,10 @@ async function envoyerChantiers(msgs) {
         } else { x[id].conflit = true; msgs.push(c.nom + ' : conflit (modifié ailleurs)'); }
       }
       else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
-    } catch (e) { syncEcrire(x); msgs.push('Pas de réseau pour « ' + c.nom + ' »'); if (affiche) syncStatut(msgs.join(' · ')); return; }
+    } catch (e) { syncEcrire(x); msgs.push(c.nom + ' : pas de réseau, envoi différé'); if (affiche) syncStatut(msgs.join('\n')); return; }
   }
   syncEcrire(x);
-  if (affiche) syncStatut(msgs.length ? msgs.join(' · ') : 'Rien à envoyer : tous les chantiers sont à jour.');
+  if (affiche) syncStatut(msgs.length ? msgs.join('\n') : 'Rien à envoyer : tous les chantiers sont à jour.');
 }
 
 // Récupère les chantiers modifiés sur un autre appareil (sans écraser les modifications non envoyées)
@@ -2763,19 +2762,25 @@ async function recupererChantiers(msgs) {
     lsSet('lignes.' + id, doc.supprime ? [] : (lignes || []));
     x[id] = { maj: doc.maj, modifie: false, supprimeEnvoye: doc.supprime ? true : undefined };
     recus++;
-    msgs.push((meta.nom || id) + (doc.supprime ? ' : supprimé (reçu de Drive)' : ' : reçu de Drive'));
+    if (!doc.supprime) msgs.push((meta.nom || id) + ' : reçu de Drive');
   }
   lsSet('chantiers', chantiers);
   syncEcrire(x);
   if (recus) renderChantiers();
-  if (affiche) syncStatut(msgs.length ? msgs.join(' · ') : 'Chantiers à jour');
+  if (affiche) syncStatut(msgs.length ? msgs.join('\n') : 'Chantiers à jour');
 }
 
 async function synchroniserChantiers() {
   if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const msgs = [];
-  try { await envoyerChantiers(msgs); await recupererChantiers(msgs); syncStatut(msgs.length ? msgs.join(' · ') : 'Chantiers à jour'); }
-  catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
+  try {
+    await envoyerChantiers(msgs); await recupererChantiers(msgs);
+    // Un état pour chaque chantier affiché (les chantiers supprimés ne sont pas affichés)
+    const affiches = chantiers.filter(c => !c.supprime);
+    const etat = c => msgs.find(m => m.startsWith(c.nom + ' : ') || m.startsWith(c.nom + ' : pas de réseau')) || (c.nom + ' : à jour');
+    const globaux = msgs.filter(m => !affiches.some(c => m.startsWith(c.nom + ' :')));
+    syncStatut([...globaux, ...affiches.map(etat)].join('\n'));
+  } catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
 }
 
 // Bouton « Synchroniser les chantiers » sur la liste des chantiers
