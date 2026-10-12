@@ -1562,9 +1562,9 @@ function genererPlatNv(c) {
       if (!oI) manque.push('isolant ' + titre);
       else {
         const surfIsol = Math.max(0, surfBrute - (cle === 'doub' ? menuiseriesToutesM2(c) : portesEtPlacardsToutesM2(c)));
-        ajouterLotSiAbsent(c.id, oI.lot);
+        ajouterLotSiAbsent(c.id, o.lot);
         const vI = { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
-        L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² × 1,05 = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+        L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² × 1,05 = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
         nb++;
       }
     }
@@ -1592,9 +1592,9 @@ function genererPlatNv(c) {
         const oI = BIB.ouvrages.find(x => x.id === q.pla.isol && !x.supprime);
         if (!oI) manque.push('isolant plafond');
         else {
-          ajouterLotSiAbsent(c.id, oI.lot);
+          ajouterLotSiAbsent(c.id, o.lot);
           const vI = { nombre: '1', cote1: String(m2 * 1.05), cote2: '1' };
-          L.push({ uid: uid(), lot: oI.lot, ouvrage: oI.id, designation: `${oI.designation} – plafond, ${fmt(m2)} m² × 1,05 = ${fmt(m2 * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+          L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – plafond, ${fmt(m2)} m² × 1,05 = ${fmt(m2 * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
           nb++;
         }
       }
