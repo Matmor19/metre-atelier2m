@@ -1348,10 +1348,9 @@ function genererPiecesNv(c) {
   }
   sauverLignes(c.id, L);
   renderMetre();
-  let msg = nb + ' ligne(s) de pièces au métré.';
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
-  if (uniques.length) msg += ' Non trouvées dans la bibliothèque : ' + uniques.join(' ; ') + '.';
-  return msg;
+  if (uniques.length) return 'Pièces : ouvrage manquant dans la bibliothèque.';
+  return nb ? 'Pièces régénérées.' : 'Pièces : aucune ligne.';
 }
 /* ============ Bloc plâtrerie et isolation (séparé du configurateur de pièces) ============ */
 // Saisie : hauteur sous plafond, linéaire de cloisonnement et linéaire de doublage. Surface = linéaire × hauteur.
@@ -1664,16 +1663,18 @@ function genererPlatNv(c) {
   for (let i = d0Pla; i < L.length; i++) L[i].platBloc = 'pla';
   sauverLignes(c.id, L);
   renderMetre();
-  if (sansHauteur) return 'Saisissez d\'abord la hauteur sous plafond.';
-  if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de ' + manque.join(' et ') + '.';
-  return nb ? nb + ' ligne(s) plâtrerie au métré.' : 'Saisissez au moins un linéaire.';
+  if (sansHauteur) return 'Plâtrerie : hauteur manquante.';
+  if (manque.length) return 'Plâtrerie : type manquant.';
+  return nb ? 'Plâtrerie régénérée.' : 'Plâtrerie : linéaire manquant.';
 }
 // Bouton « Générer le métré depuis le configurateur » : relance les trois blocs ; chacun retire ses anciennes lignes
 // et ne remet que ce qui est encore saisi. Les lignes saisies à la main ne sont pas touchées.
 function genererMetreConfigurateur(c) {
   const msgs = [genererPiecesNv(c), genererPlatNv(c), genererPeinture(c)];
   renderMetre();
-  return msgs.filter(Boolean).join(' ');
+  // Message court : « Métré régénéré. », suivi seulement des éléments manquants
+  const manquants = msgs.filter(m => m && /manquant/.test(m));
+  return ['Métré régénéré.', ...manquants].join(' ');
 }
 if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () => {
   const c = chantiers.find(x => x.id === courantId);
@@ -1830,9 +1831,9 @@ function genererPeinture(c) {
   }
   sauverLignes(c.id, L);
   renderMetre();
-  if (sansHauteur) return 'Saisissez la hauteur sous plafond du bloc peinture pour les murs.';
-  if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de peinture : ' + manque.join(' et ') + '.';
-  return nb ? nb + ' ligne(s) peinture au métré.' : 'Saisissez au moins une surface.';
+  if (sansHauteur) return 'Peinture : hauteur manquante.';
+  if (manque.length) return 'Peinture : type manquant.';
+  return nb ? 'Peinture régénérée.' : 'Peinture : surface manquante.';
 }
 $('vConfig') && $('vConfig').addEventListener('click', e => {
   const b = e.target.closest('[data-pei-act]');
