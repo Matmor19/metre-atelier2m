@@ -3972,7 +3972,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0211",
@@ -4002,7 +4003,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0213",
@@ -4047,7 +4049,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0216",
@@ -4152,7 +4155,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0223",
@@ -4278,7 +4282,8 @@
       "si": {
         "cle": "borne",
         "val": "oui"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0230",
@@ -6693,7 +6698,8 @@
         "max": 68.74,
         "nb_prix": 2,
         "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0367",
@@ -6715,7 +6721,8 @@
         "max": 93.01,
         "nb_prix": 2,
         "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0368",
@@ -6737,7 +6744,8 @@
         "max": 82.73,
         "nb_prix": 2,
         "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0369",
@@ -11035,7 +11043,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0611",
@@ -11065,7 +11074,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0613",
@@ -11080,7 +11090,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0614",
@@ -11170,7 +11181,8 @@
           "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0620",
@@ -11185,7 +11197,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0621",
@@ -11215,7 +11228,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0623",
@@ -16295,6 +16309,6 @@
       "version": 1
     }
   ],
-  "revision": 53,
+  "revision": 54,
   "prochainNumero": 896
 }
