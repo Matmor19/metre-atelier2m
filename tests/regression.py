@@ -111,7 +111,7 @@ JS_TESTS = r"""(c) => {
   R.plafCouleur = plafL.filter(x => x.pieceOption && surbrillanceLigne(x) === 'ligne-option').length;
   pcuis.plafVV = ''; pcuis.eclairage = ''; genererPiecesNv(cN);
   R.pointsCuisineRetour = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine' && x.ouvrage === 'OUV-0614').length;
-  R.pieceNv = { plafCouleur: R.plafCouleur, plafPlafonnier: R.plafPlafonnier, plafVVsupp: R.plafVVsupp, spotsCuisine: R.spotsCuisine, pointsCuisineSpots: R.pointsCuisineSpots, pointsCuisineRetour: R.pointsCuisineRetour, n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
+  R.pieceNv = { maison: lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'maison').map(x => x.ouvrage + '=' + x.quantite).join(' '), plafCouleur: R.plafCouleur, plafPlafonnier: R.plafPlafonnier, plafVVsupp: R.plafVVsupp, spotsCuisine: R.spotsCuisine, pointsCuisineSpots: R.pointsCuisineSpots, pointsCuisineRetour: R.pointsCuisineRetour, n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
     prises: (n1.find(x => x.ouvrage === 'OUV-0611') || {}).quantite || 0,
     rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && /Bureau/.test(x.designation)).length),
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
@@ -186,7 +186,7 @@ ATTENDU = {
     'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'lignesPlat': 0},
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
-    'pieceNv': {'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
+    'pieceNv': {'maison': 'OUV-0609=1 OUV-0618=1', 'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 34, 'nApresRegeneration': 34, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
 echecs = 0

@@ -1222,11 +1222,36 @@ function renderPiecesNv() {
   host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
     ${liste.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
+    ${liste.length ? (() => { const eq = equipementsMaison(c); return `<div class="card" style="margin-top:10px"><strong style="font-size:13px">Équipements de la maison (calculés selon les pièces)</strong>
+      <p class="muted" style="font-size:12px;margin:4px 0">Tableau : ${esc(eq.tableau)} (${eq.modules} modules pour ${eq.circuits} circuits, ${eq.ddr} différentiel(s) 30 mA). Détecteurs de fumée : ${eq.detecteurs} (1 pour 100 m², pour ${fmt(eq.surf)} m² hors terrasse).</p></div>`; })() : ''}
     <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
       <button type="button" class="btn sec" data-nv-act="add">+ Ajouter une pièce</button>
       <button type="button" class="btn" data-nv-act="gen">Ajouter au métré</button>
     </div>
     <p id="nvStatut" class="muted" style="font-size:13px"></p></div>`;
+}
+// Équipements de la maison (hors pièces) : tableau adapté aux pièces saisies, et détecteurs de fumée (1 pour 100 m²)
+// Circuits : éclairage (8 points max par circuit), prises (8 max), 1 circuit par appareil spécialisé, 1 circuit VMC
+function equipementsMaison(c) {
+  const pcs = piecesNvDe(c).filter(p => (ELEC_PIECE_TYPES[p.nom] || '') !== 'Extérieur (terrasse)');
+  let ecl = 0, pri = 0, spec = 0, surf = 0;
+  for (const p of pcs) surf += num(p.surf);
+  for (const p of pcs) {
+    if (eclairagePiece(p) === 'spots') ecl += nbSpots(p); else ecl += num(appDefaut(p, 'points'));
+    if (eclairagePiece(p) === 'spots' && p.plafVV === 'oui') ecl += 1;
+    pri += ['prises', 'tv', 'hotte', 'rasoir'].reduce((a, k) => a + num(appDefaut(p, k)), 0);
+    spec += ['plaque', 'four', 'lvaisselle', 'llinge', 'sechelinge', 'chauffeau'].filter(k => num(appDefaut(p, k)) > 0).length;
+  }
+  const circuits = (ecl ? Math.ceil(ecl / 8) : 0) + (pri ? Math.ceil(pri / 8) : 0) + spec + 1;
+  const ddr = Math.max(2, Math.ceil(circuits / 8));
+  const modules = Math.ceil((circuits + 2 * ddr + 2) * 1.2);
+  const tableau = modules <= 12 ? 'Tableau électrique 12 modules avec protections'
+    : modules <= 24 ? 'Tableau électrique 24 modules avec protections'
+    : modules <= 36 ? 'Tableau électrique 36 modules avec protections'
+    : modules <= 48 ? 'Tableau électrique 48 modules avec protections'
+    : 'Tableau électrique 4 rangées (logement > 100 m²)';
+  const detecteurs = surf > 0 ? Math.ceil(surf / 100) : 0;
+  return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf };
 }
 function genererPiecesNv(c) {
   const pcs = piecesNvDe(c);
@@ -1301,6 +1326,18 @@ function genererPiecesNv(c) {
       if (!o) { manque.push(desPnv(p, a)); continue; }
       const v = { nombre: String(n) };
       ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
+    }
+  }
+  // Équipements de la maison : un seul tableau adapté, et les détecteurs de fumée (norme, sans couleur)
+  const eq = equipementsMaison(c);
+  if (eq.pieces > 0) {
+    const oT = ouvrageParDesig(eq.tableau);
+    if (!oT) manque.push(eq.tableau);
+    else { const v = { nombre: '1' }; ajoute(oT, v, calcul(oT, v), `${oT.designation} (${eq.modules} modules nécessaires, ${eq.circuits} circuits) – maison`, 'maison'); }
+    if (eq.detecteurs > 0) {
+      const oD = ouvrageParDesig('Détecteur autonome de fumée');
+      if (!oD) manque.push('Détecteur autonome de fumée');
+      else { const v = { nombre: String(eq.detecteurs) }; ajoute(oD, v, calcul(oD, v), `${oD.designation} (1 pour 100 m²) – maison`, 'maison'); }
     }
   }
   sauverLignes(c.id, L);
