@@ -14260,6 +14260,25 @@
       "version": 1
     },
     {
+      "id": "OUV-0931",
+      "lot": "isolation-thermique",
+      "designation": "Fibre de bois à enduire 20 mm pour tableau de menuiserie",
+      "unite": "m²",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
       "id": "OUV-0754",
       "lot": "doublages-cloisons-plafonds",
       "designation": "Cloison 124 mm phonique : laine minérale, BA13 deux faces",
@@ -16992,6 +17011,6 @@
       "version": 1
     }
   ],
-  "revision": 77,
-  "prochainNumero": 931
+  "revision": 78,
+  "prochainNumero": 932
 }
