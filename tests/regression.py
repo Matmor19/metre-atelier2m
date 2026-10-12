@@ -29,7 +29,7 @@ CHANTIER = {
                "murs": [
                    {"id": "soub1", "cat": "soub", "nom": "Mur de soubassement ", "longueur": "20", "hauteur": "0.5", "porteur": True,
                     "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": False},
-                   {"id": "peri1", "nom": "Mur périphérique ", "longueur": "50", "hauteur": "2", "porteur": True,
+                   {"id": "peri1", "cat": "peri", "nom": "Mur périphérique ", "longueur": "50", "hauteur": "2", "porteur": True,
                     "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": True}],
                "toiture": {"type": "", "surface": "", "pente": "", "couverture": ""},
                "choix": {"murs": "", "tableaux": "", "finition": ""},

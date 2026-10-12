@@ -1908,12 +1908,13 @@ function projetCalcul(p) {
   }
   // Menuiseries du nouveau configurateur de pièces : même règle que l'ancien (surface déduite des murs cochés, tableaux)
   const cNv = chantiers.find(x => x.id === courantId);
+  let dedNv = 0;   // fenêtres du nouveau bloc : déduites des murs périphériques, sans case à cocher
   if (cNv) for (const pc of piecesNvDe(cNv)) for (const m of (pc.menus || [])) {
     if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
     const nbM = num(m.nb) || 1;
     const aire = num(m.l) * num(m.h) / 10000;          // cm × cm → m²
     const tab = 2 * (num(m.h) / 100) * e * nbM;        // tableaux : 2 côtés × hauteur (m) × épaisseur
-    if (aire >= SEUIL_DEDUCTION) r.deduit += aire * nbM;
+    if (aire >= SEUIL_DEDUCTION) dedNv += aire * nbM;
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '') + ' · fenêtre' }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: nbM });
   }
@@ -1921,6 +1922,10 @@ function projetCalcul(p) {
   const cochés = r.murs.filter(x => x.m.deduire === true);
   const brutCochés = cochés.reduce((a, x) => a + x.brut, 0);
   for (const x of cochés) x.menu = brutCochés > 0 ? Math.min(x.brut, r.deduit * x.brut / brutCochés) : 0;
+  // Fenêtres du configurateur de pièces : toujours déduites des murs périphériques (au prorata de leur surface brute)
+  const periNv = r.murs.filter(x => x.m.cat === 'peri');
+  const brutPeri = periNv.reduce((a, x) => a + x.brut, 0);
+  if (dedNv > 0 && brutPeri > 0) for (const x of periNv) x.menu = (x.menu || 0) + Math.min(x.brut, dedNv * x.brut / brutPeri);
   r.deduitMenuiseries = r.deduit;
   // Ouverture libre (m²) : s'ajoute à la part des menuiseries, sans règle de seuil
   for (const x of r.murs) x.ded = Math.min(x.brut, (x.menu || 0) + Math.max(0, num(x.m.ouvLibre)));
