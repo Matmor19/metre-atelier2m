@@ -1390,21 +1390,20 @@ function renderPlatNv() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = platNvDe(c);
-  const ligne = (cle, titre, re) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
-      <strong style="font-size:13px;min-width:120px">${titre}</strong>
+  const ligne = (cle, titre, re, extra = '') => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
+      <strong style="font-size:13px;min-width:120px">${titre}</strong>${extra}
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}</div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
-    <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
+    <p class="muted">Cloisonnement : hauteur sous plafond. Doublage : hauteur de doublage (peut être différente). Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
-      <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label>
-      <label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label></div>
+      <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
     ${ligne('cloi', 'Cloisonnement', /^Cloison/i)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement (1,50 m² et plus) : ${fmt(portesEtPlacardsM2(c))} m².</p>
-    ${ligne('doub', 'Doublage', /^Doublage/i)}
+    ${ligne('doub', 'Doublage', /^Doublage/i, `<label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label>`)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (fenêtres, portes-fenêtres, baies et portes d'entrée d'au moins 1,50 m²).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
