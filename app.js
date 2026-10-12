@@ -1089,6 +1089,18 @@ const PNV_APPAREIL = [
 const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-porte fin de chantier 73×204', '83': 'Bloc-porte fin de chantier 83×204', '93': 'Bloc-porte fin de chantier 93×204', '103': 'Bloc-porte fin de chantier 103×204' };
 // Sens d'ouverture des portes de passage (information, ne modifie aucun ouvrage)
 const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
+// Spots encastrés : surface (m²) couverte par 1 spot, d'après la fiche « nombre de spots » (valeur médiane de la plage)
+// Couloir / entrée 2 à 3 m² → 2,5 ; chambre / séjour 2 à 2,5 m² → 2,25 ; cuisine / bureau 1 à 1,5 m² → 1,25 ; salle de bains 1 m²
+const SPOT_M2 = { 'Entrée / dégagement': 2.5, 'Chambre': 2.25, 'Séjour': 2.25, 'Cuisine': 1.25, 'Bureau': 1.25, 'Salle de bains': 1 };
+// Éclairage du plafond d'une pièce : 'spots' seulement si la pièce a une règle de spots, sinon point lumineux
+function eclairagePiece(p) {
+  return p.eclairage === 'spots' && SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''] ? 'spots' : 'point';
+}
+function nbSpots(p) {
+  const m2 = SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''];
+  const surf = num(p.surf);
+  return m2 && surf > 0 ? Math.ceil(surf / m2) : 0;
+}
 function piecesNvDe(c) {
   c.elec = c.elec || { pieces: [] };
   c.elec.piecesNv = c.elec.piecesNv || [];
@@ -1198,7 +1210,10 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Passage libre sans porte ml (déduit des plinthes) <input data-nv="${esc(p.id)}|passage" inputmode="decimal" value="${esc(p.passage || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
+      ${SPOT_M2[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
+      ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
+        ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
+        : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
     </div></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
@@ -1260,7 +1275,14 @@ function genererPiecesNv(c) {
       const v = { nombre: String(n) };
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
+    if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
+      const desSpot = ELEC_PIECE_TYPES[p.nom] === 'Salle de bains' ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
+      const o = ouvrageParDesig(desSpot);
+      if (!o) manque.push(desSpot);
+      else { const v = { nombre: String(nbSpots(p)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
     for (const a of PNV_APPAREIL) {
+      if (a.cle === 'points' && eclairagePiece(p) === 'spots') continue;
       const n = num(appDefaut(p, a.cle));
       if (!(n > 0)) continue;
       const o = ouvrageParDesig(desPnv(p, a));
