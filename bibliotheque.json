@@ -16311,7 +16311,7 @@
     {
       "id": "OUV-0939",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Rail montant 48 plus BA13",
+      "designation": "Rail montant doublé 48 BA13",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16329,13 +16329,13 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Rail montant 48 plus BA13"
+        "val": "Rail montant doublé 48 BA13"
       }
     },
     {
       "id": "OUV-0940",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Rail montant 70 plus BA13",
+      "designation": "Rail montant doublé 70 BA13",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16353,13 +16353,13 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Rail montant 70 plus BA13"
+        "val": "Rail montant doublé 70 BA13"
       }
     },
     {
       "id": "OUV-0941",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Rail montant 90 plus BA13",
+      "designation": "Rail montant doublé 90 BA13",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16377,10 +16377,10 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Rail montant 90 plus BA13"
+        "val": "Rail montant doublé 90 BA13"
       }
     }
   ],
-  "revision": 89,
+  "revision": 90,
   "prochainNumero": 942
 }
