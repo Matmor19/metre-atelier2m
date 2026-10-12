@@ -2692,7 +2692,8 @@ function ouvrirChantier(id) {
 function syncLire() { return lsGet('sync', {}); }
 function syncEcrire(x) { lsSet('sync', x); }
 // Barre d'avancement de la synchronisation (visible pendant l'envoi et la réception)
-// Envoi = 0 à 50 %, réception = 50 à 100 %
+// Envoi = 0 à 50 %, réception = 50 à 100 %. Actif seulement pendant « Synchroniser les chantiers ».
+let syncEnCours = false;
 function syncAvance(pct, libelle) {
   const b = $('syncBarre'), r = $('syncRempli');
   if (b) b.hidden = false;
@@ -2720,9 +2721,9 @@ async function envoyerChantiers(msgs) {
   for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
   const heure = () => new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const idsSync = Object.keys(x); let fait = 0;
-  if (affiche) syncAvance(0, 'Envoi des modifications…');
+  if (syncEnCours) syncAvance(0, 'Envoi des modifications…');
   for (const id of idsSync) {
-    fait++; if (affiche) syncAvance(50 * (fait - 1) / Math.max(idsSync.length, 1), 'Envoi des modifications…');
+    fait++; if (syncEnCours) syncAvance(50 * (fait - 1) / Math.max(idsSync.length, 1), 'Envoi des modifications…');
     const c = chantiers.find(y => y.id === id);
     if (!c) { if (x[id].modifie) delete x[id]; continue; }
     // Chantier supprimé : sa version « supprimée » est envoyée une seule fois, sans contrôle de conflit
@@ -2758,7 +2759,7 @@ async function envoyerChantiers(msgs) {
 async function recupererChantiers(msgs) {
   const affiche = !msgs; msgs = msgs || [];
   if (!syncConfigOk()) return;
-  if (affiche) syncAvance(50, 'Interrogation de Drive…');
+  if (syncEnCours) syncAvance(50, 'Interrogation de Drive…');
   const liste = await post({ action: 'lister_chantiers' });
   if (!liste.ok) { msgs.push('Refus du script : ' + (liste.erreur || 'erreur inconnue')); if (affiche) syncStatut(msgs.join(' · ')); return; }
   const x = syncLire();
@@ -2766,7 +2767,7 @@ async function recupererChantiers(msgs) {
   let vus = 0;
   for (const item of liste.chantiers) {
     const id = item.id;
-    vus++; if (affiche) syncAvance(50 + 50 * (vus - 1) / Math.max(liste.chantiers.length, 1), 'Réception des chantiers…');
+    vus++; if (syncEnCours) syncAvance(50 + 50 * (vus - 1) / Math.max(liste.chantiers.length, 1), 'Réception des chantiers…');
     if (x[id] && x[id].modifie) continue;
     const j = await post({ action: 'lire_chantier', id });
     const doc = j.ok ? j.chantier : null;
@@ -2788,6 +2789,7 @@ async function recupererChantiers(msgs) {
 async function synchroniserChantiers() {
   if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const msgs = [];
+  syncEnCours = true;
   syncAvance(0, 'Démarrage…');
   try {
     await envoyerChantiers(msgs); await recupererChantiers(msgs);
@@ -2797,7 +2799,7 @@ async function synchroniserChantiers() {
     const globaux = msgs.filter(m => !affiches.some(c => m.startsWith(c.nom + ' :')));
     syncStatut([...globaux, ...affiches.map(etat)].join('\n'));
   } catch (e) { syncStatut('Synchronisation impossible pour le moment (réseau).'); }
-  finally { syncFinBarre(); }
+  finally { syncEnCours = false; syncFinBarre(); }
 }
 
 // Bouton « Synchroniser les chantiers » sur la liste des chantiers
