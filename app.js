@@ -1364,6 +1364,7 @@ function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteu
   if (!q.cloi.jointInit) { q.cloi.joint = 'S * 3,8'; q.cloi.jointInit = true; }
   q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
   for (const k of ['cloi', 'doub', 'pla']) { q[k].hydro = q[k].hydro || ''; q[k].feu = q[k].feu || ''; }
+  if (!q.pla.hydroInit) { q.pla.hydro = 'S'; q.pla.hydroInit = true; }
   // Formule de la bande à joint du plafond : S × 3,80 (proposée une seule fois, ensuite modifiable librement)
   if (!q.pla.jointInit) { q.pla.joint = 'S * 3,8'; q.pla.jointInit = true; }
   return q; }
@@ -1387,6 +1388,10 @@ function champJoint(q, cle, val) {
     <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} class="${v ? 'joint-verrouille' : ''}" style="flex:1;min-width:150px"></span>`;
 }
 // Plus-values plaque hydrofuge et plaque coupe-feu : une case de formule chacune, sous la bande à joint
+// Surface totale (m²) des salles d'eau et salles de bain du configurateur : base de la plus-value hydrofuge du plafond
+function surfacePiecesEau(c) {
+  return piecesNvDe(c).reduce((a, p) => PLAT_EAU.test(p.type) ? a + num(p.surf) * (num(p.nb) || 1) : a, 0);
+}
 function champPlusValue(cle, sous, titre, val) {
   return `<div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">${titre}</span><input data-plat="${cle}|${sous}" value="${esc(val || '')}" placeholder="formule" style="flex:1;min-width:200px"></div>`;
 }
@@ -1425,6 +1430,7 @@ function renderPlatNv() {
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, 'pla', q.pla.joint)}</div>
     ${champPlusValue('pla', 'hydro', 'Plus-value plaque hydrofuge', q.pla.hydro)}
+    <p class="muted" style="font-size:13px;margin:2px 0 0">Surface des salles d'eau et salles de bain (base de la plus-value hydrofuge du plafond) : ${fmt(surfacePiecesEau(c))} m².</p>
     ${champPlaqueFeu('pla', q.pla.feu)}
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-plat-act="gen">Ajouter au métré</button></div>
     <p id="platStatut" class="muted" style="font-size:13px"></p></div>`;
