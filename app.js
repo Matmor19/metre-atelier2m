@@ -858,6 +858,11 @@ function rafraichirDesignations(id) {
     if (restants.length !== c.lots.length) { c.lots = restants; lsSet('chantiers', chantiers); marquerChantier(id); }
   }
 }
+// Ligne liée : issue du configurateur, d'un lien bibliothèque, ou d'un ouvrage relié (fondation VRD incluse)
+function ligneLiee(l) {
+  return !!(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || l.vrd);
+}
+
 function renderMetre() {
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
@@ -904,8 +909,8 @@ function renderMetre() {
       // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
       const oRelie = BIB.ouvrages.find(y => y.id === l.ouvrage);
       const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
-      const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || l.lienDe || ouvrageRelie);
-      h += `<tr class="ligne${manuelle ? ' ligne-manuelle' : ''}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
+      const liee = ligneLiee(l) || ouvrageRelie;
+      h += `<tr class="ligne ${liee ? 'ligne-lie' : 'ligne-manuelle'}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
         <td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td>
@@ -924,8 +929,9 @@ function renderMetre() {
       <td class="mt">${fmt(total)} €</td><td></td></tr></tfoot>`;
   }
   h += '</table>';
-  const nbManuelles = lignesDe(courantId).filter(l => !(l.projet || l.auto || l.plat || l.qteAuto)).length;
-  if (nbManuelles) h = `<p class="legende-manuel"><span class="pastille"></span> Surbrillance : lignes saisies à la main (les autres viennent du configurateur)</p>` + h;
+  const nbManuelles = lignesDe(courantId).filter(l => !ligneLiee(l)).length;
+  const nbLiees = lignesDe(courantId).filter(l => ligneLiee(l)).length;
+  if (nbManuelles || nbLiees) h = `<p class="legende-manuel"><span class="pastille pastille-lie"></span> lignes liées au configurateur ou à la bibliothèque <span class="pastille pastille-manuel"></span> lignes saisies à la main</p>` + h;
   $('tableMetre').innerHTML = h;
 }
 
