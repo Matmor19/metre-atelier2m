@@ -206,6 +206,11 @@ for _t in ('63', '73', '83', '93', '103'):
     _ok = any(o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages']) and f"'{_t}': '{_des}'" in _app
     if _ok: print(f'ok    porte.{_t}')
     else: echecs += 1; print(f'ÉCHEC porte.{_t} : ouvrage ou correspondance absent')
+# Spots encastrés : ouvrage LED standard et version étanche IP65 pour salle de bain
+for _id, _des in (('OUV-0211', 'Spot encastré LED'), ('OUV-0898', 'Spot encastré LED étanche IP65 (salle de bain)')):
+    _ok = any(o['id'] == _id and o['designation'] == _des and not o.get('supprime') for o in _bib['ouvrages'])
+    if _ok: print(f'ok    spot.{_id}')
+    else: echecs += 1; print(f'ÉCHEC spot.{_id} : ouvrage absent')
 if erreurs:
     echecs += len(erreurs); print('ERREURS JS :', erreurs)
 print('\nRésultat :', 'TOUT EST OK' if echecs == 0 else f'{echecs} échec(s) — ne pas publier')

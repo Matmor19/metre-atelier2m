@@ -71,3 +71,4 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 - Remise à zéro totale : efface aussi toutes les pièces du configurateur (tableau des pièces), la plâtrerie et la peinture, ainsi que leurs lignes au métré. Les lignes saisies à la main restent.
 
 - Portes de passage (configurateur de pièces) : tailles 63, 73, 83, 93 et 103 × 204, chacune reliée à son ouvrage « Bloc-porte fin de chantier … × 204 » (OUV-0192, OUV-0191, OUV-0190, OUV-0896, OUV-0897). Menu « Sens d'ouverture » : poussant à droite / poussant à gauche, enregistré avec la porte mais sans effet sur les lignes du métré.
+- Spots encastrés (électricité) : OUV-0211 « Spot encastré LED » pour les pièces courantes, OUV-0898 « Spot encastré LED étanche IP65 (salle de bain) ». Nombre de spots par pièce non encore branché au configurateur.

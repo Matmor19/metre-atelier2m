@@ -4023,6 +4023,21 @@
       "version": 1
     },
     {
+      "id": "OUV-0898",
+      "lot": "electricite",
+      "designation": "Spot encastré LED étanche IP65 (salle de bain)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
       "id": "OUV-0212",
       "lot": "electricite",
       "designation": "Prise de courant 16 A simple",
@@ -16341,6 +16356,6 @@
       "version": 1
     }
   ],
-  "revision": 55,
-  "prochainNumero": 898
+  "revision": 56,
+  "prochainNumero": 899
 }
