@@ -1,0 +1,13 @@
+{
+  "note": "État validé de « Test configurateur » (Drive id 1t7hhzP4HkcUgr_cizRzSM1etPCfRAioI), relevé le 2026-10-12. Les lignes OUV-0004 (clôture) ne sont PAS validées : doublon à corriger.",
+  "lignes_validees": [
+    {"lot": "installation-chantier", "ouvrage": "OUV-0485", "designation": "Branchement provisoire d'eau de chantier", "quantite": 1},
+    {"lot": "installation-chantier", "ouvrage": "OUV-0486", "designation": "Branchement provisoire d'électricité de chantier", "quantite": 1},
+    {"lot": "installation-chantier", "ouvrage": "OUV-0484", "designation": "Base vie (bungalow ou conteneur) : mise en place et repli", "quantite": 1},
+    {"lot": "installation-chantier", "ouvrage": "OUV-0492", "designation": "Grue de chantier (mise en place)", "quantite": 1},
+    {"lot": "installation-chantier", "ouvrage": "OUV-0487", "designation": "Benne à gravats (location et enlèvement)", "quantite": 1},
+    {"lot": "installation-chantier", "ouvrage": "OUV-0488", "designation": "Benne à déchets triés (location et enlèvement)", "quantite": 1},
+    {"lot": "terrassement-vrd", "ouvrage": "OUV-0008", "designation": "Fouilles en tranchée pour semelles filantes", "quantite": 1.5, "cotes": "10 × 0,3 × 0,5"},
+    {"lot": "gros-oeuvre", "ouvrage": "OUV-0040", "designation": "Semelles filantes en béton armé", "quantite": 1.5, "lien": "vrd de OUV-0008 (surbrillance mauve)"}
+  ]
+}
