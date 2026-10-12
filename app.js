@@ -1088,6 +1088,7 @@ function renderPiecesNv() {
   const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
       <select data-nv="${esc(p.id)}|nom" style="flex:1;font-weight:700"><option value="">— à choisir —</option>${Object.keys(ELEC_PIECE_TYPES).map(t => `<option ${t === p.nom ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="width:60px">
       <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
     </div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
@@ -1127,7 +1128,7 @@ function genererPiecesNv(c) {
     nb++;
   };
   for (const p of pcs) {
-    const nom = p.nom || 'Pièce';
+    const nom = (p.nom || 'Pièce') + (p.qualif ? ' ' + p.qualif : '');   // « Chambre » + numéro
     const surf = num(p.surf);
     if (p.revet && surf > 0) {
       const o = BIB.ouvrages.find(x => x.id === p.revet);
