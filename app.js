@@ -1073,7 +1073,8 @@ function ouvrirAssistantElec(message) { ouvrirConfigurateur(message); }
 const PNV_APPAREIL = [
   { cle: 'prises', libelle: 'Prises de courant', des: 'Prise de courant 16 A' },
   { cle: 'rj45', libelle: 'Prise RJ45', des: 'Prise RJ45 (réseau)' },
-  { cle: 'interrup', libelle: 'Interrupteurs simples', des: 'Interrupteur simple' },
+  { cle: 'interrup', libelle: 'Interrupteurs simples (allumage)', des: 'Interrupteur simple allumage (point)' },
+  { cle: 'vv', libelle: 'Interrupteurs va-et-vient', des: 'Interrupteur va-et-vient (point)' },
   { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' },
   { cle: 'rasoir', libelle: 'Prise rasoir', des: 'Prise rasoir (transformateur 20-50 VA, hors volume de sécurité)' },
   { cle: 'tv', libelle: 'Prise TV', des: 'Prise TV' },
@@ -1103,7 +1104,13 @@ function appDefaut(p, cle) {
   const regle = ELEC_PIECE_TYPES[p.nom] || '';
   const surf = num(p.surf);
   if (cle === 'points') return '1';            // 1 point de centre par pièce
-  if (cle === 'interrup') return '1';          // au moins 1 point d'allumage (près de chaque accès)
+  // allumage : simple pour cuisine, dressing, salle de bains, salle d'eau, WC ; aucun pour chambre, séjour, couloir (va-et-vient)
+  // va-et-vient : couloir, chambre, séjour (1 point chacun) ; cuisine (1 en plus du simple)
+  if (cle === 'interrup') {
+    const simple = { 'Cuisine': '1', 'Dressing': '1', 'Salle de bains': '1', 'Salle d\'eau': '1', 'WC': '1', 'Chambre': '0', 'Séjour': '0', 'Entrée / dégagement': '0' };
+    return regle in simple ? simple[regle] : '1';
+  }
+  if (cle === 'vv') return ['Chambre', 'Séjour', 'Entrée / dégagement', 'Cuisine'].includes(regle) ? '1' : '0';
   // RJ45 : séjour 2 (près du coin TV), chambre 1, bureau 1, cuisine 1
   if (cle === 'rj45') return ({ 'Séjour': '2', 'Chambre': '1', 'Bureau': '1', 'Cuisine': '1' })[regle] || '';
   if (cle === 'tv') return regle === 'Séjour' ? '1' : '';

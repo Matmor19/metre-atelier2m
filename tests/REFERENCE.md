@@ -49,3 +49,5 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 - Tests : cuisine (3 circuits + hotte), cellier (3 circuits), 27 lignes au total pour le jeu de test.
 - Capture Google (tableau prises/éclairage/TV) utilisée pour corriger : cuisine selon la surface, séjour sans prise en plus (les 2 sont des RJ45), prise rasoir en salle de bains. Ligne ajoutée : OUV-0889 (prise rasoir).
 - Séjour : 5 ou 7 prises, sans prise supplémentaire (décision de Mathieu).
+- Interrupteurs (décision de Mathieu) : couloir, chambre, séjour en va-et-vient (1 point chacun) ; cuisine : 1 simple allumage et 1 va-et-vient ; dressing, salle de bains, salle d'eau, WC : simple allumage. Une ligne « point » par interrupteur ou va-et-vient (OUV-0364 / OUV-0365).
+- Cuisine de 9 m² : 9 lignes au total (vv ajouté). Le jeu de test donne 28 lignes.
