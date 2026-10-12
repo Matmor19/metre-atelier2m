@@ -16431,7 +16431,7 @@
     {
       "id": "OUV-0944",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Doublage collé placo plus PSE épaisseur 140 R 4,40",
+      "designation": "Doublage collé placo plus PSE épaisseur 140 R 4,40 à 4,50",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -16449,7 +16449,7 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Doublage collé placo plus PSE épaisseur 140 R 4,40"
+        "val": "Doublage collé placo plus PSE épaisseur 140 R 4,40 à 4,50"
       }
     },
     {
@@ -16525,6 +16525,6 @@
       }
     }
   ],
-  "revision": 93,
+  "revision": 94,
   "prochainNumero": 948
 }
