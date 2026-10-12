@@ -136,12 +136,12 @@ JS_TESTS = r"""(c) => {
   R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
   pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
   // Isolant choisi sur la cloison : une ligne isolant de même surface que la cloison, puis retirée si on revient à « Sans isolant »
-  pq.cloi.isol = 'OUV-0126'; genererMetreConfigurateur(cN);
+  pq.cloi.isol = 'OUV-0902'; genererMetreConfigurateur(cN);
   const lC = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0751');
-  const lI = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0126');
+  const lI = lsGet('lignes.' + c.id, []).find(x => x.platNv && x.ouvrage === 'OUV-0902');
   R.platIsol = lC && lI && Math.abs(lC.quantite - lI.quantite) < 0.01 ? 1 : 0;
   pq.cloi.isol = ''; genererMetreConfigurateur(cN);
-  R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0126').length;
+  R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0902').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149').length;

@@ -2460,7 +2460,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0126",
@@ -2479,7 +2480,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0127",
@@ -2498,7 +2500,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0128",
@@ -2517,7 +2520,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0129",
@@ -2766,7 +2770,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Isolation thermique intérieure des murs maçonnés"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0140",
@@ -3097,7 +3102,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0156",
@@ -7450,7 +7456,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0402",
@@ -7469,7 +7476,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0403",
@@ -7488,7 +7496,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0404",
@@ -10198,7 +10207,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Isolation intérieure des murs en laine de verre 100 mm"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0560",
@@ -10222,7 +10232,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Isolation intérieure des murs en laine de bois rigide"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0561",
@@ -17011,6 +17022,6 @@
       "version": 1
     }
   ],
-  "revision": 78,
+  "revision": 79,
   "prochainNumero": 932
 }

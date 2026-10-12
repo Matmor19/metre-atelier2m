@@ -91,3 +91,4 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 - ITE ajouté : OUV-0927 « ITE panneau fibre de bois rigide 40 mm (R 0,95) ». C'est un isolant extérieur : il n'est pas proposé dans la liste d'isolant de la plâtrerie (ITE exclu).
 - ITE panneaux fibre de bois rigide (isolant extérieur, hors liste plâtrerie) : OUV-0927 40 mm (R 0,95), OUV-0928 60 mm (R 1,4), OUV-0929 80 mm (R 1,9), OUV-0930 100 mm (R 2,35). Épaisseurs 120, 140, 160, 180, 200 et 240 mm non retenues.
 - Fibre de bois à enduire : OUV-0931 « Fibre de bois à enduire 20 mm pour tableau de menuiserie » (m²), pour les tableaux de menuiserie en ossature. Hors liste plâtrerie.
+- Liste d'isolant de la plâtrerie : seuls les isolants demandés par Mathieu sont proposés. Les anciens isolants de la bibliothèque (OUV-0125, 0126, 0127, 0128, 0139, 0155, 0401, 0402, 0403, 0559, 0560) sont marqués « supprimé ».
