@@ -116,6 +116,11 @@ JS_TESTS = r"""(c) => {
   R.platCloi = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0751') || {}).quantite || 0) * 100) / 100 };
   R.platPla = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0149') || {}).quantite || 0) * 100) / 100 };
   R.plat = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.platNv) || {}).quantite || 0) * 100) / 100 };
+  // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
+  platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
+  R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149').length;
+  R.peiStale = lsGet('lignes.' + c.id, []).filter(x => x.ouvrage === 'OUV-0689').length;
+  platNvDe(cN).hauteur = '2.5'; peiDe(cN).hauteur = '2.5'; genererMetreConfigurateur(cN);
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
   ficheVersMetre();
   const elev = lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0048' && /murs, surface nette/.test((x.valeurs || {}).src || ''));
@@ -156,6 +161,8 @@ ATTENDU = {
     'platPla': {'quantite': 12},
     'platDoub': {'quantite': 21.22},
     'platCloi': {'quantite': 18.51},
+    'platStale': 0,
+    'peiStale': 0,
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},

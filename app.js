@@ -1336,10 +1336,11 @@ function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
 function genererPlatNv(c) {
   const q = platNvDe(c);
   const h = num(q.hauteur);
-  if (!(h > 0) && (num(q.cloi.ml) > 0 || num(q.doub.ml) > 0)) return 'Saisissez d\'abord la hauteur sous plafond.';
-  const L = lignesDe(c.id).filter(l => !l.platNv);
+  const sansHauteur = !(h > 0) && (num(q.cloi.ml) > 0 || num(q.doub.ml) > 0);
+  const L = lignesDe(c.id).filter(l => !l.platNv);   // les anciennes lignes sont toujours retirées
   const manque = []; let nb = 0;
   for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
+    if (!(h > 0)) break;
     const ml = num(q[cle].ml);
     if (!(ml > 0)) continue;
     const o = BIB.ouvrages.find(x => x.id === q[cle].ouv && !x.supprime);
@@ -1377,9 +1378,24 @@ function genererPlatNv(c) {
   }
   sauverLignes(c.id, L);
   renderMetre();
+  if (sansHauteur) return 'Saisissez d\'abord la hauteur sous plafond.';
   if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de ' + manque.join(' et ') + '.';
   return nb ? nb + ' ligne(s) plâtrerie au métré.' : 'Saisissez au moins un linéaire.';
 }
+// Bouton « Générer le métré depuis le configurateur » : relance les trois blocs ; chacun retire ses anciennes lignes
+// et ne remet que ce qui est encore saisi. Les lignes saisies à la main ne sont pas touchées.
+function genererMetreConfigurateur(c) {
+  const msgs = [genererPiecesNv(c), genererPlatNv(c), genererPeinture(c)];
+  renderMetre();
+  return msgs.filter(Boolean).join(' ');
+}
+if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () => {
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const msg = genererMetreConfigurateur(c);
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  if ($('cfgStatut')) $('cfgStatut').textContent = msg;
+});
 $('vConfig') && $('vConfig').addEventListener('click', e => {
   const b = e.target.closest('[data-plat-act]');
   if (!b) return;
@@ -1465,8 +1481,8 @@ function genererPeinture(c) {
     nb++;
   };
   const ml = peiLineaire(c);
-  if (ml > 0) {
-    if (!(h > 0)) return 'Saisissez la hauteur sous plafond du bloc peinture pour les murs.';
+  const sansHauteur = ml > 0 && !(h > 0);
+  if (ml > 0 && h > 0) {
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
@@ -1491,6 +1507,7 @@ function genererPeinture(c) {
   }
   sauverLignes(c.id, L);
   renderMetre();
+  if (sansHauteur) return 'Saisissez la hauteur sous plafond du bloc peinture pour les murs.';
   if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de peinture : ' + manque.join(' et ') + '.';
   return nb ? nb + ' ligne(s) peinture au métré.' : 'Saisissez au moins une surface.';
 }
