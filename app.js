@@ -1403,7 +1403,7 @@ function renderPlatNv() {
       <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
     ${ligne('cloi', 'Cloisonnement', /^Cloison/i)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement (1,50 m² et plus) : ${fmt(portesEtPlacardsM2(c))} m².</p>
-    ${ligne('doub', 'Doublage', /^Doublage/i, `<label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label>`)}
+    ${ligne('doub', 'Doublage', /^(Doublage|Système Optima|Rail montant doublé)/i, `<label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label>`)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (fenêtres, portes-fenêtres, baies et portes d'entrée d'au moins 1,50 m²).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
