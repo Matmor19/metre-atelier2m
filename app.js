@@ -1213,6 +1213,7 @@ function renderPiecesNv() {
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
+      ${eclairagePiece(p) === 'spots' ? `<label style="font-size:12px">Plafonnier en plus, commandé par va-et-vient <select data-nv="${esc(p.id)}|plafVV" style="min-width:160px"><option value="">Non</option><option value="oui" ${p.plafVV === 'oui' ? 'selected' : ''}>Oui</option></select></label>` : ''}
       ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
@@ -1282,6 +1283,14 @@ function genererPiecesNv(c) {
       const o = ouvrageParDesig(desSpot);
       if (!o) manque.push(desSpot);
       else { const v = { nombre: String(nbSpots(p)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
+    if (eclairagePiece(p) === 'spots' && p.plafVV === 'oui') {
+      const oPl = ouvrageParDesig('Point lumineux plafonnier');
+      const oVV = ouvrageParDesig('Interrupteur va-et-vient (point)');
+      if (!oPl) manque.push('Point lumineux plafonnier');
+      else { const v = { nombre: '1' }; ajoute(oPl, v, calcul(oPl, v), `${oPl.designation} (plafonnier avec spots) – ${nom}`, p.id); }
+      if (!oVV) manque.push('Interrupteur va-et-vient (point)');
+      else { const v = { nombre: '1' }; ajoute(oVV, v, calcul(oVV, v), `${oVV.designation} (commande du plafonnier) – ${nom}`, p.id); }
     }
     for (const a of PNV_APPAREIL) {
       if (a.cle === 'points' && eclairagePiece(p) === 'spots') continue;

@@ -104,9 +104,13 @@ JS_TESTS = r"""(c) => {
   const spotsL = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine');
   R.spotsCuisine = spotsL.filter(x => x.ouvrage === 'OUV-0211').map(x => x.quantite).join(',');
   R.pointsCuisineSpots = spotsL.filter(x => x.ouvrage === 'OUV-0614').length;
-  pcuis.eclairage = ''; genererPiecesNv(cN);
+  pcuis.plafVV = 'oui'; genererPiecesNv(cN);
+  const plafL = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine');
+  R.plafPlafonnier = plafL.filter(x => x.ouvrage === 'OUV-0614').length;
+  R.plafVVsupp = plafL.filter(x => /commande du plafonnier/.test(x.designation)).length;
+  pcuis.plafVV = ''; pcuis.eclairage = ''; genererPiecesNv(cN);
   R.pointsCuisineRetour = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine' && x.ouvrage === 'OUV-0614').length;
-  R.pieceNv = { spotsCuisine: R.spotsCuisine, pointsCuisineSpots: R.pointsCuisineSpots, pointsCuisineRetour: R.pointsCuisineRetour, n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
+  R.pieceNv = { plafPlafonnier: R.plafPlafonnier, plafVVsupp: R.plafVVsupp, spotsCuisine: R.spotsCuisine, pointsCuisineSpots: R.pointsCuisineSpots, pointsCuisineRetour: R.pointsCuisineRetour, n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
     prises: (n1.find(x => x.ouvrage === 'OUV-0611') || {}).quantite || 0,
     rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && /Bureau/.test(x.designation)).length),
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
@@ -181,7 +185,7 @@ ATTENDU = {
     'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'lignesPlat': 0},
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
-    'pieceNv': {'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
+    'pieceNv': {'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
 echecs = 0
