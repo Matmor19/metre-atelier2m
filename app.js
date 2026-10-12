@@ -1419,6 +1419,17 @@ function portesEtPlacardsM2(c) {
   }, 0);
 }
 function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
+// Bande à joint : ouvrage fixe (OUV-0157 « Bandes à joints et ponçage BA13 », m²), ajouté automatiquement
+// sur chaque ligne cloisonnement, doublage et plafond, de même surface que la ligne. Retourne false si l'ouvrage manque.
+const OUV_BANDE_JOINT = 'OUV-0157';
+function ajouterBandeJoint(c, L, surface, titre) {
+  const oJ = BIB.ouvrages.find(x => x.id === OUV_BANDE_JOINT && !x.supprime);
+  if (!oJ) return false;
+  ajouterLotSiAbsent(c.id, oJ.lot);
+  const vJ = { nombre: '1', cote1: String(surface), cote2: '1' };
+  L.push({ uid: uid(), lot: oJ.lot, ouvrage: oJ.id, designation: `${oJ.designation} – ${titre}, ${fmt(surface)} m²`, unite: oJ.unite, valeurs: vJ, quantite: calcul(oJ, vJ), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+  return true;
+}
 function genererPlatNv(c) {
   const q = platNvDe(c);
   const h = num(q.hauteur);
@@ -1442,6 +1453,7 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
+    if (ajouterBandeJoint(c, L, net, titre)) nb++; else manque.push('bande à joint ' + titre);
     if (q[cle].isol) {
       const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
       if (!oI) manque.push('isolant ' + titre);
@@ -1463,6 +1475,7 @@ function genererPlatNv(c) {
       const v = { nombre: '1', cote1: String(m2), cote2: '1' };
       L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(m2)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
       nb++;
+      if (ajouterBandeJoint(c, L, m2, 'plafond')) nb++; else manque.push('bande à joint plafond');
       if (q.pla.isol) {
         const oI = BIB.ouvrages.find(x => x.id === q.pla.isol && !x.supprime);
         if (!oI) manque.push('isolant plafond');
