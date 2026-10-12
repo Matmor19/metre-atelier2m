@@ -754,7 +754,6 @@ function majLignesDepuisConfigurateur(c) {
   _majConfigEnCours = true;
   try {
     const L = lignesDe(c.id);
-    if (!L.length) return;
     const col = {};
     _revueCollecte = {};
     try { genererElec(); genererPlat(); ficheVersMetre(); }
@@ -778,19 +777,21 @@ function majLignesDepuisConfigurateur(c) {
       vus.add(k); fresh.push(l);
     }
     const pool = {};
-    for (const x of Lk) if (x.ouvrage) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
-    const remplacer = new Map();
+    const estAutoC = x => !!(x.projet || x.auto || x.plat || x.qteAuto);
+    for (const x of Lk) if (x.ouvrage && estAutoC(x)) (pool[cleL(x)] = pool[cleL(x)] || []).push(x);
+    const remplacer = new Map(), ajouts = [];
     for (const l of fresh) {
       const ex = pool[cleL(l)] && pool[cleL(l)].shift();
-      if (!ex) continue;
+      // Nouvelle ligne du configurateur : ajoutée tout de suite au métré
+      if (!ex) { ajouts.push(l); continue; }
       // Le texte du détail (src) compte aussi : un libellé corrigé dans l'application met à jour la ligne existante
       if (sig(ex.valeurs) !== sig(l.valeurs) || (ex.valeurs || {}).src !== (l.valeurs || {}).src || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation) {
         // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur
         remplacer.set(ex.uid, Object.assign({}, ex, { designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
       }
     }
-    if (!remplacer.size) return;
-    const nouvelles = Lk.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x);
+    if (!remplacer.size && !ajouts.length) return;
+    const nouvelles = Lk.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x).concat(ajouts);
     sauverLignes(c.id, nouvelles);
   } finally { _majConfigEnCours = false; }
 }
@@ -1301,7 +1302,7 @@ function synchroConfig() {
   _synchroT = setTimeout(() => {
     majQuantitesAuto(chantiers.find(x => x.id === courantId));
     majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
-    if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur enregistré. Rien n\'est ajouté au métré : saisissez vos lignes, puis utilisez « Revue complète avant édition ».';
+    if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur enregistré. Les lignes calculées sont ajoutées automatiquement au métré.';
   }, 300);
 }
 // Revue complète : calcule ce que le configurateur demande, et propose d'ajouter chaque ligne manquante (oui / non)
@@ -3996,11 +3997,20 @@ window.addEventListener('storage', e => {
 });
 
 /* ============ Démarrage ============ */
+// Remise à zéro unique du chantier « test Claude » : toutes ses lignes sont effacées, le chantier est gardé
+function remiseAZeroTestClaude() {
+  if (lsGet('remise_test_claude_v166', false)) return;
+  const c = chantiers.find(x => !x.supprime && String(x.nom || '').trim().toLowerCase() === 'test claude');
+  if (!c) return;
+  sauverLignes(c.id, []);
+  lsSet('remise_test_claude_v166', true);
+}
 (async function init() {
   await chargerBibliotheque();
   if (!BIB) { document.body.insertAdjacentHTML('beforeend', '<p class="muted" style="padding:16px">Bibliothèque introuvable.</p>'); return; }
   lotCourant = BIB.lots[0].id;
   remplirLots();
+  remiseAZeroTestClaude();
   renderChantiers();
   preparerClients();
   if (courantId && chantiers.find(c => c.id === courantId && !c.supprime)) ouvrirChantier(courantId);
