@@ -2709,11 +2709,19 @@ async function envoyerChantiers() {
   for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
   let envoyes = 0;
   for (const id of Object.keys(x)) {
-    if (!x[id].modifie) continue;
     const c = chantiers.find(y => y.id === id);
-    if (!c) { delete x[id]; continue; }
-    // Chantier supprimé sur cet appareil : on ne l'envoie plus et son conflit n'est pas signalé
-    if (c.supprime) { x[id] = { maj: x[id].maj, modifie: false }; continue; }
+    if (!c) { if (x[id].modifie) delete x[id]; continue; }
+    // Chantier supprimé : sa version « supprimée » est envoyée une seule fois, sans contrôle de conflit
+    if (c.supprime) {
+      if (x[id].supprimeEnvoye && !x[id].modifie) continue;
+      try {
+        const doc = Object.assign({}, c, { lignes: [] });
+        const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: null });
+        if (j.ok) x[id] = { maj: j.maj, modifie: false, supprimeEnvoye: true };
+      } catch (e) { syncEcrire(x); syncStatut('Pas de réseau : les modifications seront envoyées plus tard.'); return; }
+      continue;
+    }
+    if (!x[id].modifie) continue;
     const doc = Object.assign({}, c, { lignes: lignesDe(id) });
     try {
       const j = await post({ action: 'sauver_chantier', chantier: doc, base_maj: x[id].maj || null });
