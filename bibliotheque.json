@@ -13639,7 +13639,7 @@
     {
       "id": "OUV-0899",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 100 mm : rail et montants 48, 2 BA13 de face",
+      "designation": "Cloison phonique 100 mm : rail et montants 48, 2 x BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -13657,13 +13657,13 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Cloison 100 mm : rail et montants 48, 2 BA13 de face"
+        "val": "Cloison phonique 100 mm : rail et montants 48, 2 x BA13 deux faces"
       }
     },
     {
       "id": "OUV-0900",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 142 mm : rail et montants 70, 2 BA13 de face",
+      "designation": "Cloison phonique 142 mm : rail et montants 70, 2 x BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -13681,13 +13681,13 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Cloison 142 mm : rail et montants 70, 2 BA13 de face"
+        "val": "Cloison phonique 142 mm : rail et montants 70, 2 x BA13 deux faces"
       }
     },
     {
       "id": "OUV-0901",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Cloison 150 mm : rail et montants 98, 2 BA13 de face",
+      "designation": "Cloison phonique 150 mm : rail et montants 98, 2 x BA13 deux faces",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -13705,7 +13705,7 @@
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
-        "val": "Cloison 150 mm : rail et montants 98, 2 BA13 de face"
+        "val": "Cloison phonique 150 mm : rail et montants 98, 2 x BA13 deux faces"
       }
     },
     {
@@ -16441,6 +16441,6 @@
       "version": 1
     }
   ],
-  "revision": 63,
+  "revision": 64,
   "prochainNumero": 902
 }
