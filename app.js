@@ -2780,6 +2780,18 @@ async function envoyerChantiers(msgs) {
           const j2 = await post({ action: 'sauver_chantier', chantier: doc, base_maj: null });
           if (j2.ok) { x[id] = { maj: j2.maj, modifie: false }; msgs.push(c.nom + ' : envoyé à ' + heure() + ' (version du téléphone gardée)'); }
           else msgs.push(c.nom + ' : refus (' + (j2.erreur || 'réponse inattendue') + ')');
+        } else if (explicite && confirm('Reprendre la version de Drive sur ce téléphone, à la place de la version du téléphone ?\n\nOK : version de Drive.\nAnnuler : ne rien changer.')) {
+          // Reprise de la version Drive : elle remplace celle du téléphone (lignes comprises)
+          const j3 = await post({ action: 'lire_chantier', id });
+          if (j3.ok && j3.chantier) {
+            const { lignes: lignesDrive, ...metaDrive } = j3.chantier;
+            const i = chantiers.findIndex(y => y.id === id);
+            if (i >= 0) chantiers[i] = metaDrive; else chantiers.push(metaDrive);
+            lsSet('lignes.' + id, metaDrive.supprime ? [] : (lignesDrive || []));
+            lsSet('chantiers', chantiers);
+            x[id] = { maj: j3.chantier.maj, modifie: false };
+            msgs.push(c.nom + ' : version de Drive reprise sur ce téléphone');
+          } else msgs.push(c.nom + ' : refus (' + (j3.erreur || 'lecture impossible') + ')');
         } else { x[id].conflit = true; msgs.push(c.nom + ' : conflit (modifié ailleurs)'); }
       }
       else msgs.push(c.nom + ' : refus (' + (j.erreur || 'réponse inattendue') + ')');
