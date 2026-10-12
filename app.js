@@ -349,6 +349,8 @@ function detail(l) {
 const TXT_SURFACE = 'Surface mesurée suivant plan';
 // Ouverture déduite des murs à partir de cette surface (m²), partout dans le calcul et les libellés
 const SEUIL_DEDUCTION = 1;
+// Bloc A (ancien configurateur de pièces) : EN VEILLE. Ses données sont conservées ; il ne produit plus aucune ligne.
+const PIECES_ANCIEN_VEILLE = true;
 // Murs de soutènement et muret de jardin : surface nette (longueur × hauteur), aucune ouverture déduite
 const SOUT_TYPES = [
   { id: 'beton', nom: 'Mur de soutènement béton armé', idOuv: 'OUV-0881', designation: 'Mur de soutènement béton armé (surface nette)', lot: 'terrassement-vrd' },
@@ -813,7 +815,7 @@ function majLignesDepuisConfigurateur(c) {
     // Lignes du configurateur (sans quantité automatique) que le configurateur ne produit plus : retirées de CE chantier
     const produitesC = new Set();
     for (const arr of Object.values(col)) for (const l of arr) if (l.ouvrage && !uids.has(l.uid)) produitesC.add(cleL(l));
-    const sansSource = new Set(L.filter(x => (x.projet || x.auto || x.plat) && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x))).map(x => x.uid));
+    const sansSource = PIECES_ANCIEN_VEILLE ? new Set() : new Set(L.filter(x => (x.projet || x.auto || x.plat) && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x))).map(x => x.uid));
     const Lk = sansSource.size ? L.filter(x => !sansSource.has(x.uid)) : L;
     if (sansSource.size) sauverLignes(c.id, Lk);
     // Propositions du configurateur qui ne sont pas des copies des lignes déjà présentes
@@ -878,6 +880,7 @@ function rafraichirDesignations(id) {
 // - ambre : ligne saisie à la main
 // - rien : lignes produites directement par le configurateur ou reprises telles quelles
 function surbrillanceLigne(l) {
+  if (l.pieceNv) return '';   // produite par le configurateur de pièces : pas de couleur
   const oRelie = BIB && BIB.ouvrages ? BIB.ouvrages.find(y => y.id === l.ouvrage) : null;
   const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
   if (l.vrd || l.lienDe) return 'ligne-lie';
@@ -1031,6 +1034,7 @@ function elecCalcul(pieces) {
 }
 // Crée les lignes du lot Électricité (les lignes générées précédemment sont remplacées)
 function genererElec() {
+  if (PIECES_ANCIEN_VEILLE) return 'Ancien configurateur de pièces en veille : aucune ligne générée.';
   const c = chantiers.find(x => x.id === courantId);
   const pieces = (c && c.elec && c.elec.pieces) || [];
   if (!pieces.length) { sauverLignes(courantId, lignesDe(courantId).filter(l => !l.auto)); renderMetre(); return 'Ajoutez d\'abord les pièces.'; }
@@ -1055,6 +1059,140 @@ function genererElec() {
   return msg;
 }
 function ouvrirAssistantElec(message) { ouvrirConfigurateur(message); }
+
+
+/* ============ Configurateur de pièces (nouveau bloc) ============ */
+// Par pièce : surface au sol + revêtement, portes fin de chantier, menuiseries extérieures, appareillage de la pièce seulement.
+// Stocké dans c.elec.piecesNv. Les lignes produites portent pieceNv (id de la pièce) et sont remplacées à chaque génération.
+const PNV_APPAREIL = [
+  { cle: 'prises', libelle: 'Prises de courant', des: 'Prise de courant 16 A' },
+  { cle: 'rj45', libelle: 'Prise RJ45', des: 'Prise RJ45 (réseau)' },
+  { cle: 'interrup', libelle: 'Interrupteurs simples', des: 'Interrupteur simple' },
+  { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' }
+];
+const PNV_PORTE = 'Bloc-porte fin de chantier 83×204';
+function piecesNvDe(c) {
+  c.elec = c.elec || { pieces: [] };
+  c.elec.piecesNv = c.elec.piecesNv || [];
+  return c.elec.piecesNv;
+}
+function ouvrageParDesig(des) { return BIB.ouvrages.find(o => o.designation === des && !o.supprime); }
+function renderPiecesNv() {
+  const host = $('cfgPiecesNv');
+  if (!host) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c || !BIB) { host.innerHTML = ''; return; }
+  const liste = piecesNvDe(c);
+  const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && !o.supprime);
+  const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+  const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <input data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce" style="flex:1;font-weight:700">
+      <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
+      <label style="font-size:12px">Surface au sol m² <input data-nv="${esc(p.id)}|surf" inputmode="decimal" value="${esc(p.surf || '')}" style="width:90px"></label>
+      <select data-nv="${esc(p.id)}|revet" style="flex:1;min-width:180px">${optRev(p.revet)}</select>
+    </div>
+    <div style="margin-top:8px"><strong style="font-size:13px">Menuiseries extérieures</strong></div>
+    ${(p.menus || []).map((m, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
+      <label style="font-size:12px">Larg. m <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Haut. m <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
+      <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
+    <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
+    <div style="margin-top:8px"><strong style="font-size:13px">Portes fin de chantier 83×204</strong>
+      <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:70px;margin-left:8px"></div>
+    <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
+      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc((p.app || {})[a.cle] || '')}" style="width:60px"></label>`).join('')}
+    </div></div>`;
+  host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
+    <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
+    ${liste.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
+    <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button type="button" class="btn sec" data-nv-act="add">+ Ajouter une pièce</button>
+      <button type="button" class="btn" data-nv-act="gen">Ajouter au métré</button>
+    </div>
+    <p id="nvStatut" class="muted" style="font-size:13px"></p></div>`;
+}
+function genererPiecesNv(c) {
+  const pcs = piecesNvDe(c);
+  const L = lignesDe(c.id).filter(l => !l.pieceNv);
+  const manque = [];
+  let nb = 0;
+  const ajoute = (o, valeurs, q, designation, pieceId) => {
+    ajouterLotSiAbsent(c.id, o.lot);
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, cree: new Date().toISOString() });
+    nb++;
+  };
+  for (const p of pcs) {
+    const nom = p.nom || 'Pièce';
+    const surf = num(p.surf);
+    if (p.revet && surf > 0) {
+      const o = BIB.ouvrages.find(x => x.id === p.revet);
+      if (!o) manque.push('revêtement de ' + nom);
+      else { const v = { nombre: '1', cote1: String(surf), cote2: '1' }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
+    if (num(p.portes) > 0) {
+      const o = ouvrageParDesig(PNV_PORTE);
+      if (!o) manque.push(PNV_PORTE);
+      else { const v = { nombre: String(num(p.portes)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
+    for (const m of (p.menus || [])) {
+      const n = num(m.nb) || 1;
+      if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
+      const o = ouvrageParDesig(MENU_DESIG.ouvrant.PVC);
+      if (!o) { manque.push(MENU_DESIG.ouvrant.PVC); continue; }
+      const v = { nombre: String(n) };
+      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} m – ${nom}`, p.id);
+    }
+    for (const a of PNV_APPAREIL) {
+      const n = num((p.app || {})[a.cle]);
+      if (!(n > 0)) continue;
+      const o = ouvrageParDesig(a.des);
+      if (!o) { manque.push(a.des); continue; }
+      const v = { nombre: String(n) };
+      ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
+    }
+  }
+  sauverLignes(c.id, L);
+  renderMetre();
+  let msg = nb + ' ligne(s) de pièces au métré.';
+  const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
+  if (uniques.length) msg += ' Non trouvées dans la bibliothèque : ' + uniques.join(' ; ') + '.';
+  return msg;
+}
+function majPieceNv(c, cle, val) {
+  const [id, champ, k, sous] = cle.split('|');
+  const p = piecesNvDe(c).find(x => x.id === id);
+  if (!p) return;
+  if (champ === 'menu') { p.menus = p.menus || []; if (p.menus[k]) p.menus[k][sous] = val; }
+  else if (champ === 'app') { p.app = p.app || {}; p.app[k] = val; }
+  else p[champ] = val;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+}
+$('vConfig') && $('vConfig').addEventListener('click', e => {
+  const b = e.target.closest('[data-nv-act]');
+  if (!b) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const [act, id, k] = b.dataset.nvAct.split(':');
+  const liste = piecesNvDe(c);
+  if (act === 'add') liste.push({ id: 'pn' + uid(), nom: 'Pièce ' + (liste.length + 1), surf: '', revet: '', menus: [], portes: '', app: {} });
+  else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
+  else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
+  else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
+  else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderPiecesNv();
+});
+$('vConfig') && $('vConfig').addEventListener('change', e => {
+  const t = e.target.closest('[data-nv]');
+  if (!t) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (c) majPieceNv(c, t.dataset.nv, t.value);
+});
 
 /* ============ Configurateur des pièces (électricité, plâtrerie, sols, plinthes) ============ */
 // Une seule liste de pièces par chantier (c.elec.pieces). Chaque pièce porte ses murs, portes et placards, saisis en brut.
@@ -1153,6 +1291,7 @@ const platPlacards = () => platListe(/façade de placard/i, 'm²');
 
 // Calcule toutes les quantités à partir des pièces (et de la hauteur), puis crée les lignes des lots concernés
 function genererPlat() {
+  if (PIECES_ANCIEN_VEILLE) return 'Ancien configurateur de pièces en veille : aucune ligne générée.';
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return 'Ouvrez d\'abord un chantier.';
   const P = platDe(c), pieces = piecesDe(c);
@@ -1254,7 +1393,7 @@ function genererPlat() {
 // Après suppression d'une pièce : retire du métré de CE chantier les lignes que le configurateur produisait et qui n'ont plus de source.
 // Les lignes saisies à la main ne sont jamais touchées ; les autres chantiers ne sont pas concernés.
 function retirerLignesSansSource(c) {
-  if (!c || !BIB) return 0;
+  if (!c || !BIB || PIECES_ANCIEN_VEILLE) return 0;   // en veille : rien n'est retiré (les lignes restent)
   const L = lignesDe(c.id);
   if (!L.some(x => x.projet || x.auto || x.plat || x.qteAuto)) return 0;
   _revueCollecte = {};
@@ -1279,6 +1418,7 @@ function retirerLignesSansSource(c) {
 function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
+  renderPiecesNv();
   const P = platDe(c), pieces = piecesDe(c);
   const opt = (liste, val) => `<option value="">— choisir —</option>` + liste.map(d => `<option ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const optPortes = () => `<option value="">— choisir —</option><option>${esc(PORTE_AUTO)}</option>` + platPortes().map(d => `<option>${esc(d)}</option>`).join('');
@@ -1338,7 +1478,8 @@ function ouvrirConfigurateur() {
       ${subListe(p.equip || [], i, 'equip', x => `${esc(x.type)} × ${num(x.nb)}`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_equip_type" style="flex:1;min-width:200px">${opt(equipOptions(p))}</select><input id="pl_${i}_equip_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
     </div>`;
-  $('cfgPieces').innerHTML = `<div class="bloc">${lotTitre('B. Liste des pièces de la maison (sans l\'équipement)')}
+  if (PIECES_ANCIEN_VEILLE) $('cfgPieces').innerHTML = '<div class="bloc"><p class="muted"><strong>Ancien configurateur de pièces : en veille.</strong> Ses données sont conservées, mais il ne produit plus aucune ligne au métré.</p></div>';
+  else $('cfgPieces').innerHTML = `<div class="bloc">${lotTitre('B. Liste des pièces de la maison (sans l\'équipement)')}
     <p class="muted">Saisissez chaque pièce une seule fois, avec ses murs, portes et placards en brut. Le calcul distingue seul les pièces d'eau d'après leur nom.</p>
     <label for="plH">Hauteur sous plafond (m)</label>
     <input id="plH" inputmode="decimal" value="${esc(P.hauteur)}" placeholder="ex. 2,50">
@@ -1732,6 +1873,7 @@ function validerMenu(c, pc, m) {
   return nouvelles.length + ' ligne(s) de la menuiserie ajoutée(s) au métré.';
 }
 function piecesCourantes() {
+  if (PIECES_ANCIEN_VEILLE) return [];
   const c = chantiers.find(x => x.id === courantId);
   return c ? piecesDe(c) : [];
 }

@@ -28,3 +28,8 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 ## Points ouverts (pas encore validés)
 - Doublon de clôture sur « Test configurateur » : à supprimer à la main, puis à vérifier avec le nouveau remplacement.
 - Lignes de clôture déjà présentes avec l'ancien libellé de décapage : sans importance, chantier de test.
+
+## Configurateur de pièces
+- **Bloc A (ancien configurateur de pièces)** : EN VEILLE (`PIECES_ANCIEN_VEILLE = true` dans app.js). Ses données sont conservées, il ne produit plus aucune ligne, et la synchronisation ne retire rien. Pour le réactiver : passer le drapeau à `false`, puis relancer les tests.
+- **Bloc C (nouveau configurateur de pièces)** : par pièce, surface au sol et revêtement, portes fin de chantier 83×204, menuiseries extérieures (fenêtre), appareillage de la pièce (prises, RJ45, interrupteurs, points lumineux). Bouton « Ajouter au métré » : régénère les lignes de la pièce (elles portent `pieceNv`, sans surbrillance) sans jamais les doubler.
+- Non encore câblé : les plâtreries liées au revêtement, et les plinthes.
