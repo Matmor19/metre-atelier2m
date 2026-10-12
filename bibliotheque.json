@@ -13920,7 +13920,7 @@
     {
       "id": "OUV-0913",
       "lot": "isolation-thermique",
-      "designation": "Isolant cellulose soufflée Isowatt 300 mm (R 7)",
+      "designation": "Isolant ouate de cellulose soufflée 300 mm (R 7)",
       "unite": "m²",
       "type": "ossature_bois",
       "saisie": "metre",
@@ -13939,7 +13939,7 @@
     {
       "id": "OUV-0914",
       "lot": "isolation-thermique",
-      "designation": "Isolant cellulose soufflée Isowatt 350 mm (R 8)",
+      "designation": "Isolant ouate de cellulose soufflée 350 mm (R 8)",
       "unite": "m²",
       "type": "ossature_bois",
       "saisie": "metre",
@@ -13958,7 +13958,7 @@
     {
       "id": "OUV-0915",
       "lot": "isolation-thermique",
-      "designation": "Isolant cellulose soufflée Isowatt 435 mm (R 10)",
+      "designation": "Isolant ouate de cellulose soufflée 435 mm (R 10)",
       "unite": "m²",
       "type": "ossature_bois",
       "saisie": "metre",
@@ -16707,6 +16707,6 @@
       "version": 1
     }
   ],
-  "revision": 71,
+  "revision": 72,
   "prochainNumero": 916
 }
