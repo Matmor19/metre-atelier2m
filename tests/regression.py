@@ -129,6 +129,12 @@ JS_TESTS = r"""(c) => {
   R.platCloi = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0751') || {}).quantite || 0) * 100) / 100 };
   R.platPla = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0149') || {}).quantite || 0) * 100) / 100 };
   R.plat = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.platNv) || {}).quantite || 0) * 100) / 100 };
+  // Cloisonnement saisi en m² (sans linéaire) : même déduction que par le linéaire, 10 m² - portes et placards
+  const pq = platNvDe(cN); const mlSauve = pq.cloi.ml;
+  pq.cloi.ml = ''; pq.cloi.m2 = '10'; genererMetreConfigurateur(cN);
+  const lM2 = lsGet('lignes.' + c.id, []).find(x => x.platNv && /cloison/i.test(x.designation));
+  R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
+  pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149').length;
@@ -161,6 +167,7 @@ JS_TESTS = r"""(c) => {
 }"""
 
 ATTENDU = {
+    'platM2Ok': 1,
     'installation': 'OUV-0484=1 OUV-0485=1 OUV-0486=1 OUV-0487=1 OUV-0488=1 OUV-0492=1',
     'fouille': 1.5,
     'semelle': 1.5,

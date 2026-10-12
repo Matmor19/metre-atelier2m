@@ -1350,7 +1350,7 @@ function genererPiecesNv(c) {
 /* ============ Bloc plâtrerie et isolation (séparé du configurateur de pièces) ============ */
 // Saisie : hauteur sous plafond, linéaire de cloisonnement et linéaire de doublage. Surface = linéaire × hauteur.
 // Les lignes produites portent platNv et sont remplacées à chaque génération.
-function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', ouv: '' }; q.doub = q.doub || { ml: '', ouv: '' }; q.pla = q.pla || { m2: '', ouv: '' }; return q; }
+function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '' }; q.pla = q.pla || { m2: '', ouv: '' }; return q; }
 function optPlat(re, val) {
   return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
@@ -1364,6 +1364,7 @@ function renderPlatNv() {
   const ligne = (cle, titre, re) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">${titre}</strong>
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
+      ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
       <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Hauteur sous plafond, linéaire de cloisonnement et de doublage. Surface = linéaire × hauteur.</p>
@@ -1410,32 +1411,25 @@ function aireporteOk(aire) { return aire >= SEUIL_PLATRERIE; }
 function genererPlatNv(c) {
   const q = platNvDe(c);
   const h = num(q.hauteur);
-  const sansHauteur = !(h > 0) && (num(q.cloi.ml) > 0 || num(q.doub.ml) > 0);
+  // Cloisonnement et doublage : linéaire × hauteur, ou surface m² saisie directement (si les deux sont saisis, le linéaire prime)
+  const sansHauteur = !(h > 0) && ['cloi', 'doub'].some(k => num(q[k].ml) > 0 && !(num(q[k].m2) > 0));
   const L = lignesDe(c.id).filter(l => !l.platNv);   // les anciennes lignes sont toujours retirées
   const manque = []; let nb = 0;
   for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
-    if (!(h > 0)) break;
-    const ml = num(q[cle].ml);
-    if (!(ml > 0)) continue;
+    const ml = num(q[cle].ml), m2s = num(q[cle].m2);
+    const viaMl = ml > 0 && h > 0;
+    const surfBrute = viaMl ? ml * h : m2s;
+    if (!(surfBrute > 0)) continue;
     const o = BIB.ouvrages.find(x => x.id === q[cle].ouv && !x.supprime);
     if (!o) { manque.push(titre); continue; }
     ajouterLotSiAbsent(c.id, o.lot);
-    if (cle === 'doub') {
-      // Doublage : surface brute (linéaire × hauteur) moins les menuiseries extérieures d'au moins 1,50 m²
-      const ded = menuiseriesExtM2(c);
-      const net = Math.max(0, ml * h - ded);
-      const v = { nombre: '1', cote1: String(net), cote2: '1' };
-      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins menuiseries de 1,50 m² et plus : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
-    } else if (cle === 'cloi') {
-      // Cloisonnement : surface brute (linéaire × hauteur) moins toutes les portes de passage et façades de placard
-      const ded = portesEtPlacardsM2(c);
-      const net = Math.max(0, ml * h - ded);
-      const v = { nombre: '1', cote1: String(net), cote2: '1' };
-      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes et façades de placard de 1,50 m² et plus : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
-    } else {
-      const v = { nombre: '1', cote1: String(ml), cote2: String(h) };
-      L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
-    }
+    // Déduction : doublage = menuiseries extérieures de 1,50 m² et plus ; cloisonnement = portes de passage et façades de placard de 1,50 m² et plus
+    const ded = cle === 'doub' ? menuiseriesExtM2(c) : portesEtPlacardsM2(c);
+    const net = Math.max(0, surfBrute - ded);
+    const libDed = cle === 'doub' ? 'menuiseries de 1,50 m² et plus' : 'portes et façades de placard de 1,50 m² et plus';
+    const base = viaMl ? `${fmt(ml)} ml × ${fmt(h)} m` : `${fmt(m2s)} m² saisis`;
+    const v = { nombre: '1', cote1: String(net), cote2: '1' };
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
   }
   // Plafond : saisi directement en m², sans hauteur
