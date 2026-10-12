@@ -863,6 +863,9 @@ function renderMetre() {
   nettoyerSuffixeRigoles(courantId);
   rafraichirDesignations(courantId);
   majLignesDepuisConfigurateur(chantiers.find(x => x.id === courantId));
+  // Semelles béton manquantes ou obsolètes : recalculées depuis les fouilles (enregistrées seulement si changé)
+  { const avant = lignesDe(courantId), apres = alignerFondations(avant);
+    if (JSON.stringify(apres) !== JSON.stringify(avant)) sauverLignes(courantId, apres); }
   majLignesLiees(courantId);
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   const L = lignesDe(courantId);
@@ -2751,7 +2754,7 @@ async function envoyerChantiers(msgs) {
             const { lignes: lignesDrive, ...metaDrive } = j3.chantier;
             const i = chantiers.findIndex(y => y.id === id);
             if (i >= 0) chantiers[i] = metaDrive; else chantiers.push(metaDrive);
-            lsSet('lignes.' + id, metaDrive.supprime ? [] : (lignesDrive || []));
+            lsSet('lignes.' + id, metaDrive.supprime ? [] : alignerFondations(lignesDrive || []));
             lsSet('chantiers', chantiers);
             x[id] = { maj: j3.chantier.maj, modifie: false };
             msgs.push(c.nom + ' : version de Drive reprise sur ce téléphone');
@@ -2785,7 +2788,7 @@ async function recupererChantiers(msgs) {
     const { lignes, ...meta } = doc;
     const i = chantiers.findIndex(c => c.id === id);
     if (i >= 0) chantiers[i] = meta; else chantiers.push(meta);
-    lsSet('lignes.' + id, doc.supprime ? [] : (lignes || []));
+    lsSet('lignes.' + id, doc.supprime ? [] : alignerFondations(lignes || []));
     x[id] = { maj: doc.maj, modifie: false, supprimeEnvoye: doc.supprime ? true : undefined };
     recus++;
     if (!doc.supprime) msgs.push((meta.nom || id) + ' : reçu de Drive');
