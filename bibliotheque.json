@@ -16068,8 +16068,23 @@
         }
       ],
       "version": 3
+    },
+    {
+      "id": "OUV-0881",
+      "lot": "revetements-sols",
+      "designation": "Plinthes",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Linéaire (m)"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 49,
-  "prochainNumero": 880
+  "revision": 50,
+  "prochainNumero": 882
 }
