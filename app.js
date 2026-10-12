@@ -1398,6 +1398,96 @@ $('vConfig') && $('vConfig').addEventListener('change', e => {
   if (cle === 'hauteur') q.hauteur = t.value; else q[cle][sous] = t.value;
   lsSet('chantiers', chantiers); marquerChantier(c.id);
 });
+/* ============ Bloc peinture (séparé, comme la plâtrerie) ============ */
+// Murs : linéaire × hauteur, moins les menuiseries extérieures, portes et façades d'au moins 1,50 m².
+// Plafond : surface saisie directement en m². Données dans c.peinture ; lignes marquées peiNv.
+function peiDe(c) {
+  const q = c.peinture = c.peinture || {};
+  q.hauteur = q.hauteur || '';
+  q.murs = q.murs || { ml: '', ouv: 'OUV-0689' };
+  q.plafond = q.plafond || { m2: '', ouv: 'OUV-0690' };
+  return q;
+}
+// Hauteur utilisée : celle du bloc peinture, à défaut celle du bloc plâtrerie
+function peiHauteur(c) { return num(peiDe(c).hauteur) || num(platNvDe(c).hauteur); }
+function optPei(re, val) {
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
+    .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+}
+function renderPeinture() {
+  const host = $('cfgPeinture');
+  if (!host) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c || !BIB) { host.innerHTML = ''; return; }
+  const q = peiDe(c);
+  host.innerHTML = `<div class="bloc">${lotTitre('E. Peinture (bloc séparé)')}
+    <p class="muted">Murs : linéaire × hauteur, moins les menuiseries, portes et façades d'au moins 1,50 m². Plafond : surface en m².</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
+      <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
+      <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
+      <strong style="font-size:13px;min-width:120px">Murs</strong>
+      <label style="font-size:12px">Linéaire ml <input data-pei="murs|ml" inputmode="decimal" value="${esc(q.murs.ml || '')}" style="width:80px"></label>
+      <select data-pei="murs|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv)}</select></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
+      <strong style="font-size:13px;min-width:120px">Plafond</strong>
+      <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" style="width:80px"></label>
+      <select data-pei="plafond|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture plafond/i, q.plafond.ouv)}</select></div>
+    <p class="muted" style="font-size:13px;margin:6px 0 0">Déduit des murs : ${fmt(menuiseriesExtM2(c) + portesEtPlacardsM2(c))} m² (menuiseries, portes et façades d'au moins 1,50 m²).</p>
+    <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-pei-act="gen">Ajouter au métré</button></div>
+    <p id="peiStatut" class="muted" style="font-size:13px"></p></div>`;
+}
+function genererPeinture(c) {
+  const q = peiDe(c);
+  const h = peiHauteur(c);
+  const L = lignesDe(c.id).filter(l => !l.peiNv);
+  const manque = []; let nb = 0;
+  const ajoute = (o, v, designation) => {
+    ajouterLotSiAbsent(c.id, o.lot);
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', peiNv: true, cree: new Date().toISOString() });
+    nb++;
+  };
+  const ml = num(q.murs.ml);
+  if (ml > 0) {
+    if (!(h > 0)) return 'Saisissez la hauteur sous plafond (bloc peinture ou plâtrerie).';
+    const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
+    if (!o) manque.push('murs');
+    else {
+      const ded = menuiseriesExtM2(c) + portesEtPlacardsM2(c);
+      const net = Math.max(0, ml * h - ded);
+      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins ouvertures ${fmt(ded)} m²`);
+    }
+  }
+  const m2 = num(q.plafond.m2);
+  if (m2 > 0) {
+    const o = BIB.ouvrages.find(x => x.id === q.plafond.ouv && !x.supprime);
+    if (!o) manque.push('plafond');
+    else ajoute(o, { nombre: '1', cote1: String(m2), cote2: '1' }, `${o.designation} – ${fmt(m2)} m²`);
+  }
+  sauverLignes(c.id, L);
+  renderMetre();
+  if (manque.length) return (nb ? nb + ' ligne(s) au métré. ' : '') + 'Choisissez le type de peinture : ' + manque.join(' et ') + '.';
+  return nb ? nb + ' ligne(s) peinture au métré.' : 'Saisissez au moins une surface.';
+}
+$('vConfig') && $('vConfig').addEventListener('click', e => {
+  const b = e.target.closest('[data-pei-act]');
+  if (!b) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const msg = genererPeinture(c);
+  if ($('peiStatut')) $('peiStatut').textContent = msg;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+});
+$('vConfig') && $('vConfig').addEventListener('change', e => {
+  const t = e.target.closest('[data-pei]');
+  if (!t) return;
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  const q = peiDe(c);
+  const [cle, sous] = t.dataset.pei.split('|');
+  if (cle === 'hauteur') q.hauteur = t.value; else q[cle][sous] = t.value;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+});
 function majPieceNv(c, cle, val) {
   const [id, champ, k, sous] = cle.split('|');
   const p = piecesNvDe(c).find(x => x.id === id);
@@ -1423,7 +1513,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   lsSet('chantiers', chantiers); marquerChantier(c.id);
-  renderPiecesNv(); renderPlatNv();
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
 });
 $('vConfig') && $('vConfig').addEventListener('change', e => {
   const t = e.target.closest('[data-nv]');
@@ -1656,7 +1746,7 @@ function retirerLignesSansSource(c) {
 function ouvrirConfigurateur() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c) return;
-  renderPiecesNv(); renderPlatNv();
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
   const P = platDe(c), pieces = piecesDe(c);
   const opt = (liste, val) => `<option value="">— choisir —</option>` + liste.map(d => `<option ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const optPortes = () => `<option value="">— choisir —</option><option>${esc(PORTE_AUTO)}</option>` + platPortes().map(d => `<option>${esc(d)}</option>`).join('');
