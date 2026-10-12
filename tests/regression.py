@@ -137,6 +137,13 @@ JS_TESTS = r"""(c) => {
   const iEnd = Lg.findIndex(x => x.ouvrage === 'OUV-0071' && /surface nette/.test((x.valeurs || {}).src || ''));
   const iTab = Lg.findIndex(x => x.designation === 'Tableaux de menuiseries (2 côtés)');
   R.tableauSousEnduit = iTab >= 0 && iTab === iEnd + 1;
+  // Remise à zéro : les cases remplies sont vidées (pièce de test, plâtrerie, peinture) et les lignes générées retirées
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
+  remiseAZeroConfigurateur(cN, false);
+  R.raz = { plat: (platNvDe(cN).hauteur === '' && platNvDe(cN).cloi.ml === '') ? 1 : 0,
+    pieces: ((piecesNvDe(cN).find(p => p.id === 'pn-test') || {}).surf === '') ? 1 : 0,
+    pei: peiDe(cN).hauteur === '' ? 1 : 0,
+    lignesPlat: lsGet('lignes.' + c.id, []).filter(x => x.platNv).length };
   return R;
 }"""
 
@@ -163,6 +170,7 @@ ATTENDU = {
     'platCloi': {'quantite': 18.51},
     'platStale': 0,
     'peiStale': 0,
+    'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'lignesPlat': 0},
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},

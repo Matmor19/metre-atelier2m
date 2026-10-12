@@ -1396,6 +1396,28 @@ if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () =>
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   if ($('cfgStatut')) $('cfgStatut').textContent = msg;
 });
+// Remise à zéro : vide toutes les cases vertes (cases remplies) du configurateur.
+// Chaque case vidée envoie son événement « change » : les gestionnaires enregistrent le vide dans les données.
+// Les lignes du métré générées par ces cases sont ensuite retirées ; les lignes saisies à la main restent.
+function remiseAZeroConfigurateur(c, demander = true) {
+  if (demander && !confirm('Toutes les cases remplies du configurateur seront vidées. Les lignes saisies à la main restent. Continuer ?')) return;
+  const f = $('vConfig');
+  if (f) {
+    f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
+      if (el.value === '' || el.id === 'btnGenererConfig') return;
+      el.value = '';
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  const msg = genererMetreConfigurateur(c);
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
+  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur remis à zéro. ' + msg;
+}
+if ($('btnRaz')) $('btnRaz').addEventListener('click', () => {
+  const c = chantiers.find(x => x.id === courantId);
+  if (c) remiseAZeroConfigurateur(c, true);
+});
 $('vConfig') && $('vConfig').addEventListener('click', e => {
   const b = e.target.closest('[data-plat-act]');
   if (!b) return;
