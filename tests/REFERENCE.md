@@ -83,3 +83,4 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 - Isolants ajoutés : OUV-0903 « Isolant laine de verre non revêtu 60 mm » et OUV-0904 « Isolant laine de verre non revêtu 85 mm » (m²), proposés dans la liste d'isolant de la plâtrerie.
 - Isolants ajoutés : OUV-0905 « Isolant laine de verre GR32 120 mm » et OUV-0906 « Isolant laine de verre GR32 140 mm » (m²), proposés dans la liste d'isolant de la plâtrerie.
 - Isolant ajouté : OUV-0907 « Isolant laine de verre Isoconfort 280 mm (R 7) » (m²), proposé dans la liste d'isolant de la plâtrerie.
+- Isolants ajoutés : OUV-0908 « Isolant laine de verre IBR 320 mm (R 8) » et OUV-0909 « Isolant laine de verre IBR 400 mm (R 10) » (m²), proposés dans la liste d'isolant de la plâtrerie.
