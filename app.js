@@ -1345,76 +1345,6 @@ function synchroConfig() {
     if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur enregistré. Les lignes calculées sont ajoutées automatiquement au métré.';
   }, 300);
 }
-// Revue complète : calcule ce que le configurateur demande, et propose d'ajouter chaque ligne manquante (oui / non)
-function revueConfigurateur() {
-  const c = chantiers.find(x => x.id === courantId);
-  if (!c) return;
-  _revueCollecte = {};
-  try { genererElec(); genererPlat(); ficheVersMetre(); }
-  finally { var col = _revueCollecte; _revueCollecte = null; }
-  const existantes = lignesDe(courantId);
-  const cleL = l => l.ouvrage + '|' + l.designation;
-  // Lignes venant du configurateur (les lignes saisies à la main ne sont jamais touchées)
-  const estAuto = l => !!(l.projet || l.auto || l.plat || l.qteAuto);
-  const dejaLa = l => existantes.some(x => x.uid === l.uid || (!estAuto(x) && cleL(x) === cleL(l)));
-  const reste = {};
-  for (const x of existantes) if (estAuto(x)) (reste[cleL(x)] = reste[cleL(x)] || []).push(x);
-  const sig = v => ['nombre', 'cote1', 'cote2', 'cote3'].map(k => num(v && v[k])).join('|');
-  const props = [], vus = new Set();
-  for (const L of Object.values(col)) for (const l of L) {
-    if (!l.ouvrage) continue;
-    // Une ligne déjà présente dans le métré (même numéro) n'est pas une nouvelle proposition
-    if (existantes.some(x => x.uid === l.uid)) continue;
-    const cle = cleL(l);
-    if (vus.has(cle + JSON.stringify(l.valeurs))) continue;
-    vus.add(cle + JSON.stringify(l.valeurs));
-    const ex = reste[cle] && reste[cle].shift();
-    if (ex) {
-      // Ligne déjà au métré : mise à jour seulement si la quantité ou les cotes ont changé
-      if (sig(ex.valeurs) !== sig(l.valeurs) || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9) props.push({ maj: ex, neuf: l });
-      continue;
-    }
-    if (dejaLa(l)) continue;
-    props.push({ neuf: l });
-  }
-  let h = `<h2 style="margin:0 0 6px;font-size:18px">Revue complète avant édition</h2>`;
-  if (!props.length) {
-    h += `<p class="muted">Rien à ajouter ni à mettre à jour : le métré correspond déjà au configurateur.</p>`;
-  } else {
-    h += `<p class="muted" style="font-size:13px">Cochez les lignes à ajouter ou à mettre à jour. Les lignes non cochées ne changent pas.</p>`;
-    const par = {};
-    props.forEach((it, i) => { (par[it.neuf.lot] = par[it.neuf.lot] || []).push([it, i]); });
-    for (const [lot, items] of Object.entries(par)) {
-      h += `<h3 style="font-size:14px;margin:12px 0 4px">${esc(libLot(lot))}</h3>`;
-      for (const [it, i] of items) {
-        const l = it.neuf;
-        const libelle = it.maj
-          ? `Mettre à jour : ${esc(l.designation)} <span class="muted">(${fmt(num(it.maj.quantite))} → ${fmt(num(l.quantite))} ${esc(l.unite)})</span>`
-          : esc(l.designation);
-        h += `<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;font-size:14px">
-          <input type="checkbox" data-rev="${i}" style="margin-top:3px"><span style="flex:1">${libelle}</span>
-          <span class="muted" style="white-space:nowrap">${l.quantite ? fmt(Number(l.quantite)) + ' ' + esc(l.unite) : 'à saisir'}</span></label>`;
-      }
-    }
-    h += `<div class="row" style="margin-top:12px;gap:8px"><button type="button" id="revAjouter" class="btn">Ajouter les lignes cochées</button><button type="button" id="revFermer" class="btn sec">Fermer</button></div>`;
-  }
-  if (!props.length) h += `<div class="row" style="margin-top:12px"><button type="button" id="revFermer" class="btn sec">Fermer</button></div>`;
-  $('sheet').innerHTML = h;
-  ouvrirModal();
-  if ($('revFermer')) $('revFermer').onclick = fermer;
-  if ($('revAjouter')) $('revAjouter').onclick = () => {
-    const coches = [...document.querySelectorAll('[data-rev]')].filter(x => x.checked).map(x => props[+x.dataset.rev]);
-    // Mise à jour : la ligne existante garde sa place et son numéro, seules les valeurs changent
-    const maj = new Map(coches.filter(it => it.maj).map(it => [it.maj.uid, it.neuf]));
-    const L = lignesDe(courantId).map(x => maj.has(x.uid) ? Object.assign({}, maj.get(x.uid), { uid: x.uid, cree: x.cree }) : x)
-      .concat(coches.filter(it => !it.maj).map(it => it.neuf));
-    sauverLignes(courantId, L);
-    renderMetre();
-    fermer();
-    if ($('cfgStatut')) $('cfgStatut').textContent = coches.length + ' ligne(s) ajoutée(s) ou mise(s) à jour au métré après revue.';
-  };
-}
-if ($('btnRevue')) $('btnRevue').addEventListener('click', revueConfigurateur);
 // Retire du métré, dans tous les chantiers, les lignes générées automatiquement (les lignes saisies à la main restent)
 function retirerLignesAuto() {
   const n = chantiers.reduce((a, c) => a + lignesDe(c.id).filter(l => l.auto || l.plat || l.projet).length, 0);
@@ -1428,6 +1358,16 @@ function retirerLignesAuto() {
   if ($('cfgStatut')) $('cfgStatut').textContent = n + ' ligne(s) générée(s) retirée(s). Vos lignes saisies à la main sont conservées.';
 }
 if ($('btnRetirerAuto')) $('btnRetirerAuto').addEventListener('click', retirerLignesAuto);
+// Bouton « Synchroniser le métré » : recalcule le métré depuis le configurateur et la bibliothèque, puis envoie sur Drive
+async function synchroniserMetre() {
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) return;
+  majQuantitesAuto(c);
+  majLignesDepuisConfigurateur(c);
+  renderMetre();
+  await synchroniserChantiers();
+}
+if ($('btnSyncMetre')) $('btnSyncMetre').addEventListener('click', synchroniserMetre);
 // Ajoute une pièce, ou met à jour celle qui existe déjà (même nom et même numéro) : pas de doublon, murs conservés
 function ajouterPiece(c, p) {
   const L = piecesDe(c);
@@ -1490,7 +1430,7 @@ if ($('vConfig')) $('vConfig').addEventListener('click', e => {
   if (!b || !$('plH')) return;
   const P = platDe(c);
   P.hauteur = v('plH') || P.hauteur;
-  if (b.id === 'plGenElec' || b.id === 'plGen') { sauverPlat(c); revueConfigurateur(); return; }
+  if (b.id === 'plGenElec' || b.id === 'plGen') { sauverPlat(c); synchroConfig(); return; }
   if (b.id === 'plAjPiece') {
     if (!v('plType')) return;
     const pc = { type: v('plType'), qualif: v('plQual'), nb: v('plNb') || '1', surf: v('plSurf'), perim: v('plPerim'), longueur: v('plL'), largeur: v('plLa'), sol: v('plSol') };
