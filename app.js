@@ -1097,8 +1097,8 @@ function renderPiecesNv() {
     </div>
     <div style="margin-top:8px"><strong style="font-size:13px">Menuiseries extérieures</strong></div>
     ${(p.menus || []).map((m, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      <label style="font-size:12px">Larg. m <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
-      <label style="font-size:12px">Haut. m <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
@@ -1146,7 +1146,7 @@ function genererPiecesNv(c) {
       const o = ouvrageParDesig(MENU_DESIG.ouvrant.PVC);
       if (!o) { manque.push(MENU_DESIG.ouvrant.PVC); continue; }
       const v = { nombre: String(n) };
-      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} m – ${nom}`, p.id);
+      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
     for (const a of PNV_APPAREIL) {
       const n = num((p.app || {})[a.cle]);
