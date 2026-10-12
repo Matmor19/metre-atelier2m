@@ -16379,8 +16379,32 @@
         "cle": "murs_choix",
         "val": "Rail montant doublé 90 BA13"
       }
+    },
+    {
+      "id": "OUV-0942",
+      "lot": "doublages-cloisons-plafonds",
+      "designation": "Doublage collé placo plus PSE épaisseur 100 R 3,15",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Doublage collé placo plus PSE épaisseur 100 R 3,15"
+      }
     }
   ],
-  "revision": 90,
-  "prochainNumero": 942
+  "revision": 91,
+  "prochainNumero": 943
 }
