@@ -30,7 +30,7 @@ CHANTIER = {
                    {"id": "soub1", "cat": "soub", "nom": "Mur de soubassement ", "longueur": "20", "hauteur": "0.5", "porteur": True,
                     "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": False},
                    {"id": "peri1", "cat": "peri", "nom": "Mur périphérique ", "longueur": "50", "hauteur": "2", "porteur": True,
-                    "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": True}],
+                    "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "Enduit extérieur monocouche sur façade", "deduire": True, "epMur": "33"}],
                "toiture": {"type": "", "surface": "", "pente": "", "couverture": ""},
                "choix": {"murs": "", "tableaux": "", "finition": ""},
                "fond": {"largeur": "", "hauteur": "", "pleines": [], "rigLin": "10", "rigHt": "0.5", "rigLarg": "0.3"},
@@ -100,6 +100,9 @@ JS_TESTS = r"""(c) => {
   ficheVersMetre();
   const elev = lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0048' && /murs, surface nette/.test((x.valeurs || {}).src || ''));
   R.elevApresFenetre = elev ? elev.quantite : null;
+  const tabl = lsGet('lignes.' + c.id, []).find(x => x.designation === 'Tableaux de menuiseries (2 côtés)');
+  R.tableauxAuto = tabl ? Math.round(tabl.quantite * 100) / 100 : null;
+  R.tableauxDesig = tabl ? tabl.ouvrage : null;
   return R;
 }"""
 
@@ -116,6 +119,8 @@ ATTENDU = {
     'soubQuantite': 10,
     'veilleAucuneAuto': 0,
     'elevApresFenetre': 99,
+    'tableauxAuto': 0.66,
+    'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
     'pieceNv': {'n': 7, 'nApresRegeneration': 7, 'surbrillance': '', 'prises': 3},
 }

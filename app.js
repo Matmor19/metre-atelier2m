@@ -1898,6 +1898,9 @@ function projetCalcul(p) {
   }
   const e = sLong > 0 ? sEp / sLong / 100 : 0;
   r.epMoy = e;
+  // Finition extérieure des murs périphériques : elle donne le revêtement des tableaux des fenêtres
+  const murFin = r.murs.find(x => x.m.cat === 'peri' && x.m.finition);
+  r.finTab = murFin ? murFin.m.finition : '';
   // Menuiseries rattachées aux pièces : chacune compte pour son nombre (nb × pièces identiques)
   for (const x of menusCalcul(piecesCourantes())) {
     const aire = num(x.m.largeur) * num(x.m.hauteur);
@@ -2656,7 +2659,8 @@ function ficheVersMetre() {
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
   for (const [f, surf] of Object.entries(r.parFin || {})) if (surf > 0) ajouter(f, surf, f, null, SRC_QTE.finit_net);
   if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
-  ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
+  ajouter(p.choix.tableaux || r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
   else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
   for (const x of menusCalcul(c)) {
