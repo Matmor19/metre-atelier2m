@@ -4628,10 +4628,22 @@ if ($('btnFichierBib')) $('btnFichierBib').onclick = async () => {
   } catch (e) { alert('Envoi impossible pour le moment (réseau).'); }
 };
 
+// Envoi sur Drive. Si la bibliothèque de l'appareil a moins d'ouvrages que le Drive,
+// on demande confirmation (suppressions voulues) puis on renvoie avec l'accord.
+async function envoyerBibliotheque() {
+  let j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB });
+  if (!j.ok && j.reduction) {
+    const ok = confirm('Le Drive contient ' + j.reduction + ' ouvrage(s) de plus que cette bibliothèque. Ces ouvrages seront supprimés sur le Drive. Confirmer ?');
+    if (!ok) return { ok: false, erreur: 'envoi annulé, rien n\'a été modifié sur le Drive' };
+    j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB, confirmer_reduction: true });
+  }
+  return j;
+}
+
 $('btnEnvoiBib').onclick = async () => {
   if (!lsGet('url', '') || !lsGet('jeton', '')) { alert("Enregistrez d'abord l'adresse et le jeton."); return; }
   try {
-    const j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB });
+    const j = await envoyerBibliotheque();
     alert(j.ok ? 'Bibliothèque envoyée sur Drive.' : 'Refus : ' + (j.erreur || 'erreur inconnue'));
   } catch (e) { alert('Envoi impossible pour le moment (réseau).'); }
 };
@@ -4928,7 +4940,7 @@ async function sauverBibliotheque() {
     texte = 'Enregistré sur cet appareil. Renseignez le script dans Réglages pour l\'envoyer sur Drive.';
   } else {
     try {
-      const j = await post({ action: 'sauver_bibliotheque', bibliotheque: BIB });
+      const j = await envoyerBibliotheque();
       if (j.ok) { lsSet('bib_modifiee', false); texte = 'Enregistré et envoyé sur Drive.'; }
       else texte = 'Drive a refusé l\'envoi : ' + (j.erreur || 'erreur inconnue') + '. Enregistré sur cet appareil.';
     } catch (e) {

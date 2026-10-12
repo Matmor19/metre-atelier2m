@@ -83,8 +83,9 @@ function doPost(e) {
         var nouvelle = data.bibliotheque;
         // Seuls les ouvrages actifs comptent (les ouvrages supprimés peuvent être purgés)
         var actifs = function (b) { return (b && b.ouvrages || []).filter(function (o) { return !o.supprime; }).length; };
-        if (actuelle && actifs(nouvelle) < actifs(actuelle)) {
-          return reponse_({ ok: false, erreur: 'refus : bibliothèque réduite' });
+        // Réduction refusée, sauf si l'application confirme une suppression voulue (confirmer_reduction)
+        if (actuelle && actifs(nouvelle) < actifs(actuelle) && data.confirmer_reduction !== true) {
+          return reponse_({ ok: false, erreur: 'refus : bibliothèque réduite', reduction: actifs(actuelle) - actifs(nouvelle) });
         }
         ecrireJson_(dos, FICHIER_BIBLIO, nouvelle);
         return reponse_({ ok: true });
