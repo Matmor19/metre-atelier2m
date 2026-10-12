@@ -1134,6 +1134,10 @@ function appDefaut(p, cle) {
   if (regle === 'Entrée / dégagement') return surf > 4 ? '2' : '1';
   return surf > 4 ? '1' : '0';
 }
+// Façades de placard de la bibliothèque (coulissant ou battant), choisies dans une liste
+function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Façade de placard/i.test(o.designation)); }
+// Largeur totale des façades posées au sol (ml) : elles ne reçoivent pas de plinthe
+function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
@@ -1165,7 +1169,14 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
       <select data-nv="${esc(p.id)}|porteType" style="min-width:130px"><option value="83" ${(p.porteType || '83') === '83' ? 'selected' : ''}>83 × 204</option><option value="73" ${p.porteType === '73' ? 'selected' : ''}>73 × 204</option></select>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
-    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Façade placard ml <input data-nv="${esc(p.id)}|placard" inputmode="decimal" value="${esc(p.placard || '')}" style="width:90px"></label></div>
+    <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
+    ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
+      <select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:180px">${facadesPlacard().map(o => `<option value="${esc(o.id)}" ${o.id === (f.ouv || 'OUV-0755') ? 'selected' : ''}>${esc(o.designation)}</option>`).join('')}</select>
+      <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|facade|${k}|l" inputmode="decimal" value="${esc(f.l || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|facade|${k}|h" inputmode="decimal" value="${esc(f.h || '')}" style="width:70px"></label>
+      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:50px"></label>
+      <button type="button" class="btn small danger" data-nv-act="delfacade:${esc(p.id)}:${k}">✕</button></div>`).join('')}
+    <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addfacade:${esc(p.id)}">+ Façade de placard</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
@@ -1199,10 +1210,10 @@ function genererPiecesNv(c) {
     }
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
-      // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard
+      // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard − portes et baies extérieures
       const largeurPorte = num(p.porteType || '83') / 100;
       const baies = (p.menus || []).filter(m => estPorteBaie(m) && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
-      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - num(p.placard) - baies);
+      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - facadesLargeur(p) - baies);
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
       else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
@@ -1212,6 +1223,14 @@ function genererPiecesNv(c) {
       const o = ouvrageParDesig(desPorte);
       if (!o) manque.push(desPorte);
       else { const v = { nombre: String(num(p.portes)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
+    for (const f of (p.facades || [])) {
+      const n = num(f.nb) || 1;
+      if (!(num(f.l) > 0 && num(f.h) > 0)) continue;
+      const o = BIB.ouvrages.find(x => x.id === (f.ouv || 'OUV-0755') && !x.supprime);
+      if (!o) { manque.push('façade de placard'); continue; }
+      const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
+      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(f.l))} × ${fmt(num(f.h))} cm – ${nom}`, p.id);
     }
     for (const m of (p.menus || [])) {
       const n = num(m.nb) || 1;
@@ -1243,6 +1262,7 @@ function majPieceNv(c, cle, val) {
   const p = piecesNvDe(c).find(x => x.id === id);
   if (!p) return;
   if (champ === 'menu') { p.menus = p.menus || []; if (p.menus[k]) p.menus[k][sous] = val; }
+  else if (champ === 'facade') { p.facades = p.facades || []; if (p.facades[k]) p.facades[k][sous] = val; }
   else if (champ === 'app') { p.app = p.app || {}; p.app[k] = val; }
   else p[champ] = val;
   lsSet('chantiers', chantiers); marquerChantier(c.id);
@@ -1258,6 +1278,8 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
   else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
+  else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: 'OUV-0755', l: '', h: '', nb: '1' }); }
+  else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderPiecesNv();
