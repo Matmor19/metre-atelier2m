@@ -2692,9 +2692,12 @@ function ouvrirChantier(id) {
 function syncLire() { return lsGet('sync', {}); }
 function syncEcrire(x) { lsSet('sync', x); }
 // Barre d'avancement de la synchronisation (visible pendant l'envoi et la réception)
-function syncAvance(fait, total, libelle) {
-  const b = $('syncBarre'); if (b) { b.hidden = false; b.max = Math.max(total, 1); b.value = fait; }
-  syncStatut(libelle + ' ' + fait + ' / ' + total + '…');
+// Envoi = 0 à 50 %, réception = 50 à 100 %
+function syncAvance(pct, libelle) {
+  const b = $('syncBarre'), r = $('syncRempli');
+  if (b) b.hidden = false;
+  if (r) r.style.width = Math.round(pct) + '%';
+  syncStatut(libelle + ' ' + Math.round(pct) + ' %');
 }
 function syncFinBarre() { const b = $('syncBarre'); if (b) b.hidden = true; }
 function syncStatut(texte) { const e = $('syncStatut'); if (e) { e.style.whiteSpace = 'pre-line'; e.textContent = texte; } }
@@ -2717,9 +2720,9 @@ async function envoyerChantiers(msgs) {
   for (const c of chantiers) if (!x[c.id] && !c.supprime) x[c.id] = { modifie: true };   // anciens chantiers : envoyés une fois ; supprimés : jamais envoyés
   const heure = () => new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const idsSync = Object.keys(x); let fait = 0;
-  if (affiche) syncAvance(0, idsSync.length, 'Envoi');
+  if (affiche) syncAvance(0, 'Envoi des modifications…');
   for (const id of idsSync) {
-    fait++; if (affiche) syncAvance(fait, idsSync.length, 'Envoi');
+    fait++; if (affiche) syncAvance(50 * (fait - 1) / Math.max(idsSync.length, 1), 'Envoi des modifications…');
     const c = chantiers.find(y => y.id === id);
     if (!c) { if (x[id].modifie) delete x[id]; continue; }
     // Chantier supprimé : sa version « supprimée » est envoyée une seule fois, sans contrôle de conflit
@@ -2755,6 +2758,7 @@ async function envoyerChantiers(msgs) {
 async function recupererChantiers(msgs) {
   const affiche = !msgs; msgs = msgs || [];
   if (!syncConfigOk()) return;
+  if (affiche) syncAvance(50, 'Interrogation de Drive…');
   const liste = await post({ action: 'lister_chantiers' });
   if (!liste.ok) { msgs.push('Refus du script : ' + (liste.erreur || 'erreur inconnue')); if (affiche) syncStatut(msgs.join(' · ')); return; }
   const x = syncLire();
@@ -2762,7 +2766,7 @@ async function recupererChantiers(msgs) {
   let vus = 0;
   for (const item of liste.chantiers) {
     const id = item.id;
-    vus++; if (affiche) syncAvance(vus, liste.chantiers.length, 'Réception');
+    vus++; if (affiche) syncAvance(50 + 50 * (vus - 1) / Math.max(liste.chantiers.length, 1), 'Réception des chantiers…');
     if (x[id] && x[id].modifie) continue;
     const j = await post({ action: 'lire_chantier', id });
     const doc = j.ok ? j.chantier : null;
@@ -2784,7 +2788,7 @@ async function recupererChantiers(msgs) {
 async function synchroniserChantiers() {
   if (!syncConfigOk()) { syncStatut('Renseignez l\'adresse du script et le jeton dans Réglages.'); return; }
   const msgs = [];
-  syncAvance(0, 1, 'Démarrage');
+  syncAvance(0, 'Démarrage…');
   try {
     await envoyerChantiers(msgs); await recupererChantiers(msgs);
     // Un état pour chaque chantier affiché (les chantiers supprimés ne sont pas affichés)
@@ -2801,7 +2805,7 @@ function preparerSynchro() {
   if ($('btnSynchro') || !$('listeChantiers')) return;
   $('listeChantiers').insertAdjacentHTML('beforebegin', `<div class="row" style="margin-bottom:12px;align-items:center">
     <button class="btn sec small" id="btnSynchro" style="flex:0 0 auto">Synchroniser les chantiers</button>
-    <progress id="syncBarre" max="1" value="0" hidden style="width:120px;flex:0 0 auto"></progress>
+    <div id="syncBarre" hidden style="width:120px;height:10px;background:var(--line);border-radius:6px;overflow:hidden;flex:0 0 auto"><div id="syncRempli" style="height:100%;width:0;background:var(--ok);transition:width .3s"></div></div>
     <span class="muted" id="syncStatut"></span></div>`);
   $('btnSynchro').onclick = synchroniserChantiers;
 }
