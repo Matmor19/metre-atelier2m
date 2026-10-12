@@ -987,7 +987,7 @@ const ELEC_REGLES = {
 const ELEC_PIECE_TYPES = {
   "Entrée": "Entrée / dégagement", "Dégagement": "Entrée / dégagement",
   "Toilette": "WC", "Salle d'eau": "Salle d'eau", "Salle de bain": "Salle de bains",
-  "Chambre": "Chambre", "Salon": "Séjour", "Séjour": "Séjour", "Pièce de vie": "Séjour",
+  "Chambre": "Chambre", "Bureau": "Bureau", "Salon": "Séjour", "Séjour": "Séjour", "Pièce de vie": "Séjour",
   "Cuisine": "Cuisine", "Dressing": "Dressing", "Cellier": "Buanderie / cellier",
   "Buanderie": "Buanderie / cellier", "Cellier buanderie": "Buanderie / cellier",
   "Mezzanine": "Mezzanine", "Cage d'escalier": "Cage d'escalier", "Cave": "Cave", "Garage": "Garage",
@@ -1087,6 +1087,11 @@ function ouvrageParDesig(des) { return BIB.ouvrages.find(o => o.designation === 
 function menusPorteBaie() {
   return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Porte|Baie)/i.test(o.designation));
 }
+// Prise RJ45 : 1 par chambre et par bureau par défaut (saisie manuelle prioritaire)
+function rjDefaut(p) {
+  if (p.app && p.app.rj45 !== undefined && p.app.rj45 !== '') return p.app.rj45;
+  return (p.nom === 'Chambre' || p.nom === 'Bureau') ? '1' : '';
+}
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
@@ -1121,7 +1126,7 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Façade placard ml <input data-nv="${esc(p.id)}|placard" inputmode="decimal" value="${esc(p.placard || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc((p.app || {})[a.cle] || '')}" style="width:60px"></label>`).join('')}
+      ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(a.cle === 'rj45' ? rjDefaut(p) : ((p.app || {})[a.cle] || ''))}" style="width:60px"></label>`).join('')}
     </div></div>`;
   host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
@@ -1176,7 +1181,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
     for (const a of PNV_APPAREIL) {
-      const n = num((p.app || {})[a.cle]);
+      const n = num(a.cle === 'rj45' ? rjDefaut(p) : (p.app || {})[a.cle]);
       if (!(n > 0)) continue;
       const o = ouvrageParDesig(a.des);
       if (!o) { manque.push(a.des); continue; }

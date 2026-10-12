@@ -90,12 +90,14 @@ JS_TESTS = r"""(c) => {
   const cN = chantiers.find(x => x.id === c.id);
   piecesNvDe(cN).push({ id: 'pn-test', nom: 'Chambre test', surf: '15', revet: 'OUV-0274', portes: '1',
     perim: '15.5', porteType: '83', placard: '2', menus: [{ l: '100', h: '100', nb: '1' }, { l: '180', h: '210', nb: '1', ouv: 'OUV-0172' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
+  piecesNvDe(cN).push({ id: 'pn-bureau', nom: 'Bureau', surf: '', revet: '', portes: '', menus: [], app: {} });
   genererPiecesNv(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);
   const n2 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   R.pieceNv = { n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
     prises: (n1.find(x => x.ouvrage === 'OUV-0611') || {}).quantite || 0,
+    rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && /Bureau/.test(x.designation)).length),
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
     plinthesSousRevet: (n1.findIndex(x => x.ouvrage === 'OUV-0881') === n1.findIndex(x => x.ouvrage === 'OUV-0274') + 1) };
   // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
@@ -134,7 +136,7 @@ ATTENDU = {
     'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
-    'pieceNv': {'n': 9, 'nApresRegeneration': 9, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
+    'pieceNv': {'rjBureau': 1, 'n': 10, 'nApresRegeneration': 10, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3},
 }
 
 echecs = 0
