@@ -1713,7 +1713,13 @@ function projetCalcul(p) {
     const brut = surfaceMur(m);
     r.murs.push({ m, brut, ded: 0 });
     r.brut += brut;
-    if (m.cat === 'soub') { r.linSoub += num(m.longueur); if (m.finition) r.linSolin += num(m.longueur); if (m.finition === DELTA_SOUB) r.deltaSoub += num(m.longueur) * (num(m.hauteur) + DELTA_SOUB_PLUS); }
+    if (m.cat === 'soub') {
+      r.linSoub += num(m.longueur);
+      // Enduit hydrofuge : solin au mètre linéaire + pose Delta-MS sur hauteur + 30 cm
+      if (m.finition === HYDRO_SOUB) { r.linSolin += num(m.longueur); r.deltaSoub += num(m.longueur) * (num(m.hauteur) + DELTA_SOUB_PLUS); }
+      // Membrane Delta-MS choisie comme protection : sa ligne sur hauteur + 30 cm
+      if (m.finition === DELTA_SOUB) r.deltaSoub += num(m.longueur) * (num(m.hauteur) + DELTA_SOUB_PLUS);
+    }
     else if (m.porteur !== false) r.linP += num(m.longueur);
     if ((m.cat || 'peri') === 'peri' && num(m.epMur) > 0 && num(m.longueur) > 0) { sEp += num(m.epMur) * num(m.longueur); sLong += num(m.longueur); }
   }
@@ -2015,6 +2021,8 @@ function ficheListeMur() {
 // Membrane Delta-MS : posée sur le mur de soubassement, sur sa hauteur + 30 cm
 const DELTA_SOUB = 'Membrane de protection et drainage Delta-MS sur mur de soubassement';
 const DELTA_SOUB_PLUS = 0.30;
+// Enduit hydrofuge : seul cas qui déclenche automatiquement le solin et la pose Delta-MS
+const HYDRO_SOUB = 'Enduit hydrofuge sur mur de soubassement (face extérieure)';
 // Murs de la bibliothèque (lot gros œuvre) : parois en m²
 function ficheListeMurGO() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
@@ -2417,7 +2425,7 @@ function ficheVersMetre() {
     if (!t) { manquants.push('Matériau du mur de soubassement'); continue; }
     ajouter(t, surf, t, null, SRC_QTE.soub_s);
   }
-  // Solin en tête de soubassement : seulement sur les murs de soubassement qui ont une protection
+  // Solin en tête de soubassement : seulement sur les murs de soubassement avec enduit hydrofuge
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
   // Membrane Delta-MS : pose sur la hauteur du soubassement + 30 cm, seulement si ce mur a cette protection
   ajouter(DELTA_SOUB, r.deltaSoub, DELTA_SOUB, null, 'murs de soubassement (hauteur + 30 cm)');
