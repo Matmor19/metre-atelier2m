@@ -1706,14 +1706,14 @@ function piecesCourantes() {
   return c ? piecesDe(c) : [];
 }
 function projetCalcul(p) {
-  const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, soubS: 0, semelle: 0, fouille: 0 };
+  const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, linSolin: 0, soubS: 0, semelle: 0, fouille: 0 };
   // Épaisseur du mur fini : moyenne des murs périphériques, pondérée par leur longueur
   let sEp = 0, sLong = 0;
   for (const m of p.murs) {
     const brut = surfaceMur(m);
     r.murs.push({ m, brut, ded: 0 });
     r.brut += brut;
-    if (m.cat === 'soub') r.linSoub += num(m.longueur);
+    if (m.cat === 'soub') { r.linSoub += num(m.longueur); if (m.finition) r.linSolin += num(m.longueur); }
     else if (m.porteur !== false) r.linP += num(m.longueur);
     if ((m.cat || 'peri') === 'peri' && num(m.epMur) > 0 && num(m.longueur) > 0) { sEp += num(m.epMur) * num(m.longueur); sLong += num(m.longueur); }
   }
@@ -2413,7 +2413,8 @@ function ficheVersMetre() {
     if (!t) { manquants.push('Matériau du mur de soubassement'); continue; }
     ajouter(t, surf, t, null, SRC_QTE.soub_s);
   }
-  ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSoub, 'Solin aluminium fixé en tête de soubassement');
+  // Solin en tête de soubassement : seulement sur les murs de soubassement qui ont une protection
+  ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
   // Plancher bas
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
     ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
