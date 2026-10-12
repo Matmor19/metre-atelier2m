@@ -2015,9 +2015,21 @@ function ficheListeMurGO() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
+// Ouvrages retirés de la seule liste des finitions (ils restent dans la bibliothèque)
+const FINITIONS_RETIREES = new Set([
+  'Contre-lattage pour bardage', 'Plafond en lambris bois', 'Enduit de finition sur plâtre (sous-couche)',
+  'Enduit plâtre projeté intérieur', 'Papier peint ou toile de verre', 'Peinture murs et plafonds (2 couches)',
+  'Lasure ou vernis bois extérieur (bardage, terrasse)', 'Peinture de sol (garage)', 'Enduit de rebouchage et lissage',
+  'Démolition de cloison légère (plâtre ou placo)', 'Enduit chaux intérieur sur mur ancien',
+  'Démolition de cloison en plaques de plâtre', "Piquetage et dépose d'enduit ancien",
+  'Bande et enduit de joints sur plaques de plâtre', 'Lambris bois mural', 'Papier peint',
+  'Enduit décoratif (tadelakt, chaux, béton ciré)', 'Lambris PVC', 'Enduit de finition sur plâtre',
+  'Peinture plafond deux couches', 'Peinture boiseries et menuiseries', 'Peinture sur métal (radiateurs, garde-corps)',
+  'Lasure bois extérieur', 'Enduit de lissage sur plâtre'
+]);
 // Finitions : recherche dans toute la bibliothèque (m²)
 function ficheListeFinition() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation))
+  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation) && !FINITIONS_RETIREES.has(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Protections des murs enterrés (soubassement) : toute la bibliothèque (m²)

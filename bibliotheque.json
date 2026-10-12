@@ -1968,8 +1968,7 @@
       "si": {
         "cle": "finition_choix",
         "val": "Contre-lattage pour bardage"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0098",
@@ -3047,8 +3046,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0153",
@@ -3193,8 +3191,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit de finition sur plâtre (sous-couche)"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0160",
@@ -3218,8 +3215,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit plâtre projeté intérieur"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0161",
@@ -5393,8 +5389,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Papier peint ou toile de verre"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0295",
@@ -5457,8 +5452,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Peinture murs et plafonds (2 couches)"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0298",
@@ -5537,8 +5531,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Lasure ou vernis bois extérieur (bardage, terrasse)"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0302",
@@ -5557,8 +5550,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0303",
@@ -5597,8 +5589,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit de rebouchage et lissage"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0305",
@@ -6203,8 +6194,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0341",
@@ -6484,8 +6474,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0357",
@@ -9003,8 +8992,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0496",
@@ -9235,8 +9223,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0509",
@@ -10566,8 +10553,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Bande et enduit de joints sur plaques de plâtre"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0580",
@@ -11004,8 +10990,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0608",
@@ -12241,8 +12226,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Papier peint"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0682",
@@ -12266,8 +12250,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit décoratif (tadelakt, chaux, béton ciré)"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0683",
@@ -12286,8 +12269,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "supprime": true
+      "version": 1
     },
     {
       "id": "OUV-0684",
@@ -12359,8 +12341,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit de finition sur plâtre"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0687",
@@ -12434,8 +12415,7 @@
         }
       ],
       "version": 1,
-      "qte": "des::Peinture plafond deux couches",
-      "supprime": true
+      "qte": "des::Peinture plafond deux couches"
     },
     {
       "id": "OUV-0691",
@@ -12459,8 +12439,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Peinture boiseries et menuiseries"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0692",
@@ -12484,8 +12463,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Peinture sur métal (radiateurs, garde-corps)"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0693",
@@ -12509,8 +12487,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Lasure bois extérieur"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0694",
@@ -12582,8 +12559,7 @@
       "si": {
         "cle": "murs_choix",
         "val": "Enduit de lissage sur plâtre"
-      },
-      "supprime": true
+      }
     },
     {
       "id": "OUV-0697",
@@ -16094,6 +16070,6 @@
       "version": 3
     }
   ],
-  "revision": 49,
+  "revision": 48,
   "prochainNumero": 880
 }
