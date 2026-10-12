@@ -1142,6 +1142,12 @@ function genererPiecesNv(c) {
       if (!o) manque.push('revêtement de ' + nom);
       else { const v = { nombre: '1', cote1: String(surf), cote2: '1' }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
     }
+    // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
+    if (num(p.perim) > 0) {
+      const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
+      if (!o) manque.push('Plinthes (OUV-0881)');
+      else { const v = { nombre: '1', cote1: String(num(p.perim)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    }
     if (num(p.portes) > 0) {
       const o = ouvrageParDesig(PNV_PORTE);
       if (!o) manque.push(PNV_PORTE);
