@@ -16083,8 +16083,113 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-0882",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé plaque de cuisson 32 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0883",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé four 16 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0884",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé lave-vaisselle 16 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0885",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé lave-linge 16 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0886",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé sèche-linge 16 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0887",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé chauffe-eau 20 A",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0888",
+      "lot": "electricite",
+      "designation": "Prise hotte 16 A (à 1,80 m)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 50,
-  "prochainNumero": 882
+  "revision": 51,
+  "prochainNumero": 889
 }

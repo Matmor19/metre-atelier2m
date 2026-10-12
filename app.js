@@ -1074,7 +1074,15 @@ const PNV_APPAREIL = [
   { cle: 'prises', libelle: 'Prises de courant', des: 'Prise de courant 16 A' },
   { cle: 'rj45', libelle: 'Prise RJ45', des: 'Prise RJ45 (réseau)' },
   { cle: 'interrup', libelle: 'Interrupteurs simples', des: 'Interrupteur simple' },
-  { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' }
+  { cle: 'points', libelle: 'Points lumineux', des: 'Point lumineux plafonnier' },
+  { cle: 'tv', libelle: 'Prise TV', des: 'Prise TV' },
+  { cle: 'hotte', libelle: 'Prise hotte', des: 'Prise hotte 16 A (à 1,80 m)' },
+  { cle: 'plaque', libelle: 'Plaque de cuisson (32 A)', des: 'Circuit spécialisé plaque de cuisson 32 A' },
+  { cle: 'four', libelle: 'Four (16 A)', des: 'Circuit spécialisé four 16 A' },
+  { cle: 'lvaisselle', libelle: 'Lave-vaisselle (16 A)', des: 'Circuit spécialisé lave-vaisselle 16 A' },
+  { cle: 'llinge', libelle: 'Lave-linge (16 A)', des: 'Circuit spécialisé lave-linge 16 A' },
+  { cle: 'sechelinge', libelle: 'Sèche-linge (16 A)', des: 'Circuit spécialisé sèche-linge 16 A' },
+  { cle: 'chauffeau', libelle: 'Chauffe-eau (20 A)', des: 'Circuit spécialisé chauffe-eau 20 A' }
 ];
 const PNV_PORTES = { '83': 'Bloc-porte fin de chantier 83×204', '73': 'Bloc-porte fin de chantier 73×204' };
 function piecesNvDe(c) {
@@ -1093,15 +1101,22 @@ function appDefaut(p, cle) {
   if (p.app && p.app[cle] !== undefined && p.app[cle] !== '') return String(p.app[cle]);
   const regle = ELEC_PIECE_TYPES[p.nom] || '';
   const surf = num(p.surf);
-  if (cle === 'rj45') return (p.nom === 'Chambre' || p.nom === 'Bureau') ? '1' : '';
   if (cle === 'points') return '1';            // 1 point de centre par pièce
   if (cle === 'interrup') return '1';          // au moins 1 point d'allumage (près de chaque accès)
-  // prises : séjour 5 (< 28 m²) ou 7 (≥ 28 m²) + 2 supplémentaires près des RJ45 ; chambre 3 ; cuisine 3 (< 4 m²) ou 6
-  // autres pièces de plus de 4 m² : 1 ; salles d'eau, salles de bains et WC : aucune prise dans les volumes
+  // RJ45 : séjour 2 (près du coin TV), chambre 1, bureau 1, cuisine 1
+  if (cle === 'rj45') return ({ 'Séjour': '2', 'Chambre': '1', 'Bureau': '1', 'Cuisine': '1' })[regle] || '';
+  if (cle === 'tv') return regle === 'Séjour' ? '1' : '';
+  if (cle === 'hotte') return regle === 'Cuisine' ? '1' : '';
+  // gros appareils : une ligne spécialisée par appareil (cuisine ; buanderie / cellier)
+  if (cle === 'plaque' || cle === 'four' || cle === 'lvaisselle') return regle === 'Cuisine' ? '1' : '';
+  if (cle === 'llinge' || cle === 'sechelinge' || cle === 'chauffeau') return regle === 'Buanderie / cellier' ? '1' : '';
+  // prises : séjour 5 (< 28 m²) ou 7 (≥ 28 m²) + 2 supplémentaires ; chambre 3 ; bureau 3 ; cuisine 6 (dont 4 sur plan de travail)
+  // salle de bains et salle d'eau : 1 prise hors volumes ; WC : aucune ; autres pièces de plus de 4 m² : 1
   if (regle === 'Séjour') return String((surf >= 28 ? 7 : 5) + 2);
-  if (regle === 'Chambre') return '3';
-  if (regle === 'Cuisine') return String(surf > 4 ? 6 : 3);
-  if (regle === 'Salle de bains' || regle === 'Salle d\'eau' || regle === 'WC') return '0';
+  if (regle === 'Chambre' || regle === 'Bureau') return '3';
+  if (regle === 'Cuisine') return '6';
+  if (regle === 'Salle de bains' || regle === 'Salle d\'eau') return '1';
+  if (regle === 'WC') return '0';
   return surf > 4 ? '1' : '0';
 }
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
