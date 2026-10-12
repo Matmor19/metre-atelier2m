@@ -1389,8 +1389,8 @@ function optPlat(re, val) {
 function verrouJoint(q, cle) { return !(q.verrou && q.verrou[cle] === false); }
 function champJoint(q, cle, val) {
   const v = verrouJoint(q, cle);
-  return `<span class="row" style="gap:4px;flex:1;min-width:200px;align-items:center">
-    <button type="button" class="btn" data-verrou="${cle}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="padding:2px 8px">${v ? '🔒' : '🔓'}</button>
+  return `<span style="display:flex;flex-wrap:nowrap;gap:4px;flex:1;min-width:200px;align-items:center">
+    <button type="button" data-verrou="${cle}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="flex:0 0 28px;width:28px;height:28px;padding:0;background:#1f6fd1;color:#fff;border:none;border-radius:3px;cursor:pointer;line-height:1">${v ? '🔒' : '🔓'}</button>
     <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} class="${v ? 'joint-verrouille' : ''}" style="flex:1;min-width:150px"></span>`;
 }
 // Plus-values plaque hydrofuge et plaque coupe-feu : une case de formule chacune, sous la bande à joint
@@ -1450,8 +1450,8 @@ function resultatsPlat(c, q) {
 function champFormuleVerrou(q, vkey, dataKey, titre, val, res) {
   const v = verrouJoint(q, vkey);
   return `<div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">${titre}</span>
-    <span class="row" style="gap:4px;flex:1;min-width:200px;align-items:center">
-    <button type="button" class="btn" data-verrou="${vkey}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="padding:2px 8px">${v ? '🔒' : '🔓'}</button>
+    <span style="display:flex;flex-wrap:nowrap;gap:4px;flex:1;min-width:200px;align-items:center">
+    <button type="button" data-verrou="${vkey}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="flex:0 0 28px;width:28px;height:28px;padding:0;background:#1f6fd1;color:#fff;border:none;border-radius:3px;cursor:pointer;line-height:1">${v ? '🔒' : '🔓'}</button>
     <input data-plat="${dataKey}" value="${esc(val || '')}" placeholder="formule" ${v ? 'readonly' : ''} class="${v ? 'joint-verrouille' : ''}" style="flex:1;min-width:150px"></span>${resBox(res)}</div>`;
 }
 function renderPlatNv() {
