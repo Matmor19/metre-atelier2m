@@ -1694,6 +1694,12 @@ const DES_FOND_SEMELLE = 'Semelles filantes en béton armé';
 const DES_MASSIF = 'Fouille pour puits ou massif de fondation';
 const DES_SEMELLE_ISO = 'Semelles isolées en béton armé';
 const DES_PLATEFORME = 'Fouille en pleine masse (dallage, plateforme)';
+// Terrassement saisi dans « Terrain » du configurateur : décapage et réseaux en tranchée (la clôture n'est jamais automatique)
+const DES_DECAP = 'Décapage de terre végétale (épaisseur 20 cm)';
+const DES_RES_EAU = 'Canalisation eau potable multicouche (tranchée, pose comprise)';
+const DES_RES_EU = 'Canalisation PVC EU ou EV (tranchée, pose comprise) – diamètre à préciser';
+const DES_RES_EP = 'Canalisation PVC EP vers réseau ou infiltration (tranchée, pose comprise) – diamètre à préciser';
+const DES_RES_ELEC = 'Tranchée et gaine électrique (pose comprise) – électricité';
 const DES_DIVERS = 'Fouille pour trou divers';
 const FICHE_FONDS_DEF = { largeur: '', hauteur: '' };
 
@@ -2456,6 +2462,12 @@ function ficheVersMetre() {
   // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
   // La semelle béton (gros œuvre) n'est plus créée ici : elle suit la ligne de fouille, voir alignerFondations()
   }
+  // Décapage et réseaux en tranchée, selon les champs du configurateur (Terrain). Pas de clôture : elle se lie à la main.
+  ajouter(DES_DECAP, num(p.terrain.decap), undefined, null, 'surface à décaper (configurateur, Terrain)');
+  ajouter(DES_RES_EAU, num(p.terrain.resEau));
+  ajouter(DES_RES_EU, num(p.terrain.resEu));
+  ajouter(DES_RES_EP, num(p.terrain.resEp));
+  ajouter(DES_RES_ELEC, num(p.terrain.resElec));
   // Soubassement : chaque mur avec son matériau ; solin en tête sur son linéaire
   for (const [t, surf] of Object.entries(r.parSoub || {})) {
     if (!(surf > 0)) continue;
