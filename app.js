@@ -1192,6 +1192,7 @@ function renderPiecesNv() {
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:50px"></label>
       <button type="button" class="btn small danger" data-nv-act="delfacade:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addfacade:${esc(p.id)}">+ Façade de placard</button>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Passage libre sans porte ml (déduit des plinthes) <input data-nv="${esc(p.id)}|passage" inputmode="decimal" value="${esc(p.passage || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${PNV_APPAREIL.map(a => `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
@@ -1225,10 +1226,10 @@ function genererPiecesNv(c) {
     }
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
-      // Linéaire de plinthes = périmètre − largeur des portes de passage − façades de placard − portes et baies extérieures
+      // Linéaire de plinthes = périmètre − portes de passage − façades de placard − portes et baies extérieures − passages libres sans porte
       const largeurPorte = num(p.porteType || '83') / 100;
       const baies = (p.menus || []).filter(m => estPorteBaie(m) && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
-      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - facadesLargeur(p) - baies);
+      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - facadesLargeur(p) - baies - num(p.passage));
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
       else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
