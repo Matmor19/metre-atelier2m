@@ -13768,7 +13768,7 @@
     {
       "id": "OUV-0905",
       "lot": "isolation-thermique",
-      "designation": "Isolant laine de verre GR32 120 mm",
+      "designation": "Isolant laine de verre GR32 120 mm (R 3,75)",
       "unite": "m²",
       "type": "ossature_bois",
       "saisie": "metre",
@@ -13787,7 +13787,7 @@
     {
       "id": "OUV-0906",
       "lot": "isolation-thermique",
-      "designation": "Isolant laine de verre GR32 140 mm",
+      "designation": "Isolant laine de verre GR32 140 mm (R 4,35)",
       "unite": "m²",
       "type": "ossature_bois",
       "saisie": "metre",
@@ -16707,6 +16707,6 @@
       "version": 1
     }
   ],
-  "revision": 72,
+  "revision": 73,
   "prochainNumero": 916
 }

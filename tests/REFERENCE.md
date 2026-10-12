@@ -81,7 +81,7 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
 - Plâtrerie (bloc D) : sur les lignes cloisonnement, doublage et plafond, une liste « Isolant » (sans isolant par défaut) propose les ouvrages « Isolation … » en m² de la bibliothèque, hors toiture, rampants, combles, planchers, dalles, ITE et extérieur. Si un isolant est choisi, une ligne supplémentaire est ajoutée au métré, de même surface que la ligne (cloison, doublage ou plafond).
 - Isolant ajouté à la bibliothèque : OUV-0902 « Isolant laine de verre non revêtu 45 mm » (m²), proposé dans la liste d'isolant de la plâtrerie.
 - Isolants ajoutés : OUV-0903 « Isolant laine de verre non revêtu 60 mm » et OUV-0904 « Isolant laine de verre non revêtu 85 mm » (m²), proposés dans la liste d'isolant de la plâtrerie.
-- Isolants ajoutés : OUV-0905 « Isolant laine de verre GR32 120 mm » et OUV-0906 « Isolant laine de verre GR32 140 mm » (m²), proposés dans la liste d'isolant de la plâtrerie.
+- Isolants ajoutés : OUV-0905 « Isolant laine de verre GR32 120 mm (R 3,75) » et OUV-0906 « Isolant laine de verre GR32 140 mm (R 4,35) » (m²), proposés dans la liste d'isolant de la plâtrerie.
 - Isolant ajouté : OUV-0907 « Isolant laine de verre Isoconfort 280 mm (R 7) » (m²), proposé dans la liste d'isolant de la plâtrerie.
 - Isolants ajoutés : OUV-0908 « Isolant laine de verre IBR 320 mm (R 8) » et OUV-0909 « Isolant laine de verre IBR 400 mm (R 10) » (m²), proposés dans la liste d'isolant de la plâtrerie.
 - Isolants ajoutés : OUV-0910 « Isolant laine de verre soufflée 330 mm (R 7) », OUV-0911 « … 380 mm (R 8) » et OUV-0912 « … 465 mm (R 10) » (m²), proposés dans la liste d'isolant de la plâtrerie.
