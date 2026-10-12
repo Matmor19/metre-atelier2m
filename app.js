@@ -371,7 +371,7 @@ function detailHtml(l) {
     const typeLigne = v.typeMur || '';
     const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
-    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures déduites' : ''}`).join(' ; ');
+    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures égales ou supérieures à 1,50 m² déduites' : ''}`).join(' ; ');
     return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
@@ -2312,7 +2312,7 @@ function ficheResume() {
   const ligne = (a, b, gras) => `<tr><td style="padding:4px 0;${gras ? 'font-weight:700' : ''}">${a}</td><td style="text-align:right;padding:4px 0;${gras ? 'font-weight:700;color:#6a1b9a' : ''}">${b}</td></tr>`;
   $('ficheResume').innerHTML = `<table style="width:100%;border-collapse:collapse">
     ${ligne('Murs (longueur × hauteur)', fmt(r.brut) + ' m²')}
-    ${ligne('Ouvertures de plus de 1,50 m² déduites', '− ' + fmt(r.deduit) + ' m²')}
+    ${ligne('Ouvertures égales ou supérieures à 1,50 m² déduites', '− ' + fmt(r.deduit) + ' m²')}
     ${ligne('Élévation nette des murs (finition)', fmt(r.net) + ' m²', true)}
     ${ligne('Tableaux de menuiseries (2 côtés × hauteur × épaisseur)', fmt(r.tableaux) + ' m²', true)}
     ${ligne('Toiture (surface développée)', fmt(r.toiture) + ' m²', true)}

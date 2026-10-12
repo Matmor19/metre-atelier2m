@@ -30,7 +30,7 @@ CHANTIER = {
                    {"id": "soub1", "cat": "soub", "nom": "Mur de soubassement ", "longueur": "20", "hauteur": "0.5", "porteur": True,
                     "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": False},
                    {"id": "peri1", "nom": "Mur périphérique ", "longueur": "50", "hauteur": "2", "porteur": True,
-                    "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": False}],
+                    "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "", "deduire": True}],
                "toiture": {"type": "", "surface": "", "pente": "", "couverture": ""},
                "choix": {"murs": "", "tableaux": "", "finition": ""},
                "fond": {"largeur": "", "hauteur": "", "pleines": [], "rigLin": "10", "rigHt": "0.5", "rigLarg": "0.3"},
@@ -79,7 +79,7 @@ JS_TESTS = r"""(c) => {
   const lElev = L.find(x => x.ouvrage === 'OUV-0048' && /^(Calcul du configurateur : )?murs, surface nette/.test((x.valeurs || {}).src || ''));
   const lSoub = L.find(x => x.ouvrage === 'OUV-0048' && /murs de soubassement/.test((x.valeurs || {}).src || ''));
   const txtElev = lElev ? (() => { const d = document.createElement('div'); d.innerHTML = detailHtml(lElev); return d.textContent; })() : '';
-  R.detailElev = { soubCite: /soubassement/i.test(txtElev), periCite: /Mur périphérique/.test(txtElev), quantite: lElev ? lElev.quantite : null };
+  R.detailElev = { soubCite: /soubassement/i.test(txtElev), periCite: /Mur périphérique/.test(txtElev), quantite: lElev ? lElev.quantite : null, regleDeduction: /égales ou supérieures à 1,50 m² déduites/.test(txtElev) };
   R.soubQuantite = lSoub ? lSoub.quantite : null;
   // Ordre des lots : installation de chantier en premier
   R.premierLot = lotsDuChantier(c.id)[0] ? (lotsDuChantier(c.id)[0].id || lotsDuChantier(c.id)[0]) : null;
@@ -95,7 +95,7 @@ ATTENDU = {
     'clotureAuto': 0,
     'surb': {'configDirecte': '', 'semelleLiee': 'ligne-lie', 'manuelle': 'ligne-manuelle', 'configClotureNonMauve': ''},
     'premierLot': 'installation-chantier',
-    'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100},
+    'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100, 'regleDeduction': True},
     'soubQuantite': 10,
 }
 
