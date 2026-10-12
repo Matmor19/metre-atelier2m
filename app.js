@@ -1705,15 +1705,19 @@ function piecesCourantes() {
   return c ? piecesDe(c) : [];
 }
 function projetCalcul(p) {
-  const e = num(p.epaisseur) / 100;
   const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, soubS: 0, semelle: 0, fouille: 0 };
+  // Épaisseur du mur fini : moyenne des murs périphériques, pondérée par leur longueur
+  let sEp = 0, sLong = 0;
   for (const m of p.murs) {
     const brut = surfaceMur(m);
     r.murs.push({ m, brut, ded: 0 });
     r.brut += brut;
     if (m.cat === 'soub') r.linSoub += num(m.longueur);
     else if (m.porteur !== false) r.linP += num(m.longueur);
+    if ((m.cat || 'peri') === 'peri' && num(m.epMur) > 0 && num(m.longueur) > 0) { sEp += num(m.epMur) * num(m.longueur); sLong += num(m.longueur); }
   }
+  const e = sLong > 0 ? sEp / sLong / 100 : 0;
+  r.epMoy = e;
   // Menuiseries rattachées aux pièces : chacune compte pour son nombre (nb × pièces identiques)
   for (const x of menusCalcul(piecesCourantes())) {
     const aire = num(x.m.largeur) * num(x.m.hauteur);
@@ -2076,6 +2080,7 @@ function ficheRendre() {
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
         <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
+        ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
       </div></div>`;
   };
@@ -2200,7 +2205,6 @@ function ficheRendre() {
     ${carte('Fouilles en rigoles (linéaire saisi à la main)', contenuRig, 'fond_fouille')}
     </div>
     <div class="bloc">${lotTitre('2. Gros œuvre + matériaux de finition')}
-    ${carte('Épaisseur du mur (pour les tableaux)', champ('Épaisseur totale du mur (cm)', inp('data-k="epais" inputmode="decimal" placeholder="ex. 30"', p.epaisseur, '160px')))}
     ${carte('Murs de soubassement (mur au-dessus des fondations)', blocMurs('soub') + ajouterMur('soub', '+ Ajouter un mur de soubassement'))}
     ${carte('Murs périphériques', blocMurs('peri') + ajouterMur('peri', '+ Ajouter un mur périphérique'))}
     ${carte('Murs de refend (sans finition)', blocMurs('refend') + ajouterMur('refend', '+ Ajouter un mur de refend'))}
@@ -2423,6 +2427,7 @@ function ficheVersMetre() {
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
   for (const [f, surf] of Object.entries(r.parFin || {})) if (surf > 0) ajouter(f, surf, f, null, SRC_QTE.finit_net);
+  if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
   ajouter(p.choix.tableaux, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
   else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
