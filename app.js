@@ -843,7 +843,13 @@ function majLignesDepuisConfigurateur(c) {
       }
     }
     if (!remplacer.size && !ajouts.length) return;
-    const nouvelles = Lk.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x).concat(ajouts);
+    // Nouvelles lignes : ajoutées en fin de lot, sauf les tableaux de fenêtres, placés juste sous l'enduit de leur mur (même ouvrage)
+    const nouvelles = Lk.map(x => remplacer.has(x.uid) ? remplacer.get(x.uid) : x);
+    for (const a of ajouts) {
+      const i = a.designation === 'Tableaux de menuiseries (2 côtés)'
+        ? nouvelles.reduce((acc, x, k) => (x.ouvrage === a.ouvrage && x.lot === a.lot ? k : acc), -1) : -1;
+      if (i >= 0) nouvelles.splice(i + 1, 0, a); else nouvelles.push(a);
+    }
     sauverLignes(c.id, nouvelles);
   } finally { _majConfigEnCours = false; }
 }

@@ -103,6 +103,15 @@ JS_TESTS = r"""(c) => {
   const tabl = lsGet('lignes.' + c.id, []).find(x => x.designation === 'Tableaux de menuiseries (2 côtés)');
   R.tableauxAuto = tabl ? Math.round(tabl.quantite * 100) / 100 : null;
   R.tableauxDesig = tabl ? tabl.ouvrage : null;
+  // Tableaux après synchronisation : placés juste sous l'enduit de leur mur, même si d'autres lignes suivent
+  let Lt = lsGet('lignes.' + c.id, []).filter(x => x.designation !== 'Tableaux de menuiseries (2 côtés)');
+  Lt.push({ uid: 'dummy-fin', lot: 'gros-oeuvre', ouvrage: 'OUV-0770', designation: 'Ligne factice', unite: 'm²', valeurs: {}, quantite: 1, prix: 'moyen' });
+  lsSet('lignes.' + c.id, Lt);
+  majQuantitesAuto(c); majLignesDepuisConfigurateur(c);
+  const Lg = lsGet('lignes.' + c.id, []).filter(x => x.lot === 'gros-oeuvre');
+  const iEnd = Lg.findIndex(x => x.ouvrage === 'OUV-0071' && /surface nette/.test((x.valeurs || {}).src || ''));
+  const iTab = Lg.findIndex(x => x.designation === 'Tableaux de menuiseries (2 côtés)');
+  R.tableauSousEnduit = iTab >= 0 && iTab === iEnd + 1;
   return R;
 }"""
 
@@ -120,6 +129,7 @@ ATTENDU = {
     'veilleAucuneAuto': 0,
     'elevApresFenetre': 99,
     'tableauxAuto': 0.66,
+    'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
     'pieceNv': {'n': 7, 'nApresRegeneration': 7, 'surbrillance': '', 'prises': 3},
