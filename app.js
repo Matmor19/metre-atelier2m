@@ -1553,10 +1553,13 @@ function genererPlatNv(c) {
   const L = lignesDe(c.id).filter(l => !l.platNv);   // les anciennes lignes sont toujours retirées
   const manque = []; let nb = 0;
   // Ajoute une ligne au métré pour un ouvrage donné, en m², avec la surface indiquée (cote1)
-  const ajouteM2 = (o, designation, surface) => {
+  // detailTexte : texte affiché dans la colonne Détail (ex. « longueur (2 plaques × 1,20 m) × hauteur 2,70 m »)
+  const ajouteM2 = (o, designation, surface, detailTexte) => {
     ajouterLotSiAbsent(c.id, o.lot);
     const v = { nombre: '1', cote1: String(surface), cote2: '1' };
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    const ligne = { uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() };
+    if (detailTexte) { v.src = 'Plus-value plaque'; ligne.detailTexte = detailTexte; }
+    L.push(ligne);
     nb++;
   };
   // Plus-value plaque (hydrofuge, acoustique) saisie en ml : plaques de 1,20 m arrondies au-dessus, × hauteur
@@ -1572,14 +1575,14 @@ function genererPlatNv(c) {
     if (!(pv.surf > 0)) return;
     const o = ouvPlusValue(idOuv);
     if (!o) { manque.push(nomPV + ' ' + titre); return; }
-    ajouteM2(o, `${o.designation} – ${titre} : ${pv.n} plaques × ${fmt(PLAQUE_ML)} m × ${fmt(hh)} m = ${fmt(pv.surf)} m²`, pv.surf);
+    ajouteM2(o, `${o.designation} – ${titre} : ${pv.n} plaques × ${fmt(PLAQUE_ML)} m × ${fmt(hh)} m = ${fmt(pv.surf)} m²`, pv.surf, `longueur (${pv.n} plaques × ${fmt(PLAQUE_ML)} m) × hauteur ${fmt(hh)} m`);
   };
   const ajouteFeu = (titre, valeur) => {
     const m2 = num(valeur);
     if (!(m2 > 0)) return;
     const o = ouvPlusValue(ouvFeu);
     if (!o) { manque.push('plus-value coupe-feu ' + titre); return; }
-    ajouteM2(o, `${o.designation} – ${titre}, ${fmt(m2)} m²`, m2);
+    ajouteM2(o, `${o.designation} – ${titre}, ${fmt(m2)} m²`, m2, `plaque coupe-feu ${fmt(m2)} m² (liste 3, 6, 9 ou 15)`);
   };
   for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
     const d0 = L.length;
@@ -1652,7 +1655,7 @@ function genererPlatNv(c) {
         const rH = resultatFormuleJoint(q.pla.hydro, sEau);
         if (!(rH > 0)) { /* rien à ajouter : surface des salles d'eau nulle ou formule incorrecte */ if (rH === null) manque.push('formule plus-value hydrofuge plafond'); }
         else if (!oH) manque.push('plus-value hydrofuge plafond');
-        else ajouteM2(oH, `${oH.designation} – plafond salles d'eau et de bain, ${fmt(rH)} m²`, rH);
+        else ajouteM2(oH, `${oH.designation} – plafond salles d'eau et de bain, ${fmt(rH)} m²`, rH, `formule (${q.pla.hydro}) avec S = surface des salles d'eau et de bain ${fmt(surfacePiecesEau(c))} m²`);
       }
       ajouteFeu('plafond', q.pla.feu);
     }
