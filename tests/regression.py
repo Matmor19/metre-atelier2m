@@ -89,13 +89,17 @@ JS_TESTS = r"""(c) => {
   R.veilleMessage = /veille/.test(retourElec);
   const cN = chantiers.find(x => x.id === c.id);
   piecesNvDe(cN).push({ id: 'pn-test', nom: 'Chambre test', surf: '15', revet: 'OUV-0274', portes: '1',
-    menus: [{ l: '1', h: '1', nb: '1' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
+    menus: [{ l: '100', h: '100', nb: '1' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
   genererPiecesNv(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);
   const n2 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   R.pieceNv = { n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
     prises: (n1.find(x => x.ouvrage === 'OUV-0611') || {}).quantite || 0 };
+  // La fenêtre du nouveau bloc (100 × 100 cm = 1 m²) est déduite du mur périphérique : 100 - 1 = 99
+  ficheVersMetre();
+  const elev = lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0048' && /murs, surface nette/.test((x.valeurs || {}).src || ''));
+  R.elevApresFenetre = elev ? elev.quantite : null;
   return R;
 }"""
 
@@ -111,6 +115,7 @@ ATTENDU = {
     'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100, 'regleDeduction': True},
     'soubQuantite': 10,
     'veilleAucuneAuto': 0,
+    'elevApresFenetre': 99,
     'veilleMessage': True,
     'pieceNv': {'n': 7, 'nApresRegeneration': 7, 'surbrillance': '', 'prises': 3},
 }

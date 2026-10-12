@@ -1906,6 +1906,17 @@ function projetCalcul(p) {
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: nomPiece(x.piece) + ' · ' + FICHE_OUV[x.m.type] }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: x.nb });
   }
+  // Menuiseries du nouveau configurateur de pièces : même règle que l'ancien (surface déduite des murs cochés, tableaux)
+  const cNv = chantiers.find(x => x.id === courantId);
+  if (cNv) for (const pc of piecesNvDe(cNv)) for (const m of (pc.menus || [])) {
+    if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
+    const nbM = num(m.nb) || 1;
+    const aire = num(m.l) * num(m.h) / 10000;          // cm × cm → m²
+    const tab = 2 * (num(m.h) / 100) * e * nbM;        // tableaux : 2 côtés × hauteur (m) × épaisseur
+    if (aire >= SEUIL_DEDUCTION) r.deduit += aire * nbM;
+    r.tableaux += tab;
+    r.ouvs.push({ o: { nom: (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '') + ' · fenêtre' }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: nbM });
+  }
   // Ouvertures : déduites seulement des murs dont la case « Déduire les ouvertures » est cochée, au prorata de leur surface
   const cochés = r.murs.filter(x => x.m.deduire === true);
   const brutCochés = cochés.reduce((a, x) => a + x.brut, 0);
