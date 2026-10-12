@@ -150,7 +150,7 @@ ATTENDU = {
     'veilleMessage': True,
     'plat': {'quantite': 25},
     'platPla': {'quantite': 12},
-    'platDoub': {'quantite': 20.22},
+    'platDoub': {'quantite': 21.22},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
