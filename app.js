@@ -933,7 +933,12 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
+    let blocPrec = null;
+    const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
     for (const l of ls) {
+      // Sous-titre à chaque début de bloc de plâtrerie (cloisonnement, doublage, plafond)
+      if (l.platBloc && l.platBloc !== blocPrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${SOUS_TITRES_PLAT[l.platBloc]}</td></tr>`;
+      blocPrec = l.platBloc || null;
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
@@ -1577,6 +1582,7 @@ function genererPlatNv(c) {
     ajouteM2(o, `${o.designation} – ${titre}, ${fmt(m2)} m²`, m2);
   };
   for (const [cle, titre] of [['cloi', 'cloisonnement'], ['doub', 'doublage']]) {
+    const d0 = L.length;
     const ml = num(q[cle].ml), m2s = num(q[cle].m2);
     const hk = cle === 'doub' ? num(q.hauteurDoub) : h;   // le doublage a sa propre hauteur
     const viaMl = ml > 0 && hk > 0;
@@ -1612,9 +1618,11 @@ function genererPlatNv(c) {
     ajouteMlPlus(ouvHydro, 'plus-value hydrofuge', titre, num(q[cle].hydro), hk);
     if (cle === 'cloi') ajouteMlPlus(ouvAcou, 'plus-value acoustique', titre, num(q.cloi.acou), hk);
     ajouteFeu(titre, q[cle].feu);
+    for (let i = d0; i < L.length; i++) L[i].platBloc = cle;
   }
   // Plafond : saisi directement en m², sans hauteur
   const m2 = num(q.pla.m2);
+  const d0Pla = L.length;
   if (m2 > 0) {
     const o = BIB.ouvrages.find(x => x.id === q.pla.ouv && !x.supprime);
     if (!o) manque.push('plafond');
@@ -1649,6 +1657,7 @@ function genererPlatNv(c) {
       ajouteFeu('plafond', q.pla.feu);
     }
   }
+  for (let i = d0Pla; i < L.length; i++) L[i].platBloc = 'pla';
   sauverLignes(c.id, L);
   renderMetre();
   if (sansHauteur) return 'Saisissez d\'abord la hauteur sous plafond.';
