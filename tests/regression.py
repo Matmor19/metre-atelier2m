@@ -92,6 +92,7 @@ JS_TESTS = r"""(c) => {
     perim: '15.5', porteType: '83', facades: [{ ouv: 'OUV-0755', l: '200', h: '240', nb: '1' }], menus: [{ l: '100', h: '100', nb: '1' }, { l: '180', h: '210', nb: '1', ouv: 'OUV-0172' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
   piecesNvDe(cN).push({ id: 'pn-bureau', nom: 'Bureau', surf: '', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-cuisine', nom: 'Cuisine', surf: '9', revet: '', portes: '', menus: [], app: {} });
+  piecesNvDe(cN).push({ id: 'pn-terrasse', nom: 'Terrasse extérieure', surf: '10', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-cellier', nom: 'Cellier', surf: '5', revet: '', portes: '', menus: [], app: {} });
   genererPiecesNv(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
@@ -102,6 +103,7 @@ JS_TESTS = r"""(c) => {
     rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && /Bureau/.test(x.designation)).length),
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
     plinthesSousRevet: (n1.findIndex(x => x.ouvrage === 'OUV-0881') === n1.findIndex(x => x.ouvrage === 'OUV-0274') + 1),
+    terrasse: n1.filter(x => x.pieceNv === 'pn-terrasse' && ['OUV-0615', 'OUV-0223', 'OUV-0893'].includes(x.ouvrage)).length,
     facade: Math.round(((n1.find(x => x.ouvrage === 'OUV-0755') || {}).quantite || 0) * 100) / 100,
     circuitsCuisine: n1.filter(x => ['OUV-0882', 'OUV-0883', 'OUV-0884'].includes(x.ouvrage)).length,
     circuitsCellier: n1.filter(x => ['OUV-0885', 'OUV-0886', 'OUV-0887'].includes(x.ouvrage)).length,
@@ -142,7 +144,7 @@ ATTENDU = {
     'tableauSousEnduit': True,
     'tableauxDesig': 'OUV-0071',
     'veilleMessage': True,
-    'pieceNv': {'rjBureau': 1, 'n': 29, 'nApresRegeneration': 29, 'facade': 4.8, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
+    'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
 echecs = 0

@@ -1099,22 +1099,33 @@ function menusPorteBaie() {
 }
 // Appareillage par défaut d'une pièce, d'après les repères NF C 15-100 (infographie Legrand « Les prises de courant »).
 // Une valeur saisie à la main prime toujours.
+// Désignation de l'ouvrage à mettre au métré : la terrasse reçoit des équipements extérieurs
+function desPnv(p, a) {
+  const regle = ELEC_PIECE_TYPES[p.nom] || '';
+  if (regle === 'Extérieur (terrasse)') {
+    if (a.cle === 'prises') return 'Prise extérieure étanche';
+    if (a.cle === 'points') return 'Éclairage extérieur (applique ou borne)';
+    if (a.cle === 'interrup') return 'Interrupteur à voyant témoin pour prise extérieure';
+  }
+  return a.des;
+}
 function appDefaut(p, cle) {
   if (p.app && p.app[cle] !== undefined && p.app[cle] !== '') return String(p.app[cle]);
   const regle = ELEC_PIECE_TYPES[p.nom] || '';
   const surf = num(p.surf);
   // Sans surface saisie, les prises qui dépendent de la surface restent vides (pas de valeur devinée)
   const surfVide = String(p.surf ?? '').trim() === '';
-  const fixe = ['Chambre', 'Bureau', 'Salle de bains', 'Salle d\'eau', 'WC'];
+  const fixe = ['Chambre', 'Bureau', 'Salle de bains', 'Salle d\'eau', 'WC', 'Garage', 'Cave', 'Mezzanine', 'Cage d\'escalier', 'Extérieur (terrasse)'];
   if (cle === 'prises' && surfVide && !fixe.includes(regle)) return '';
   if (cle === 'points') return '1';            // 1 point de centre par pièce
   // allumage : simple pour cuisine, dressing, salle de bains, salle d'eau, WC ; aucun pour chambre, séjour, couloir (va-et-vient)
   // va-et-vient : couloir, chambre, séjour (1 point chacun) ; cuisine (1 en plus du simple)
   if (cle === 'interrup') {
-    const simple = { 'Cuisine': '1', 'Dressing': '1', 'Salle de bains': '1', 'Salle d\'eau': '1', 'WC': '1', 'Chambre': '0', 'Séjour': '0', 'Entrée / dégagement': '0' };
+    const simple = { 'Cuisine': '1', 'Dressing': '1', 'Salle de bains': '1', 'Salle d\'eau': '1', 'WC': '1', 'Chambre': '0', 'Séjour': '0', 'Entrée / dégagement': '0', 'Cage d\'escalier': '0' };
     return regle in simple ? simple[regle] : '1';
   }
-  if (cle === 'vv') return ['Chambre', 'Séjour', 'Entrée / dégagement', 'Cuisine'].includes(regle) ? '1' : '0';
+  // cage d'escalier : 1 point en va-et-vient (une commande à chaque étage)
+  if (cle === 'vv') return ['Chambre', 'Séjour', 'Entrée / dégagement', 'Cuisine', 'Cage d\'escalier'].includes(regle) ? '1' : '0';
   // RJ45 : séjour 2 (près du coin TV), chambre 1, bureau 1, cuisine 1
   if (cle === 'rj45') return ({ 'Séjour': '2', 'Chambre': '1', 'Bureau': '1', 'Cuisine': '1' })[regle] || '';
   if (cle === 'tv') return regle === 'Séjour' ? '1' : '';
@@ -1130,6 +1141,10 @@ function appDefaut(p, cle) {
   if (regle === 'Cuisine') return surf > 4 ? '6' : '3';
   if (regle === 'Salle de bains' || regle === 'Salle d\'eau') return '1';
   if (regle === 'WC') return '0';
+  // garage 2 prises ; cave, mezzanine et terrasse 1 prise (terrasse : prise extérieure étanche) ; cage d'escalier aucune
+  if (regle === 'Garage') return '2';
+  if (regle === 'Cave' || regle === 'Mezzanine' || regle === 'Extérieur (terrasse)') return '1';
+  if (regle === 'Cage d\'escalier') return '0';
   // entrée / dégagement (couloir) : 1 prise obligatoire, 2 si la pièce dépasse 4 m²
   if (regle === 'Entrée / dégagement') return surf > 4 ? '2' : '1';
   return surf > 4 ? '1' : '0';
@@ -1244,8 +1259,8 @@ function genererPiecesNv(c) {
     for (const a of PNV_APPAREIL) {
       const n = num(appDefaut(p, a.cle));
       if (!(n > 0)) continue;
-      const o = ouvrageParDesig(a.des);
-      if (!o) { manque.push(a.des); continue; }
+      const o = ouvrageParDesig(desPnv(p, a));
+      if (!o) { manque.push(desPnv(p, a)); continue; }
       const v = { nombre: String(n) };
       ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
     }
