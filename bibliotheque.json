@@ -13658,7 +13658,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison 100 mm phonique : laine minérale, BA13 deux faces"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0755",
@@ -13701,7 +13702,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison 90 mm phonique : laine minérale, BA13 deux faces"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0757",
@@ -13725,7 +13727,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison 120 mm phonique : double BA13 désolidarisé"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0758",
@@ -13769,7 +13772,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0760",
@@ -16365,6 +16369,6 @@
       "version": 1
     }
   ],
-  "revision": 61,
+  "revision": 62,
   "prochainNumero": 899
 }
