@@ -1359,7 +1359,10 @@ function isolantsPlat() {
 function optIsol(val) {
   return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
-function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' }; return q; }
+function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
+  // Formule de la bande à joint du plafond : S × 3,80 (proposée une seule fois, ensuite modifiable librement)
+  if (!q.pla.jointInit) { q.pla.joint = 'S * 3,8'; q.pla.jointInit = true; }
+  return q; }
 // Bande à joint : une case où l'on saisit une formule ; S = surface de la ligne (m²). Résultat = quantité de l'ouvrage OUV-0579.
 const OUV_BANDE_JOINT = 'OUV-0579';
 function resultatFormuleJoint(texte, surface) {

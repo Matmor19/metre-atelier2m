@@ -136,7 +136,7 @@ JS_TESTS = r"""(c) => {
   R.platM2Ok = lM2 && Math.abs(lM2.quantite - (10 - portesEtPlacardsM2(cN))) < 0.01 ? 1 : 0;
   pq.cloi.ml = mlSauve; pq.cloi.m2 = ''; genererMetreConfigurateur(cN);
   // Bande à joint (case formule) : vide, aucune ligne ; avec « S * 1,1 », une ligne OUV-0579 = surface de la cloison × 1,1
-  const nbJointSansChoix = lsGet('lignes.' + c.id, []).filter(x => x.platNv && /joint/i.test(x.designation)).length;
+  const nbJointSansChoix = lsGet('lignes.' + c.id, []).filter(x => x.platNv && /joint/i.test(x.designation) && /cloisonnement/.test(x.designation)).length;
   pq.cloi.joint = 'S * 1.1'; genererMetreConfigurateur(cN);
   const LJ = lsGet('lignes.' + c.id, []);
   const jC = LJ.find(x => x.platNv && x.ouvrage === 'OUV-0579' && /cloisonnement/.test(x.designation));
@@ -152,6 +152,7 @@ JS_TESTS = r"""(c) => {
   R.platIsolRetire = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage === 'OUV-0902').length;
   // Retrait : sans hauteur, plus aucune ligne plâtrerie ni peinture murs ne doit rester
   platNvDe(cN).hauteur = ''; peiDe(cN).hauteur = ''; genererMetreConfigurateur(cN);
+  R.platJointPla = (function () { const cc = {}; const qq = platNvDe(cc); return qq.pla.joint === 'S * 3,8' && qq.pla.jointInit === true ? 1 : 0; })();
   R.platStale = lsGet('lignes.' + c.id, []).filter(x => x.platNv && x.ouvrage !== 'OUV-0149' && !(/joint/i.test(x.designation) && /plafond/.test(x.designation))).length;
   R.peiStale = lsGet('lignes.' + c.id, []).filter(x => x.ouvrage === 'OUV-0689').length;
   platNvDe(cN).hauteur = '2.5'; peiDe(cN).hauteur = '2.5'; genererMetreConfigurateur(cN);
@@ -185,6 +186,7 @@ ATTENDU = {
     'platM2Ok': 1,
     'platIsol': 1,
     'platJoint': 1,
+    'platJointPla': 1,
     'platIsolRetire': 0,
     'installation': 'OUV-0484=1 OUV-0485=1 OUV-0486=1 OUV-0487=1 OUV-0488=1 OUV-0492=1',
     'fouille': 1.5,
