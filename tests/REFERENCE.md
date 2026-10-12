@@ -42,8 +42,10 @@ Lancer les tests : `python3 tests/regression.py` (doit afficher « TOUT EST OK �
   - Cuisine : prises 3 (4 m² ou moins) ou 6 (plus de 4 m², dont 4 au-dessus du plan de travail) ; RJ45 1 ; prise hotte 1 (à 1,80 m) ; circuits spécialisés plaque de cuisson 32 A, four 16 A, lave-vaisselle 16 A (1 chacun).
   - Salle de bains et salle d'eau : prise 1 + prise rasoir 1 (transformateur 20-50 VA, hors volume de sécurité) ; WC : 0 (la prise est dans le couloir).
   - Buanderie / cellier : prises 1 si plus de 4 m² ; circuits spécialisés lave-linge 16 A, sèche-linge 16 A, chauffe-eau 20 A (1 chacun).
+  - Entrée / dégagement (couloir) : prises 1, et 2 si plus de 4 m² ; points lumineux 1 ; interrupteurs 1.
   - Autres pièces : prises 1 si plus de 4 m² ; points lumineux 1 ; interrupteurs 1.
 - Une valeur saisie à la main prime toujours.
 - Lignes de bibliothèque ajoutées : OUV-0882 à OUV-0888 (circuits spécialisés et prise hotte).
 - Tests : cuisine (3 circuits + hotte), cellier (3 circuits), 27 lignes au total pour le jeu de test.
 - Capture Google (tableau prises/éclairage/TV) utilisée pour corriger : cuisine selon la surface, séjour sans prise en plus (les 2 sont des RJ45), prise rasoir en salle de bains. Ligne ajoutée : OUV-0889 (prise rasoir).
+- Séjour : 5 ou 7 prises, sans prise supplémentaire (décision de Mathieu).

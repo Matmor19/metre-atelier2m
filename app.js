@@ -1119,6 +1119,8 @@ function appDefaut(p, cle) {
   if (regle === 'Cuisine') return surf > 4 ? '6' : '3';
   if (regle === 'Salle de bains' || regle === 'Salle d\'eau') return '1';
   if (regle === 'WC') return '0';
+  // entrée / dégagement (couloir) : 1 prise obligatoire, 2 si la pièce dépasse 4 m²
+  if (regle === 'Entrée / dégagement') return surf > 4 ? '2' : '1';
   return surf > 4 ? '1' : '0';
 }
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
