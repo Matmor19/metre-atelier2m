@@ -73,7 +73,33 @@ let lotCourant = null;
 function lignesDe(id) { return lsGet('lignes.' + id, []); }
 // Pendant la revue, les lignes calculées sont recueillies ici au lieu d'être enregistrées dans le métré
 let _revueCollecte = null;
-function sauverLignes(id, L) { if (_revueCollecte) { _revueCollecte[id] = (_revueCollecte[id] || []).concat(L); return true; } const ok = lsSet('lignes.' + id, L); marquerChantier(id); return ok; }
+// Fondations : chaque fouille du VRD (tranchée pour semelles filantes, massif) entraîne la semelle béton
+// du gros œuvre qui va avec, avec les mêmes cotes et la même quantité. Si la fouille disparaît, la semelle aussi.
+// Fonction pure : renvoie la nouvelle liste de lignes.
+const pairesFondation = () => [[DES_FOND_FOUILLE, DES_FOND_SEMELLE], [DES_MASSIF, DES_SEMELLE_ISO]];  // appelée à l'enregistrement, pas au chargement
+function alignerFondations(L) {
+  if (!BIB || !BIB.ouvrages || !Array.isArray(L)) return L;
+  const ouv = d => BIB.ouvrages.find(x => !x.supprime && x.designation === d);
+  let out = L.slice();
+  const sources = new Set();
+  for (const [fouDes, betDes] of pairesFondation()) {
+    const fou = ouv(fouDes), bet = ouv(betDes);
+    if (!fou || !bet) continue;
+    for (const f of L) {
+      if (f.ouvrage !== fou.id || !(f.quantite > 0)) continue;
+      sources.add(f.uid);
+      // La semelle déjà liée à cette fouille, ou une semelle issue de l'ancien calcul du configurateur (à reprendre)
+      const existant = out.find(x => x.vrd === f.uid) || out.find(x => x.ouvrage === bet.id && !x.vrd && (x.projet || x.qteAuto));
+      const ligne = Object.assign({}, existant || {}, { uid: existant ? existant.uid : uid(), lot: bet.lot, ouvrage: bet.id, designation: bet.designation, unite: bet.unite,
+        valeurs: JSON.parse(JSON.stringify(f.valeurs || {})), quantite: f.quantite, surface: null, prix: 'moyen', cree: (existant && existant.cree) || new Date().toISOString(),
+        vrd: f.uid, projet: undefined, qteAuto: undefined });
+      out = existant ? out.map(x => x === existant ? ligne : x) : out.concat([ligne]);
+    }
+  }
+  // Semelle dont la fouille a été supprimée : retirée
+  return out.filter(x => !x.vrd || sources.has(x.vrd));
+}
+function sauverLignes(id, L) { if (_revueCollecte) { _revueCollecte[id] = (_revueCollecte[id] || []).concat(L); return true; } L = alignerFondations(L); const ok = lsSet('lignes.' + id, L); marquerChantier(id); return ok; }
 function libLot(id) { const l = BIB.lots.find(x => x.id === id); return l ? l.nom : id; }
 
 async function post(corps) {
@@ -1773,7 +1799,7 @@ function projetCalcul(p) {
   const f = p.fond || FICHE_FONDS_DEF;
   // Si des rigoles sont saisies (bloc Terrassement), leur linéaire, largeur et HT servent aux semelles et fouilles
   const rig = num(f.rigLin) > 0;
-  r.fondLin = rig ? num(f.rigLin) : r.linP;
+  r.fondLin = rig ? num(f.rigLin) : 0;  // seul le champ « rigoles » du configurateur compte (pas les murs porteurs)
   r.fdimLarg = rig && num(f.rigLarg) > 0 ? num(f.rigLarg) : num(f.largeur);
   r.fdimProf = num(f.rigHt);  // hauteur de fouille = HT de la rigole
   // Hauteur de semelle : avec des rigoles, c'est la HT du terrassement (hauteur de fouille).
@@ -2415,7 +2441,7 @@ function ficheVersMetre() {
     if (e.usage === 'massif') {
       if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
-      ajouter(DES_SEMELLE_ISO, n_, undefined, { nombre: String(n_), ...dims });  // une ligne par massif, reprend son détail
+      // La semelle isolée (gros œuvre) suit la fouille du massif, voir alignerFondations()
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = 1;  // plateforme : toujours 1, pas de nombre
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
@@ -2428,11 +2454,7 @@ function ficheVersMetre() {
   ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes',
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
-  const sf = semellesDuTerrassement(c);
-  const cotesSem = sf.sem_lin > 0 ? { cote1: String(sf.sem_lin), cote2: String(sf.sem_larg), cote3: String(sf.sem_haut) }
-    : { cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.semHaut) };
-  ajouter(DES_FOND_SEMELLE, r.semelle, 'Semelles filantes en béton armé',
-    { nombre: '1', ...cotesSem });
+  // La semelle béton (gros œuvre) n'est plus créée ici : elle suit la ligne de fouille, voir alignerFondations()
   }
   // Soubassement : chaque mur avec son matériau ; solin en tête sur son linéaire
   for (const [t, surf] of Object.entries(r.parSoub || {})) {
