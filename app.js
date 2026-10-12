@@ -1380,7 +1380,7 @@ function champJoint(q, cle, val) {
   const v = verrouJoint(q, cle);
   return `<span class="row" style="gap:4px;flex:1;min-width:200px;align-items:center">
     <button type="button" class="btn" data-verrou="${cle}" title="${v ? 'Déverrouiller la formule' : 'Verrouiller la formule'}" style="padding:2px 8px">${v ? '🔒' : '🔓'}</button>
-    <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} style="flex:1;min-width:150px"></span>`;
+    <input data-plat="${cle}|joint" value="${esc(val || '')}" placeholder="formule, ex. S × 1,1" ${v ? 'readonly' : ''} class="${v ? 'joint-verrouille' : ''}" style="flex:1;min-width:150px"></span>`;
 }
 function renderPlatNv() {
   const host = $('cfgPlatNv');
