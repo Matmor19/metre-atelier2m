@@ -10420,7 +10420,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison hydrofuge BA13 (salle d'eau)"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0571",
@@ -13747,7 +13748,8 @@
       "si": {
         "cle": "murs_choix",
         "val": "Cloison coupe-feu BA13 (protection garage)"
-      }
+      },
+      "supprime": true
     },
     {
       "id": "OUV-0759",
@@ -16362,6 +16364,6 @@
       "version": 1
     }
   ],
-  "revision": 57,
+  "revision": 58,
   "prochainNumero": 899
 }
