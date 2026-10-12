@@ -111,6 +111,7 @@ JS_TESTS = r"""(c) => {
   platNvDe(cN).hauteur = '2.5'; platNvDe(cN).cloi = { ml: '10', ouv: 'OUV-0751' }; platNvDe(cN).doub = { ml: '10', ouv: 'OUV-0761' }; platNvDe(cN).pla = { m2: '12', ouv: 'OUV-0149' }; genererPlatNv(cN);
   R.platDoub = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0761') || {}).quantite || 0) * 100) / 100 };
   peiDe(cN).hauteur = '2.5'; peiDe(cN).murs = { ml: '10', ouv: 'OUV-0689' }; peiDe(cN).plafond = { m2: '12', ouv: 'OUV-0690' }; genererPeinture(cN);
+  R.peiPF = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0691') || {}).quantite || 0) * 100) / 100 };
   R.pei = { murs: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0689') || {}).quantite || 0) * 100) / 100, plafond: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0690') || {}).quantite || 0) * 100) / 100 };
   R.platCloi = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0751') || {}).quantite || 0) * 100) / 100 };
   R.platPla = { quantite: Math.round(((lsGet('lignes.' + c.id, []).find(x => x.ouvrage === 'OUV-0149') || {}).quantite || 0) * 100) / 100 };
@@ -156,6 +157,7 @@ ATTENDU = {
     'platDoub': {'quantite': 21.22},
     'platCloi': {'quantite': 18.51},
     'pei': {'murs': 38.75, 'plafond': 12},
+    'peiPF': {'quantite': 12.99},
     'pieceNv': {'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 10.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 

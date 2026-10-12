@@ -1406,10 +1406,16 @@ function peiDe(c) {
   q.hauteur = q.hauteur || '';
   q.murs = q.murs || { ml: '', ouv: 'OUV-0689' };
   q.plafond = q.plafond || { m2: '', ouv: 'OUV-0690' };
+  q.portesFacades = q.portesFacades || { ouv: 'OUV-0691' };
   return q;
 }
 // Hauteur : seulement celle saisie dans le bloc peinture (jamais celle de la plâtrerie)
 function peiHauteur(c) { return num(peiDe(c).hauteur); }
+// Surface brute de toutes les portes de passage et façades de placard du configurateur (sans seuil)
+function portesFacadesBrutM2(c) {
+  return piecesNvDe(c).reduce((a, p) => a + num(p.portes) * (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M
+    + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0);
+}
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val) {
@@ -1431,6 +1437,10 @@ function renderPeinture() {
       <strong style="font-size:13px;min-width:120px">Murs</strong>
       <span style="font-size:13px">Linéaire repris des pièces : ${fmt(peiLineaire(c))} ml</span>
       <select data-pei="murs|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv)}</select></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
+      <strong style="font-size:13px;min-width:120px">Portes et placards</strong>
+      <span style="font-size:13px">Surface des portes de passage et façades de placard : ${fmt(portesFacadesBrutM2(c))} m² × 2 = ${fmt(portesFacadesBrutM2(c) * 2)} m² (deux faces)</span>
+      <select data-pei="portesFacades|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture/i, q.portesFacades.ouv)}</select></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" style="width:80px"></label>
@@ -1457,6 +1467,13 @@ function genererPeinture(c) {
       // Murs : linéaire des pièces × hauteur du bloc peinture, sans aucune déduction
       ajoute(o, { nombre: '1', cote1: String(ml), cote2: String(h) }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m`);
     }
+  }
+  // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
+  const pf = portesFacadesBrutM2(c);
+  if (pf > 0) {
+    const o = BIB.ouvrages.find(x => x.id === q.portesFacades.ouv && !x.supprime);
+    if (!o) manque.push('portes et placards');
+    else ajoute(o, { nombre: '1', cote1: String(pf * 2), cote2: '1' }, `${o.designation} – portes et façades de placard ${fmt(pf)} m² × 2`);
   }
   const m2 = num(q.plafond.m2);
   if (m2 > 0) {
