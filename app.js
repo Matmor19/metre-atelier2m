@@ -1090,8 +1090,8 @@ const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-por
 // Sens d'ouverture des portes de passage (information, ne modifie aucun ouvrage)
 const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
 // Spots encastrés, formule de la fiche : Surface (m²) × Lux recommandés = Lumens totaux ; Lumens totaux ÷ Lumens par spot = nombre de spots (arrondi au supérieur)
-// Lux recommandés : valeur médiane de la plage de la fiche (couloir 50-100, chambre/salon 100-200, cuisine/bureau 300-500, salle de bains 200-500)
-const SPOT_LUX = { 'Entrée / dégagement': 75, 'Chambre': 150, 'Séjour': 150, 'Cuisine': 400, 'Bureau': 400, 'Salle de bains': 350 };
+// Lux recommandés : valeurs retenues par Mathieu (entrée/couloir 150, chambre/séjour 200, cuisine 300, bureau 350, salle de bains et salle d'eau 400, WC et buanderie/cellier 150)
+const SPOT_LUX = { 'Entrée / dégagement': 150, 'Chambre': 200, 'Séjour': 200, 'Cuisine': 300, 'Bureau': 350, 'Salle de bains': 400, 'Salle d\'eau': 400, 'WC': 150, 'Buanderie / cellier': 150 };
 // Lumens émis par un spot : 450 lm, valeur de l'exemple de la fiche (salon 20 m² → 7 à 8 spots)
 const SPOT_LUMENS = 450;
 // Éclairage du plafond d'une pièce : 'spots' seulement si la pièce a une règle de spots, sinon point lumineux
@@ -1278,7 +1278,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
-      const desSpot = ELEC_PIECE_TYPES[p.nom] === 'Salle de bains' ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
+      const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(ELEC_PIECE_TYPES[p.nom]) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
       const o = ouvrageParDesig(desSpot);
       if (!o) manque.push(desSpot);
       else { const v = { nombre: String(nbSpots(p)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }

@@ -98,7 +98,7 @@ JS_TESTS = r"""(c) => {
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);
   const n2 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
-  // Spots : cuisine de 9 m² en spots = 9 / 1,25 → 8 spots OUV-0211, sans point lumineux ; retour au point ensuite
+  // Spots : cuisine de 9 m² en spots = 9 × 300 lux / 450 lm → 6 spots OUV-0211, sans point lumineux ; retour au point ensuite
   const pcuis = piecesNvDe(cN).find(x => x.id === 'pn-cuisine');
   pcuis.eclairage = 'spots'; genererPiecesNv(cN);
   const spotsL = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine');
@@ -181,7 +181,7 @@ ATTENDU = {
     'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'lignesPlat': 0},
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
-    'pieceNv': {'spotsCuisine': '8', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
+    'pieceNv': {'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 32, 'nApresRegeneration': 32, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
 echecs = 0
