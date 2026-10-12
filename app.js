@@ -1416,6 +1416,10 @@ function portesFacadesBrutM2(c) {
   return piecesNvDe(c).reduce((a, p) => a + num(p.portes) * (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M
     + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0);
 }
+// Surface totale de toutes les menuiseries extérieures du configurateur, sans seuil
+function menuiseriesTotalM2(c) {
+  return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => b + (num(m.l) > 0 && num(m.h) > 0 ? num(m.l) * num(m.h) / 10000 * (num(m.nb) || 1) : 0), 0), 0);
+}
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val) {
@@ -1429,7 +1433,8 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `<div class="bloc">${lotTitre('E. Peinture (bloc séparé)')}
-    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc, moins les portes et placards peints (surface × 2). Plafond : surface en m².</p>
+    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc, moins les portes et placards peints (surface × 2) et toutes les menuiseries extérieures. Plafond : surface en m².</p>
+    <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
@@ -1464,10 +1469,10 @@ function genererPeinture(c) {
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
-      // Murs : linéaire des pièces × hauteur du bloc, moins les portes et placards peints (surface × 2)
-      const deduit = portesFacadesBrutM2(c) * 2;
+      // Murs : linéaire des pièces × hauteur du bloc, moins les portes et placards peints (surface × 2) et les menuiseries extérieures
+      const deduit = portesFacadesBrutM2(c) * 2 + menuiseriesTotalM2(c);
       const net = Math.max(0, ml * h - deduit);
-      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes et placards peints ${fmt(deduit)} m²`);
+      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes, placards et menuiseries ${fmt(deduit)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
