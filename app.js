@@ -1431,6 +1431,10 @@ function resBox(txt) {
 function resultatsPlat(c, q) {
   const h = num(q.hauteur), R = {};
   const m2txt = v => (v === null || v === undefined || !(v >= 0)) ? '—' : fmt(v) + ' m²';
+  // Bande à joint : l'unité vient de la bibliothèque (OUV-0579)
+  const oJ = BIB.ouvrages.find(x => x.id === OUV_BANDE_JOINT && !x.supprime);
+  const uniteJoint = oJ && oJ.unite ? oJ.unite : 'm²';
+  const jointTxt = v => (v === null || v === undefined || !(v >= 0)) ? '—' : fmt(v) + ' ' + uniteJoint;
   for (const cle of ['cloi', 'doub']) {
     const ml = num(q[cle].ml), m2s = num(q[cle].m2), hk = cle === 'doub' ? num(q.hauteurDoub) : h;
     const viaMl = ml > 0 && hk > 0;
@@ -1438,14 +1442,14 @@ function resultatsPlat(c, q) {
     const surfCase = surfBrute > 0 ? Math.max(0, surfBrute - (cle === 'doub' ? menuiseriesToutesM2(c) : portesEtPlacardsToutesM2(c))) : null;
     const mlH = num(q[cle].hydro);
     R[cle] = {
-      joint: surfCase === null ? '—' : m2txt(resultatFormuleJoint(q[cle].joint, surfCase)),
+      joint: surfCase === null ? '—' : jointTxt(resultatFormuleJoint(q[cle].joint, surfCase)),
       hydro: mlH > 0 && hk > 0 ? m2txt(Math.ceil(mlH / 1.2) * 1.2 * hk) : '—',
       feu: num(q[cle].feu) > 0 ? m2txt(num(q[cle].feu)) : '—'
     };
   }
   const m2 = num(q.pla.m2);
   R.pla = {
-    joint: m2 > 0 ? m2txt(resultatFormuleJoint(q.pla.joint, m2)) : '—',
+    joint: m2 > 0 ? jointTxt(resultatFormuleJoint(q.pla.joint, m2)) : '—',
     hydro: m2txt(resultatFormuleJoint(q.pla.hydro, surfacePiecesEau(c))),
     feu: num(q.pla.feu) > 0 ? m2txt(num(q.pla.feu)) : '—'
   };
@@ -1547,7 +1551,7 @@ function ajouterBandeJoint(c, L, formule, surface, titre) {
   if (!oJ || r === null) return false;
   ajouterLotSiAbsent(c.id, oJ.lot);
   const vJ = { nombre: '1', cote1: String(r), cote2: '1' };
-  L.push({ uid: uid(), lot: oJ.lot, ouvrage: oJ.id, designation: `${oJ.designation} – ${titre}, ${fmt(r)} m²`, unite: oJ.unite, valeurs: vJ, quantite: calcul(oJ, vJ), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+  L.push({ uid: uid(), lot: oJ.lot, ouvrage: oJ.id, designation: `${oJ.designation} – ${titre}, ${fmt(r)} ${oJ.unite || 'm²'}`, unite: oJ.unite, valeurs: vJ, quantite: calcul(oJ, vJ), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
   return true;
 }
 function genererPlatNv(c) {
