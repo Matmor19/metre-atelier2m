@@ -4968,6 +4968,24 @@ $('btnBiblio').onclick = ouvrirBiblio;
 $('biblioLot').onchange = renderBiblio;
 $('biblioRecherche').oninput = renderBiblio;
 $('btnBiblioNouveau').onclick = () => { ouvrirModal(); formulaireOuvrage(null, $('biblioLot').value); };
+// Renommer le lot choisi : seul le nom change, l'identifiant du lot reste le même (les ouvrages restent reliés)
+$('btnRenommerLot').onclick = async () => {
+  const id = $('biblioLot').value;
+  if (!id) { alert('Choisissez d\'abord un lot dans la liste.'); return; }
+  const lot = BIB.lots.find(l => l.id === id);
+  if (!lot) return;
+  const saisi = prompt('Nouveau nom du lot :', lot.nom);
+  if (saisi === null) return;
+  const nom = saisi.trim();
+  if (!nom || nom === lot.nom) return;
+  lot.nom = nom;
+  await sauverBibliotheque();   // enregistre sur cet appareil et envoie sur Drive
+  const choisi = $('biblioLot').value;   // met à jour la liste des lots, sans effacer le message
+  $('biblioLot').innerHTML = '<option value="">Tous les lots</option>' + BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
+  $('biblioLot').value = choisi;
+  remplirLots();
+  renderBiblio();
+};
 $('biblioListe').addEventListener('click', e => {
   const r = e.target.closest('[data-restaurer-ouv]');
   if (r) {
