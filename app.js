@@ -44,7 +44,8 @@ const PAGE = document.body.dataset.page || 'saisie';
     body[data-page="tableau"] .btn.sec{background:transparent;color:#B9561A;border-color:#E07838}
     body[data-page="tableau"] .card{border-color:#f0c9ab}
     body[data-page="tableau"] table.metre tr.lot td{background:#E07838;color:#fff}
-    @media (prefers-color-scheme: dark){ body[data-page="tableau"]{background:#2a1d15} }
+    :root[data-theme="dark"] body[data-page="tableau"]{background:#2a1d15}
+    @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body[data-page="tableau"]{background:#2a1d15} }
   `;
   const s = document.createElement('style');
   s.textContent = css;
@@ -5135,4 +5136,24 @@ if ($('btnConfig')) $('btnConfig').onclick = () => ouvrirConfig();
   new MutationObserver(toutes).observe(f, { childList: true, subtree: true });
   f.addEventListener('input', e => marque(e.target));
   f.addEventListener('change', e => marque(e.target));
+})();
+
+/* Mode clair / sombre (bureau) : choix mémorisé sur cet appareil ; sans choix, on suit le réglage de l'ordinateur */
+(function () {
+  const CLE = 'metre2m.theme';
+  function appliquer(theme) {
+    document.documentElement.dataset.theme = theme;
+    const b = document.getElementById('btnTheme');
+    if (b) b.textContent = theme === 'dark' ? '☀ Mode clair' : '☾ Mode sombre';
+  }
+  let theme = null;
+  try { theme = localStorage.getItem(CLE); } catch (e) { /* mode privé : pas de mémoire */ }
+  if (theme !== 'dark' && theme !== 'light') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  appliquer(theme);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#btnTheme')) return;
+    const suivant = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(CLE, suivant); } catch (err) { /* pas de mémoire : le choix vaut pour cette fenêtre */ }
+    appliquer(suivant);
+  });
 })();
