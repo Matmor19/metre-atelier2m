@@ -4380,11 +4380,26 @@ async function pdfCdpgfFormulaire() {
   y -= 26;
   ecrire("Mode d'emploi", M, y, 10, helvB, ORANGE);
   y -= 16;
-  ligne('1. Ce document se remplit avec Adobe Acrobat Reader, gratuit : ' + ACROBAT_URL, M, LARG, 9, helv, NOIR);
-  ligne("2. Il ne fonctionne qu'avec ce logiciel : le calcul des montants et des totaux n'est pas fait par les lecteurs de navigateur.", M, LARG, 9, helv, NOIR);
-  ligne('3. Remplissez uniquement les cases « P.U. HT » (prix unitaire) et « TVA % » de chaque ligne. Les quantités sont figées.', M, LARG, 9, helv, NOIR);
-  ligne('4. Les montants, les totaux HT, la TVA et le total TTC se calculent automatiquement.', M, LARG, 9, helv, NOIR);
-  ligne('5. Une fois rempli, enregistrez le fichier (Fichier > Enregistrer) avant de le renvoyer.', M, LARG, 9, helv, NOIR);
+  ligne("ATTENTION : lisez ceci avant de remplir le fichier. Ce fichier ne fonctionne que dans Google Chrome. Dans Adobe ou dans un autre logiciel, les montants ne se calculent pas.", M, LARG, 9, helv, NOIR);
+  ligne("1. Fermez ce fichier (fermez la fenêtre du logiciel qui l'a ouvert).", M, LARG, 9, helv, NOIR);
+  ligne("2. Allez dans le dossier où le fichier est enregistré (par exemple « Téléchargements »).", M, LARG, 9, helv, NOIR);
+  ligne("3. Faites un clic droit sur le fichier.", M, LARG, 9, helv, NOIR);
+  ligne("4. Cliquez sur « Ouvrir avec ».", M, LARG, 9, helv, NOIR);
+  ligne("5. Cliquez sur « Google Chrome ». Si Chrome n'apparaît pas, cliquez sur « Rechercher une autre application » ou « Choisir une autre application », puis sélectionnez Google Chrome.", M, LARG, 9, helv, NOIR);
+  ligne("6. Vérifiez que le fichier s'affiche bien dans Google Chrome.", M, LARG, 9, helv, NOIR);
+  ligne("7. Remplissez seulement les cases « P.U. HT » et « TVA % » de chaque ligne. Les quantités sont déjà fixées.", M, LARG, 9, helv, NOIR);
+  ligne("8. Après chaque prix saisi, vérifiez que « Montant HT » se remplit.", M, LARG, 9, helv, NOIR);
+  ligne("9. En bas de chaque lot, vérifiez que les totaux HT, TVA et TTC s'affichent.", M, LARG, 9, helv, NOIR);
+  ligne("10. Pour garder votre saisie : cliquez sur l'icône Télécharger (flèche en haut à droite de Chrome), puis rouvrez le fichier téléchargé dans Chrome et vérifiez que vos prix sont bien là.", M, LARG, 9, helv, NOIR);
+  // Aide visuelle pour l'étape 10 : capture du bandeau Chrome (fichier aide-telechargement-chrome.png, à côté de l'application)
+  try {
+    const aide = await doc.embedPng(await (await fetch(new URL('aide-telechargement-chrome.png', location.href).href, { cache: 'no-cache' })).arrayBuffer());
+    const sAide = aide.scaleToFit(LARG, 60);
+    if (y - sAide.height - 8 < BAS) nouvellePage();
+    y -= sAide.height + 6;
+    page.drawImage(aide, { x: M, y, width: sAide.width, height: sAide.height });
+    y -= 8;
+  } catch (e) { /* image absente : le texte de l'étape 10 suffit */ }
   ligne('Les taux de TVA du lot (TVA 1, 2 et 3) sont affichés en haut de chaque lot : ils sont repris automatiquement de la colonne « TVA % ».', M, LARG, 9, helv, NOIR);
 
   // ---- Une section par lot ----
@@ -4472,13 +4487,13 @@ async function pdfCdpgfFormulaire() {
     y -= 22;
     calcul(fTTC, `event.value=f(n(getField("L${k}_HT").value)${fTVA.map(o => `+n(getField("L${k}_MT${o.t}").value)`).join('')});`);
     y -= 8;
-    ligne('Indiquez les prix unitaires HT et le taux de TVA de chaque ligne. Les montants et les totaux se calculent automatiquement dans Adobe Acrobat Reader.', M, LARG, 7.5, helv, GRIS);
+    ligne('Indiquez les prix unitaires HT et le taux de TVA de chaque ligne. Les montants et les totaux se calculent automatiquement dans Google Chrome (voir le mode d\'emploi, page de garde).', M, LARG, 7.5, helv, GRIS);
   });
 
   // Pied de page : numéro de page et rappel du logiciel
   const pages = doc.getPages();
   pages.forEach((p, i) => {
-    p.drawText(texteFormulaire(`Page ${i + 1} / ${pages.length} · Calculs : Adobe Acrobat Reader (gratuit) ${ACROBAT_URL}`), { x: M, y: 24, size: 6.8, font: helv, color: GRIS });
+    p.drawText(texteFormulaire(`Page ${i + 1} / ${pages.length} · Calculs : ouvrir ce fichier avec Google Chrome`), { x: M, y: 24, size: 6.8, font: helv, color: GRIS });
   });
   // Ordre des calculs : montants, puis TVA, puis totaux
   const CO = doc.context.obj([]);
