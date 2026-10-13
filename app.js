@@ -4373,6 +4373,13 @@ async function pdfCdpgfFormulaire() {
     y -= sAide.height + 6;
     page.drawImage(aide, { x: M, y, width: sAide.width, height: sAide.height });
     y -= 8;
+    // Zoom sur la flèche de téléchargement (fichier aide-telechargement-chrome-zoom.png)
+    const zoom = await doc.embedPng(await (await fetch(new URL('aide-telechargement-chrome-zoom.png', location.href).href, { cache: 'no-cache' })).arrayBuffer());
+    const sZoom = zoom.scaleToFit(LARG * 0.5, 110);
+    if (y - sZoom.height - 8 < BAS) nouvellePage();
+    y -= sZoom.height + 6;
+    page.drawImage(zoom, { x: M, y, width: sZoom.width, height: sZoom.height });
+    y -= 8;
   } catch (e) { /* image absente : le texte de l'étape 10 suffit */ }
   ligne('Les taux de TVA du lot (TVA 1, 2 et 3) sont affichés en haut de chaque lot : ils sont repris automatiquement de la colonne « TVA % ».', M, LARG, 9, helv, NOIR);
 
