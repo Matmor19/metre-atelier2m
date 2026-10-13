@@ -4701,6 +4701,11 @@ function renderLotMenu() {
   const id = $('biblioLot').value;
   const lot = BIB.lots.find(l => l.id === id);
   $('biblioLotTexte').textContent = lot ? String(lot.nom).toUpperCase() : 'TOUS LES LOTS';
+  const bouton = $('biblioLotBouton');   // lot choisi : case bleue, texte blanc
+  bouton.style.background = lot ? '#2F6FB0' : '';
+  bouton.style.borderColor = lot ? '#2F6FB0' : '';
+  bouton.style.color = lot ? '#fff' : '';
+  bouton.style.fontWeight = lot ? '700' : '';
   const item = (valeur, texte, couleur, actif) =>
     `<button type="button" data-lot-valeur="${esc(valeur)}" style="display:block;width:100%;text-align:left;padding:12px;min-height:44px;border:0;border-bottom:1px solid var(--line);background:${actif ? 'var(--line)' : 'transparent'};color:${couleur};font-weight:${couleur === 'var(--fg)' ? '400' : '700'};font-size:16px;cursor:pointer">${esc(texte)}</button>`;
   let h = item('', 'TOUS LES LOTS', 'var(--fg)', id === '');
