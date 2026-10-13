@@ -4664,9 +4664,17 @@ const ouvragesLibres = () => BIB.ouvrages.filter(o => !o.supprime);   // les ouv
 function champsBib(unite) { return champsLibre(unite).map(c => ({ cle: c.cle, libelle: c.libelle })); }
 const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
 
+// Liste des lots de la bibliothèque : noms en majuscules, un lot sur deux sur fond orange transparent
+function optionsLotsBiblio() {
+  const opts = BIB.lots.map((l, i) => {
+    const fond = i % 2 === 0 ? 'background-color:rgba(224,120,56,.25)' : 'background-color:#ffffff';
+    return `<option value="${esc(l.id)}" style="${fond}">${esc(String(l.nom).toUpperCase())}</option>`;
+  }).join('');
+  return '<option value="">TOUS LES LOTS</option>' + opts;
+}
 function ouvrirBiblio() {
   $('titre').textContent = 'Bibliothèque de métré';
-  $('biblioLot').innerHTML = '<option value="">Tous les lots</option>' + BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
+  $('biblioLot').innerHTML = optionsLotsBiblio();
   $('biblioStatut').classList.add('hidden');
   route('biblio');
   renderBiblio();
@@ -4981,7 +4989,7 @@ $('btnRenommerLot').onclick = async () => {
   lot.nom = nom;
   await sauverBibliotheque();   // enregistre sur cet appareil et envoie sur Drive
   const choisi = $('biblioLot').value;   // met à jour la liste des lots, sans effacer le message
-  $('biblioLot').innerHTML = '<option value="">Tous les lots</option>' + BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
+  $('biblioLot').innerHTML = optionsLotsBiblio();
   $('biblioLot').value = choisi;
   remplirLots();
   renderBiblio();
