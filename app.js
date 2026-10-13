@@ -389,7 +389,7 @@ function detailHtml(l) {
 
 /* ============ Affichage ============ */
 function route(nom) {
-  const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio' };
+  const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio', import: 'vImport' };
   if (PAGE === 'tableau') nom = 'tableau';
   for (const k of Object.keys(vues)) { const el = $(vues[k]); if (el) el.classList.toggle('hidden', k !== nom); }
   // Onglet en surbrillance : le métré et le tableau d'un chantier appartiennent à « Chantiers »
@@ -5157,3 +5157,107 @@ if ($('btnConfig')) $('btnConfig').onclick = () => ouvrirConfig();
     appliquer(suivant);
   });
 })();
+
+/* ============ Import d'un plan PDF (étape 1 : lecture et vérification, sans écriture dans le configurateur) ============ */
+let PLAN = null;   // { pieces: [{nom, surface}], menus: [{type, largeur, hauteur, piece}], total: '' }
+const RE_SURF_PL = /^\d+[.,]\d{2}\s?m²$/;
+const RE_MEN_PL = /(fen[eê]tre(?: coulissante| fixe)?|porte(?: fen[eê]tre| d.entr[ée]e)?|baie(?: coulissante)?)?\s*(\d{2,3})\s?[x×]\s?(\d{2,3})/gi;
+
+function chargerPdfJs() {
+  return new Promise((ok, ko) => {
+    if (window.pdfjsLib) return ok(window.pdfjsLib);
+    const s = document.querySelector('script[src*="pdf.min.js"]');
+    if (!s) return ko(new Error('bibliothèque PDF absente'));
+    s.addEventListener('load', () => ok(window.pdfjsLib));
+    s.addEventListener('error', () => ko(new Error('bibliothèque PDF non chargée (réseau ?)')));
+    if (window.pdfjsLib) ok(window.pdfjsLib);
+  });
+}
+
+async function lirePlanPdf(fichier) {
+  const lib = await chargerPdfJs();
+  lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await lib.getDocument({ data: await fichier.arrayBuffer() }).promise;
+  const page = await pdf.getPage(1);
+  const contenu = await page.getTextContent();
+  const fr = contenu.items.filter(it => it.str && it.str.trim()).map(it => ({ x: it.transform[4], y: it.transform[5], s: it.str.trim() }));
+  const surfaces = fr.filter(f => RE_SURF_PL.test(f.s) && !/zone/i.test(f.s));
+  const labels = fr.filter(f => !RE_SURF_PL.test(f.s) && !/\d+\s?[x×]\s?\d+/i.test(f.s) && /[a-zA-Zé]/.test(f.s) && f.s.length > 2 && !/cm|m²|habitable|zone/i.test(f.s));
+  const dist = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const pieces = surfaces.map(sf => {
+    const c = labels.reduce((m, l) => (!m || dist(l, sf) < dist(m, sf) ? l : m), null);
+    const loin = c && dist(c, sf) > 60;
+    return { nom: loin ? 'TOTAL OU ZONE (à vérifier)' : (c ? c.s : '?'), surface: sf.s };
+  });
+  const menus = [];
+  for (const f of fr) {
+    for (const m of f.s.matchAll(RE_MEN_PL)) {
+      const proche = surfaces.reduce((b, sf) => (!b || dist(sf, f) < dist(b, f) ? sf : b), null);
+      const idx = proche ? surfaces.indexOf(proche) : -1;
+      menus.push({ type: (m[1] || 'non précisé').trim(), largeur: m[2], hauteur: m[3], piece: idx >= 0 && pieces[idx] ? pieces[idx].nom : '?' });
+    }
+  }
+  return { pieces, menus, total: '' };
+}
+
+function afficherPlan() {
+  if (!PLAN) return;
+  const ligne = (contenu) => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">${contenu}</div>`;
+  const champ = (cls, i, champ, val, w) => `<input data-pl="${cls}" data-i="${i}" data-c="${champ}" value="${esc(val)}" style="width:${w};min-height:38px">`;
+  let h = '<strong>Pièces et surfaces</strong><div style="margin:8px 0">';
+  PLAN.pieces.forEach((p, i) => { h += ligne(champ('piece', i, 'nom', p.nom, '55%') + champ('piece', i, 'surface', p.surface, '28%') + `<button type="button" class="btn small sec" data-pl-suppr="piece" data-i="${i}">Suppr.</button>`); });
+  h += '<button type="button" class="btn small sec" data-pl-ajout="piece">+ Ajouter une pièce</button></div>';
+  h += '<strong>Menuiseries</strong><div style="margin:8px 0">';
+  PLAN.menus.forEach((m, i) => { h += ligne(champ('menu', i, 'type', m.type, '30%') + champ('menu', i, 'largeur', m.largeur, '12%') + ' x ' + champ('menu', i, 'hauteur', m.hauteur, '12%') + champ('menu', i, 'piece', m.piece, '30%') + `<button type="button" class="btn small sec" data-pl-suppr="menu" data-i="${i}">Suppr.</button>`); });
+  h += '<button type="button" class="btn small sec" data-pl-ajout="menu">+ Ajouter une menuiserie</button></div>';
+  h += `<label>Surface habitable indiquée sur le plan (m²)</label>` + champ('total', 0, 'valeur', PLAN.total, '40%');
+  $('plTableau').innerHTML = h;
+}
+
+$('btnImportPlan').onclick = () => { route('import'); PLAN = null; $('plTableau').innerHTML = ''; $('plStatut').textContent = 'Choisissez un fichier PDF.'; };
+$('btnPlAnnuler').onclick = () => { PLAN = null; route('config'); };
+$('plFichier').onchange = async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  $('plStatut').textContent = 'Lecture du plan en cours…';
+  try {
+    PLAN = await lirePlanPdf(f);
+    const tot = PLAN.pieces.find(p => /TOTAL/.test(p.nom));
+    PLAN.total = tot ? tot.surface : '';
+    PLAN.pieces = PLAN.pieces.filter(p => !/TOTAL/.test(p.nom));
+    $('plStatut').textContent = `${PLAN.pieces.length} pièce(s) et ${PLAN.menus.length} menuiserie(s) trouvées. Vérifiez et corrigez avant de valider.`;
+    afficherPlan();
+  } catch (err) {
+    $('plStatut').textContent = 'Lecture impossible : ' + (err.message || err);
+  }
+};
+$('plTableau').addEventListener('input', e => {
+  const c = e.target.dataset.c; if (!c || !PLAN) return;
+  const i = Number(e.target.dataset.i);
+  if (e.target.dataset.pl === 'piece') PLAN.pieces[i][c] = e.target.value;
+  else if (e.target.dataset.pl === 'menu') PLAN.menus[i][c] = e.target.value;
+  else if (e.target.dataset.pl === 'total') PLAN.total = e.target.value;
+});
+$('plTableau').addEventListener('click', e => {
+  if (!PLAN) return;
+  const ajout = e.target.closest('[data-pl-ajout]');
+  if (ajout) {
+    if (ajout.dataset.plAjout === 'piece') PLAN.pieces.push({ nom: '', surface: '' });
+    else PLAN.menus.push({ type: '', largeur: '', hauteur: '', piece: '' });
+    afficherPlan(); return;
+  }
+  const suppr = e.target.closest('[data-pl-suppr]');
+  if (suppr && confirm('Supprimer cette ligne du tableau ?')) {
+    const i = Number(suppr.dataset.i);
+    if (suppr.dataset.plSuppr === 'piece') PLAN.pieces.splice(i, 1); else PLAN.menus.splice(i, 1);
+    afficherPlan();
+  }
+});
+$('btnPlValider').onclick = () => {
+  if (!PLAN) { alert('Importez d\'abord un plan.'); return; }
+  const vides = PLAN.pieces.filter(p => !p.nom.trim() || !p.surface.trim()).length;
+  if (vides && !confirm(vides + ' pièce(s) sans nom ou sans surface. Valider quand même ?')) return;
+  lsSet('plan_valide', { date: new Date().toISOString(), ...PLAN });
+  alert(`Plan validé : ${PLAN.pieces.length} pièce(s), ${PLAN.menus.length} menuiserie(s). Rien n'a encore été envoyé dans le configurateur.`);
+  PLAN = null; route('config');
+};

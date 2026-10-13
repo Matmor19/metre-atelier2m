@@ -145,9 +145,23 @@ tr.ligne-option td{background:rgba(40,150,220,.22)}
   </section>
 
   <!-- Écran 3 : configurateur complet (dimensions, structure, pièces, équipements) -->
+  <section id="vImport" class="hidden">
+    <div class="card">
+      <strong>Importer un plan (PDF)</strong>
+      <p class="muted" style="margin:6px 0 10px">Le PDF est lu sur cet appareil. Vérifiez le tableau : vous pouvez modifier, ajouter ou supprimer une ligne. Rien n'est envoyé dans le configurateur à cette étape.</p>
+      <input type="file" id="plFichier" accept="application/pdf">
+      <p class="muted" id="plStatut" style="margin-top:8px"></p>
+    </div>
+    <div class="card" id="plTableau" style="padding:12px"></div>
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <button type="button" class="btn sec" id="btnPlAnnuler">Annuler</button>
+      <button type="button" class="btn" id="btnPlValider">Valider ce plan</button>
+    </div>
+  </section>
   <section id="vConfig" class="hidden">
     <div class="row" style="margin-bottom:4px;justify-content:space-between;align-items:center">
       <strong>Configurateur complet</strong>
+      <button type="button" id="btnImportPlan" class="btn sec">Importer un plan (PDF)</button>
       <button type="button" id="btnRetirerAuto" class="btn sec">Retirer les lignes générées</button>
       <button type="button" id="btnGenererConfig" class="btn">Générer le métré depuis le configurateur</button>
       <button type="button" id="btnRaz" class="btn sec">Remise à zéro</button>
@@ -214,6 +228,7 @@ tr.ligne-option td{background:rgba(40,150,220,.22)}
 
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
