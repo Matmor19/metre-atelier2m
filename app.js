@@ -4672,9 +4672,28 @@ function optionsLotsBiblio() {
   }).join('');
   return '<option value="">TOUS LES LOTS</option>' + opts;
 }
+// Liste des lots de la bibliothèque sur téléphone : boutons visibles (la liste cachée reste la source du choix)
+function renderLotsBoutons() {
+  const actif = $('biblioLot').value;
+  const bouton = (id, texte, fond) => {
+    const sel = id === actif;
+    return `<button type="button" data-lot-id="${esc(id)}" style="display:block;width:100%;text-align:left;padding:10px 12px;min-height:44px;border-radius:var(--r);border:${sel ? '2px solid #E07838' : '1px solid var(--line)'};background:${fond};color:var(--fg);font-weight:${sel ? '700' : '400'};cursor:pointer">${esc(texte)}</button>`;
+  };
+  let h = bouton('', 'TOUS LES LOTS', 'var(--card)');
+  BIB.lots.forEach((l, i) => { h += bouton(l.id, String(l.nom).toUpperCase(), i % 2 === 0 ? 'rgba(224,120,56,.25)' : 'var(--card)'); });
+  $('biblioLotsBoutons').innerHTML = h;
+}
+$('biblioLotsBoutons').addEventListener('click', e => {
+  const b = e.target.closest('[data-lot-id]');
+  if (!b) return;
+  $('biblioLot').value = b.dataset.lotId;
+  renderBiblio();
+  renderLotsBoutons();
+});
 function ouvrirBiblio() {
   $('titre').textContent = 'Bibliothèque de métré';
   $('biblioLot').innerHTML = optionsLotsBiblio();
+  renderLotsBoutons();
   $('biblioStatut').classList.add('hidden');
   route('biblio');
   renderBiblio();
@@ -4991,6 +5010,7 @@ $('btnRenommerLot').onclick = async () => {
   const choisi = $('biblioLot').value;   // met à jour la liste des lots, sans effacer le message
   $('biblioLot').innerHTML = optionsLotsBiblio();
   $('biblioLot').value = choisi;
+  renderLotsBoutons();
   remplirLots();
   renderBiblio();
 };
