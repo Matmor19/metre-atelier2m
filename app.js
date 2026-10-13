@@ -921,7 +921,7 @@ function surbrillanceLigne(l) {
   const oRelie = BIB && BIB.ouvrages ? BIB.ouvrages.find(y => y.id === l.ouvrage) : null;
   const ouvrageRelie = !!(oRelie && (oRelie.lieConfig || oRelie.liePar || oRelie.cotes));
   if (l.vrd || l.lienDe) return 'ligne-lie';
-  const manuelle = !(l.projet || l.auto || l.plat || l.qteAuto || l.lien || ouvrageRelie);
+  const manuelle = !(l.projet || l.auto || l.plat || l.platNv || l.qteAuto || l.lien || ouvrageRelie);   // platNv : plâtrerie produite par le configurateur
   return manuelle ? 'ligne-manuelle' : '';
 }
 
