@@ -5227,7 +5227,8 @@ function afficherPlan() {
   const ligne = (contenu) => `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">${contenu}</div>`;
   const champ = (cls, i, champ, val, w) => `<input data-pl="${cls}" data-i="${i}" data-c="${champ}" value="${esc(val)}" style="width:${w};min-height:38px">`;
   let h = '<strong>Pièces et surfaces</strong><div style="margin:8px 0">';
-  PLAN.pieces.forEach((p, i) => { h += ligne(champ('piece', i, 'nom', p.nom, '55%') + champ('piece', i, 'surface', p.surface, '28%') + `<button type="button" class="btn small sec" data-pl-suppr="piece" data-i="${i}">Suppr.</button>`); });
+  h += ligne('<span class="muted" style="width:40%;font-size:12px">Nom de la pièce</span><span class="muted" style="width:18%;font-size:12px">Surface (m²)</span><span class="muted" style="width:18%;font-size:12px">Linéaire (ml)</span>');
+  PLAN.pieces.forEach((p, i) => { h += ligne(champ('piece', i, 'nom', p.nom, '40%') + champ('piece', i, 'surface', p.surface, '18%') + champ('piece', i, 'lin', p.lin || '', '18%') + `<button type="button" class="btn small sec" data-pl-suppr="piece" data-i="${i}">Suppr.</button>`); });
   h += '<button type="button" class="btn small sec" data-pl-ajout="piece">+ Ajouter une pièce</button></div>';
   h += '<strong>Menuiseries</strong><div style="margin:8px 0">';
   PLAN.menus.forEach((m, i) => { h += ligne(champ('menu', i, 'type', m.type, '30%') + champ('menu', i, 'largeur', m.largeur, '12%') + ' x ' + champ('menu', i, 'hauteur', m.hauteur, '12%') + champ('menu', i, 'piece', m.piece, '30%') + `<button type="button" class="btn small sec" data-pl-suppr="menu" data-i="${i}">Suppr.</button>`); });
@@ -5264,7 +5265,7 @@ $('plTableau').addEventListener('click', e => {
   if (!PLAN) return;
   const ajout = e.target.closest('[data-pl-ajout]');
   if (ajout) {
-    if (ajout.dataset.plAjout === 'piece') PLAN.pieces.push({ nom: '', surface: '' });
+    if (ajout.dataset.plAjout === 'piece') PLAN.pieces.push({ nom: '', surface: '', lin: '' });
     else PLAN.menus.push({ type: '', largeur: '', hauteur: '', piece: '' });
     afficherPlan(); return;
   }
@@ -5294,21 +5295,28 @@ function planEtat(liste, plan) {
   const L = JSON.parse(JSON.stringify(liste));
   const rap = { ajoutees: [], completees: [], menusAjoutes: [], conservees: [], aVerifier: [] };
   for (const pc of plan.pieces) {
-    const nom = (pc.nom || '').trim(), surf = (pc.surface || '').trim();
+    const nom = (pc.nom || '').trim(), surf = (pc.surface || '').trim(), lin = (pc.lin || '').trim();
     if (!nom) { rap.aVerifier.push('Pièce sans nom, rien n\'est écrit pour elle'); continue; }
     const libelle = nom;
-    let p = L.find(x => (x.nom || '').toLowerCase() === nom.toLowerCase());
+    let p = L.find(x => ((x.nom || '') + (x.qualif ? ' ' + x.qualif : '')).trim().toLowerCase() === nom.toLowerCase());
     if (!typePieceNv(nom)) rap.aVerifier.push(`« ${nom} » : type de pièce non reconnu, les règles de calcul (appareillage, spots) ne s'appliqueront pas`);
     if (!p) {
-      p = { id: 'pn' + uid(), nom, qualif: '', surf: '', revet: '', menus: [], portes: '', app: {} };
+      p = { id: 'pn' + uid(), nom, qualif: '', surf: '', perim: '', revet: '', menus: [], portes: '', app: {} };
       L.push(p);
       if (surf) p.surf = surf;
-      rap.ajoutees.push(libelle + (surf ? ' : ' + surf + ' m²' : ''));
+      if (lin) p.perim = lin;
+      rap.ajoutees.push(libelle + (surf ? ' : ' + surf + ' m²' : '') + (lin ? ' · ' + lin + ' ml' : ''));
     } else if (!p.surf && surf) {
       p.surf = surf;
       rap.completees.push(libelle + ' : surface ' + surf + ' m²');
     } else if (p.surf && surf && num(p.surf) !== num(surf)) {
       rap.conservees.push(libelle + ' : surface déjà à ' + p.surf + ' m² (plan : ' + surf + ' m²), non modifiée');
+    }
+    if (lin && !p.perim) {
+      p.perim = lin;
+      rap.completees.push(libelle + ' : linéaire ' + lin + ' ml');
+    } else if (lin && p.perim && num(p.perim) !== num(lin)) {
+      rap.conservees.push(libelle + ' : linéaire déjà à ' + p.perim + ' ml (plan : ' + lin + ' ml), non modifié');
     }
     p.menus = p.menus || [];
     for (const m of plan.menus.filter(x => x.piece === nom)) {
