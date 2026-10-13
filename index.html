@@ -109,8 +109,13 @@ tr.ligne-option td{background:rgba(40,150,220,.22)}
         <button class="btn sec" id="ongletTableau">Métré du chantier (<span id="nbLignes">0</span>)</button>
       </div>
       <div class="card" id="enteteSaisie" style="margin-bottom:0;box-shadow:0 2px 6px rgba(0,0,0,.08)">
-        <label for="selLot">1. Lot</label>
-        <select id="selLot"></select>
+        <label for="selLotBouton">1. Lot</label>
+        <select id="selLot" class="hidden"></select>
+        <div style="position:relative">
+          <button type="button" id="selLotBouton" class="btn sec" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
+            <span id="selLotTexte"></span><span aria-hidden="true">▾</span></button>
+          <div id="selLotListe" class="hidden" style="position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:var(--r);max-height:60vh;overflow:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)"></div>
+        </div>
         <label for="recherche">2. Ouvrage (dans ce lot)</label>
         <input id="recherche" placeholder="Rechercher…">
       </div>

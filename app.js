@@ -474,13 +474,37 @@ window.addEventListener('resize', figerEntete);
 function colorerLot() {
   const s = $('selLot'); if (!s) return;
   s.style.background = '#E07838'; s.style.color = '#fff'; s.style.borderColor = '#E07838'; s.style.fontWeight = '700';
+  const bouton = $('selLotBouton'); if (bouton) { bouton.style.background = '#E07838'; bouton.style.color = '#fff'; bouton.style.borderColor = '#E07838'; bouton.style.fontWeight = '700'; }
 }
 function remplirLots() {
   $('selLot').innerHTML = BIB.lots.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('');
   if (!lotCourant) lotCourant = BIB.lots[0].id;
   $('selLot').value = lotCourant;
   colorerLot();
+  renderLotMenuSaisie();
 }
+// Liste déroulante maison du lot (saisie) : même présentation que la bibliothèque (majuscules, un lot sur deux en orange)
+function renderLotMenuSaisie() {
+  const id = $('selLot').value;
+  const lot = BIB.lots.find(l => l.id === id);
+  $('selLotTexte').textContent = lot ? String(lot.nom).toUpperCase() : '';
+  $('selLotListe').innerHTML = BIB.lots.map((l, i) => {
+    const actif = l.id === id;
+    const couleur = i % 2 === 0 ? '#E07838' : 'var(--fg)';
+    return `<button type="button" data-lot-saisie="${esc(l.id)}" style="display:block;width:100%;text-align:left;padding:12px;min-height:44px;border:0;border-bottom:1px solid var(--line);background:${actif ? 'var(--line)' : 'transparent'};color:${couleur};font-weight:${i % 2 === 0 ? '700' : '400'};font-size:16px;cursor:pointer">${esc(String(l.nom).toUpperCase())}</button>`;
+  }).join('');
+}
+$('selLotBouton').onclick = () => {
+  renderLotMenuSaisie();
+  $('selLotListe').classList.toggle('hidden');
+};
+$('selLotListe').addEventListener('click', e => {
+  const b = e.target.closest('[data-lot-saisie]');
+  if (!b) return;
+  $('selLot').value = b.dataset.lotSaisie;
+  $('selLotListe').classList.add('hidden');
+  $('selLot').dispatchEvent(new Event('change'));   // même traitement que la liste d'origine
+});
 
 function renderOuvrages() {
   figerEntete();
@@ -3769,7 +3793,7 @@ $('ongletTableau').onclick = ouvrirTableau;
 $('ongletSaisie2').onclick = () => route('metre');
 $('ongletTableau2').onclick = () => route('tableau');
 
-$('selLot').onchange = e => { lotCourant = e.target.value; colorerLot(); renderOuvrages(); };
+$('selLot').onchange = e => { lotCourant = e.target.value; colorerLot(); renderLotMenuSaisie(); renderOuvrages(); };
 $('recherche').oninput = renderOuvrages;
 
 $('listeOuvrages').addEventListener('click', e => {
