@@ -183,7 +183,12 @@ tr.ligne-option td{background:rgba(40,150,220,.22)}
   <section id="vBiblio" class="hidden">
     <div class="card">
       <div class="row">
-        <div><label for="biblioLot">Lot</label><select id="biblioLot"></select></div>
+        <div><label for="biblioLotBouton">Lot</label><select id="biblioLot" class="hidden"></select>
+          <div style="position:relative">
+            <button type="button" id="biblioLotBouton" class="btn sec" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center">
+              <span id="biblioLotTexte">TOUS LES LOTS</span><span aria-hidden="true">▾</span></button>
+            <div id="biblioLotListe" class="hidden" style="position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:var(--r);max-height:60vh;overflow:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)"></div>
+          </div></div>
         <div><label for="biblioRecherche">Recherche</label><input id="biblioRecherche" placeholder="Rechercher un ouvrage…"></div>
       </div>
       <div class="row" style="margin-top:10px;justify-content:space-between;align-items:center">

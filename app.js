@@ -4672,9 +4672,35 @@ function optionsLotsBiblio() {
   }).join('');
   return '<option value="">TOUS LES LOTS</option>' + opts;
 }
+// Liste déroulante maison du choix de lot (s'ouvre au toucher, couleurs visibles sur téléphone)
+function renderLotMenu() {
+  const id = $('biblioLot').value;
+  const lot = BIB.lots.find(l => l.id === id);
+  $('biblioLotTexte').textContent = lot ? String(lot.nom).toUpperCase() : 'TOUS LES LOTS';
+  const item = (valeur, texte, couleur, actif) =>
+    `<button type="button" data-lot-valeur="${esc(valeur)}" style="display:block;width:100%;text-align:left;padding:12px;min-height:44px;border:0;border-bottom:1px solid var(--line);background:${actif ? 'var(--line)' : 'transparent'};color:${couleur};font-weight:${couleur === 'var(--fg)' ? '400' : '700'};font-size:16px;cursor:pointer">${esc(texte)}</button>`;
+  let h = item('', 'TOUS LES LOTS', 'var(--fg)', id === '');
+  BIB.lots.forEach((l, i) => {
+    h += item(l.id, String(l.nom).toUpperCase(), i % 2 === 0 ? '#E07838' : 'var(--fg)', id === l.id);
+  });
+  $('biblioLotListe').innerHTML = h;
+}
+$('biblioLotBouton').onclick = () => {
+  renderLotMenu();
+  $('biblioLotListe').classList.toggle('hidden');
+};
+$('biblioLotListe').addEventListener('click', e => {
+  const b = e.target.closest('[data-lot-valeur]');
+  if (!b) return;
+  $('biblioLot').value = b.dataset.lotValeur;
+  $('biblioLotListe').classList.add('hidden');
+  renderLotMenu();
+  renderBiblio();
+});
 function ouvrirBiblio() {
   $('titre').textContent = 'Bibliothèque de métré';
   $('biblioLot').innerHTML = optionsLotsBiblio();
+  renderLotMenu();
   $('biblioStatut').classList.add('hidden');
   route('biblio');
   renderBiblio();
@@ -4991,6 +5017,7 @@ $('btnRenommerLot').onclick = async () => {
   const choisi = $('biblioLot').value;   // met à jour la liste des lots, sans effacer le message
   $('biblioLot').innerHTML = optionsLotsBiblio();
   $('biblioLot').value = choisi;
+  renderLotMenu();
   remplirLots();
   renderBiblio();
 };
