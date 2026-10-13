@@ -4699,6 +4699,7 @@ $('biblioLotListe').addEventListener('click', e => {
 });
 function ouvrirBiblio() {
   $('titre').textContent = 'Bibliothèque de métré';
+  $('biblioEntete').style.top = document.querySelector('header').offsetHeight + 'px';   // le bloc du haut reste visible en faisant défiler
   $('biblioLot').innerHTML = optionsLotsBiblio();
   renderLotMenu();
   $('biblioStatut').classList.add('hidden');
