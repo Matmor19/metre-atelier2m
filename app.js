@@ -1721,7 +1721,15 @@ if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () =>
 // Chaque case vidée envoie son événement « change » : les gestionnaires enregistrent le vide dans les données.
 // Les lignes du métré générées par ces cases sont ensuite retirées ; les lignes saisies à la main restent.
 function remiseAZeroConfigurateur(c, demander = true) {
-  if (demander && !confirm('Mise à zéro totale : toutes les pièces, la plâtrerie et la peinture du configurateur seront effacées, ainsi que leurs lignes au métré. Les lignes saisies à la main restent. Continuer ?')) return;
+  if (demander && !confirm('Remise à zéro totale : tout le configurateur de ce chantier sera vidé (blocs du configurateur, pièces, plâtrerie, peinture) et tout son métré effacé, lignes saisies à la main comprises. Le terrain et les renseignements du client sont conservés. Continuer ?')) return;
+  razTotale(c);
+  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur et métré mis à zéro.';
+}
+// Vide le configurateur du chantier : blocs du configurateur (projet sauf terrain), pièces, plâtrerie, peinture et toutes les lignes du métré.
+// Restent : le terrain (fiche client) et l'identité du dossier (référence Kanban, client).
+function razTotale(c) {
+  // Le terrain (fiche client) est gardé : on le mémorise avant de vider les cases
+  const terrainGarde = c.projet && c.projet.terrain ? JSON.parse(JSON.stringify(c.projet.terrain)) : null;
   const f = $('vConfig');
   if (f) {
     f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
@@ -1730,15 +1738,14 @@ function remiseAZeroConfigurateur(c, demander = true) {
       el.dispatchEvent(new Event('change', { bubbles: true }));
     });
   }
-  // Mise à zéro totale : on efface aussi les lignes du tableau (pièces) et les blocs plâtrerie et peinture
-  c.elec = c.elec || { pieces: [] };
-  c.elec.piecesNv = [];
+  delete c.projet;                 // les blocs du configurateur repartent de leurs valeurs par défaut (projetDe)
+  if (terrainGarde) projetDe(c).terrain = terrainGarde;   // terrain et renseignements de la fiche client conservés
+  c.elec = { pieces: [], piecesNv: [] };
   c.platNv = {};
   c.peinture = {};
-  const msg = genererMetreConfigurateur(c);   // plus rien à générer : les lignes pièces, plâtrerie et peinture sont retirées
+  sauverLignes(c.id, []);          // tout le métré du chantier, lignes saisies à la main comprises
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderPiecesNv(); renderPlatNv(); renderPeinture();
-  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur mis à zéro. ' + msg;
 }
 if ($('btnRaz')) $('btnRaz').addEventListener('click', () => {
   const c = chantiers.find(x => x.id === courantId);
@@ -5160,6 +5167,7 @@ if ($('btnConfig')) $('btnConfig').onclick = () => ouvrirConfig();
 
 /* ============ Import d'un plan PDF (étape 1 : lecture et vérification, sans écriture dans le configurateur) ============ */
 let PLAN = null;   // { pieces: [{nom, surface}], menus: [{type, largeur, hauteur, piece}], total: '' }
+let PLAN_VALIDE = null;   // copie du plan validé, en attente du choix : remise à zéro totale ou complément
 const RE_SURF_PL = /^\d+[.,]\d{2}\s?m²$/;
 const RE_MEN_PL = /(fen[eê]tre(?: coulissante| fixe)?|porte(?: fen[eê]tre| d.entr[ée]e)?|baie(?: coulissante)?)?\s*(\d{2,3})\s?[x×]\s?(\d{2,3})/gi;
 
@@ -5214,8 +5222,8 @@ function afficherPlan() {
   $('plTableau').innerHTML = h;
 }
 
-$('btnImportPlan').onclick = () => { route('import'); PLAN = null; $('plTableau').innerHTML = ''; $('plStatut').textContent = 'Choisissez un fichier PDF.'; };
-$('btnPlAnnuler').onclick = () => { PLAN = null; route('config'); };
+$('btnImportPlan').onclick = () => { route('import'); PLAN = null; PLAN_VALIDE = null; $('plChoix').classList.add('hidden'); $('plTableau').innerHTML = ''; $('plStatut').textContent = 'Choisissez un fichier PDF.'; };
+$('btnPlAnnuler').onclick = () => { PLAN = null; PLAN_VALIDE = null; route('config'); };
 $('plFichier').onchange = async e => {
   const f = e.target.files && e.target.files[0];
   if (!f) return;
@@ -5258,6 +5266,84 @@ $('btnPlValider').onclick = () => {
   const vides = PLAN.pieces.filter(p => !p.nom.trim() || !p.surface.trim()).length;
   if (vides && !confirm(vides + ' pièce(s) sans nom ou sans surface. Valider quand même ?')) return;
   lsSet('plan_valide', { date: new Date().toISOString(), ...PLAN });
-  alert(`Plan validé : ${PLAN.pieces.length} pièce(s), ${PLAN.menus.length} menuiserie(s). Rien n'a encore été envoyé dans le configurateur.`);
-  PLAN = null; route('config');
+  PLAN_VALIDE = JSON.parse(JSON.stringify(PLAN));
+  PLAN = null;
+  $('plTableau').innerHTML = '';
+  $('plChoix').classList.remove('hidden');
+  $('plStatut').textContent = `Plan validé : ${PLAN_VALIDE.pieces.length} pièce(s), ${PLAN_VALIDE.menus.length} menuiserie(s). Choisissez comment l'envoyer dans le configurateur. Rien n'est encore écrit.`;
 };
+
+/* ---- Envoi du plan validé dans le configurateur : deux choix ---- */
+// Nom du plan (« Chambre 2 », « Salle d'eau parentale ») → pièce du configurateur (type + qualificatif)
+function piecesPlanCles(nom) {
+  const texte = String(nom || '').replace(/’/g, "'").trim();
+  const m = texte.match(/^(.*?)\s*(\d+|parentale)?$/i);
+  const base = (m ? m[1] : texte).trim().toLowerCase();
+  const cle = Object.keys(ELEC_PIECE_TYPES).find(k => k.toLowerCase() === base);
+  return cle ? { nom: cle, qualif: (m && m[2]) || '' } : null;
+}
+// Calcule ce qui serait écrit, sans rien modifier : retourne la nouvelle liste de pièces et le rapport
+// Règle : une case déjà remplie n'est jamais écrasée ; une pièce ou une menuiserie déjà présente n'est pas dupliquée
+function planEtat(liste, plan) {
+  const L = JSON.parse(JSON.stringify(liste));
+  const rap = { ajoutees: [], completees: [], menusAjoutes: [], conservees: [], aVerifier: [] };
+  for (const pc of plan.pieces) {
+    const nom = (pc.nom || '').trim(), surf = (pc.surface || '').trim();
+    const cle = piecesPlanCles(nom);
+    if (!cle) { rap.aVerifier.push(`« ${nom || 'sans nom'} » : nom de pièce non reconnu, rien n'est écrit pour cette pièce`); continue; }
+    const libelle = cle.nom + (cle.qualif ? ' ' + cle.qualif : '');
+    let p = L.find(x => x.nom === cle.nom && (x.qualif || '') === cle.qualif);
+    if (!p) {
+      p = { id: 'pn' + uid(), nom: cle.nom, qualif: cle.qualif, surf: '', revet: '', menus: [], portes: '', app: {} };
+      L.push(p);
+      if (surf) p.surf = surf;
+      rap.ajoutees.push(libelle + (surf ? ' : ' + surf + ' m²' : ''));
+    } else if (!p.surf && surf) {
+      p.surf = surf;
+      rap.completees.push(libelle + ' : surface ' + surf + ' m²');
+    } else if (p.surf && surf && num(p.surf) !== num(surf)) {
+      rap.conservees.push(libelle + ' : surface déjà à ' + p.surf + ' m² (plan : ' + surf + ' m²), non modifiée');
+    }
+    p.menus = p.menus || [];
+    for (const m of plan.menus.filter(x => x.piece === nom)) {
+      const lib = `${m.type} ${m.largeur} × ${m.hauteur} cm`;
+      if (p.menus.some(x => num(x.l) === num(m.largeur) && num(x.h) === num(m.hauteur))) {
+        rap.conservees.push(`${libelle} : ${lib} déjà présente, non ajoutée`);
+        continue;
+      }
+      p.menus.push({ l: m.largeur, h: m.hauteur, nb: '1', ouv: '' });
+      rap.menusAjoutes.push(`${libelle} : ${lib}`);
+      if (!/^fen[eê]tre/i.test(m.type)) rap.aVerifier.push(`${libelle} : ${lib} ajoutée comme fenêtre, à changer dans le configurateur si c'est une porte ou une baie`);
+    }
+  }
+  if (plan.total) rap.aVerifier.push(`Surface habitable du plan (${plan.total} m²) : aucune case du configurateur ne la reçoit, elle n'est pas reportée`);
+  return { liste: L, rap };
+}
+function recapPlan(titre, rap) {
+  const bloc = (t, l) => l.length ? '\n' + t + '\n' + l.map(x => '  - ' + x).join('\n') + '\n' : '';
+  const corps = bloc('Pièces ajoutées :', rap.ajoutees) + bloc('Surfaces complétées (cases vides seulement) :', rap.completees)
+    + bloc('Menuiseries ajoutées :', rap.menusAjoutes) + bloc('Déjà renseigné, non modifié :', rap.conservees) + bloc('À vérifier (non écrit) :', rap.aVerifier);
+  return titre + '\n' + (corps || '\nRien à écrire.');
+}
+function envoyerPlan(mode) {
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c || !PLAN_VALIDE) { alert('Aucun plan validé ou chantier introuvable.'); return; }
+  const base = mode === 'raz' ? [] : piecesNvDe(c);
+  const { liste, rap } = planEtat(base, PLAN_VALIDE);
+  const titre = mode === 'raz'
+    ? 'REMISE À ZÉRO TOTALE : tout le configurateur et tout le métré de ce chantier seront effacés (lignes saisies à la main comprises), puis remplis avec le plan. Le terrain et les renseignements du client sont conservés.'
+    : 'COMPLÉTER LE CONFIGURATEUR : aucune case déjà remplie ni aucune ligne existante n\'est modifiée.';
+  if (!confirm(recapPlan(titre, rap) + '\n\nÉcrire dans le configurateur ?')) return;
+  if (mode === 'raz') razTotale(c);
+  c.elec = c.elec || { pieces: [] };
+  c.elec.piecesNv = liste;
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
+  PLAN_VALIDE = null;
+  $('plChoix').classList.add('hidden');
+  $('plStatut').textContent = 'Plan écrit dans le configurateur. Cliquez sur « Générer le métré depuis le configurateur » pour créer les lignes.';
+  route('config');
+}
+$('btnPlRaz').onclick = () => envoyerPlan('raz');
+$('btnPlCompleter').onclick = () => envoyerPlan('completer');
+$('btnPlChoixAnnuler').onclick = () => { PLAN_VALIDE = null; $('plChoix').classList.add('hidden'); route('config'); };

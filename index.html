@@ -153,6 +153,15 @@ tr.ligne-option td{background:rgba(40,150,220,.22)}
       <p class="muted" id="plStatut" style="margin-top:8px"></p>
     </div>
     <div class="card" id="plTableau" style="padding:12px"></div>
+    <div class="card hidden" id="plChoix">
+      <strong>Envoyer ce plan dans le configurateur</strong>
+      <p class="muted" style="margin:6px 0 10px">Remise à zéro totale : vide tout le configurateur et tout le métré de ce chantier (lignes saisies à la main comprises), puis le remplit avec le plan. Le terrain de la fiche client est conservé. Compléter : n'écrit que dans les cases vides, sans rien modifier de ce qui est déjà rempli.</p>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <button type="button" class="btn danger" id="btnPlRaz">Remise à zéro totale</button>
+        <button type="button" class="btn" id="btnPlCompleter">Compléter le configurateur</button>
+        <button type="button" class="btn sec" id="btnPlChoixAnnuler">Plus tard</button>
+      </div>
+    </div>
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
       <button type="button" class="btn sec" id="btnPlAnnuler">Annuler</button>
       <button type="button" class="btn" id="btnPlValider">Valider ce plan</button>
