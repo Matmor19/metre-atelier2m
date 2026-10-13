@@ -1184,7 +1184,7 @@ function appDefaut(p, cle) {
   const surfVide = String(p.surf ?? '').trim() === '';
   const fixe = ['Chambre', 'Bureau', 'Salle de bains', 'Salle d\'eau', 'WC', 'Garage', 'Cave', 'Mezzanine', 'Cage d\'escalier', 'Extérieur (terrasse)'];
   if (cle === 'prises' && surfVide && !fixe.includes(regle)) return '';
-  if (cle === 'points') return '1';            // 1 point de centre par pièce
+  if (cle === 'points') return String(Math.max(1, Math.ceil(num(p.surf) / 20)));   // 1 point par tranche de 20 m² (arrondi au supérieur), 1 minimum
   // allumage : simple pour cuisine, dressing, salle de bains, salle d'eau, WC ; aucun pour chambre, séjour, couloir (va-et-vient)
   // va-et-vient : couloir, chambre, séjour (1 point chacun) ; cuisine (1 en plus du simple)
   if (cle === 'interrup') {
