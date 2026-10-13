@@ -1758,6 +1758,7 @@ function razTotale(c) {
   c.platNv = {};
   c.peinture = {};
   sauverLignes(c.id, []);          // tout le métré du chantier, lignes saisies à la main comprises
+  c.lots = [];                     // plus aucun titre de lot : le métré repart vide
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderPiecesNv(); renderPlatNv(); renderPeinture();
 }
