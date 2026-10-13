@@ -1133,12 +1133,26 @@ const SPOT_LUX = { 'Entrée / dégagement': 150, 'Chambre': 200, 'Séjour': 200,
 const SPOT_LUMENS = 450;
 // Éclairage du plafond d'une pièce : 'spots' seulement si la pièce a une règle de spots, sinon point lumineux
 function eclairagePiece(p) {
-  return p.eclairage === 'spots' && SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? 'spots' : 'point';
+  return p.eclairage === 'spots' && SPOT_LUX[typePieceNv(p.nom) || ''] ? 'spots' : 'point';
 }
 function nbSpots(p) {
-  const lux = SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''];
+  const lux = SPOT_LUX[typePieceNv(p.nom) || ''];
   const surf = num(p.surf);
   return lux && surf > 0 ? Math.ceil(surf * lux / SPOT_LUMENS) : 0;
+}
+// Type de pièce (règles de calcul) déduit du nom saisi ou du plan : nom exact, sinon mot-clé
+const MOTS_TYPE_PIECE = [
+  [/toilette|\bwc\b/i, 'WC'], [/salle d.eau/i, "Salle d'eau"], [/salle de bain|\bsdb\b/i, 'Salle de bains'],
+  [/chambre/i, 'Chambre'], [/bureau/i, 'Bureau'], [/salon|s[ée]jour|pi[èe]ce de vie/i, 'Séjour'],
+  [/cuisine/i, 'Cuisine'], [/dressing/i, 'Dressing'], [/cellier|buanderie/i, 'Buanderie / cellier'],
+  [/\bdgt|d[ée]gagement|couloir|entr[ée]e/i, 'Entrée / dégagement'], [/cave/i, 'Cave'], [/garage/i, 'Garage'],
+  [/mezzanine/i, 'Mezzanine'], [/escalier/i, "Cage d'escalier"], [/terrasse/i, 'Extérieur (terrasse)']
+];
+function typePieceNv(nom) {
+  const t = String(nom || '').trim();
+  if (ELEC_PIECE_TYPES[t]) return ELEC_PIECE_TYPES[t];
+  const m = MOTS_TYPE_PIECE.find(([re]) => re.test(t));
+  return m ? m[1] : '';
 }
 function piecesNvDe(c) {
   c.elec = c.elec || { pieces: [] };
@@ -1154,7 +1168,7 @@ function menusPorteBaie() {
 // Une valeur saisie à la main prime toujours.
 // Désignation de l'ouvrage à mettre au métré : la terrasse reçoit des équipements extérieurs
 function desPnv(p, a) {
-  const regle = ELEC_PIECE_TYPES[p.nom] || '';
+  const regle = typePieceNv(p.nom) || '';
   if (regle === 'Extérieur (terrasse)') {
     if (a.cle === 'prises') return 'Prise extérieure étanche';
     if (a.cle === 'points') return 'Éclairage extérieur (applique ou borne)';
@@ -1164,7 +1178,7 @@ function desPnv(p, a) {
 }
 function appDefaut(p, cle) {
   if (p.app && p.app[cle] !== undefined && p.app[cle] !== '') return String(p.app[cle]);
-  const regle = ELEC_PIECE_TYPES[p.nom] || '';
+  const regle = typePieceNv(p.nom) || '';
   const surf = num(p.surf);
   // Sans surface saisie, les prises qui dépendent de la surface restent vides (pas de valeur devinée)
   const surfVide = String(p.surf ?? '').trim() === '';
@@ -1217,7 +1231,7 @@ function renderPiecesNv() {
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
   const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <select data-nv="${esc(p.id)}|nom" style="flex:1;font-weight:700"><option value="">— à choisir —</option>${Object.keys(ELEC_PIECE_TYPES).map(t => `<option ${t === p.nom ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <input list="dlPiecesNv" data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce (ex. Chambre parentale)" style="flex:1;font-weight:700">
       <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="width:60px">
       <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
     </div>
@@ -1249,13 +1263,13 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Passage libre sans porte ml (déduit des plinthes) <input data-nv="${esc(p.id)}|passage" inputmode="decimal" value="${esc(p.passage || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${SPOT_LUX[ELEC_PIECE_TYPES[p.nom] || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
+      ${SPOT_LUX[typePieceNv(p.nom) || ''] ? `<label style="font-size:12px">Éclairage du plafond <select data-nv="${esc(p.id)}|eclairage" style="min-width:200px"><option value="">Point lumineux plafonnier</option><option value="spots" ${eclairagePiece(p) === 'spots' ? 'selected' : ''}>Spots encastrés (selon la surface)</option></select></label>` : ''}
       ${eclairagePiece(p) === 'spots' ? `<label style="font-size:12px">Plafonnier en plus, commandé par va-et-vient <select class="option-piece" data-nv="${esc(p.id)}|plafVV" style="min-width:160px"><option value="">Non</option><option value="oui" ${p.plafVV === 'oui' ? 'selected' : ''}>Oui</option></select></label>` : ''}
       ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
     </div></div>`;
-  host.innerHTML = `<div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
+  host.innerHTML = `<datalist id="dlPiecesNv">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option value="${esc(t)}">`).join('')}</datalist><div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
     ${liste.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
     ${liste.length ? (() => { const eq = equipementsMaison(c); return `<div class="card" style="margin-top:10px"><strong style="font-size:13px">Équipements de la maison (calculés selon les pièces)</strong>
@@ -1269,7 +1283,7 @@ function renderPiecesNv() {
 // Équipements de la maison (hors pièces) : tableau adapté aux pièces saisies, et détecteurs de fumée (1 pour 100 m²)
 // Circuits : éclairage (8 points max par circuit), prises (8 max), 1 circuit par appareil spécialisé, 1 circuit VMC
 function equipementsMaison(c) {
-  const pcs = piecesNvDe(c).filter(p => (ELEC_PIECE_TYPES[p.nom] || '') !== 'Extérieur (terrasse)');
+  const pcs = piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)');
   let ecl = 0, pri = 0, spec = 0, surf = 0;
   for (const p of pcs) surf += num(p.surf);
   for (const p of pcs) {
@@ -1341,7 +1355,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
-      const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(ELEC_PIECE_TYPES[p.nom]) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
+      const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(typePieceNv(p.nom)) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
       const o = ouvrageParDesig(desSpot);
       if (!o) manque.push(desSpot);
       else { const v = { nombre: String(nbSpots(p)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
@@ -5274,14 +5288,6 @@ $('btnPlValider').onclick = () => {
 };
 
 /* ---- Envoi du plan validé dans le configurateur : deux choix ---- */
-// Nom du plan (« Chambre 2 », « Salle d'eau parentale ») → pièce du configurateur (type + qualificatif)
-function piecesPlanCles(nom) {
-  const texte = String(nom || '').replace(/’/g, "'").trim();
-  const m = texte.match(/^(.*?)\s*(\d+|parentale)?$/i);
-  const base = (m ? m[1] : texte).trim().toLowerCase();
-  const cle = Object.keys(ELEC_PIECE_TYPES).find(k => k.toLowerCase() === base);
-  return cle ? { nom: cle, qualif: (m && m[2]) || '' } : null;
-}
 // Calcule ce qui serait écrit, sans rien modifier : retourne la nouvelle liste de pièces et le rapport
 // Règle : une case déjà remplie n'est jamais écrasée ; une pièce ou une menuiserie déjà présente n'est pas dupliquée
 function planEtat(liste, plan) {
@@ -5289,12 +5295,12 @@ function planEtat(liste, plan) {
   const rap = { ajoutees: [], completees: [], menusAjoutes: [], conservees: [], aVerifier: [] };
   for (const pc of plan.pieces) {
     const nom = (pc.nom || '').trim(), surf = (pc.surface || '').trim();
-    const cle = piecesPlanCles(nom);
-    if (!cle) { rap.aVerifier.push(`« ${nom || 'sans nom'} » : nom de pièce non reconnu, rien n'est écrit pour cette pièce`); continue; }
-    const libelle = cle.nom + (cle.qualif ? ' ' + cle.qualif : '');
-    let p = L.find(x => x.nom === cle.nom && (x.qualif || '') === cle.qualif);
+    if (!nom) { rap.aVerifier.push('Pièce sans nom, rien n\'est écrit pour elle'); continue; }
+    const libelle = nom;
+    let p = L.find(x => (x.nom || '').toLowerCase() === nom.toLowerCase());
+    if (!typePieceNv(nom)) rap.aVerifier.push(`« ${nom} » : type de pièce non reconnu, les règles de calcul (appareillage, spots) ne s'appliqueront pas`);
     if (!p) {
-      p = { id: 'pn' + uid(), nom: cle.nom, qualif: cle.qualif, surf: '', revet: '', menus: [], portes: '', app: {} };
+      p = { id: 'pn' + uid(), nom, qualif: '', surf: '', revet: '', menus: [], portes: '', app: {} };
       L.push(p);
       if (surf) p.surf = surf;
       rap.ajoutees.push(libelle + (surf ? ' : ' + surf + ' m²' : ''));
