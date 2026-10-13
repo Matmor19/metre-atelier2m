@@ -9,7 +9,7 @@
     },
     {
       "id": "demolition",
-      "nom": "Démolition",
+      "nom": "Dépose - Démolition",
       "ordre": 2
     },
     {
@@ -24,7 +24,7 @@
     },
     {
       "id": "gros-oeuvre",
-      "nom": "Gros œuvre",
+      "nom": "Maçonnerie",
       "ordre": 5
     },
     {
@@ -39,7 +39,7 @@
     },
     {
       "id": "couverture-zinguerie",
-      "nom": "Couverture & zinguerie",
+      "nom": "Couverture - Zinguerie",
       "ordre": 8
     },
     {
@@ -49,7 +49,7 @@
     },
     {
       "id": "doublages-cloisons-plafonds",
-      "nom": "Plâtrerie, isolation",
+      "nom": "Plâtrerie - Isolation",
       "ordre": 10
     },
     {
@@ -69,12 +69,12 @@
     },
     {
       "id": "plomberie-sanitaire",
-      "nom": "Plomberie & sanitaire",
+      "nom": "Plomberie - Sanitaire",
       "ordre": 14
     },
     {
       "id": "chauffage-vmc-climatisation",
-      "nom": "Chauffage, VMC & climatisation",
+      "nom": "Chauffage / VMC - Climatisation",
       "ordre": 15
     },
     {
@@ -94,7 +94,7 @@
     },
     {
       "id": "cuisine",
-      "nom": "Cuisine",
+      "nom": "Aménagement intérieur",
       "ordre": 19
     },
     {
@@ -817,11 +817,15 @@
     {
       "id": "OUV-0040",
       "lot": "gros-oeuvre",
-      "designation": "Semelles filantes en béton armé",
+      "designation": "Semelles filantes type SL35 (6 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
       "unite": "m³",
       "type": "commun",
       "saisie": "metre",
       "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
         {
           "cle": "cote1",
           "libelle": "Longueur (m)"
@@ -832,11 +836,12 @@
         },
         {
           "cle": "cote3",
-          "libelle": "Épaisseur ou hauteur (m)"
+          "libelle": "Hauteur (m)"
         }
       ],
-      "version": 1,
-      "qte": "fond_semelle"
+      "version": 2,
+      "qte": "fond_semelle",
+      "mesure": "lxlxh"
     },
     {
       "id": "OUV-0041",
@@ -847,6 +852,10 @@
       "saisie": "metre",
       "champs": [
         {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
           "cle": "cote1",
           "libelle": "Longueur (m)"
         },
@@ -856,11 +865,12 @@
         },
         {
           "cle": "cote3",
-          "libelle": "Épaisseur ou hauteur (m)"
+          "libelle": "Hauteur (m)"
         }
       ],
-      "version": 2,
-      "qte": "semi_nb"
+      "version": 4,
+      "qte": "semi_nb",
+      "mesure": "lxlxh"
     },
     {
       "id": "OUV-0042",
@@ -2764,7 +2774,7 @@
     {
       "id": "OUV-0154",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Trappe d'accès au faux plafond",
+      "designation": "Trappe d'accès isolée et étanche à l'air 60x60  (\"Push-Pull\")",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -2774,7 +2784,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "mesure": "nombre"
     },
     {
       "id": "OUV-0156",
@@ -10005,7 +10016,7 @@
     {
       "id": "OUV-0578",
       "lot": "doublages-cloisons-plafonds",
-      "designation": "Trappe de visite en plaque de plâtre",
+      "designation": "Trappe d'accès isolée et étanche à l'air 40x40  (\"Push-Pull\")",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -10015,31 +10026,33 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "mesure": "nombre"
     },
     {
       "id": "OUV-0579",
       "lot": "doublages-cloisons-plafonds",
       "designation": "Bande et enduit de joints sur plaque de plâtre compris ponçage",
-      "unite": "m²",
+      "unite": "ml",
       "type": "commun",
       "saisie": "metre",
       "champs": [
         {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
+          "cle": "nombre",
+          "libelle": "Nombre"
         },
         {
-          "cle": "cote2",
-          "libelle": "Hauteur ou largeur (m)"
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Bande et enduit de joints sur plaque de plâtre compris ponçage"
-      }
+      },
+      "mesure": "l"
     },
     {
       "id": "OUV-0580",
@@ -16552,8 +16565,317 @@
         "cle": "murs_choix",
         "val": "Plus-value plaque acoustique"
       }
+    },
+    {
+      "id": "OUV-0952",
+      "lot": "doublages-cloisons-plafonds",
+      "designation": "Trappe d'accès invisible à peindre (Cadre alu + BA13 hydro + isolant collé) 70x80",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "mesure": "nombre"
+    },
+    {
+      "id": "OUV-0953",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type SL35 (6 HA 8) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0954",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type SL35 (4 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0955",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type SL35 (4 HA 8) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "mesure": "nombre"
+    },
+    {
+      "id": "OUV-0956",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type S45 (6 HA 8) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 2,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0957",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type S45 (6 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0958",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type S45 (4 HA 8) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0959",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type S45 (4 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0960",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type FSR10 (6 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "m³",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        },
+        {
+          "cle": "cote3",
+          "libelle": "Hauteur (m)"
+        }
+      ],
+      "version": 1,
+      "mesure": "lxlxh"
+    },
+    {
+      "id": "OUV-0961",
+      "lot": "gros-oeuvre",
+      "designation": "Semelles filantes type FSM10 (6 HA 10) en béton armé • dosé à 350 kg/m³ (type C25/30).",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        },
+        {
+          "cle": "cote1",
+          "libelle": "Cote 1 (m)"
+        }
+      ],
+      "version": 2,
+      "cotes": {
+        "cote1": {
+          "k": "fond",
+          "champ": "rigLin",
+          "lib": "Fouilles en rigoles (linéaire saisi à la main) · Linéaire de rigoles (ml)"
+        },
+        "cote2": {
+          "k": "fond",
+          "champ": "rigLarg",
+          "lib": "Fouilles en rigoles (linéaire saisi à la main) · Largeur de la rigole (m)"
+        },
+        "cote3": {
+          "k": "fond",
+          "champ": "rigHt",
+          "lib": "Fouilles en rigoles (linéaire saisi à la main) · HT, hauteur de fouille (m)"
+        }
+      }
+    },
+    {
+      "id": "OUV-0962",
+      "lot": "electricite",
+      "designation": "Interrupteur double va-et-vient (deux commandes, deux zones)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0963",
+      "lot": "electricite",
+      "designation": "Bouton-poussoir (commande de point lumineux via télérupteur)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-0964",
+      "lot": "electricite",
+      "designation": "Télérupteur au tableau (commande par boutons-poussoirs)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 97,
-  "prochainNumero": 951
+  "revision": 98,
+  "prochainNumero": 964
 }

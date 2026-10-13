@@ -77,10 +77,10 @@ let _revueCollecte = null;
 // Fondations : chaque fouille du VRD (tranchée pour semelles filantes, massif) entraîne la semelle béton
 // du gros œuvre qui va avec, avec les mêmes cotes et la même quantité. Si la fouille disparaît, la semelle aussi.
 // Fonction pure : renvoie la nouvelle liste de lignes.
-const pairesFondation = () => [[DES_FOND_FOUILLE, DES_FOND_SEMELLE], [DES_MASSIF, DES_SEMELLE_ISO]];  // appelée à l'enregistrement, pas au chargement
+const pairesFondation = () => [[DES_FOND_FOUILLE, 'OUV-0040'], [DES_MASSIF, DES_SEMELLE_ISO]];   // semelle filante : liée par identifiant (son nom a été précisé dans la bibliothèque)  // appelée à l'enregistrement, pas au chargement
 function alignerFondations(L) {
   if (!BIB || !BIB.ouvrages || !Array.isArray(L)) return L;
-  const ouv = d => BIB.ouvrages.find(x => !x.supprime && x.designation === d);
+  const ouv = d => BIB.ouvrages.find(x => !x.supprime && (x.designation === d || x.id === d));
   let out = L.slice();
   const sources = new Set();
   for (const [fouDes, betDes] of pairesFondation()) {
