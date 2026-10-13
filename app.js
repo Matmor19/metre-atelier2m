@@ -4348,6 +4348,34 @@ async function pdfCdpgfFormulaire() {
     ordreCalcul.push(f.acroField.ref);
   };
 
+  // ---- Page 1 : mode d'emploi (sur sa propre page, avant la page de garde) ----
+  nouvellePage();
+  contexteTable = false;
+  y -= 26;
+  ecrire("Mode d'emploi", M, y, 16, helvB, ORANGE);
+  y -= 26;
+  ligne("ATTENTION : lisez ceci avant de remplir le fichier. Ce fichier ne fonctionne que dans Google Chrome. Dans Adobe ou dans un autre logiciel, les montants ne se calculent pas.", M, LARG, 9, helv, NOIR);
+  ligne("1. Fermez ce fichier (fermez la fenêtre du logiciel qui l'a ouvert).", M, LARG, 9, helv, NOIR);
+  ligne("2. Allez dans le dossier où le fichier est enregistré (par exemple « Téléchargements »).", M, LARG, 9, helv, NOIR);
+  ligne("3. Faites un clic droit sur le fichier.", M, LARG, 9, helv, NOIR);
+  ligne("4. Cliquez sur « Ouvrir avec ».", M, LARG, 9, helv, NOIR);
+  ligne("5. Cliquez sur « Google Chrome ». Si Chrome n'apparaît pas, cliquez sur « Rechercher une autre application » ou « Choisir une autre application », puis sélectionnez Google Chrome.", M, LARG, 9, helv, NOIR);
+  ligne("6. Vérifiez que le fichier s'affiche bien dans Google Chrome.", M, LARG, 9, helv, NOIR);
+  ligne("7. Remplissez seulement les cases « P.U. HT » et « TVA % » de chaque ligne. Les quantités sont déjà fixées.", M, LARG, 9, helv, NOIR);
+  ligne("8. Après chaque prix saisi, vérifiez que « Montant HT » se remplit.", M, LARG, 9, helv, NOIR);
+  ligne("9. En bas de chaque lot, vérifiez que les totaux HT, TVA et TTC s'affichent.", M, LARG, 9, helv, NOIR);
+  ligne("10. Pour garder votre saisie : cliquez sur l'icône Télécharger (flèche en haut à droite de Chrome), puis rouvrez le fichier téléchargé dans Chrome et vérifiez que vos prix sont bien là.", M, LARG, 9, helv, NOIR);
+  // Aide visuelle pour l'étape 10 : capture du bandeau Chrome (fichier aide-telechargement-chrome.png, à côté de l'application)
+  try {
+    const aide = await doc.embedPng(await (await fetch(new URL('aide-telechargement-chrome.png', location.href).href, { cache: 'no-cache' })).arrayBuffer());
+    const sAide = aide.scaleToFit(LARG, 60);
+    if (y - sAide.height - 8 < BAS) nouvellePage();
+    y -= sAide.height + 6;
+    page.drawImage(aide, { x: M, y, width: sAide.width, height: sAide.height });
+    y -= 8;
+  } catch (e) { /* image absente : le texte de l'étape 10 suffit */ }
+  ligne('Les taux de TVA du lot (TVA 1, 2 et 3) sont affichés en haut de chaque lot : ils sont repris automatiquement de la colonne « TVA % ».', M, LARG, 9, helv, NOIR);
+
   // ---- Page de garde ----
   nouvellePage();
   contexteTable = false;
@@ -4377,30 +4405,6 @@ async function pdfCdpgfFormulaire() {
   ecrire('Lots concernés', M, y, 10, helvB, ORANGE);
   y -= 16;
   for (const lot of lots) ligne(lot.num + ' · ' + lot.nom + ' (' + lot.lignes.length + (lot.lignes.length > 1 ? ' lignes)' : ' ligne)'), M + 10, LARG - 10, 9, helv, NOIR);
-  y -= 26;
-  ecrire("Mode d'emploi", M, y, 10, helvB, ORANGE);
-  y -= 16;
-  ligne("ATTENTION : lisez ceci avant de remplir le fichier. Ce fichier ne fonctionne que dans Google Chrome. Dans Adobe ou dans un autre logiciel, les montants ne se calculent pas.", M, LARG, 9, helv, NOIR);
-  ligne("1. Fermez ce fichier (fermez la fenêtre du logiciel qui l'a ouvert).", M, LARG, 9, helv, NOIR);
-  ligne("2. Allez dans le dossier où le fichier est enregistré (par exemple « Téléchargements »).", M, LARG, 9, helv, NOIR);
-  ligne("3. Faites un clic droit sur le fichier.", M, LARG, 9, helv, NOIR);
-  ligne("4. Cliquez sur « Ouvrir avec ».", M, LARG, 9, helv, NOIR);
-  ligne("5. Cliquez sur « Google Chrome ». Si Chrome n'apparaît pas, cliquez sur « Rechercher une autre application » ou « Choisir une autre application », puis sélectionnez Google Chrome.", M, LARG, 9, helv, NOIR);
-  ligne("6. Vérifiez que le fichier s'affiche bien dans Google Chrome.", M, LARG, 9, helv, NOIR);
-  ligne("7. Remplissez seulement les cases « P.U. HT » et « TVA % » de chaque ligne. Les quantités sont déjà fixées.", M, LARG, 9, helv, NOIR);
-  ligne("8. Après chaque prix saisi, vérifiez que « Montant HT » se remplit.", M, LARG, 9, helv, NOIR);
-  ligne("9. En bas de chaque lot, vérifiez que les totaux HT, TVA et TTC s'affichent.", M, LARG, 9, helv, NOIR);
-  ligne("10. Pour garder votre saisie : cliquez sur l'icône Télécharger (flèche en haut à droite de Chrome), puis rouvrez le fichier téléchargé dans Chrome et vérifiez que vos prix sont bien là.", M, LARG, 9, helv, NOIR);
-  // Aide visuelle pour l'étape 10 : capture du bandeau Chrome (fichier aide-telechargement-chrome.png, à côté de l'application)
-  try {
-    const aide = await doc.embedPng(await (await fetch(new URL('aide-telechargement-chrome.png', location.href).href, { cache: 'no-cache' })).arrayBuffer());
-    const sAide = aide.scaleToFit(LARG, 60);
-    if (y - sAide.height - 8 < BAS) nouvellePage();
-    y -= sAide.height + 6;
-    page.drawImage(aide, { x: M, y, width: sAide.width, height: sAide.height });
-    y -= 8;
-  } catch (e) { /* image absente : le texte de l'étape 10 suffit */ }
-  ligne('Les taux de TVA du lot (TVA 1, 2 et 3) sont affichés en haut de chaque lot : ils sont repris automatiquement de la colonne « TVA % ».', M, LARG, 9, helv, NOIR);
 
   // ---- Une section par lot ----
   lots.forEach((lot, k) => {
