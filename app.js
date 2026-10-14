@@ -3459,6 +3459,7 @@ function ficheRendre() {
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
     ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
+      ${champ('Ouvrage de maçonnerie (une seule ligne au métré, lot gros œuvre)', (() => { const cle = `terr-maco-${e.usage || 'massif'}`, tit = 'Maçonnerie : ' + (e.usage || 'massif'); return selCrayon(cle, tit, `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="ouv" style="width:100%">${optListeOuvrages(cle, tit, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && (o.unite === 'm²' || o.unite === 'm³') && o.lot === 'gros-oeuvre').map(o => o.designation))], e.ouv || '', '— aucun —')}</select>`) + `<label style="display:flex;gap:6px;align-items:center;font-size:14px;margin-top:4px"><input type="checkbox" data-k="pleine" data-id="${esc(e.id)}" data-champ="coff" ${e.coff ? 'checked' : ''} style="width:16px;height:16px;margin:0"> Coffrage compris (indiqué sur la ligne du métré)</label>`; })())}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
         ${(e.usage || 'massif') === 'plateforme'
           ? champ('Surface (m²)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="s" inputmode="decimal"`, e.s || ''))
@@ -3690,6 +3691,17 @@ function ficheVersMetre() {
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
     } else if (e.usage === 'divers') {
       if (L_ > 0 && l_ > 0 && h_ > 0) ajouter(DES_DIVERS, L_ * l_ * h_, undefined, { nombre: '1', ...dims });
+    }
+    // Ouvrage de maçonnerie choisi pour cet usage : une seule ligne au lot maçonnerie
+    if (e.ouv) {
+      const o = BIB.ouvrages.find(x => x.id === e.ouv && !x.supprime);
+      const usage = e.usage || 'massif', enM2 = o && o.unite === 'm²';
+      let q = 0;
+      if (usage === 'plateforme') q = enM2 ? num(e.s) : num(e.s) * num(e.h);
+      else if (usage === 'massif') { const base = num(e.nb) * num(e.L) * num(e.l); q = enM2 ? base : base * num(e.h); }
+      else q = enM2 ? num(e.L) * num(e.l) : num(e.L) * num(e.l) * num(e.h);
+      if (o && (o.unite === 'm²' || o.unite === 'm³')) ajouter(o.designation, q, e.coff ? o.designation + ' (coffrage compris)' : undefined, null, 'fouille ' + usage + ' (terrassement)');
+      else if (o) manquants.push(o.designation + ' (unité non prise en charge)');
     }
   }
   // Semelles filantes et fouilles en tranchée : seulement si des rigoles sont saisies
