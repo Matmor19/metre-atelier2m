@@ -396,6 +396,7 @@ function route(nom) {
   const onglet = { chantiers: 'btnChantiers', metre: 'btnChantiers', tableau: 'btnChantiers', config: 'btnConfig', reglages: 'btnReglages' };
   ['btnChantiers', 'btnConfig', 'btnReglages'].forEach(id => { const b = $(id); if (b) b.classList.toggle('actif', onglet[nom] === id); });
   if (nom === 'metre' || nom === 'tableau') compterLignes();
+  if (nom === 'config') requestAnimationFrame(dessinerOnglets);
 }
 
 function compterLignes() {
@@ -3401,8 +3402,28 @@ function tabTitre(t) {
   const m = /^([A-Z0-9]+)\.\s*(.*)$/.exec(t);
   const id = m ? m[1] : '', titre = m ? m[2] : t;
   const premiere = titre.charAt(0).toUpperCase(), reste = titre.slice(1).toUpperCase();
-  return `<div class="tab-row ${lettre ? 'lettre' : 'numero'}"><h2 class="lot-titre"><span class="tab-gros">${esc(id)}.</span> <span class="tab-gros">${esc(premiere)}</span><span class="tab-petit">${esc(reste)}</span></h2><div class="tab-fill"></div></div>`;
+  return `<div class="tab-row ${lettre ? 'lettre' : 'numero'}"><svg class="tab-svg" aria-hidden="true"></svg><h2 class="lot-titre"><span class="tab-gros">${esc(id)}.</span> <span class="tab-gros">${esc(premiere)}</span><span class="tab-petit">${esc(reste)}</span></h2></div>`;
 }
+// Dessin des onglets : un seul tracé par titre (4 px, arrondis de 14 px), sans superposition de bordures
+function dessinerOnglets() {
+  document.querySelectorAll('.tab-row').forEach(row => {
+    const h2 = row.querySelector('h2'), svg = row.querySelector('svg.tab-svg');
+    if (!h2 || !svg) return;
+    const w = row.clientWidth, hh = row.clientHeight;
+    if (!w || !hh) return;                       // écran masqué : on dessinera à l'affichage
+    const sx = h2.offsetLeft + h2.offsetWidth, r = 14;
+    const d = `M 2 ${hh - 2 + r} A ${r} ${r} 0 0 1 ${2 + r} ${hh - 2} L ${sx - 2 - r} ${hh - 2} A ${r} ${r} 0 0 0 ${sx - 2} ${hh - 2 - r} L ${sx - 2} ${2 + r} A ${r} ${r} 0 0 1 ${sx - 2 + r} 2 L ${w - 2 - r} 2 A ${r} ${r} 0 0 1 ${w - 2} ${2 + r} L ${w - 2} ${hh}`;
+    const vb = `0 0 ${w} ${hh}`;
+    if (svg.getAttribute('viewBox') !== vb) svg.setAttribute('viewBox', vb);
+    let path = svg.firstElementChild;
+    if (!path) { path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(path); }
+    if (path.getAttribute('d') !== d) path.setAttribute('d', d);
+  });
+}
+let _ongletsT = null;
+new MutationObserver(() => { cancelAnimationFrame(_ongletsT); _ongletsT = requestAnimationFrame(dessinerOnglets); }).observe(document.body, { childList: true, subtree: true });
+window.addEventListener('resize', dessinerOnglets);
+window.addEventListener('load', dessinerOnglets);
 function lotTitre(t) { return `<h2 class="lot-titre">${t}</h2>`; }
 // Fouilles en pleine masse : liste (plusieurs lignes possibles). Ancien choix unique converti.
 function pleinesDe(fd) {
