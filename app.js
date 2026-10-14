@@ -3002,7 +3002,7 @@ const LISTES_CONF = {
   protection: { titre: 'Protection des murs enterrés (soubassement)', base: ficheListeProtection }
 };
 function listesReglages() { const L = lsGet('listes', {}); return L && typeof L === 'object' ? L : {}; }
-function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [] }; }
+function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: r.lots || null }; }
 // Liste affichée : base du code, sans les ouvrages retirés, avec les ouvrages ajoutés
 function listeEffective(cle) {
   const r = listeReglage(cle);
@@ -3033,10 +3033,20 @@ async function reprendreListes() {
   } catch (e) { /* hors ligne : copie de cet appareil */ }
 }
 let listeGereCle = null;
+// Lots attribués à la liste : ceux choisis par l'utilisateur, sinon les lots des ouvrages du code
+function listeLots(cle) {
+  const r = listeReglage(cle);
+  if (r.lots && r.lots.length) return r.lots.filter(id => BIB.lots.some(l => l.id === id));
+  const base = LISTES_CONF[cle].base();
+  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && base.includes(o.designation)).map(o => o.lot))];
+}
+// Ouvrages (m²) d'une liste de lots
+function designationsDesLots(lots) {
+  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && lots.includes(o.lot)).map(o => o.designation))];
+}
+function sauverReglage(cle, r) { const L = listesReglages(); L[cle] = r; return sauverListes(L); }
 function ouvrirGestionListe(cle) {
   listeGereCle = cle;
-  const base = LISTES_CONF[cle].base();
-  const lotDefaut = (BIB.ouvrages.find(o => !o.supprime && base.includes(o.designation)) || {}).lot || BIB.lots[0].id;
   let ov = $('gestListe');
   if (!ov) {
     ov = document.createElement('div');
@@ -3044,43 +3054,83 @@ function ouvrirGestionListe(cle) {
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:16px';
     // Délégation : un seul écouteur pour toute la fenêtre, même après redessin
     ov.addEventListener('change', async e => {
-      if (e.target.id === 'glLot') { ov.dataset.lot = e.target.value; rendreGestionListe(); return; }
-      const i = e.target.closest('input[data-gl]'); if (!i) return;
-      const L = listesReglages(), r = listeReglage(listeGereCle), d = i.dataset.gl, b = LISTES_CONF[listeGereCle].base();
+      const t = e.target;
+      if (t.id === 'glLot') { ov.dataset.lot = t.value; rendreGestionListe(true); return; }
+      if (t.id === 'glAjoutLot') {
+        if (!t.value) return;
+        const r = listeReglage(listeGereCle); r.lots = [...listeLots(listeGereCle), t.value];
+        ov.dataset.lot = t.value;
+        $('glMsg').textContent = await sauverReglage(listeGereCle, r); rendreGestionListe(); return;
+      }
+      const i = t.closest('input[data-gl]'); if (!i) return;
+      const r = listeReglage(listeGereCle), d = i.dataset.gl, b = LISTES_CONF[listeGereCle].base();
       r.retires = r.retires.filter(x => x !== d); r.ajoutes = r.ajoutes.filter(x => x !== d);
       if (i.checked && !b.includes(d)) r.ajoutes.push(d);
       if (!i.checked && b.includes(d)) r.retires.push(d);
-      L[listeGereCle] = r;
-      const texte = await sauverListes(L);
-      $('glMsg').textContent = texte; rendreGestionListe();
+      $('glMsg').textContent = await sauverReglage(listeGereCle, r);
+      rendreGestionListe(true);
     });
     ov.addEventListener('input', e => { if (e.target.id === 'glFiltre') { ov.dataset.filtre = e.target.value; rendreGestionListe(true); } });
     ov.addEventListener('click', async e => {
-      if (e.target === ov || e.target.id === 'glFermer') { ov.remove(); listeGereCle = null; return; }
-      if (e.target.id === 'glOrigine') {
-        if (!confirm('Revenir à la liste d\'origine de ce configurateur ? Vos ajouts et retraits pour cette liste seront effacés.')) return;
-        const L = listesReglages(); L[listeGereCle] = { retires: [], ajoutes: [] };
-        $('glMsg').textContent = await sauverListes(L); rendreGestionListe();
+      const t = e.target;
+      if (t === ov || t.id === 'glFermer') { ov.remove(); listeGereCle = null; return; }
+      const cle = listeGereCle, base = LISTES_CONF[cle].base();
+      if (t.dataset.retirlot) {
+        const r = listeReglage(cle); r.lots = listeLots(cle).filter(id => id !== t.dataset.retirlot);
+        if (ov.dataset.lot === t.dataset.retirlot) ov.dataset.lot = r.lots[0] || '';
+        $('glMsg').textContent = await sauverReglage(cle, r); rendreGestionListe(); return;
+      }
+      if (t.id === 'glToutDecocher') {
+        if (!confirm('Décocher tous les ouvrages de cette liste ? Vous cocherez ensuite ceux que vous voulez.')) return;
+        $('glMsg').textContent = await sauverReglage(cle, { lots: listeLots(cle), retires: base.slice(), ajoutes: [] });
+        rendreGestionListe(); return;
+      }
+      if (t.id === 'glToutCocher') {
+        const r = listeReglage(cle), surLot = designationsDesLots([ov.dataset.lot]);
+        r.retires = r.retires.filter(x => !surLot.includes(x));
+        surLot.forEach(d => { if (!base.includes(d) && !r.ajoutes.includes(d)) r.ajoutes.push(d); });
+        $('glMsg').textContent = await sauverReglage(cle, r); rendreGestionListe(); return;
+      }
+      if (t.id === 'glOrigine') {
+        if (!confirm("Revenir à la liste d'origine de ce configurateur ? Vos ajouts, retraits et lots pour cette liste seront effacés.")) return;
+        $('glMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null });
+        rendreGestionListe();
       }
     });
     document.body.appendChild(ov);
   }
-  ov.dataset.lot = lotDefaut; ov.dataset.filtre = '';
+  ov.dataset.lot = listeLots(cle)[0] || ''; ov.dataset.filtre = '';
   rendreGestionListe();
 }
 function rendreGestionListe(seulLaListe) {
   const ov = $('gestListe'); if (!ov || !listeGereCle) return;
-  const efficace = listeEffective(listeGereCle), lot = ov.dataset.lot, filtre = (ov.dataset.filtre || '').toLowerCase();
-  const surLot = [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === lot).map(o => o.designation))];
-  const horsLot = efficace.filter(d => !surLot.includes(d));
-  const ligne = d => `<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;font-size:14px"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="margin-top:3px"><span>${esc(d)}</span></label>`;
-  const contenuListe = `<div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochez les ouvrages à proposer dans la liste. Décochez pour les retirer. Les ouvrages de la bibliothèque sont proposés ici.</div>`
-    + (horsLot.length ? `<p style="font-size:13px;margin:8px 0 2px"><strong>Ajoutés depuis un autre lot</strong></p>${horsLot.map(ligne).join('')}` : '')
-    + surLot.filter(d => !filtre || d.toLowerCase().includes(filtre)).map(ligne).join('');
+  const cle = listeGereCle, lots = listeLots(cle);
+  if (!lots.includes(ov.dataset.lot)) ov.dataset.lot = lots[0] || '';
+  const lot = ov.dataset.lot, filtre = (ov.dataset.filtre || '').toLowerCase();
+  const efficace = listeEffective(cle);
+  const surLot = designationsDesLots(lot ? [lot] : []);
+  const hors = efficace.filter(d => !designationsDesLots(lots).includes(d));
+  const filtrer = arr => arr.filter(d => !filtre || d.toLowerCase().includes(filtre));
+  // Case à cocher fine, à gauche : décocher ne fait que changer la case, l'ouvrage reste affiché
+  const ligne = d => `<label style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eee;font-size:14px"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00"><span>${esc(d)}</span></label>`;
+  const contenuListe = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
+      <button type="button" class="btn small sec" id="glToutCocher">Tout cocher (ce lot)</button>
+      <button type="button" class="btn small danger" id="glToutDecocher">Tout décocher</button>
+    </div>
+    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposé dans la liste. Décocher ne fait pas disparaître l'ouvrage de cette fenêtre.</div>
+    ${filtrer(surLot).map(ligne).join('') || '<p class="muted" style="font-size:13px">Aucun ouvrage pour ce lot.</p>'}
+    ${filtrer(hors).length ? `<p style="font-size:13px;margin:10px 0 2px"><strong>Ajoutés depuis un lot non attribué</strong></p>${filtrer(hors).map(ligne).join('')}` : ''}`;
   if (seulLaListe && $('glListe')) { $('glListe').innerHTML = contenuListe; return; }
+  const dispo = BIB.lots.filter(l => !lots.includes(l.id));
   ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:10px;max-width:640px;width:100%;padding:16px;margin:auto">
-    <h3 style="margin:0 0 8px">Liste : ${esc(LISTES_CONF[listeGereCle].titre)}</h3>
-    <label style="font-size:13px">Lot<select id="glLot" style="width:100%;padding:6px;margin-top:4px">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select></label>
+    <h3 style="margin:0 0 8px">Liste : ${esc(LISTES_CONF[cle].titre)}</h3>
+    <div style="font-size:13px"><strong>Lots attribués à cette liste</strong></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">
+      ${lots.map(id => `<span style="border:1px solid #c9b8dc;border-radius:14px;padding:3px 6px 3px 10px;font-size:13px">${esc(libLot(id))} <button type="button" data-retirlot="${esc(id)}" title="Retirer ce lot" style="border:0;background:none;cursor:pointer;font-size:13px">✕</button></span>`).join('')}
+      <select id="glAjoutLot" style="padding:4px;font-size:13px"><option value="">+ Ajouter un lot…</option>${dispo.map(l => `<option value="${esc(l.id)}">${esc(l.nom)}</option>`).join('')}</select>
+    </div>
+    <label style="font-size:13px;display:block;margin-top:10px">Lot affiché (seuls ses ouvrages sont listés)
+      <select id="glLot" style="width:100%;padding:6px;margin-top:4px">${lots.map(id => `<option value="${esc(id)}" ${id === lot ? 'selected' : ''}>${esc(libLot(id))}</option>`).join('')}</select></label>
     <input id="glFiltre" placeholder="Rechercher un ouvrage…" value="${esc(ov.dataset.filtre || '')}" style="width:100%;padding:6px;margin-top:8px;box-sizing:border-box">
     <div id="glListe" style="max-height:50vh;overflow:auto;margin-top:6px">${contenuListe}</div>
     <p id="glMsg" style="font-size:13px;color:#6b5a7a;margin:8px 0"></p>
@@ -3279,7 +3329,8 @@ function ficheRendre() {
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Plancher bas', contenuPlancher)}
     ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', listeAvecCrayon('murs', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(listeEffective('murs'), p.choix.murs)}</select>`))
-      + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`)))}
+      + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`))
+      + `<div style="margin-top:8px"><div style="font-size:13px"><strong>Gérer les listes des murs (sans ajouter de mur)</strong></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${[['murGO', 'Type de mur'], ['finition', 'Finition des murs'], ['protection', 'Protection (soubassement)']].map(([k, l]) => `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${k}">✏️ ${l}</button>`).join('')}</div></div>`)}
     </div>
     <div class="bloc">${lotTitre('3. Charpente')}
     ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
