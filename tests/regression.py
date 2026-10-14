@@ -33,7 +33,7 @@ CHANTIER = {
                     "type": "Élévation murs en aggloméré de ciment 20 cm (surface nette)", "finition": "Enduit extérieur monocouche sur façade", "deduire": True, "epMur": "33"}],
                "toiture": {"type": "", "surface": "", "pente": "", "couverture": ""},
                "choix": {"murs": "", "tableaux": "", "finition": ""},
-               "fond": {"largeur": "", "hauteur": "", "pleines": [], "rigLin": "10", "rigHt": "0.5", "rigLarg": "0.3"},
+               "fond": {"largeur": "", "hauteur": "", "pleines": [], "rigLin": "10", "rigHt": "0.5", "rigLarg": "0.3", "semOuv": "OUV-0040"},
                "equip": {}, "cuisine": {"bas": "", "haut": "", "plan": "", "plan_ml": ""},
                "chantier": {"eau": "oui", "elec": "oui", "base": "oui", "grue": "oui", "bennes": "1", "bennesTri": "1"},
                "soub": {"hauteur": ""},
