@@ -1128,6 +1128,7 @@ const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-por
 const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
 // Choix du bloc porte (un ouvrage de la bibliothèque par combinaison, voir le lot menuiseries-interieures)
 const BP_CHOIX = {
+  dim: ['63×204', '73×204', '83×204', '93×204'],
   dest: ['de communication', 'acoustique', 'de service isothermique', 'technique coupe-feu EI30', 'palière thermique', 'palière acoustique', 'palière blindage de sécurité'],
   pousse: ['poussant droit', 'poussant gauche'],
   ame: ['âme alvéolaire', 'âme pleine', 'âme tubulaire'],
@@ -1136,12 +1137,14 @@ const BP_CHOIX = {
   pose: ['pose traditionnelle', 'pose fin de chantier', 'pose rénovation']
 };
 for (const k of Object.keys(BP_CHOIX)) BP_CHOIX[k] = BP_CHOIX[k].map(t => [t, t]);
-// Désignations des ouvrages « bloc porte 83 × 204 » créés dans la bibliothèque
+// Désignations des ouvrages « bloc porte » (sans la dimension, ajoutée à l'intitulé du métré)
 function blocPorteDesignations() {
-  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.designation.startsWith('Bloc-porte 83×204 ')).map(o => o.designation))];
+  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.designation.startsWith('Bloc-porte ')).map(o => o.designation))];
 }
 // Nombre de portes de passage d'une pièce (somme des blocs portes) ; largeur : 83 cm
 const LARGEUR_PORTE_NV = 0.83;
+// Intitulé du métré : « Bloc-porte » + dimension choisie + reste de la désignation
+function intituleBloc(designation, dim) { return designation.replace('Bloc-porte ', 'Bloc-porte ' + (dim || '83×204') + ' '); }
 function nbPortesNv(p) { return (p.blocs || []).reduce((a, bl) => a + num(bl.nb), 0); }
 // Spots encastrés, formule de la fiche : Surface (m²) × Lux recommandés = Lumens totaux ; Lumens totaux ÷ Lumens par spot = nombre de spots (arrondi au supérieur)
 // Lux recommandés : valeurs retenues par Mathieu (entrée/couloir 150, chambre/séjour 200, cuisine 300, bureau 350, salle de bains et salle d'eau 400, WC et buanderie/cellier 150)
@@ -1265,9 +1268,9 @@ function renderPiecesNv() {
       ${selCrayon('nv-menu-ouv', 'Menuiserie extérieure : type', `<select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-menu-ouv', 'Menuiserie extérieure : type', () => menusPorteBaie().map(o => o.designation), m.ouv, 'Fenêtre (châssis)')}</select>`)}
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
-    <div style="margin-top:8px"><strong style="font-size:13px">Portes de passage fin de chantier (bloc porte 83 × 204)</strong></div>
+    <div style="margin-top:8px"><strong style="font-size:13px">Portes de passage fin de chantier (bloc porte)</strong></div>
     ${(p.blocs || []).map((bl, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
-      ${[['dest', 'Destination'], ['pousse', 'Poussant'], ['ame', 'Âme'], ['type', 'Type'], ['fin', 'Finition'], ['pose', 'Pose']].map(([champ, lib]) => `<label style="font-size:12px;flex:1;min-width:150px">${lib}${selCrayon('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), `<select data-nv="${esc(p.id)}|bloc|${k}|${champ}" style="width:100%;min-width:0">${optCodes('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), BP_CHOIX[champ], bl[champ] || '', '— choisir —')}</select>`)}</label>`).join('')}
+      ${[['dest', 'Destination'], ['dim', 'Dimensions'], ['pousse', 'Poussant'], ['ame', 'Âme'], ['type', 'Type'], ['fin', 'Finition'], ['pose', 'Pose']].map(([champ, lib]) => `<label style="font-size:12px;flex:1;min-width:150px">${lib}${selCrayon('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), `<select data-nv="${esc(p.id)}|bloc|${k}|${champ}" style="width:100%;min-width:0">${optCodes('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), BP_CHOIX[champ], bl[champ] || (champ === 'dim' ? '83×204' : ''), '— choisir —')}</select>`)}</label>`).join('')}
       <label style="font-size:12px;flex:1;min-width:200px">Ouvrage de la bibliothèque${selCrayon('bp-ouv', 'Bloc porte : ouvrage', `<select data-nv="${esc(p.id)}|bloc|${k}|ouv" style="width:100%;min-width:0">${optListeOuvrages('bp-ouv', 'Bloc porte : ouvrage', () => blocPorteDesignations(), bl.ouv || '', '— choisir —')}</select>`)}</label>
       <label style="font-size:12px">Nombre <input data-nv="${esc(p.id)}|bloc|${k}|nb" inputmode="numeric" value="${esc(bl.nb || '')}" style="width:70px"></label>
       <button type="button" class="btn small danger" data-nv-act="delbloc:${esc(p.id)}:${k}">✕</button></div>`).join('')}
@@ -1355,7 +1358,7 @@ function genererPiecesNv(c) {
       if (!bl.ouv || !(num(bl.nb) > 0)) continue;
       const o = BIB.ouvrages.find(x => x.id === bl.ouv && !x.supprime);
       if (!o) { manque.push('Bloc porte (ouvrage à choisir ou supprimé)'); continue; }
-      const v = { nombre: String(num(bl.nb)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
+      const v = { nombre: String(num(bl.nb)) }; ajoute(o, v, calcul(o, v), `${intituleBloc(o.designation, bl.dim)} – ${nom}`, p.id);
     }
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
@@ -1989,7 +1992,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
   else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
-  else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
+  else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dim: '83×204', dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
   else if (act === 'delbloc') { const p = liste.find(x => x.id === id); if (p) p.blocs.splice(Number(k), 1); }
   else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: 'OUV-0755', l: '', h: '', nb: '1' }); }
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
