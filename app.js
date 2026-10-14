@@ -2597,7 +2597,7 @@ function projetDe(c) {
   if (c.projet.choix.finition === undefined) c.projet.choix.finition = '';
   if (!c.projet.soub) c.projet.soub = { hauteur: '' };
   if (!c.projet.terrain) c.projet.terrain = { surface: '', perimetre: '' };
-  if (!c.projet.plancher) c.projet.plancher = { type: '', surface: '', ep: '', retombee: '', portee: '', entraxe: '' };
+  if (!c.projet.plancher) c.projet.plancher = { type: '', surface: '', brut: '', ep: '', retombee: '', portee: '', entraxe: '' };
   return c.projet;
 }
 // Calculs : murs moins ouvertures de 1 m² ou plus, tableaux (2 côtés × hauteur × épaisseur),
@@ -3136,6 +3136,7 @@ function ficheRendre() {
   const contenuPlancher = (() => {
     const pl = p.plancher;
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${champ('Surface de plancher brut (m²), dallage RDC', inp('data-k="plan" data-champ="brut" inputmode="decimal"', pl.brut || ''))}
       ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois']], pl.type || ''))}
       ${champ('Surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
       ${pl.type === 'hourdis' ? champ('Épaisseur de la dalle de compression (cm)', inp('data-k="plan" data-champ="ep" inputmode="decimal" placeholder="ex. 4"', pl.ep)) : ''}
@@ -3382,6 +3383,8 @@ function ficheVersMetre() {
   // Membrane Delta-MS : pose sur la hauteur du soubassement + 30 cm, seulement si ce mur a cette protection
   ajouter(DELTA_SOUB, r.deltaSoub, DELTA_SOUB, null, 'murs de soubassement (hauteur + 30 cm)');
   // Plancher bas
+  // Surface de plancher brut saisie à la main : dallage béton sur terre-plein
+  if (num(p.plancher.brut) > 0) ajouter('Dallage béton sur terre-plein (épaisseur 12 cm)', num(p.plancher.brut), 'Dallage de plancher brut', null, 'surface de plancher brut (saisie)');
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
     ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
     ajouter('Dalle de compression béton armé (sur hourdis)', r.dalleC, 'Dalle de compression ' + num(p.plancher.ep) + ' cm', null, SRC_QTE.plan_dalle);
