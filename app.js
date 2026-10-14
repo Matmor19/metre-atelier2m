@@ -88,8 +88,8 @@ function alignerFondations(L) {
     if (!fou) continue;
     for (const f of L) {
       if (f.ouvrage !== fou.id || !(f.quantite > 0)) continue;
-      // « Aucune semelle » choisie : pas de semelle (une semelle déjà liée à cette fouille est retirée)
-      if (f.semOuv === '') continue;
+      // Fouille en rigole sans semelle choisie : rien n'est inséré (une semelle déjà liée est retirée)
+      if (fouDes === DES_FOND_FOUILLE && !f.semOuv) continue;
       sources.add(f.uid);
       // Semelle choisie dans le bloc Terrassement (fouille en rigole) ; sinon la semelle par défaut
       const bet = (f.semOuv && ouv(f.semOuv)) || ouv(betDes);
@@ -3593,7 +3593,7 @@ function ficheRendre() {
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
     </div>
-    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => !o.supprime && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv === undefined ? 'OUV-0040' : (fd.semOuv || ''), '— aucune semelle —')}</select>`))}</div>
+    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => !o.supprime && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv || '', '— aucune semelle —')}</select>`))}</div>
     <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
     ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
@@ -3849,8 +3849,8 @@ function ficheVersMetre() {
   ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes',
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   // Semelle choisie par l'utilisateur : mémorisée sur la ligne de fouille, lue par alignerFondations()
-  // Jamais choisie : OUV-0040 par défaut. Choisie « aucune semelle » (chaîne vide) : pas de semelle au métré
-  if (L.length > nAvantFouille) L[L.length - 1].semOuv = fdim.semOuv === undefined ? 'OUV-0040' : fdim.semOuv;
+  // Rien de choisi : pas de semelle au métré (aucune valeur par défaut)
+  if (L.length > nAvantFouille) L[L.length - 1].semOuv = fdim.semOuv || '';
   // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
   // La semelle béton (gros œuvre) n'est plus créée ici : elle suit la ligne de fouille, voir alignerFondations()
   }
