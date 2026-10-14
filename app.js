@@ -1473,7 +1473,7 @@ function crayonBouton(key, titre) {
   return `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${esc(key)}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button>`;
 }
 function selCrayon(key, titre, selHtml) {
-  return `<span style="display:flex;gap:6px;align-items:center;flex:1;min-width:200px">${crayonBouton(key, titre)}<span style="flex:1;min-width:0;display:flex">${selHtml}</span></span>`;
+  return `<span class="crayon-rangee" style="flex:1;min-width:0">${crayonBouton(key, titre)}<span style="flex:1;min-width:0;display:flex">${selHtml}</span></span>`;
 }
 function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.hauteurDoub = q.hauteurDoub || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' };
   if (!q.doub.jointInit) { q.doub.joint = 'S * 1,9'; q.doub.jointInit = true; }
@@ -3128,7 +3128,7 @@ function listeEffective(cle) {
 }
 // Liste déroulante précédée du crayon
 function listeAvecCrayon(cle, selectHtml) {
-  return `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${cle}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button><div style="flex:1;min-width:0">${selectHtml}</div></div>`;
+  return `<div class="crayon-rangee"><button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${cle}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button><div style="flex:1;min-width:0">${selectHtml}</div></div>`;
 }
 // Enregistre sur cet appareil, puis envoie sur Drive si la connexion est active
 async function sauverListes(L) {

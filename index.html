@@ -58,6 +58,13 @@ input::placeholder{color:var(--mut);opacity:.8}
 .bloc button{transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
 .bloc button:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.18);filter:brightness(1.05)}
 .bloc button:active{transform:translateY(0) scale(.97);box-shadow:none}
+/* Configurateur : champs contenus dans leur cadre, crayon à côté sans chevauchement */
+.bloc input, .bloc select, .bloc textarea { box-sizing: border-box; max-width: 100%; }
+.bloc .crayon-rangee { display: flex; gap: 6px; align-items: center; min-width: 0; width: 100%; }
+.bloc .crayon-rangee > button { flex: 0 0 auto; }
+.bloc .crayon-rangee > div, .bloc .crayon-rangee > span { flex: 1 1 auto; min-width: 0; display: flex; }
+.bloc .crayon-rangee select { width: 100%; min-width: 0; }
+
 /* Lumière qui fait le tour du cadre du bloc où l'on saisit */
 @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
 .bloc{position:relative}
