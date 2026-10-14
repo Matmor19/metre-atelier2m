@@ -88,6 +88,8 @@ function alignerFondations(L) {
     if (!fou) continue;
     for (const f of L) {
       if (f.ouvrage !== fou.id || !(f.quantite > 0)) continue;
+      // « Aucune semelle » choisie : pas de semelle (une semelle déjà liée à cette fouille est retirée)
+      if (f.semOuv === '') continue;
       sources.add(f.uid);
       // Semelle choisie dans le bloc Terrassement (fouille en rigole) ; sinon la semelle par défaut
       const bet = (f.semOuv && ouv(f.semOuv)) || ouv(betDes);
@@ -1440,7 +1442,8 @@ function optIsol(val, key, titre) {
 }
 // Liste d'ouvrages de la bibliothèque, modifiable : la valeur de chaque option est l'identifiant de l'ouvrage
 function optListeOuvrages(key, titre, baseFn, val, vide) {
-  LISTES_CONF[key] = { titre, base: baseFn };
+  // Si des lots ont été choisis dans l'éditeur, la liste suit ces lots (retirer un lot retire ses ouvrages)
+  LISTES_CONF[key] = { titre, base: () => { const r = listeReglage(key); return Array.isArray(r.lots) ? designationsTousLots(r.lots) : baseFn(); } };
   const liste = listeEffective(key);
   const ids = liste.map(d => { const o = BIB.ouvrages.find(x => !x.supprime && x.designation === d); return o ? o.id : ''; });
   let html = vide ? `<option value="">${esc(vide)}</option>` : '';
@@ -3108,7 +3111,7 @@ const LISTES_CONF = {
   protection: { titre: 'Protection des murs enterrés (soubassement)', base: ficheListeProtection }
 };
 function listesReglages() { const L = lsGet('listes', {}); return L && typeof L === 'object' ? L : {}; }
-function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: r.lots || null, biblio: !!r.biblio, titre: r.titre || '' }; }
+function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: Array.isArray(r.lots) ? r.lots : null, biblio: !!r.biblio, titre: r.titre || '' }; }
 // Liste « bibliothèque » : une liste à valeurs fixes peut être remplacée par les ouvrages de lots choisis
 function designationsTousLots(lots) { return [...new Set(BIB.ouvrages.filter(o => !o.supprime && lots.includes(o.lot)).map(o => o.designation))]; }
 function enregistrerListeBiblio(cle) {
@@ -3179,7 +3182,7 @@ function fermerGestionListe() {
 // Lots attribués à la liste : ceux choisis par l'utilisateur, sinon les lots des ouvrages du code
 function listeLots(cle) {
   const r = listeReglage(cle);
-  if (r.lots && r.lots.length) return r.lots.filter(id => BIB.lots.some(l => l.id === id));
+  if (Array.isArray(r.lots)) return r.lots.filter(id => BIB.lots.some(l => l.id === id));   // liste vide = aucun lot (volontaire)
   const base = LISTES_CONF[cle].base();
   return [...new Set(BIB.ouvrages.filter(o => !o.supprime && base.includes(o.designation)).map(o => o.lot))];
 }
@@ -3590,7 +3593,7 @@ function ficheRendre() {
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
     </div>
-    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => !o.supprime && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv || '', 'Par défaut : OUV-0040 (semelle filante SL35, 6 HA 10)')}</select>`))}</div>
+    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => !o.supprime && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv === undefined ? 'OUV-0040' : (fd.semOuv || ''), '— aucune semelle —')}</select>`))}</div>
     <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
     ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
@@ -3846,7 +3849,8 @@ function ficheVersMetre() {
   ajouter(DES_FOND_FOUILLE, r.fouille, 'Fouilles en tranchée pour semelles filantes',
     { nombre: '1', cote1: String(r.fondLin), cote2: String(r.fdimLarg), cote3: String(r.fdimProf) });
   // Semelle choisie par l'utilisateur : mémorisée sur la ligne de fouille, lue par alignerFondations()
-  if (L.length > nAvantFouille) L[L.length - 1].semOuv = fdim.semOuv || undefined;
+  // Jamais choisie : OUV-0040 par défaut. Choisie « aucune semelle » (chaîne vide) : pas de semelle au métré
+  if (L.length > nAvantFouille) L[L.length - 1].semOuv = fdim.semOuv === undefined ? 'OUV-0040' : fdim.semOuv;
   // OUV-0040 reprend automatiquement les cotes de la ligne OUV-0008 (fouille) si elle existe
   // La semelle béton (gros œuvre) n'est plus créée ici : elle suit la ligne de fouille, voir alignerFondations()
   }
