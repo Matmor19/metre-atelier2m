@@ -1292,7 +1292,7 @@ function renderPiecesNv() {
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
     </div></div>`;
-  host.innerHTML = `<datalist id="dlPiecesNv">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option value="${esc(t)}">`).join('')}</datalist><div class="bloc">${lotTitre('C. Configurateur de pièces (nouveau)')}
+  host.innerHTML = `<datalist id="dlPiecesNv">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option value="${esc(t)}">`).join('')}</datalist><div class="bloc bloc-lettre">${lotTitre('B. Configurateur de pièces')}
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
     ${liste.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
     ${liste.length ? (() => { const eq = equipementsMaison(c); return `<div class="card" style="margin-top:10px"><strong style="font-size:13px">Équipements de la maison (calculés selon les pièces)</strong>
@@ -1580,7 +1580,7 @@ function renderPlatNv() {
       ${champMlHydro(q, cle, 'hydro', 'Plus-value plaque hydrofuge', R[cle].hydro)}
       ${cle === 'cloi' ? champMlHydro(q, cle, 'acou', 'Plus-value plaque acoustique') : ''}
       ${champPlaqueFeu(cle, q[cle].feu, R[cle].feu)}`;
-  host.innerHTML = `<div class="bloc">${lotTitre('D. Plâtrerie et isolation (bloc séparé)')}
+  host.innerHTML = `<div class="bloc bloc-lettre">${lotTitre('C. Plâtrerie et isolation (bloc séparé)')}
     <p class="muted">Cloisonnement : hauteur sous plafond. Doublage : hauteur de doublage (peut être différente). Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-plat="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" style="width:90px"></label></div>
@@ -1922,7 +1922,7 @@ function renderPeinture() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
-  host.innerHTML = `<div class="bloc">${lotTitre('E. Peinture (bloc séparé)')}
+  host.innerHTML = `<div class="bloc bloc-lettre">${lotTitre('D. Peinture (bloc séparé)')}
     <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc, moins les portes et placards peints (surface × 2) et toutes les menuiseries extérieures. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -2324,7 +2324,7 @@ function ouvrirConfigurateur() {
       ${subListe(p.equip || [], i, 'equip', x => `${esc(x.type)} × ${num(x.nb)}`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap">${selCrayon('pieces-equip', 'Équipements : type', `<select id="pl_${i}_equip_type" style="flex:1;min-width:0">${optCodes('pieces-equip', 'Équipements : type', equipOptions(p).map(d => [d, esc(d)]), '', '— choisir —')}</select>`)}<input id="pl_${i}_equip_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
     </div>`;
-  if (PIECES_ANCIEN_VEILLE) $('cfgPieces').innerHTML = '<div class="bloc"><p class="muted"><strong>Ancien configurateur de pièces : en veille.</strong> Ses données sont conservées, mais il ne produit plus aucune ligne au métré.</p></div>';
+  if (PIECES_ANCIEN_VEILLE) { if ($('cfgPieces')) $('cfgPieces').innerHTML = ''; }   // ancien configurateur retiré de l'affichage ; ses données restent
   else $('cfgPieces').innerHTML = `<div class="bloc">${lotTitre('B. Liste des pièces de la maison (sans l\'équipement)')}
     <p class="muted">Saisissez chaque pièce une seule fois, avec ses murs, portes et placards en brut. Le calcul distingue seul les pièces d'eau d'après leur nom.</p>
     <label for="plH">Hauteur sous plafond (m)</label>
@@ -3395,7 +3395,7 @@ function surfaceMur(m) {
   }
   return num(m.longueur) * num(m.hauteur);
 }
-function lotTitre(t) { return `<h2 class="lot-titre">${t}</h2>`; }
+function lotTitre(t) { const lettre = /^[A-Z]\./.test(t); return `<h2 class="lot-titre ${lettre ? 'lot-lettre' : 'lot-numero'}">${t}</h2>`; }
 // Fouilles en pleine masse : liste (plusieurs lignes possibles). Ancien choix unique converti.
 function pleinesDe(fd) {
   if (!Array.isArray(fd.pleines)) {
@@ -3554,7 +3554,7 @@ function ficheRendre() {
       ? 'Solivage : OSB 9 mm en fond, isolant entre solives (épaisseur = retombée), OSB 21 mm support de revêtement de sol.'
       : 'Hourdis : plancher à poutrelles et hourdis, avec dalle de compression en béton.'}</p>`;
   })();
-  $('cfgFiche').innerHTML = `<div class="bloc">${lotTitre('A. Terrain')}
+  $('cfgFiche').innerHTML = `<div class="bloc bloc-lettre">${lotTitre('A. Terrain')}
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', refKanbanDe(c), '100%'))}</div></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
