@@ -42,11 +42,16 @@ input::placeholder{color:var(--mut);opacity:.8}
 .lot-titre{margin:4px 0 10px;padding:8px 12px;border-radius:10px;background:var(--acc);font-size:17px}
 .lot-titre.lot-lettre{color:#2e7d32}
 .lot-titre.lot-numero{color:#e07b1a}
-/* Cadres de blocs : titre en onglet au-dessus du cadre (vert pour les lettres, orange pour les chiffres) */
-.bloc:has(> .lot-titre){position:relative;margin-top:40px;padding-top:10px}
-.bloc > .lot-titre{position:relative;display:inline-block;margin:-54px 0 10px;padding:8px 14px;border:4px solid #e07b1a;border-bottom:none;border-radius:10px 10px 0 0;box-shadow:0 4px 0 var(--card)}
+/* Blocs du configurateur : onglet (titre sans fond) au-dessus d'un cadre en forme de dossier */
+.bloc{border-top:none;border-radius:0 0 14px 14px;margin-top:0}
 .bloc.bloc-lettre{border-color:#2e7d32}
-.bloc.bloc-lettre > .lot-titre{border-color:#2e7d32}
+.tab-row{display:flex;align-items:stretch;margin-top:14px}
+.tab-row.lettre{--c:#2e7d32}
+.tab-row.numero{--c:#e07b1a}
+.tab-row .lot-titre{margin:0;padding:4px 14px 4px 4px;border:none;border-right:4px solid var(--c);border-bottom:4px solid var(--c);border-radius:0;background:transparent;color:var(--c);white-space:nowrap}
+.tab-row .tab-fill{flex:1;border-top:4px solid var(--c);border-right:4px solid var(--c);border-radius:0 12px 0 0;min-height:8px}
+.tab-gros{font-size:20px;font-weight:700}
+.tab-petit{font-size:12px;letter-spacing:.04em;margin-left:1px}
 #vConfig .sousbloc{background:#fdebd8!important;border:2px solid #e07b1a!important;border-radius:10px!important;box-shadow:none!important;color:#1d2330}
 #vConfig .sousbloc h3{color:#9a4a0e!important;border-bottom:none!important;padding-bottom:0}
 #vConfig .sousbloc label{color:#1d2330!important}
