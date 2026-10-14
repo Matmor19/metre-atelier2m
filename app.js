@@ -3037,7 +3037,8 @@ let listeRetour = null;
 // Ferme l'éditeur, redessine le configurateur avec les listes à jour, et revient à la carte d'origine
 function fermerGestionListe() {
   const ov = $('gestListe'); if (ov) ov.remove();
-  listeGereCle = null;
+  const ovv = $('gestValeurs'); if (ovv) ovv.remove();
+  listeGereCle = null; listeValeurCle = null;
   ficheRendre();
   const r = listeRetour; listeRetour = null;
   if (!r) return;
@@ -3153,6 +3154,119 @@ function rendreGestionListe(seulLaListe) {
   </div>`;
 }
 
+// ===== Listes à choix fixes (toiture, équipements, plancher…) : valeurs modifiables =====
+// Clé de la liste = data-k + '.' + data-champ (ex. « toit.type »). Réglages : retires = valeurs décochées, ajoutes = { v, t }
+const FIXES_DEFAUTS = {};   // valeurs d'origine de chaque liste, enregistrées au moment du dessin
+function cleFixe(attrs) {
+  const k = /data-k="([^"]+)"/.exec(attrs), c = /data-champ="([^"]+)"/.exec(attrs);
+  return k && c ? k[1] + '.' + c[1] : null;
+}
+function valeursFixes(cle, defauts) {
+  const r = listeReglage(cle);
+  return [...defauts, ...r.ajoutes.map(a => [a.v, a.t])].filter(([v]) => !r.retires.includes(v));
+}
+let listeValeurCle = null;
+function ouvrirGestionValeurs(cle, titre) {
+  listeValeurCle = cle;
+  let ov = $('gestValeurs');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'gestValeurs';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:16px';
+    ov.dataset.titre = titre || 'Liste';
+    ov.addEventListener('change', async e => {
+      const lien = e.target.dataset.lien;
+      if (lien) {
+        // Lien d'une valeur ajoutée : ouvrage de la bibliothèque et quantité du configurateur
+        const r = listeReglage(listeValeurCle), a = r.ajoutes.find(x => x.v === e.target.dataset.lv);
+        if (!a) return;
+        if (lien === 'des') {
+          const d = e.target.value.trim();
+          if (d && !BIB.ouvrages.some(o => !o.supprime && o.designation === d)) {
+            $('gvMsg').textContent = "Cet ouvrage n'existe pas dans la bibliothèque : choisissez-le dans la liste proposée.";
+            return;
+          }
+          a.des = d;
+        } else a.src = e.target.value;
+        $('gvMsg').textContent = await sauverReglage(listeValeurCle, r);
+        return;
+      }
+      const i = e.target.closest('input[data-v]'); if (!i) return;
+      const r = listeReglage(listeValeurCle), v = i.dataset.v;
+      r.retires = r.retires.filter(x => x !== v);
+      if (!i.checked) r.retires.push(v);
+      $('gvMsg').textContent = await sauverReglage(listeValeurCle, r);
+      rendreGestionValeurs(true);
+    });
+    ov.addEventListener('click', async e => {
+      const t = e.target, cle = listeValeurCle;
+      if (t === ov || t.id === 'gvFermer') { fermerGestionListe(); return; }
+      if (t.id === 'gvAjouter') {
+        const lib = ($('gvNouveau').value || '').trim(); if (!lib) return;
+        const r = listeReglage(cle); r.ajoutes.push({ v: 'v' + Date.now(), t: lib });
+        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+      }
+      if (t.dataset.supprajout) {
+        if (!confirm('Supprimer définitivement cette valeur que vous avez ajoutée ?')) return;
+        const r = listeReglage(cle), v = t.dataset.supprajout;
+        r.ajoutes = r.ajoutes.filter(a => a.v !== v); r.retires = r.retires.filter(x => x !== v);
+        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+      }
+      if (t.id === 'gvToutCocher') {
+        const r = listeReglage(cle); r.retires = [];
+        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+      }
+      if (t.id === 'gvToutDecocher') {
+        if (!confirm('Décocher toutes les valeurs de cette liste ? Vous cocherez ensuite celles que vous voulez.')) return;
+        const r = listeReglage(cle);
+        r.retires = [...(FIXES_DEFAUTS[cle] || []).map(([v]) => v), ...r.ajoutes.map(a => a.v)];
+        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+      }
+      if (t.id === 'gvOrigine') {
+        if (!confirm("Revenir aux valeurs d'origine de cette liste ? Vos ajouts et retraits seront effacés.")) return;
+        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null }); rendreGestionValeurs();
+      }
+    });
+    document.body.appendChild(ov);
+  }
+  ov.dataset.titre = titre || ov.dataset.titre;
+  rendreGestionValeurs();
+}
+function rendreGestionValeurs(seulLaListe) {
+  const ov = $('gestValeurs'); if (!ov || !listeValeurCle) return;
+  const cle = listeValeurCle, defauts = FIXES_DEFAUTS[cle] || [], r = listeReglage(cle);
+  const lienLigne = a => `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 6px 24px">
+      <input list="dlOuvrages" data-lien="des" data-lv="${esc(a.v)}" value="${esc(a.des || '')}" placeholder="Ouvrage de la bibliothèque (lié au métré)" style="flex:2;min-width:200px;padding:4px;font-size:13px">
+      <select data-lien="src" data-lv="${esc(a.v)}" style="flex:1;min-width:180px;padding:4px;font-size:13px"><option value="">Quantité : aucune (pas de ligne)</option>${Object.entries(SRC_QTE).map(([k, lib]) => `<option value="${k}" ${a.src === k ? 'selected' : ''}>${esc(lib)}</option>`).join('')}</select>
+    </div>`;
+  const ligne = (v, t, ajout) => {
+    const a = ajout ? r.ajoutes.find(x => x.v === v) : null;
+    return `<div style="border-bottom:1px solid #eee;padding:4px 0"><label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" data-v="${esc(v)}" ${r.retires.includes(v) ? '' : 'checked'} style="width:16px;height:16px;margin:0;flex:0 0 16px;accent-color:#7a5a00"><span style="flex:1">${esc(t)}</span>${ajout ? `<button type="button" data-supprajout="${esc(v)}" title="Supprimer cette valeur" style="border:0;background:none;cursor:pointer;color:#a33">✕</button>` : ''}</label>${a ? lienLigne(a) : ''}</div>`;
+  };
+  const contenu = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
+      <button type="button" class="btn small sec" id="gvToutCocher">Tout cocher</button>
+      <button type="button" class="btn small danger" id="gvToutDecocher">Tout décocher</button>
+    </div>
+    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposée dans la liste. Décocher ne fait pas disparaître la valeur de cette fenêtre.</div>
+    ${defauts.map(([v, t]) => ligne(v, t, false)).join('')}
+    ${r.ajoutes.map(a => ligne(a.v, a.t, true)).join('')}`;
+  if (seulLaListe && $('gvListe')) { $('gvListe').innerHTML = contenu; return; }
+  ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:10px;max-width:560px;width:100%;padding:16px;margin:auto">
+    <h3 style="margin:0 0 8px">Liste : ${esc(ov.dataset.titre || 'Liste')}</h3>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <input id="gvNouveau" placeholder="Nouvelle valeur à proposer…" style="flex:1;padding:6px;box-sizing:border-box">
+      <button type="button" class="btn small" id="gvAjouter">Ajouter</button>
+    </div>
+    <datalist id="dlOuvrages">${BIB.ouvrages.filter(o => !o.supprime).map(o => `<option value="${esc(o.designation)}">`).join('')}</datalist>
+    <div id="gvListe" style="max-height:55vh;overflow:auto">${contenu}</div>
+    <p id="gvMsg" style="font-size:13px;color:#6b5a7a;margin:8px 0"></p>
+    <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">
+      <button type="button" class="btn sec" id="gvOrigine">Revenir aux valeurs d'origine</button>
+      <button type="button" class="btn" id="gvFermer">Fermer</button>
+    </div>
+  </div>`;
+}
+
 // Surface nette d'un mur : rectangle (longueur × hauteur), ou pignon (triangle : base = linéaire, hauteur = linéaire/2 × pente)
 // Demi-pignon : la moitié d'un pignon (toit monopente)
 function surfaceMur(m) {
@@ -3179,7 +3293,18 @@ function ficheRendre() {
   const carte = (titre, contenu, src) => `<section ${src ? `data-source="${src}"` : ''} class="sousbloc" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">${titre}</h3>${contenu}</section>`;
   const champ = (lib, html) => `<div style="min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${lib}</label>${html}</div>`;
   const inp = (attrs, val, w) => `<input ${attrs} value="${esc(val ?? '')}" style="width:${w || '100%'};padding:10px;border:1px solid var(--mut);border-radius:8px;background:var(--card);color:var(--fg);font-size:16px">`;
-  const sel2 = (attrs, opts, val) => `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(opts, val)}</select>`;
+  const sel2 = (attrs, opts, val) => {
+    const cle = cleFixe(attrs);
+    let liste = opts;
+    if (cle) {
+      const vide = opts.filter(([v]) => v === ''), defauts = opts.filter(([v]) => v !== '');
+      FIXES_DEFAUTS[cle] = defauts;
+      liste = [...vide, ...valeursFixes(cle, defauts)];
+      if (val && !liste.some(([v]) => v === val)) liste.push([val, val + ' (retiré de la liste)']);
+    }
+    const html = `<select ${attrs} style="width:100%;padding:6px;border:1px solid #c9b8dc;border-radius:6px">${sel(liste, val)}</select>`;
+    return cle ? listeAvecCrayon(cle, html) : html;
+  };
 
   const optListe2 = (liste, sel, vide) => `<option value="">${vide}</option>` + liste.map(t => `<option value="${esc(t)}" ${sel === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const rangeMur = m => {
@@ -3374,7 +3499,7 @@ function ficheRendre() {
     <div class="bloc">${lotTitre('12. Cuisine')}
     ${carte('Cuisine (linéaires et plan de travail)', champ('Meubles bas (ml)', inp('data-k="cuis" data-champ="bas" inputmode="decimal"', p.cuisine.bas, '160px'))
       + champ('Meubles hauts (ml)', inp('data-k="cuis" data-champ="haut" inputmode="decimal"', p.cuisine.haut, '160px'))
-      + champ('Plan de travail', `<select data-k="cuis" data-champ="plan" style="width:100%;padding:6px">${['', 'stratifie', 'quartz'].map(v => `<option value="${v}" ${(p.cuisine.plan || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', stratifie: 'Stratifié', quartz: 'Quartz' }[v]}</option>`).join('')}</select>`)
+      + champ('Plan de travail', sel2('data-k="cuis" data-champ="plan"', [CHOIX_VIDE, ['stratifie', 'Stratifié'], ['quartz', 'Quartz']], p.cuisine.plan || ''))
       + champ('Longueur du plan de travail (ml)', inp('data-k="cuis" data-champ="plan_ml" inputmode="decimal"', p.cuisine.plan_ml, '160px')))}
     </div>
 `;
@@ -3462,7 +3587,9 @@ function ficheClick(e) {
     // Mémorise la carte d'où l'on vient, pour y revenir à la fermeture
     const secs = [...$('vConfig').querySelectorAll('section')], sec = b.closest('section');
     listeRetour = { index: sec ? secs.indexOf(sec) : -1, y: window.scrollY };
-    ouvrirGestionListe(b.dataset.liste); return;
+    if (LISTES_CONF[b.dataset.liste]) { ouvrirGestionListe(b.dataset.liste); return; }
+    const lab = b.closest('div').parentElement.querySelector('label');
+    ouvrirGestionValeurs(b.dataset.liste, lab ? lab.textContent : 'Liste'); return;
   }
   if (a === 'addmur') {
     const cat = b.dataset.cat || 'peri';
@@ -3552,6 +3679,22 @@ function ficheVersMetre() {
   // Membrane Delta-MS : pose sur la hauteur du soubassement + 30 cm, seulement si ce mur a cette protection
   ajouter(DELTA_SOUB, r.deltaSoub, DELTA_SOUB, null, 'murs de soubassement (hauteur + 30 cm)');
   // Plancher bas
+  // Valeurs ajoutées à une liste à choix fixe, liées à un ouvrage de la bibliothèque (crayon)
+  {
+    const RUBRIQUE = { toit: 'toiture', equip: 'equip', plan: 'plancher', cuis: 'cuisine', choix: 'choix' };
+    const ctxQ = ctxQuantites(c), n1 = x => (x === undefined || x === null || x === '' ? 1 : num(x));
+    Object.entries(listesReglages()).forEach(([cle, rg]) => {
+      const [k, champ] = cle.split('.');
+      if (!champ || !RUBRIQUE[k] || !Array.isArray(rg.ajoutes)) return;
+      const val = (p[RUBRIQUE[k]] || {})[champ];
+      const a = rg.ajoutes.find(x => x.v === val && x.des && (rg.retires || []).indexOf(x.v) < 0);
+      if (!a) return;
+      const o = BIB.ouvrages.find(x => !x.supprime && x.designation === a.des);
+      const v = o && a.src ? qteValeur({ qte: a.src, unite: o.unite }, ctxQ) : null;
+      if (!v) return;
+      ajouter(a.des, n1(v.nombre) * n1(v.cote1) * n1(v.cote2) * n1(v.cote3), undefined, v);
+    });
+  }
   // Surface de plancher brut saisie à la main : dallage béton sur terre-plein
   if (num(p.plancher.brut) > 0) ajouter('Dallage béton sur terre-plein (épaisseur 12 cm)', num(p.plancher.brut), 'Dallage de plancher brut', null, 'surface de plancher brut (saisie)');
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
