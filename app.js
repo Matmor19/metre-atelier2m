@@ -2991,6 +2991,106 @@ function ficheListeProtection() {
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /hydrofuge|membrane|étanchéité|drainage|enterré|protection/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
+// ===== Listes déroulantes du configurateur, modifiables (crayon à gauche de chaque liste) =====
+// Base = liste du code. Réglages de l'utilisateur : ouvrages retirés (retires) et ajoutés (ajoutes),
+// enregistrés sur cet appareil (lsGet 'listes') puis sur Drive (fichier listes.json).
+const LISTES_CONF = {
+  murs: { titre: 'Matériau des murs (élévation)', base: ficheListeMur },
+  tableaux: { titre: 'Tableaux de menuiseries', base: ficheListeMur },
+  murGO: { titre: 'Type de mur (gros œuvre)', base: ficheListeMurGO },
+  finition: { titre: 'Finition des murs', base: ficheListeFinition },
+  protection: { titre: 'Protection des murs enterrés (soubassement)', base: ficheListeProtection }
+};
+function listesReglages() { const L = lsGet('listes', {}); return L && typeof L === 'object' ? L : {}; }
+function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [] }; }
+// Liste affichée : base du code, sans les ouvrages retirés, avec les ouvrages ajoutés
+function listeEffective(cle) {
+  const r = listeReglage(cle);
+  const liste = LISTES_CONF[cle].base().filter(d => !r.retires.includes(d));
+  r.ajoutes.forEach(d => { if (!liste.includes(d)) liste.push(d); });
+  return liste;
+}
+// Liste déroulante précédée du crayon
+function listeAvecCrayon(cle, selectHtml) {
+  return `<div style="display:flex;gap:6px;align-items:center"><button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${cle}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button><div style="flex:1;min-width:0">${selectHtml}</div></div>`;
+}
+// Enregistre sur cet appareil, puis envoie sur Drive si la connexion est active
+async function sauverListes(L) {
+  lsSet('listes', L); lsSet('listes_modifiees', true);
+  if (!syncConfigOk()) return 'Enregistré sur cet appareil. Renseignez le script dans Réglages pour l\'envoyer sur Drive.';
+  try {
+    const j = await post({ action: 'sauver_listes', listes: L });
+    if (j.ok) { lsSet('listes_modifiees', false); return 'Enregistré et envoyé sur Drive.'; }
+    return 'Drive a refusé l\'envoi : ' + (j.erreur || 'erreur inconnue') + '. Enregistré sur cet appareil.';
+  } catch (e) { return 'Envoi impossible pour le moment. Enregistré sur cet appareil.'; }
+}
+// Reprend les listes de Drive, sauf si cet appareil a des modifications non encore envoyées
+async function reprendreListes() {
+  if (!syncConfigOk() || lsGet('listes_modifiees', false)) return;
+  try {
+    const j = await post({ action: 'lire_listes' });
+    if (j.ok && j.listes) lsSet('listes', j.listes);
+  } catch (e) { /* hors ligne : copie de cet appareil */ }
+}
+let listeGereCle = null;
+function ouvrirGestionListe(cle) {
+  listeGereCle = cle;
+  const base = LISTES_CONF[cle].base();
+  const lotDefaut = (BIB.ouvrages.find(o => !o.supprime && base.includes(o.designation)) || {}).lot || BIB.lots[0].id;
+  let ov = $('gestListe');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'gestListe';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:16px';
+    // Délégation : un seul écouteur pour toute la fenêtre, même après redessin
+    ov.addEventListener('change', async e => {
+      if (e.target.id === 'glLot') { ov.dataset.lot = e.target.value; rendreGestionListe(); return; }
+      const i = e.target.closest('input[data-gl]'); if (!i) return;
+      const L = listesReglages(), r = listeReglage(listeGereCle), d = i.dataset.gl, b = LISTES_CONF[listeGereCle].base();
+      r.retires = r.retires.filter(x => x !== d); r.ajoutes = r.ajoutes.filter(x => x !== d);
+      if (i.checked && !b.includes(d)) r.ajoutes.push(d);
+      if (!i.checked && b.includes(d)) r.retires.push(d);
+      L[listeGereCle] = r;
+      const texte = await sauverListes(L);
+      $('glMsg').textContent = texte; rendreGestionListe();
+    });
+    ov.addEventListener('input', e => { if (e.target.id === 'glFiltre') { ov.dataset.filtre = e.target.value; rendreGestionListe(true); } });
+    ov.addEventListener('click', async e => {
+      if (e.target === ov || e.target.id === 'glFermer') { ov.remove(); listeGereCle = null; return; }
+      if (e.target.id === 'glOrigine') {
+        if (!confirm('Revenir à la liste d\'origine de ce configurateur ? Vos ajouts et retraits pour cette liste seront effacés.')) return;
+        const L = listesReglages(); L[listeGereCle] = { retires: [], ajoutes: [] };
+        $('glMsg').textContent = await sauverListes(L); rendreGestionListe();
+      }
+    });
+    document.body.appendChild(ov);
+  }
+  ov.dataset.lot = lotDefaut; ov.dataset.filtre = '';
+  rendreGestionListe();
+}
+function rendreGestionListe(seulLaListe) {
+  const ov = $('gestListe'); if (!ov || !listeGereCle) return;
+  const efficace = listeEffective(listeGereCle), lot = ov.dataset.lot, filtre = (ov.dataset.filtre || '').toLowerCase();
+  const surLot = [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === lot).map(o => o.designation))];
+  const horsLot = efficace.filter(d => !surLot.includes(d));
+  const ligne = d => `<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;font-size:14px"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="margin-top:3px"><span>${esc(d)}</span></label>`;
+  const contenuListe = `<div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochez les ouvrages à proposer dans la liste. Décochez pour les retirer. Les ouvrages de la bibliothèque sont proposés ici.</div>`
+    + (horsLot.length ? `<p style="font-size:13px;margin:8px 0 2px"><strong>Ajoutés depuis un autre lot</strong></p>${horsLot.map(ligne).join('')}` : '')
+    + surLot.filter(d => !filtre || d.toLowerCase().includes(filtre)).map(ligne).join('');
+  if (seulLaListe && $('glListe')) { $('glListe').innerHTML = contenuListe; return; }
+  ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:10px;max-width:640px;width:100%;padding:16px;margin:auto">
+    <h3 style="margin:0 0 8px">Liste : ${esc(LISTES_CONF[listeGereCle].titre)}</h3>
+    <label style="font-size:13px">Lot<select id="glLot" style="width:100%;padding:6px;margin-top:4px">${BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === lot ? 'selected' : ''}>${esc(l.nom)}</option>`).join('')}</select></label>
+    <input id="glFiltre" placeholder="Rechercher un ouvrage…" value="${esc(ov.dataset.filtre || '')}" style="width:100%;padding:6px;margin-top:8px;box-sizing:border-box">
+    <div id="glListe" style="max-height:50vh;overflow:auto;margin-top:6px">${contenuListe}</div>
+    <p id="glMsg" style="font-size:13px;color:#6b5a7a;margin:8px 0"></p>
+    <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">
+      <button type="button" class="btn sec" id="glOrigine">Revenir à la liste d'origine</button>
+      <button type="button" class="btn" id="glFermer">Fermer</button>
+    </div>
+  </div>`;
+}
+
 // Surface nette d'un mur : rectangle (longueur × hauteur), ou pignon (triangle : base = linéaire, hauteur = linéaire/2 × pente)
 // Demi-pignon : la moitié d'un pignon (toit monopente)
 function surfaceMur(m) {
@@ -3023,8 +3123,8 @@ function ficheRendre() {
   const rangeMur = m => {
     const id = `data-k="mur" data-id="${m.id}"`;
     const pig = m.cat === 'pignon', soub = m.cat === 'soub', refend = m.cat === 'refend';
-    const selMat = `<select ${id} data-champ="type" style="width:100%;padding:6px">${optListe2(ficheListeMurGO(), m.type || '', '— choisir le mur de la bibliothèque —')}</select>`;
-    const selFin = refend ? '' : `<select ${id} data-champ="finition" style="width:100%;padding:6px">${soub ? optListe2(ficheListeProtection(), m.finition || '', 'Sans protection') : optListe2(ficheListeFinition(), m.finition || '', 'Sans finition')}</select>`;
+    const selMat = listeAvecCrayon('murGO', `<select ${id} data-champ="type" style="width:100%;padding:6px">${optListe2(listeEffective('murGO'), m.type || '', '— choisir le mur de la bibliothèque —')}</select>`);
+    const selFin = refend ? '' : listeAvecCrayon(soub ? 'protection' : 'finition', `<select ${id} data-champ="finition" style="width:100%;padding:6px">${soub ? optListe2(listeEffective('protection'), m.finition || '', 'Sans protection') : optListe2(listeEffective('finition'), m.finition || '', 'Sans finition')}</select>`);
     const dimensions = pig
       ? `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;align-items:end">
           ${champ('Nom', inp(`${id} data-champ="nom"`, m.nom))}
@@ -3178,8 +3278,8 @@ function ficheRendre() {
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Plancher bas', contenuPlancher)}
-    ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.murs)}</select>`)
-      + champ('Tableaux de menuiseries', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(ficheListeMur(), p.choix.tableaux)}</select>`))}
+    ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', listeAvecCrayon('murs', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(listeEffective('murs'), p.choix.murs)}</select>`))
+      + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`)))}
     </div>
     <div class="bloc">${lotTitre('3. Charpente')}
     ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
@@ -3295,6 +3395,7 @@ function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
+  if (a === 'gerer-liste') { ouvrirGestionListe(b.dataset.liste); return; }
   if (a === 'addmur') {
     const cat = b.dataset.cat || 'peri';
     const nomCat = { soub: 'Mur de soubassement', peri: 'Mur périphérique', refend: 'Mur de refend', pignon: 'Mur pignon' }[cat];
@@ -4684,6 +4785,7 @@ $('btnSauverReglages').onclick = () => {
   lsSet('jeton', $('jeton').value.trim());
   alert('Réglages enregistrés sur cet appareil.');
   synchroBibliotheque();
+  reprendreListes();
   envoyerPropositions();
 };
 
@@ -5170,6 +5272,7 @@ function remiseAZeroTestClaude() {
     await ouvrirDepuisClient(refClient);
   }
   synchroBibliotheque();
+  reprendreListes();
   preparerSynchro();
   preparerTaillePG();
   synchroniserChantiers(false);   // à l'ouverture : silencieux, aucune boîte de conflit

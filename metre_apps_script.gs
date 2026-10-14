@@ -15,6 +15,7 @@
 var DOSSIER_METRE = 'Métré Atelier 2M';
 var DOSSIER_CHANTIERS = 'Chantiers';
 var FICHIER_BIBLIO = 'bibliotheque.json';
+var FICHIER_LISTES = 'listes.json';                           // listes déroulantes du configurateur (réglages)
 var KANBAN_JSON_ID = '144ah2a5Y0rD64P4GW7wkQKRC0pUbK7JI'; // lecture seule
 var DOSSIER_CLIENTS_KANBAN = 'Kanban Atelier 2M - Clients'; // documents envoyés depuis le Kanban
 var NOM_IMAGE_PG = 'IMAGE PG';                               // image de la page de garde
@@ -88,6 +89,16 @@ function doPost(e) {
           return reponse_({ ok: false, erreur: 'refus : bibliothèque réduite', reduction: actifs(actuelle) - actifs(nouvelle) });
         }
         ecrireJson_(dos, FICHIER_BIBLIO, nouvelle);
+        return reponse_({ ok: true });
+      }
+
+      case 'lire_listes':
+        return reponse_({ ok: true, listes: lireJson_(dossierMetre_(), FICHIER_LISTES, null) });
+
+      case 'sauver_listes': {
+        // Réglages des listes déroulantes : remplacés tels quels (pas de suppression de chantier ni de bibliothèque)
+        lock.waitLock(20000);
+        ecrireJson_(dossierMetre_(), FICHIER_LISTES, data.listes || {});
         return reponse_({ ok: true });
       }
 
