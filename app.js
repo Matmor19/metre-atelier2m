@@ -5610,27 +5610,24 @@ function enregistrerOuvrage(id) {
   sauverBibliotheque();
 }
 
-// Enregistre sur l'appareil, puis envoie sur Drive si la connexion est active
+// Enregistre tout de suite sur l'appareil, puis envoie sur Drive en arrière-plan
 async function sauverBibliotheque() {
   lsSet('bib', BIB);
   lsSet('bib_modifiee', true);
   const statut = $('biblioStatut');
-  let texte;
-  if (!lsGet('url', '') || !lsGet('jeton', '')) {
-    texte = 'Enregistré sur cet appareil. Renseignez le script dans Réglages pour l\'envoyer sur Drive.';
-  } else {
-    try {
-      const j = await envoyerBibliotheque();
-      if (j.ok) { lsSet('bib_modifiee', false); texte = 'Enregistré et envoyé sur Drive.'; }
-      else texte = 'Drive a refusé l\'envoi : ' + (j.erreur || 'erreur inconnue') + '. Enregistré sur cet appareil.';
-    } catch (e) {
-      texte = 'Pas de réseau : enregistré sur cet appareil, il sera envoyé plus tard.';
-    }
-  }
+  const sansDrive = !lsGet('url', '') || !lsGet('jeton', '');
   fermer();
-  statut.textContent = texte;
+  statut.textContent = sansDrive ? 'Enregistré sur cet appareil. Renseignez le script dans Réglages pour l\'envoyer sur Drive.' : 'Enregistré sur cet appareil. Envoi sur Drive en cours…';
   statut.classList.remove('hidden');
   renderBiblio();
+  if (sansDrive) return;
+  try {
+    const j = await envoyerBibliotheque();
+    if (j.ok) { lsSet('bib_modifiee', false); statut.textContent = 'Enregistré et envoyé sur Drive.'; }
+    else statut.textContent = 'Drive a refusé l\'envoi : ' + (j.erreur || 'erreur inconnue') + '. Enregistré sur cet appareil.';
+  } catch (e) {
+    statut.textContent = 'Pas de réseau : enregistré sur cet appareil, il sera envoyé plus tard.';
+  }
 }
 
 $('btnBiblio').onclick = ouvrirBiblio;
