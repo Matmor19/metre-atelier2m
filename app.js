@@ -3048,6 +3048,11 @@ function ouvrirConfig() {
   route('config');
   synchroConfig();
 }
+// Depuis le configurateur : retour direct au métré du même chantier (sans passer par la liste des chantiers)
+if ($('btnRetourChantier')) $('btnRetourChantier').addEventListener('click', () => {
+  if (!courantId || !chantiers.find(x => x.id === courantId && !x.supprime)) { route('chantiers'); renderChantiers(); return; }
+  ouvrirChantier(courantId);
+});
 if ($('vConfig')) {
   $('vConfig').addEventListener('change', ficheChange);
   $('vConfig').addEventListener('click', ficheClick);
