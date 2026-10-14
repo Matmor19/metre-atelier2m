@@ -3149,6 +3149,7 @@ async function reprendreListes() {
   } catch (e) { /* hors ligne : copie de cet appareil */ }
 }
 let listeGereCle = null;
+let glSel = [], glAncre = null;   // sélection des lignes d'ouvrages (bleu), ancre pour Maj
 let listeRetour = null;
 // Ouvre l'éditeur depuis un crayon, en mémorisant l'endroit d'où l'on vient
 function ouvrirDepuisCrayon(b) {
@@ -3220,27 +3221,37 @@ function ouvrirGestionListe(cle) {
     ov.addEventListener('click', async e => {
       const t = e.target;
       if (t === ov || t.id === 'glFermer') { fermerGestionListe(); return; }
-      // Clic sur une ligne : simple clic ou Ctrl = cet ouvrage seul ; Maj = tout l'intervalle depuis le dernier cliqué
+      // Ligne d'ouvrage : la case coche ou décoche ; le texte sélectionne (bleu)
       const ligneCliquee = t.closest && t.closest('label[data-gl-ligne]');
       if (ligneCliquee) {
-        e.preventDefault();
+        e.preventDefault();   // c'est ce code qui décide, pas le navigateur
         const cle = listeGereCle, base = LISTES_CONF[cle].base();
         const rangees = [...$('glListe').querySelectorAll('label[data-gl-ligne]')].map(l => l.dataset.glLigne);
         const d = ligneCliquee.dataset.glLigne;
-        const coche = !ligneCliquee.querySelector('input').checked;   // nouvel état demandé
-        let cibles = [d];
-        if (e.shiftKey && ov.dataset.ancre && rangees.includes(ov.dataset.ancre)) {
-          const a = rangees.indexOf(ov.dataset.ancre), b = rangees.indexOf(d);
-          cibles = rangees.slice(Math.min(a, b), Math.max(a, b) + 1);
+        if (t.tagName === 'INPUT') {
+          // Case : s'applique à toute la sélection si cette ligne en fait partie, sinon à cette seule ligne
+          const coche = !ligneCliquee.querySelector('input').checked;
+          const cibles = glSel.includes(d) ? glSel.slice() : [d];
+          const r = listeReglage(cle);
+          cibles.forEach(x => {
+            r.retires = r.retires.filter(y => y !== x); r.ajoutes = r.ajoutes.filter(y => y !== x);
+            if (coche && !base.includes(x)) r.ajoutes.push(x);
+            if (!coche && base.includes(x)) r.retires.push(x);
+          });
+          $('glMsg').textContent = await sauverReglage(cle, r);
+          rendreGestionListe(true);
+          return;
         }
-        const r = listeReglage(cle);
-        cibles.forEach(x => {
-          r.retires = r.retires.filter(y => y !== x); r.ajoutes = r.ajoutes.filter(y => y !== x);
-          if (coche && !base.includes(x)) r.ajoutes.push(x);
-          if (!coche && base.includes(x)) r.retires.push(x);
-        });
-        ov.dataset.ancre = d;
-        $('glMsg').textContent = await sauverReglage(cle, r);
+        // Texte : Maj = plage depuis le dernier cliqué ; Ctrl = ajouter ou retirer ; sans touche = cette ligne seule
+        if (e.shiftKey && glAncre && rangees.includes(glAncre)) {
+          const a = rangees.indexOf(glAncre), b = rangees.indexOf(d);
+          glSel = rangees.slice(Math.min(a, b), Math.max(a, b) + 1);
+        } else if (e.ctrlKey || e.metaKey) {
+          glSel = glSel.includes(d) ? glSel.filter(x => x !== d) : glSel.concat([d]);
+          glAncre = d;
+        } else {
+          glSel = [d]; glAncre = d;
+        }
         rendreGestionListe(true);
         return;
       }
@@ -3270,7 +3281,7 @@ function ouvrirGestionListe(cle) {
     });
     document.body.appendChild(ov);
   }
-  ov.dataset.lot = listeLots(cle)[0] || ''; ov.dataset.filtre = ''; ov.dataset.ancre = '';
+  ov.dataset.lot = listeLots(cle)[0] || ''; ov.dataset.filtre = ''; glSel = []; glAncre = null;
   rendreGestionListe();
 }
 function rendreGestionListe(seulLaListe) {
@@ -3284,12 +3295,12 @@ function rendreGestionListe(seulLaListe) {
   const hors = efficace.filter(d => !designationsTousLots(lots).includes(d));
   const filtrer = arr => arr.filter(d => !filtre || d.toLowerCase().includes(filtre));
   // Case à cocher fine, à gauche : décocher ne fait que changer la case, l'ouvrage reste affiché
-  const ligne = d => `<label data-gl-ligne="${esc(d)}" style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eee;font-size:14px;cursor:pointer;user-select:none"><input type="checkbox" tabindex="-1" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00;pointer-events:none"><span>${esc(d)}</span></label>`;
+  const ligne = d => `<label data-gl-ligne="${esc(d)}" style="display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-bottom:1px solid #eee;font-size:14px;cursor:pointer;user-select:none;background:${glSel.includes(d) ? '#cfe6ff' : 'transparent'}"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00;cursor:pointer"><span>${esc(d)}</span></label>`;
   const contenuListe = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
       <button type="button" class="btn small sec" id="glToutCocher">Tout cocher (ce lot)</button>
       <button type="button" class="btn small danger" id="glToutDecocher">Tout décocher</button>
     </div>
-    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposé dans la liste. Décocher ne fait pas disparaître l'ouvrage de cette fenêtre.<br>Clic : coche ou décoche un ouvrage. <strong>Maj + clic</strong> : applique le même état à tous les ouvrages entre le dernier cliqué et celui-ci.</div>
+    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposé dans la liste. Décocher ne fait pas disparaître l'ouvrage de cette fenêtre.<br>La <strong>case</strong> coche ou décoche. Cliquer sur le <strong>nom</strong> sélectionne (bleu) : <strong>Ctrl</strong> + nom ajoute ou retire de la sélection, <strong>Maj</strong> + nom sélectionne tout l'intervalle. Cocher une case d'une ligne sélectionnée s'applique à toute la sélection.</div>
     ${filtrer(surLot).map(ligne).join('') || '<p class="muted" style="font-size:13px">Aucun ouvrage pour ce lot.</p>'}
     ${filtrer(hors).length ? `<p style="font-size:13px;margin:10px 0 2px"><strong>Ajoutés depuis un lot non attribué</strong></p>${filtrer(hors).map(ligne).join('')}` : ''}`;
   if (seulLaListe && $('glListe')) { $('glListe').innerHTML = contenuListe; return; }
