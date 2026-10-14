@@ -3192,6 +3192,10 @@ function designationsDesLots(lots) {
   return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && lots.includes(o.lot)).map(o => o.designation))];
 }
 function sauverReglage(cle, r) { const L = listesReglages(); L[cle] = r; return sauverListes(L); }
+// Enregistre tout de suite sur cet appareil et met à jour l'écran ; l'envoi Drive se termine à côté (sans attendre)
+function sauverReglageEtMessage(cle, r, msgId) {
+  sauverReglage(cle, r).then(m => { const el = $(msgId); if (el) el.textContent = m; });
+}
 function ouvrirGestionListe(cle) {
   listeGereCle = cle;
   let ov = $('gestListe');
@@ -3207,14 +3211,14 @@ function ouvrirGestionListe(cle) {
         if (!t.value) return;
         const r = listeReglage(listeGereCle); r.lots = [...listeLots(listeGereCle), t.value];
         ov.dataset.lot = t.value;
-        $('glMsg').textContent = await sauverReglage(listeGereCle, r); rendreGestionListe(); return;
+        sauverReglageEtMessage(listeGereCle, r, 'glMsg'); rendreGestionListe(); return;
       }
       const i = t.closest('input[data-gl]'); if (!i) return;
       const r = listeReglage(listeGereCle), d = i.dataset.gl, b = LISTES_CONF[listeGereCle].base();
       r.retires = r.retires.filter(x => x !== d); r.ajoutes = r.ajoutes.filter(x => x !== d);
       if (i.checked && !b.includes(d)) r.ajoutes.push(d);
       if (!i.checked && b.includes(d)) r.retires.push(d);
-      $('glMsg').textContent = await sauverReglage(listeGereCle, r);
+      sauverReglageEtMessage(listeGereCle, r, 'glMsg');
       rendreGestionListe(true);
     });
     ov.addEventListener('input', e => { if (e.target.id === 'glFiltre') { ov.dataset.filtre = e.target.value; rendreGestionListe(true); } });
@@ -3239,7 +3243,7 @@ function ouvrirGestionListe(cle) {
             if (coche && !base.includes(x)) r.ajoutes.push(x);
             if (!coche && base.includes(x)) r.retires.push(x);
           });
-          $('glMsg').textContent = await sauverReglage(cle, r);
+          sauverReglageEtMessage(cle, r, 'glMsg');
           rendreGestionListe(true);
           return;
         }
@@ -3260,23 +3264,23 @@ function ouvrirGestionListe(cle) {
       if (t.dataset.retirlot) {
         const r = listeReglage(cle); r.lots = listeLots(cle).filter(id => id !== t.dataset.retirlot);
         if (ov.dataset.lot === t.dataset.retirlot) ov.dataset.lot = r.lots[0] || '';
-        $('glMsg').textContent = await sauverReglage(cle, r); rendreGestionListe(); return;
+        sauverReglageEtMessage(cle, r, 'glMsg'); rendreGestionListe(); return;
       }
       if (t.id === 'glToutDecocher') {
         if (!confirm('Décocher tous les ouvrages de cette liste ? Vous cocherez ensuite ceux que vous voulez.')) return;
-        $('glMsg').textContent = await sauverReglage(cle, { lots: listeLots(cle), retires: base.slice(), ajoutes: [] });
+        sauverReglageEtMessage(cle, { lots: listeLots(cle), retires: base.slice(), ajoutes: [] }, 'glMsg');
         rendreGestionListe(); return;
       }
       if (t.id === 'glToutCocher') {
         const r = listeReglage(cle), surLot = designationsTousLots([ov.dataset.lot]);
         r.retires = r.retires.filter(x => !surLot.includes(x));
         surLot.forEach(d => { if (!base.includes(d) && !r.ajoutes.includes(d)) r.ajoutes.push(d); });
-        $('glMsg').textContent = await sauverReglage(cle, r); rendreGestionListe(); return;
+        sauverReglageEtMessage(cle, r, 'glMsg'); rendreGestionListe(); return;
       }
       if (t.id === 'glOrigine') {
         if (!confirm("Revenir à la liste d'origine de ce configurateur ? Vos ajouts, retraits et lots pour cette liste seront effacés.")) return;
         const r0 = listeReglage(cle);
-        $('glMsg').textContent = await sauverReglage(cle, r0.biblio ? { retires: [], ajoutes: [], lots: r0.lots, biblio: true, titre: r0.titre } : { retires: [], ajoutes: [], lots: null });
+        sauverReglageEtMessage(cle, r0.biblio ? { retires: [], ajoutes: [], lots: r0.lots, biblio: true, titre: r0.titre } : { retires: [], ajoutes: [], lots: null }, 'glMsg');
         rendreGestionListe();
       }
     });
@@ -3361,14 +3365,14 @@ function ouvrirGestionValeurs(cle, titre) {
           }
           a.des = d;
         } else a.src = e.target.value;
-        $('gvMsg').textContent = await sauverReglage(listeValeurCle, r);
+        sauverReglageEtMessage(listeValeurCle, r, 'gvMsg');
         return;
       }
       const i = e.target.closest('input[data-v]'); if (!i) return;
       const r = listeReglage(listeValeurCle), v = i.dataset.v;
       r.retires = r.retires.filter(x => x !== v);
       if (!i.checked) r.retires.push(v);
-      $('gvMsg').textContent = await sauverReglage(listeValeurCle, r);
+      sauverReglageEtMessage(listeValeurCle, r, 'gvMsg');
       rendreGestionValeurs(true);
     });
     ov.addEventListener('click', async e => {
@@ -3377,28 +3381,28 @@ function ouvrirGestionValeurs(cle, titre) {
       if (t.id === 'gvAjouter') {
         const lib = ($('gvNouveau').value || '').trim(); if (!lib) return;
         const r = listeReglage(cle); r.ajoutes.push({ v: 'v' + Date.now(), t: lib });
-        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+        sauverReglageEtMessage(cle, r, 'gvMsg'); rendreGestionValeurs(); return;
       }
       if (t.dataset.supprajout) {
         if (!confirm('Supprimer définitivement cette valeur que vous avez ajoutée ?')) return;
         const r = listeReglage(cle), v = t.dataset.supprajout;
         r.ajoutes = r.ajoutes.filter(a => a.v !== v); r.retires = r.retires.filter(x => x !== v);
-        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+        sauverReglageEtMessage(cle, r, 'gvMsg'); rendreGestionValeurs(); return;
       }
       if (t.id === 'gvToutCocher') {
         const r = listeReglage(cle); r.retires = [];
-        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+        sauverReglageEtMessage(cle, r, 'gvMsg'); rendreGestionValeurs(); return;
       }
       if (t.id === 'gvToutDecocher') {
         if (!confirm('Décocher toutes les valeurs de cette liste ? Vous cocherez ensuite celles que vous voulez.')) return;
         const r = listeReglage(cle);
         r.retires = [...(FIXES_DEFAUTS[cle] || []).map(([v]) => v), ...r.ajoutes.map(a => a.v)];
-        $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
+        sauverReglageEtMessage(cle, r, 'gvMsg'); rendreGestionValeurs(); return;
       }
       if (t.id === 'gvBiblio') {
         const lots = [...ov.querySelectorAll('input[data-glot]:checked')].map(i => i.dataset.glot);
         if (!lots.length) { $('gvMsg').textContent = 'Cochez au moins un lot.'; return; }
-        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots, biblio: true, titre: ov.dataset.titre || cle });
+        sauverReglageEtMessage(cle, { retires: [], ajoutes: [], lots, biblio: true, titre: ov.dataset.titre || cle }, 'gvMsg');
         enregistrerListeBiblio(cle);
         ov.remove(); listeValeurCle = null;
         ouvrirGestionListe(cle);
@@ -3406,13 +3410,13 @@ function ouvrirGestionValeurs(cle, titre) {
       }
       if (t.id === 'gvFixe') {
         if (!confirm('Revenir aux valeurs fixes de cette liste ? Les lots choisis et les ouvrages cochés seront effacés.')) return;
-        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null, biblio: false, titre: '' });
+        sauverReglageEtMessage(cle, { retires: [], ajoutes: [], lots: null, biblio: false, titre: '' }, 'gvMsg');
         retirerListeBiblio(cle);
         rendreGestionValeurs(); return;
       }
       if (t.id === 'gvOrigine') {
         if (!confirm("Revenir aux valeurs d'origine de cette liste ? Vos ajouts et retraits seront effacés.")) return;
-        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null }); rendreGestionValeurs();
+        sauverReglageEtMessage(cle, { retires: [], ajoutes: [], lots: null }, 'gvMsg'); rendreGestionValeurs();
       }
     });
     document.body.appendChild(ov);
