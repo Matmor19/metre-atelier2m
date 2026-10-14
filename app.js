@@ -3230,7 +3230,8 @@ function ouvrirGestionListe(cle) {
         const d = ligneCliquee.dataset.glLigne;
         if (t.tagName === 'INPUT') {
           // Case : s'applique à toute la sélection si cette ligne en fait partie, sinon à cette seule ligne
-          const coche = !ligneCliquee.querySelector('input').checked;
+          // Le navigateur a déjà basculé la case : son état actuel est le nouvel état voulu
+          const coche = t.checked;
           const cibles = glSel.includes(d) ? glSel.slice() : [d];
           const r = listeReglage(cle);
           cibles.forEach(x => {
