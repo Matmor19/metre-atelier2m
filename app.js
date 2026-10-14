@@ -1238,14 +1238,14 @@ function renderPiecesNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
       <label style="font-size:12px">Surface au sol m² <input data-nv="${esc(p.id)}|surf" inputmode="decimal" value="${esc(p.surf || '')}" style="width:90px"></label>
       <label style="font-size:12px">Linéaire ml <input data-nv="${esc(p.id)}|perim" inputmode="decimal" value="${esc(p.perim || '')}" style="width:90px"></label>
-      <select data-nv="${esc(p.id)}|revet" style="flex:1;min-width:180px">${optRev(p.revet)}</select>
+      ${selCrayon('nv-revet', 'Revêtement de la pièce', `<select data-nv="${esc(p.id)}|revet" style="flex:1;min-width:0">${optDesignationsId('nv-revet', 'Revêtement de la pièce', () => revets.map(o => o.designation), p.revet, '— choisir —')}</select>`)}
     </div>
     <div style="margin-top:8px"><strong style="font-size:13px">Menuiseries extérieures</strong></div>
     ${(p.menus || []).map((m, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
       <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
-      <select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:180px"><option value="">Fenêtre (châssis)</option>${menusPorteBaie().map(o => `<option value="${esc(o.id)}" ${o.id === m.ouv ? 'selected' : ''}>${esc(o.designation)}</option>`).join('')}</select>
+      ${selCrayon('nv-menu-ouv', 'Menuiserie extérieure : type', `<select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-menu-ouv', 'Menuiserie extérieure : type', () => menusPorteBaie().map(o => o.designation), m.ouv, 'Fenêtre (châssis)')}</select>`)}
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
@@ -1254,7 +1254,7 @@ function renderPiecesNv() {
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
     ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      <select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:180px">${facadesPlacard().map(o => `<option value="${esc(o.id)}" ${o.id === (f.ouv || 'OUV-0755') ? 'selected' : ''}>${esc(o.designation)}</option>`).join('')}</select>
+      ${selCrayon('nv-facade-ouv', 'Façade de placard', `<select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-facade-ouv', 'Façade de placard', () => facadesPlacard().map(o => o.designation), f.ouv || 'OUV-0755', '')}</select>`)}
       <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|facade|${k}|l" inputmode="decimal" value="${esc(f.l || '')}" style="width:70px"></label>
       <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|facade|${k}|h" inputmode="decimal" value="${esc(f.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:50px"></label>
@@ -1434,6 +1434,8 @@ function optCodes(key, titre, entries, val, vide) {
   if (val && !liste.some(([k]) => k === val)) h += `<option value="${esc(val)}" selected>${esc(val)} (retiré de la liste)</option>`;
   return h + liste.map(([k, t]) => `<option value="${esc(k)}" ${k === val ? 'selected' : ''}>${t}</option>`).join('');
 }
+// Liste de la bibliothèque dont la valeur est l'identifiant (alias de optListeOuvrages)
+function optDesignationsId(key, titre, baseFn, val, vide) { return optListeOuvrages(key, titre, baseFn, val, vide); }
 // Crayon seul, et crayon + liste sur la même ligne
 function crayonBouton(key, titre) {
   return `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${esc(key)}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button>`;
