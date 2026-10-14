@@ -189,11 +189,12 @@ JS_TESTS = r"""(c) => {
   R.tableauSousEnduit = iTab >= 0 && iTab === iEnd + 1;
   // Remise à zéro : les cases remplies sont vidées (pièce de test, plâtrerie, peinture) et les lignes générées retirées
   renderPiecesNv(); renderPlatNv(); renderPeinture();
+  const avantRazPlat = lsGet('lignes.' + c.id, []).filter(x => x.platNv).length;
   remiseAZeroConfigurateur(cN, false);
   R.raz = { plat: (platNvDe(cN).hauteur === '' && platNvDe(cN).cloi.ml === '') ? 1 : 0,
     pieces: piecesNvDe(cN).length === 0 ? 1 : 0,
     pei: peiDe(cN).hauteur === '' ? 1 : 0,
-    lignesPlat: lsGet('lignes.' + c.id, []).filter(x => x.platNv).length };
+    metreIntact: lsGet('lignes.' + c.id, []).filter(x => x.platNv).length === avantRazPlat ? 1 : 0 };
   return R;
 }"""
 
@@ -229,7 +230,7 @@ ATTENDU = {
     'platCloi': {'quantite': 18.51},
     'platStale': 0,
     'peiStale': 0,
-    'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'lignesPlat': 0},
+    'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'metreIntact': 1},
     'pei': {'murs': 20.98, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
     'pieceNv': {'maison': 'OUV-0609=1 OUV-0618=1', 'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 35, 'nApresRegeneration': 35, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},

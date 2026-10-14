@@ -1355,9 +1355,10 @@ function genererPiecesNv(c) {
       else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
     }
     for (const bl of (p.blocs || [])) {
-      if (!bl.ouv || !(num(bl.nb) > 0)) continue;
+      if (!(num(bl.nb) > 0)) continue;
+      if (!bl.ouv) { manque.push('Bloc porte : ouvrage non choisi'); continue; }
       const o = BIB.ouvrages.find(x => x.id === bl.ouv && !x.supprime);
-      if (!o) { manque.push('Bloc porte (ouvrage à choisir ou supprimé)'); continue; }
+      if (!o) { manque.push('Bloc porte : ouvrage supprimé de la bibliothèque'); continue; }
       const v = { nombre: String(num(bl.nb)) }; ajoute(o, v, calcul(o, v), `${intituleBloc(o.designation, bl.dim)} – ${nom}`, p.id);
     }
     for (const f of (p.facades || [])) {
@@ -1416,6 +1417,7 @@ function genererPiecesNv(c) {
   sauverLignes(c.id, L);
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
+  if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
   if (uniques.length) return 'Pièces : ouvrage manquant dans la bibliothèque.';
   return nb ? 'Pièces régénérées.' : 'Pièces : aucune ligne.';
 }
@@ -1794,10 +1796,41 @@ if ($('btnGenererConfig')) $('btnGenererConfig').addEventListener('click', () =>
 // Chaque case vidée envoie son événement « change » : les gestionnaires enregistrent le vide dans les données.
 // Les lignes du métré générées par ces cases sont ensuite retirées ; les lignes saisies à la main restent.
 function remiseAZeroConfigurateur(c, demander = true) {
-  if (demander && !confirm('Remise à zéro totale : tout le configurateur de ce chantier sera vidé (blocs du configurateur, pièces, plâtrerie, peinture) et tout son métré effacé, lignes saisies à la main comprises. Le terrain et les renseignements du client sont conservés. Continuer ?')) return;
-  razTotale(c);
-  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur et métré mis à zéro.';
+  if (demander && !confirm('Remise à zéro du configurateur : toutes les cases du configurateur de ce chantier seront vidées (pièces, plâtrerie, peinture, blocs). Le métré n\'est pas modifié ; utilisez « Retirer les lignes générées » pour retirer les lignes déjà produites. Le terrain et les renseignements du client sont conservés. Continuer ?')) return;
+  razConfigurateur(c);
+  if ($('cfgStatut')) $('cfgStatut').textContent = 'Configurateur mis à zéro. Le métré n\'a pas été modifié.';
 }
+// Vide les cases du configurateur du chantier, sans toucher aux lignes du métré ni aux lots
+function razConfigurateur(c) {
+  const terrainGarde = c.projet && c.projet.terrain ? JSON.parse(JSON.stringify(c.projet.terrain)) : null;
+  const f = $('vConfig');
+  if (f) {
+    f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
+      if (el.value === '' || el.id === 'btnGenererConfig') return;
+      el.value = '';
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  delete c.projet;
+  if (terrainGarde) projetDe(c).terrain = terrainGarde;
+  c.elec = { pieces: [], piecesNv: [] };
+  c.platNv = {};
+  c.peinture = {};
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
+}
+// Remise à zéro du métré du chantier ouvert : toutes ses lignes (saisies à la main comprises) et ses lots ; le configurateur n'est pas modifié
+function remiseAZeroMetre() {
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) { if ($('cfgStatut')) $('cfgStatut').textContent = 'Ouvrez d\'abord un chantier.'; return; }
+  if (!confirm('Remise à zéro du métré de ce chantier : toutes les lignes du métré seront effacées, y compris celles saisies à la main. Le configurateur n\'est pas modifié. Continuer ?')) return;
+  sauverLignes(c.id, []);
+  c.lots = [];
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderMetre();
+  if ($('cfgStatut')) $('cfgStatut').textContent = 'Métré du chantier remis à zéro. Le configurateur est conservé.';
+}
+if ($('btnRazMetre')) $('btnRazMetre').addEventListener('click', remiseAZeroMetre);
 // Vide le configurateur du chantier : blocs du configurateur (projet sauf terrain), pièces, plâtrerie, peinture et toutes les lignes du métré.
 // Restent : le terrain (fiche client) et l'identité du dossier (référence Kanban, client).
 function razTotale(c) {
@@ -2337,16 +2370,17 @@ function synchroConfig() {
   }, 300);
 }
 // Retire du métré, dans tous les chantiers, les lignes générées automatiquement (les lignes saisies à la main restent)
+// Retire du métré du chantier ouvert les lignes générées par le configurateur (les lignes saisies à la main restent)
 function retirerLignesAuto() {
-  const n = chantiers.reduce((a, c) => a + lignesDe(c.id).filter(l => l.auto || l.plat || l.projet).length, 0);
-  if (!n) { if ($('cfgStatut')) $('cfgStatut').textContent = 'Aucune ligne générée automatiquement à retirer.'; return; }
-  if (!confirm(n + ' ligne(s) générée(s) automatiquement seront retirées de tous les chantiers. Vos lignes saisies à la main ne sont pas touchées. Continuer ?')) return;
-  for (const c of chantiers) {
-    const L = lignesDe(c.id), garde = L.filter(l => !(l.auto || l.plat || l.projet));
-    if (garde.length !== L.length) sauverLignes(c.id, garde);
-  }
+  const c = chantiers.find(x => x.id === courantId);
+  if (!c) { if ($('cfgStatut')) $('cfgStatut').textContent = 'Ouvrez d\'abord un chantier.'; return; }
+  const L = lignesDe(c.id), garde = L.filter(l => !(l.auto || l.plat || l.projet));
+  const n = L.length - garde.length;
+  if (!n) { if ($('cfgStatut')) $('cfgStatut').textContent = 'Aucune ligne générée automatiquement à retirer dans ce chantier.'; return; }
+  if (!confirm(n + ' ligne(s) générée(s) seront retirées du métré de ce chantier. Vos lignes saisies à la main ne sont pas touchées. Continuer ?')) return;
+  sauverLignes(c.id, garde);
   renderMetre();
-  if ($('cfgStatut')) $('cfgStatut').textContent = n + ' ligne(s) générée(s) retirée(s). Vos lignes saisies à la main sont conservées.';
+  if ($('cfgStatut')) $('cfgStatut').textContent = n + ' ligne(s) générée(s) retirée(s) du métré. Vos lignes saisies à la main sont conservées.';
 }
 if ($('btnRetirerAuto')) $('btnRetirerAuto').addEventListener('click', retirerLignesAuto);
 // Bouton « Synchroniser le métré » : recalcule le métré depuis le configurateur et la bibliothèque, puis envoie sur Drive
