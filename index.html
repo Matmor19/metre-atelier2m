@@ -52,6 +52,15 @@ input::placeholder{color:var(--mut);opacity:.8}
 .tab-row .lot-titre{position:relative;margin:0;padding:4px 14px 4px 20px;border:none;border-radius:0;background:transparent;color:var(--c);white-space:nowrap}
 .tab-gros{font-size:20px;font-weight:700}
 .tab-petit{font-size:12px;letter-spacing:.04em;margin-left:1px}
+/* Animations : boutons au survol, cadre du bloc où l'on saisit */
+.bloc{--cadre:#e07b1a;transition:box-shadow .3s ease}
+.bloc.bloc-lettre{--cadre:#2e7d32}
+.bloc button{transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+.bloc button:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.18);filter:brightness(1.05)}
+.bloc button:active{transform:translateY(0) scale(.97);box-shadow:none}
+.bloc:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--cadre) 35%,transparent);animation:cadrePulse 1.1s ease-out 1}
+@keyframes cadrePulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cadre) 60%,transparent)}100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--cadre) 35%,transparent)}}
+@media (prefers-reduced-motion: reduce){.bloc button,.bloc button:hover,.bloc:focus-within{transition:none;transform:none;animation:none}}
 #vConfig .sousbloc{background:#fdebd8!important;border:2px solid #e07b1a!important;border-radius:10px!important;box-shadow:none!important;color:#1d2330}
 #vConfig .sousbloc h3{color:#9a4a0e!important;border-bottom:none!important;padding-bottom:0}
 #vConfig .sousbloc label{color:#1d2330!important}
