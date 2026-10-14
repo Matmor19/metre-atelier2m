@@ -3105,7 +3105,14 @@ const LISTES_CONF = {
   protection: { titre: 'Protection des murs enterrés (soubassement)', base: ficheListeProtection }
 };
 function listesReglages() { const L = lsGet('listes', {}); return L && typeof L === 'object' ? L : {}; }
-function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: r.lots || null }; }
+function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: r.lots || null, biblio: !!r.biblio, titre: r.titre || '' }; }
+// Liste « bibliothèque » : une liste à valeurs fixes peut être remplacée par les ouvrages de lots choisis
+function designationsTousLots(lots) { return [...new Set(BIB.ouvrages.filter(o => !o.supprime && lots.includes(o.lot)).map(o => o.designation))]; }
+function enregistrerListeBiblio(cle) {
+  const r = listeReglage(cle);
+  LISTES_CONF[cle] = { titre: r.titre || cle, base: () => designationsTousLots(listeReglage(cle).lots || []), biblioFixe: true };
+}
+function retirerListeBiblio(cle) { if (LISTES_CONF[cle] && LISTES_CONF[cle].biblioFixe) delete LISTES_CONF[cle]; }
 // Liste affichée : base du code, sans les ouvrages retirés, avec les ouvrages ajoutés
 function listeEffective(cle) {
   const r = listeReglage(cle);
@@ -3226,7 +3233,8 @@ function ouvrirGestionListe(cle) {
       }
       if (t.id === 'glOrigine') {
         if (!confirm("Revenir à la liste d'origine de ce configurateur ? Vos ajouts, retraits et lots pour cette liste seront effacés.")) return;
-        $('glMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null });
+        const r0 = listeReglage(cle);
+        $('glMsg').textContent = await sauverReglage(cle, r0.biblio ? { retires: [], ajoutes: [], lots: r0.lots, biblio: true, titre: r0.titre } : { retires: [], ajoutes: [], lots: null });
         rendreGestionListe();
       }
     });
@@ -3283,6 +3291,8 @@ function cleFixe(attrs) {
 }
 function valeursFixes(cle, defauts) {
   const r = listeReglage(cle);
+  if (r.biblio) { enregistrerListeBiblio(cle); return listeEffective(cle).map(d => [d, d]); }
+  retirerListeBiblio(cle);
   return [...defauts, ...r.ajoutes.map(a => [a.v, a.t])].filter(([v]) => !r.retires.includes(v));
 }
 let listeValeurCle = null;
@@ -3342,6 +3352,21 @@ function ouvrirGestionValeurs(cle, titre) {
         r.retires = [...(FIXES_DEFAUTS[cle] || []).map(([v]) => v), ...r.ajoutes.map(a => a.v)];
         $('gvMsg').textContent = await sauverReglage(cle, r); rendreGestionValeurs(); return;
       }
+      if (t.id === 'gvBiblio') {
+        const lots = [...ov.querySelectorAll('input[data-glot]:checked')].map(i => i.dataset.glot);
+        if (!lots.length) { $('gvMsg').textContent = 'Cochez au moins un lot.'; return; }
+        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots, biblio: true, titre: ov.dataset.titre || cle });
+        enregistrerListeBiblio(cle);
+        ov.remove(); listeValeurCle = null;
+        ouvrirGestionListe(cle);
+        return;
+      }
+      if (t.id === 'gvFixe') {
+        if (!confirm('Revenir aux valeurs fixes de cette liste ? Les lots choisis et les ouvrages cochés seront effacés.')) return;
+        $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null, biblio: false, titre: '' });
+        retirerListeBiblio(cle);
+        rendreGestionValeurs(); return;
+      }
       if (t.id === 'gvOrigine') {
         if (!confirm("Revenir aux valeurs d'origine de cette liste ? Vos ajouts et retraits seront effacés.")) return;
         $('gvMsg').textContent = await sauverReglage(cle, { retires: [], ajoutes: [], lots: null }); rendreGestionValeurs();
@@ -3351,6 +3376,12 @@ function ouvrirGestionValeurs(cle, titre) {
   }
   ov.dataset.titre = titre || ov.dataset.titre;
   rendreGestionValeurs();
+}
+// Choix de la source : valeurs fixes, ou ouvrages de la bibliothèque (lots cochés)
+function blocSourceListe(cle, r) {
+  const cadre = 'padding:8px;margin:6px 0;border:1px solid #c9b8dc;border-radius:8px';
+  if (r.biblio) return `<div style="${cadre}"><strong>Cette liste utilise les ouvrages de la bibliothèque</strong><div style="font-size:13px;color:#6b5a7a;margin:4px 0">Lots : ${esc((r.lots || []).map(libLot).join(', ') || 'aucun')}. Le crayon ouvre la liste des ouvrages à cocher.</div><button type="button" class="btn small sec" id="gvFixe">Revenir aux valeurs fixes</button></div>`;
+  return `<div style="${cadre}"><strong>Remplacer par les ouvrages de la bibliothèque</strong><div style="font-size:12px;color:#6b5a7a;margin:2px 0 6px">Cochez les lots : la liste proposera leurs ouvrages, que vous cocherez ensuite un par un.</div>${BIB.lots.map(l => `<label style="display:flex;gap:6px;align-items:center;font-size:14px;margin:4px 0"><input type="checkbox" data-glot="${esc(l.id)}" style="width:16px;height:16px;margin:0">${esc(l.nom)}</label>`).join('')}<button type="button" class="btn small" id="gvBiblio" style="margin-top:6px">Utiliser ces lots</button></div>`;
 }
 function rendreGestionValeurs(seulLaListe) {
   const ov = $('gestValeurs'); if (!ov || !listeValeurCle) return;
@@ -3363,13 +3394,13 @@ function rendreGestionValeurs(seulLaListe) {
     const a = ajout ? r.ajoutes.find(x => x.v === v) : null;
     return `<div style="border-bottom:1px solid #eee;padding:4px 0"><label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" data-v="${esc(v)}" ${r.retires.includes(v) ? '' : 'checked'} style="width:16px;height:16px;margin:0;flex:0 0 16px;accent-color:#7a5a00"><span style="flex:1">${esc(t)}</span>${ajout ? `<button type="button" data-supprajout="${esc(v)}" title="Supprimer cette valeur" style="border:0;background:none;cursor:pointer;color:#a33">✕</button>` : ''}</label>${a ? lienLigne(a) : ''}</div>`;
   };
-  const contenu = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
+  const contenu = blocSourceListe(cle, r) + (r.biblio ? '' : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
       <button type="button" class="btn small sec" id="gvToutCocher">Tout cocher</button>
       <button type="button" class="btn small danger" id="gvToutDecocher">Tout décocher</button>
     </div>
     <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposée dans la liste. Décocher ne fait pas disparaître la valeur de cette fenêtre.</div>
     ${defauts.map(([v, t]) => ligne(v, t, false)).join('')}
-    ${r.ajoutes.map(a => ligne(a.v, a.t, true)).join('')}`;
+    ${r.ajoutes.map(a => ligne(a.v, a.t, true)).join('')}`);
   if (seulLaListe && $('gvListe')) { $('gvListe').innerHTML = contenu; return; }
   ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:10px;max-width:560px;width:100%;padding:16px;margin:auto">
     <h3 style="margin:0 0 8px">Liste : ${esc(ov.dataset.titre || 'Liste')}</h3>
