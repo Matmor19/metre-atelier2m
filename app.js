@@ -5571,7 +5571,9 @@ window.addEventListener('focus', actualiserMetre);
 window.addEventListener('storage', e => {
   if (!e.key || !e.key.startsWith(LS)) return;
   chantiers = lsGet('chantiers', []);
-  courantId = lsGet('courant', courantId);
+  // Seule la fenêtre « tableau » suit le chantier choisi dans l'autre fenêtre.
+  // La fenêtre principale garde le sien : son configurateur ne doit jamais écrire dans un autre chantier.
+  if (PAGE === 'tableau') courantId = lsGet('courant', courantId);
   if (PAGE === 'tableau' && e.key === LS + 'courant' && courantId) { ouvrirChantier(courantId); return; }
   if (PAGE === 'tableau') renderMetre();
   compterLignes();
