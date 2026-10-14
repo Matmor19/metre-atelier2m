@@ -3220,6 +3220,30 @@ function ouvrirGestionListe(cle) {
     ov.addEventListener('click', async e => {
       const t = e.target;
       if (t === ov || t.id === 'glFermer') { fermerGestionListe(); return; }
+      // Clic sur une ligne : simple clic ou Ctrl = cet ouvrage seul ; Maj = tout l'intervalle depuis le dernier cliqué
+      const ligneCliquee = t.closest && t.closest('label[data-gl-ligne]');
+      if (ligneCliquee) {
+        e.preventDefault();
+        const cle = listeGereCle, base = LISTES_CONF[cle].base();
+        const rangees = [...$('glListe').querySelectorAll('label[data-gl-ligne]')].map(l => l.dataset.glLigne);
+        const d = ligneCliquee.dataset.glLigne;
+        const coche = !ligneCliquee.querySelector('input').checked;   // nouvel état demandé
+        let cibles = [d];
+        if (e.shiftKey && ov.dataset.ancre && rangees.includes(ov.dataset.ancre)) {
+          const a = rangees.indexOf(ov.dataset.ancre), b = rangees.indexOf(d);
+          cibles = rangees.slice(Math.min(a, b), Math.max(a, b) + 1);
+        }
+        const r = listeReglage(cle);
+        cibles.forEach(x => {
+          r.retires = r.retires.filter(y => y !== x); r.ajoutes = r.ajoutes.filter(y => y !== x);
+          if (coche && !base.includes(x)) r.ajoutes.push(x);
+          if (!coche && base.includes(x)) r.retires.push(x);
+        });
+        ov.dataset.ancre = d;
+        $('glMsg').textContent = await sauverReglage(cle, r);
+        rendreGestionListe(true);
+        return;
+      }
       const cle = listeGereCle, base = LISTES_CONF[cle].base();
       if (t.dataset.retirlot) {
         const r = listeReglage(cle); r.lots = listeLots(cle).filter(id => id !== t.dataset.retirlot);
@@ -3246,7 +3270,7 @@ function ouvrirGestionListe(cle) {
     });
     document.body.appendChild(ov);
   }
-  ov.dataset.lot = listeLots(cle)[0] || ''; ov.dataset.filtre = '';
+  ov.dataset.lot = listeLots(cle)[0] || ''; ov.dataset.filtre = ''; ov.dataset.ancre = '';
   rendreGestionListe();
 }
 function rendreGestionListe(seulLaListe) {
@@ -3260,12 +3284,12 @@ function rendreGestionListe(seulLaListe) {
   const hors = efficace.filter(d => !designationsTousLots(lots).includes(d));
   const filtrer = arr => arr.filter(d => !filtre || d.toLowerCase().includes(filtre));
   // Case à cocher fine, à gauche : décocher ne fait que changer la case, l'ouvrage reste affiché
-  const ligne = d => `<label style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eee;font-size:14px"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00"><span>${esc(d)}</span></label>`;
+  const ligne = d => `<label data-gl-ligne="${esc(d)}" style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eee;font-size:14px;cursor:pointer;user-select:none"><input type="checkbox" tabindex="-1" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00;pointer-events:none"><span>${esc(d)}</span></label>`;
   const contenuListe = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
       <button type="button" class="btn small sec" id="glToutCocher">Tout cocher (ce lot)</button>
       <button type="button" class="btn small danger" id="glToutDecocher">Tout décocher</button>
     </div>
-    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposé dans la liste. Décocher ne fait pas disparaître l'ouvrage de cette fenêtre.</div>
+    <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposé dans la liste. Décocher ne fait pas disparaître l'ouvrage de cette fenêtre.<br>Clic : coche ou décoche un ouvrage. <strong>Maj + clic</strong> : applique le même état à tous les ouvrages entre le dernier cliqué et celui-ci.</div>
     ${filtrer(surLot).map(ligne).join('') || '<p class="muted" style="font-size:13px">Aucun ouvrage pour ce lot.</p>'}
     ${filtrer(hors).length ? `<p style="font-size:13px;margin:10px 0 2px"><strong>Ajoutés depuis un lot non attribué</strong></p>${filtrer(hors).map(ligne).join('')}` : ''}`;
   if (seulLaListe && $('glListe')) { $('glListe').innerHTML = contenuListe; return; }
