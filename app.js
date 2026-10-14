@@ -1405,8 +1405,41 @@ function isolantsPlat() {
     && !/(toiture|rampant|combles|plancher|dalle|solive|terre-plein|enterr|extérieur|chevron|poutre)/i.test(o.designation)
     && !/\bITE\b/.test(o.designation));
 }
-function optIsol(val) {
-  return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+function optIsol(val, key, titre) {
+  if (!key) return `<option value="">Sans isolant</option>` + isolantsPlat().map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
+  return optListeOuvrages(key, titre, () => isolantsPlat().map(o => o.designation), val, 'Sans isolant');
+}
+// Liste d'ouvrages de la bibliothèque, modifiable : la valeur de chaque option est l'identifiant de l'ouvrage
+function optListeOuvrages(key, titre, baseFn, val, vide) {
+  LISTES_CONF[key] = { titre, base: baseFn };
+  const liste = listeEffective(key);
+  const ids = liste.map(d => { const o = BIB.ouvrages.find(x => !x.supprime && x.designation === d); return o ? o.id : ''; });
+  let html = vide ? `<option value="">${esc(vide)}</option>` : '';
+  if (val && !ids.includes(val)) { const o = BIB.ouvrages.find(x => x.id === val); if (o) html += `<option value="${esc(o.id)}" selected>${esc(o.designation)} (retiré de la liste)</option>`; }
+  return html + liste.map((d, i) => ids[i] ? `<option value="${esc(ids[i])}" ${ids[i] === val ? 'selected' : ''}>${esc(d)}</option>` : '').join('');
+}
+// Liste de désignations (bibliothèque) : valeur = le texte de l'option
+function optDesignations(key, titre, baseFn, val, vide) {
+  LISTES_CONF[key] = { titre, base: baseFn };
+  const liste = listeEffective(key);
+  let h = vide ? `<option value="">${esc(vide)}</option>` : '';
+  if (val && !liste.includes(val)) h += `<option selected>${esc(val)} (retiré de la liste)</option>`;
+  return h + liste.map(d => `<option ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
+}
+// Liste à codes fixes : entries = [[code, libellé], …]
+function optCodes(key, titre, entries, val, vide) {
+  FIXES_DEFAUTS[key] = entries;
+  const liste = valeursFixes(key, entries);
+  let h = vide ? `<option value="">${esc(vide)}</option>` : '';
+  if (val && !liste.some(([k]) => k === val)) h += `<option value="${esc(val)}" selected>${esc(val)} (retiré de la liste)</option>`;
+  return h + liste.map(([k, t]) => `<option value="${esc(k)}" ${k === val ? 'selected' : ''}>${t}</option>`).join('');
+}
+// Crayon seul, et crayon + liste sur la même ligne
+function crayonBouton(key, titre) {
+  return `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${esc(key)}" title="Gérer cette liste" style="padding:4px 8px;flex:0 0 auto">✏️</button>`;
+}
+function selCrayon(key, titre, selHtml) {
+  return `<span style="display:flex;gap:6px;align-items:center;flex:1;min-width:200px">${crayonBouton(key, titre)}<span style="flex:1;min-width:0;display:flex">${selHtml}</span></span>`;
 }
 function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteur || ''; q.hauteurDoub = q.hauteurDoub || ''; q.cloi = q.cloi || { ml: '', m2: '', ouv: '', isol: '', joint: '' }; q.doub = q.doub || { ml: '', m2: '', ouv: '', isol: '', joint: '' };
   if (!q.doub.jointInit) { q.doub.joint = 'S * 1,9'; q.doub.jointInit = true; }
@@ -1425,7 +1458,8 @@ function resultatFormuleJoint(texte, surface) {
   if (!t || !/^[0-9+\-*/(). ]+$/.test(t)) return null;
   try { const r = Function('"use strict"; return (' + t + ');')(); return Number.isFinite(r) ? r : null; } catch (e) { return null; }
 }
-function optPlat(re, val) {
+function optPlat(re, val, key, titre) {
+  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '— choisir —');
   return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
@@ -1513,8 +1547,8 @@ function renderPlatNv() {
       <strong style="font-size:15px;min-width:120px;color:#fff;font-weight:600">${titre}</strong>${extra}
       <label style="font-size:12px">Linéaire ml <input data-plat="${cle}|ml" inputmode="decimal" value="${esc(q[cle].ml || '')}" style="width:80px"></label>
       ${cle === 'pla' ? '' : `<label style="font-size:12px">ou surface m² <input data-plat="${cle}|m2" inputmode="decimal" value="${esc(q[cle].m2 || '')}" style="width:80px"></label>`}
-      <select data-plat="${cle}|ouv" style="flex:1;min-width:200px">${optPlat(re, q[cle].ouv)}</select></div>
-      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;color:#e6b800;font-weight:600">Isolant</span><select data-plat="${cle}|isol" style="flex:1;min-width:200px">${optIsol(q[cle].isol)}</select></div>
+      ${selCrayon(`plat-${cle}-ouv`, titre, `<select data-plat="${cle}|ouv" style="flex:1;min-width:0">${optPlat(re, q[cle].ouv, `plat-${cle}-ouv`, titre)}</select>`)}</div>
+      <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;color:#e6b800;font-weight:600">Isolant</span>${selCrayon(`plat-${cle}-isol`, titre, `<select data-plat="${cle}|isol" style="flex:1;min-width:0">${optIsol(q[cle].isol, `plat-${cle}-isol`, titre + ' : isolant')}</select>`)}</div>
       <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, cle, q[cle].joint)}${resBox(R[cle].joint)}</div>
       ${champMlHydro(q, cle, 'hydro', 'Plus-value plaque hydrofuge', R[cle].hydro)}
       ${cle === 'cloi' ? champMlHydro(q, cle, 'acou', 'Plus-value plaque acoustique') : ''}
@@ -1530,8 +1564,8 @@ function renderPlatNv() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;background:rgba(224,123,26,0.55);border-radius:6px;padding:6px 8px;">
       <strong style="font-size:15px;min-width:120px;color:#fff;font-weight:600">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
-      <select data-plat="pla|ouv" style="flex:1;min-width:200px">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv)}</select></div>
-    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;color:#e6b800;font-weight:600">Isolant</span><select data-plat="pla|isol" style="flex:1;min-width:200px">${optIsol(q.pla.isol)}</select></div>
+      ${selCrayon('plat-pla-ouv', 'Plafond', `<select data-plat="pla|ouv" style="flex:1;min-width:0">${optPlat(/^(Plafond|Faux plafond)/i, q.pla.ouv, 'plat-pla-ouv', 'Plafond')}</select>`)}</div>
+    <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;color:#e6b800;font-weight:600">Isolant</span>${selCrayon('plat-pla-isol', 'Plafond : isolant', `<select data-plat="pla|isol" style="flex:1;min-width:0">${optIsol(q.pla.isol, 'plat-pla-isol', 'Plafond : isolant')}</select>`)}</div>
     <div class="row" style="gap:6px;margin-top:4px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px">Bande à joint</span>${champJoint(q, 'pla', q.pla.joint)}${resBox(R.pla.joint)}</div>
     ${champFormuleVerrou(q, 'plaHydro', 'pla|hydro', 'Plus-value plaque hydrofuge', q.pla.hydro, R.pla.hydro)}
     <p class="muted" style="font-size:13px;margin:2px 0 0">Surface des salles d'eau et salles de bain (base de la plus-value hydrofuge du plafond) : ${fmt(surfacePiecesEau(c))} m².</p>
@@ -1819,7 +1853,8 @@ function menuiseriesTotalM2(c) {
 }
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
-function optPei(re, val) {
+function optPei(re, val, key, titre) {
+  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
   return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
@@ -1838,15 +1873,15 @@ function renderPeinture() {
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Murs</strong>
       <span style="font-size:13px">Linéaire repris des pièces : ${fmt(peiLineaire(c))} ml</span>
-      <select data-pei="murs|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv)}</select></div>
+      ${selCrayon('pei-murs-ouv', 'Peinture : murs', `<select data-pei="murs|ouv" style="flex:1;min-width:0">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv, 'pei-murs-ouv', 'Peinture : murs')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Portes et placards</strong>
       <span style="font-size:13px">Surface des portes de passage et façades de placard : ${fmt(portesFacadesBrutM2(c))} m² × 2 = ${fmt(portesFacadesBrutM2(c) * 2)} m² (deux faces)</span>
-      <select data-pei="portesFacades|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture/i, q.portesFacades.ouv)}</select></div>
+      ${selCrayon('pei-portesFacades-ouv', 'Peinture : portes et placards', `<select data-pei="portesFacades|ouv" style="flex:1;min-width:0">${optPei(/^Peinture/i, q.portesFacades.ouv, 'pei-portesFacades-ouv', 'Peinture : portes et placards')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" style="width:80px"></label>
-      <select data-pei="plafond|ouv" style="flex:1;min-width:200px">${optPei(/^Peinture plafond/i, q.plafond.ouv)}</select></div>
+      ${selCrayon('pei-plafond-ouv', 'Peinture : plafond', `<select data-pei="plafond|ouv" style="flex:1;min-width:0">${optPei(/^Peinture plafond/i, q.plafond.ouv, 'pei-plafond-ouv', 'Peinture : plafond')}</select>`)}</div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-pei-act="gen">Ajouter au métré</button></div>
     <p id="peiStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -2171,7 +2206,7 @@ function ouvrirConfigurateur() {
   renderPiecesNv(); renderPlatNv(); renderPeinture();
   const P = platDe(c), pieces = piecesDe(c);
   const opt = (liste, val) => `<option value="">— choisir —</option>` + liste.map(d => `<option ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
-  const optPortes = () => `<option value="">— choisir —</option><option>${esc(PORTE_AUTO)}</option>` + platPortes().map(d => `<option>${esc(d)}</option>`).join('');
+  const optPortes = () => `<option value="">— choisir —</option><option>${esc(PORTE_AUTO)}</option>` + optDesignations('pieces-portes', 'Portes : type', () => platPortes(), '', '').replace('<option value=""></option>', '');
   const subListe = (items, i, cat, texte) => items.map((x, k) => `<div class="ouv"><span>${texte(x)}</span><button type="button" class="btn small danger" data-pldel="${i}:${cat}:${k}">✕</button></div>`).join('');
   const carte = (p, i) => {
     const eau = PLAT_EAU.test(p.type);
@@ -2186,32 +2221,32 @@ function ouvrirConfigurateur() {
         <label style="font-size:12px">Largeur m <input data-plrow="${i}:largeur" inputmode="decimal" value="${esc(p.largeur || '')}" style="width:70px"></label>
         <label style="font-size:12px">Surface m² <input data-plrow="${i}:surf" inputmode="decimal" value="${esc(p.surf || '')}" style="width:80px"></label>
         <label style="font-size:12px">Périmètre ml <input data-plrow="${i}:perim" inputmode="decimal" value="${esc(p.perim || '')}" placeholder="auto" style="width:80px"></label>
-        <select data-plrow="${i}:sol" style="flex:1;min-width:160px">${opt(platSols(), p.sol || '')}</select>
+        ${selCrayon('pieces-sol', 'Revêtement de sol (pièce)', `<select data-plrow="${i}:sol" style="flex:1;min-width:0">${optDesignations('pieces-sol', 'Revêtement de sol (pièce)', () => platSols(), p.sol || '', '— choisir —')}</select>`)}
       </div>
       <p class="muted" style="margin:10px 0 2px">Murs (linéaire brut, hauteur ${num(P.hauteur) ? num(P.hauteur) + ' m' : 'à saisir'})</p>
       ${subListe(p.cloisons || [], i, 'cloisons', x => `Cloison · ${esc(x.type)} · ${fmt(num(x.ml))} ml`)}
-      <div class="row" style="margin-top:4px"><select id="pl_${i}_cloisons_type" style="flex:1">${opt(platCloisons())}</select><input id="pl_${i}_cloisons_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:cloisons">Ajouter au métré</button></div>
+      <div class="row" style="margin-top:4px">${selCrayon('pieces-cloisons', 'Cloisons : type', `<select id="pl_${i}_cloisons_type" style="flex:1;min-width:0">${optDesignations('pieces-cloisons', 'Cloisons : type', () => platCloisons(), '', '— choisir —')}</select>`)}<input id="pl_${i}_cloisons_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:cloisons">Ajouter au métré</button></div>
       ${subListe(p.doublages || [], i, 'doublages', x => `Doublage · ${esc(x.type)} · ${fmt(num(x.ml))} ml`)}
-      <div class="row" style="margin-top:4px"><select id="pl_${i}_doublages_type" style="flex:1">${opt(platDoublages())}</select><input id="pl_${i}_doublages_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:doublages">Ajouter au métré</button></div>
+      <div class="row" style="margin-top:4px">${selCrayon('pieces-doublages', 'Doublages : type', `<select id="pl_${i}_doublages_type" style="flex:1;min-width:0">${optDesignations('pieces-doublages', 'Doublages : type', () => platDoublages(), '', '— choisir —')}</select>`)}<input id="pl_${i}_doublages_ml" inputmode="decimal" placeholder="ml" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:doublages">Ajouter au métré</button></div>
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_portes_type" style="flex:1;min-width:180px">${optPortes()}</select><input id="pl_${i}_portes_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
+      <div class="row" style="margin-top:4px;flex-wrap:wrap">${selCrayon('pieces-portes', 'Portes : type', `<select id="pl_${i}_portes_type" style="flex:1;min-width:0">${optPortes()}</select>`)}<input id="pl_${i}_portes_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
       ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
       ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) + (finTxt(x.fin, x.ral) ? ' · ' + esc(finTxt(x.fin, x.ral)) : '') : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
       <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
-        <label style="display:block;font-size:14px;margin:4px 0">Type</label><select id="pl_${i}_menus_type" style="width:100%">${Object.entries(FICHE_OUV).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Type</label>${selCrayon('pieces-menus-type', 'Menuiserie : type d\'ouvrant', `<select id="pl_${i}_menus_type" style="width:100%">${optCodes('pieces-menus-type', 'Menuiserie : type d\'ouvrant', Object.entries(FICHE_OUV), '', '')}</select>`)}
         <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" placeholder="1"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Largeur (m)</label><input id="pl_${i}_menus_l" inputmode="decimal" placeholder="ex. 1,20"></div>
         <div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Hauteur (m)</label><input id="pl_${i}_menus_h" inputmode="decimal" placeholder="ex. 1,35"></div></div>
-        <label style="display:block;font-size:14px;margin:4px 0">Matériau</label><select id="pl_${i}_menus_mat" style="width:100%">${optionsListe(matsPour('ouvrant'), 'PVC')}</select>
-        <label style="display:block;font-size:14px;margin:4px 0">Finition</label><select id="pl_${i}_menus_fin" style="width:100%">${optionsListe(finsPour('PVC'), 'std')}</select>
-        <select id="pl_${i}_menus_ral" style="width:100%;display:none;margin-top:4px">${ralOptions('')}</select>
-        <label style="display:block;font-size:14px;margin:4px 0">Volet</label><select id="pl_${i}_menus_volet" style="width:100%">${Object.entries(FICHE_VOLET).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Matériau</label>${selCrayon('pieces-menus-mat', 'Menuiserie : matériau', `<select id="pl_${i}_menus_mat" style="width:100%">${optCodes('pieces-menus-mat', 'Menuiserie : matériau', matsPour('ouvrant'), 'PVC', '')}</select>`)}
+        <label style="display:block;font-size:14px;margin:4px 0">Finition</label>${selCrayon('pieces-menus-fin', 'Menuiserie : finition', `<select id="pl_${i}_menus_fin" style="width:100%">${optCodes('pieces-menus-fin', 'Menuiserie : finition', finsPour('PVC'), 'std', '')}</select>`)}
+        ${selCrayon('pieces-ral', 'Menuiserie : couleur RAL', `<select id="pl_${i}_menus_ral" style="width:100%;display:none;margin-top:4px">${optCodes('pieces-ral', 'Menuiserie : couleur RAL', RAL_LISTE.map(([k, t]) => [k, `${k} · ${t}`]), '', '— choisir la couleur —')}</select>`)}
+        <label style="display:block;font-size:14px;margin:4px 0">Volet</label>${selCrayon('pieces-volet', 'Menuiserie : volet', `<select id="pl_${i}_menus_volet" style="width:100%">${optCodes('pieces-volet', 'Menuiserie : volet', Object.entries(FICHE_VOLET), '', '')}</select>`)}
         <div id="pl_${i}_menus_volbox" style="display:none;border-left:3px solid #E07838;padding-left:8px;margin:4px 0">
-          <label style="display:block;font-size:14px;margin:4px 0">Matériau du volet</label><select id="pl_${i}_menus_matvolet" style="width:100%">${optionsListe(matsPour('ouvrant'), 'alu')}</select>
-          <label style="display:block;font-size:14px;margin:4px 0">Finition du volet</label><select id="pl_${i}_menus_finvolet" style="width:100%">${optionsListe(finsPour('alu'), 'std')}</select>
-          <select id="pl_${i}_menus_ralvolet" style="width:100%;display:none;margin-top:4px">${ralOptions('')}</select>
+          <label style="display:block;font-size:14px;margin:4px 0">Matériau du volet</label>${selCrayon('pieces-volet-mat', 'Volet : matériau', `<select id="pl_${i}_menus_matvolet" style="width:100%">${optCodes('pieces-volet-mat', 'Volet : matériau', matsPour('ouvrant'), 'alu', '')}</select>`)}
+          <label style="display:block;font-size:14px;margin:4px 0">Finition du volet</label>${selCrayon('pieces-volet-fin', 'Volet : finition', `<select id="pl_${i}_menus_finvolet" style="width:100%">${optCodes('pieces-volet-fin', 'Volet : finition', finsPour('alu'), 'std', '')}</select>`)}
+          ${selCrayon('pieces-volet-ral', 'Volet : couleur RAL', `<select id="pl_${i}_menus_ralvolet" style="width:100%;display:none;margin-top:4px">${optCodes('pieces-volet-ral', 'Volet : couleur RAL', RAL_LISTE.map(([k, t]) => [k, `${k} · ${t}`]), '', '— choisir la couleur —')}</select>`)}
         </div>
-        <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label><select id="pl_${i}_menus_appui" style="width:100%">${Object.entries(APPUI_LIB).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>
+        <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label>${selCrayon('pieces-appui', 'Menuiserie : appui', `<select id="pl_${i}_menus_appui" style="width:100%">${optCodes('pieces-appui', 'Menuiserie : appui', Object.entries(APPUI_LIB), '', '')}</select>`)}
         <div style="margin:6px 0"><label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_elec" style="width:auto;height:auto"> Volet roulant motorisé</label>
         <label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_securit" style="width:auto;height:auto"> Verre sécurit</label>
         <label style="font-size:14px"><input type="checkbox" id="pl_${i}_menus_opaque" style="width:auto;height:auto"> Verre opaque</label></div>
@@ -2219,14 +2254,14 @@ function ouvrirConfigurateur() {
       ${subListe(p.ouvertures || [], i, 'ouvertures', x => `Ouverture libre · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:180px">Ouverture libre (passage)</span><input id="pl_${i}_ouvertures_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_ouvertures_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_ouvertures_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:ouvertures">+ Ouverture</button></div>
       ${subListe(p.placards || [], i, 'placards', x => `Placard · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_placards_type" style="flex:1;min-width:180px">${opt(platPlacards())}</select><input id="pl_${i}_placards_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_placards_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_placards_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:placards">+ Placard</button></div>
+      <div class="row" style="margin-top:4px;flex-wrap:wrap">${selCrayon('pieces-placards', 'Placards : type', `<select id="pl_${i}_placards_type" style="flex:1;min-width:0">${optDesignations('pieces-placards', 'Placards : type', () => platPlacards(), '', '— choisir —')}</select>`)}<input id="pl_${i}_placards_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_placards_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_placards_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:placards">+ Placard</button></div>
     </div>`;
   };
   const carteEquip = (p, i) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
         <strong>${esc(nomPiece(p))}</strong>
       ${equipOptions(p).length ? `<p class="muted" style="margin:10px 0 2px">Équipements (nombre)</p>
       ${subListe(p.equip || [], i, 'equip', x => `${esc(x.type)} × ${num(x.nb)}`)}
-      <div class="row" style="margin-top:4px;flex-wrap:wrap"><select id="pl_${i}_equip_type" style="flex:1;min-width:200px">${opt(equipOptions(p))}</select><input id="pl_${i}_equip_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
+      <div class="row" style="margin-top:4px;flex-wrap:wrap">${selCrayon('pieces-equip', 'Équipements : type', `<select id="pl_${i}_equip_type" style="flex:1;min-width:0">${optCodes('pieces-equip', 'Équipements : type', equipOptions(p).map(d => [d, esc(d)]), '', '— choisir —')}</select>`)}<input id="pl_${i}_equip_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><button type="button" class="btn sec small" data-pladd="${i}:equip">+ Équipement</button></div>` : ''}
     </div>`;
   if (PIECES_ANCIEN_VEILLE) $('cfgPieces').innerHTML = '<div class="bloc"><p class="muted"><strong>Ancien configurateur de pièces : en veille.</strong> Ses données sont conservées, mais il ne produit plus aucune ligne au métré.</p></div>';
   else $('cfgPieces').innerHTML = `<div class="bloc">${lotTitre('B. Liste des pièces de la maison (sans l\'équipement)')}
@@ -2250,7 +2285,7 @@ function ouvrirConfigurateur() {
       <div style="flex:1;min-width:120px"><label for="plL" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Longueur (m)</label><input id="plL" inputmode="decimal"></div>
       <div style="flex:1;min-width:120px"><label for="plLa" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Largeur (m)</label><input id="plLa" inputmode="decimal"></div>
     </div>
-    <div style="margin-top:8px"><label for="plSol" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Revêtement de sol</label><select id="plSol" style="width:100%">${opt(platSols())}</select></div>
+    <div style="margin-top:8px"><label for="plSol" style="display:block;font-size:15px;font-weight:600;margin:6px 0 4px;color:var(--fg)">Revêtement de sol</label>${selCrayon('pieces-sol', 'Revêtement de sol', `<select id="plSol" style="width:100%">${optDesignations('pieces-sol', 'Revêtement de sol', () => platSols(), '', '— choisir —')}</select>`)}</div>
     <div class="row" style="margin-top:10px"><button type="button" class="btn sec" id="plAjPiece">Ajouter ou mettre à jour la pièce</button></div>
     <h3 style="margin:14px 0 0;font-size:15px">Pièces et leurs murs</h3>
     ${pieces.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
@@ -3034,12 +3069,29 @@ async function reprendreListes() {
 }
 let listeGereCle = null;
 let listeRetour = null;
-// Ferme l'éditeur, redessine le configurateur avec les listes à jour, et revient à la carte d'origine
+// Ouvre l'éditeur depuis un crayon, en mémorisant l'endroit d'où l'on vient
+function ouvrirDepuisCrayon(b) {
+  const vc = $('vConfig'), sec = b.closest('section');
+  const dansConfig = vc && vc.contains(b);
+  const secs = dansConfig ? [...vc.querySelectorAll('section')] : [];
+  listeRetour = { index: dansConfig && sec ? secs.indexOf(sec) : -1, y: window.scrollY };
+  if (LISTES_CONF[b.dataset.liste]) { ouvrirGestionListe(b.dataset.liste); return; }
+  const lab = b.closest('div') && b.closest('div').parentElement ? b.closest('div').parentElement.querySelector('label') : null;
+  ouvrirGestionValeurs(b.dataset.liste, lab ? lab.textContent : 'Liste');
+}
+// Crayons placés hors du configurateur principal (plâtrerie, peinture)
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-action="gerer-liste"]');
+  if (!b || ($('vConfig') && $('vConfig').contains(b))) return;
+  ouvrirDepuisCrayon(b);
+});
+// Ferme l'éditeur, redessine les blocs concernés avec les listes à jour, et revient à l'endroit d'origine
 function fermerGestionListe() {
   const ov = $('gestListe'); if (ov) ov.remove();
   const ovv = $('gestValeurs'); if (ovv) ovv.remove();
   listeGereCle = null; listeValeurCle = null;
   ficheRendre();
+  ouvrirConfigurateur();
   const r = listeRetour; listeRetour = null;
   if (!r) return;
   const secs = $('vConfig') ? [...$('vConfig').querySelectorAll('section')] : [];
@@ -3583,14 +3635,7 @@ function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
-  if (a === 'gerer-liste') {
-    // Mémorise la carte d'où l'on vient, pour y revenir à la fermeture
-    const secs = [...$('vConfig').querySelectorAll('section')], sec = b.closest('section');
-    listeRetour = { index: sec ? secs.indexOf(sec) : -1, y: window.scrollY };
-    if (LISTES_CONF[b.dataset.liste]) { ouvrirGestionListe(b.dataset.liste); return; }
-    const lab = b.closest('div').parentElement.querySelector('label');
-    ouvrirGestionValeurs(b.dataset.liste, lab ? lab.textContent : 'Liste'); return;
-  }
+  if (a === 'gerer-liste') { ouvrirDepuisCrayon(b); return; }
   if (a === 'addmur') {
     const cat = b.dataset.cat || 'peri';
     const nomCat = { soub: 'Mur de soubassement', peri: 'Mur périphérique', refend: 'Mur de refend', pignon: 'Mur pignon' }[cat];
