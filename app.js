@@ -1249,7 +1249,7 @@ function renderPiecesNv() {
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
-      <select data-nv="${esc(p.id)}|porteType" style="min-width:130px">${['63', '73', '83', '93', '103'].map(t => `<option value="${t}" ${(p.porteType || '83') === t ? 'selected' : ''}>${t} × 204</option>`).join('')}</select>
+      ${selCrayon('nv-porte-type', 'Porte de passage fin de chantier : largeur', `<select data-nv="${esc(p.id)}|porteType" style="min-width:0">${optCodes('nv-porte-type', 'Porte de passage fin de chantier : largeur', ['63', '73', '83', '93', '103'].map(t => [t, `${t} × 204`]), p.porteType || '83', '')}</select>`)}
       <select data-nv="${esc(p.id)}|porteSens" style="min-width:150px"><option value="">Sens d'ouverture</option>${Object.keys(PNV_SENS_PORTE).map(k => `<option value="${k}" ${p.porteSens === k ? 'selected' : ''}>${PNV_SENS_PORTE[k]}</option>`).join('')}</select>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
