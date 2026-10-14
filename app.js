@@ -2484,11 +2484,11 @@ if ($('vConfig')) $('vConfig').addEventListener('change', e => {
   const g = s => document.getElementById('pl_' + m[1] + '_menus_' + s);
   const ajuste = (sel, liste, defaut) => { const v = sel.value; sel.innerHTML = optionsListe(liste, liste.some(([k]) => k === v) ? v : defaut); };
   if (m[2] === 'type' || m[2] === 'mat') {
-    ajuste(g('mat'), matsPour(g('type').value), 'PVC');
-    ajuste(g('fin'), finsPour(g('mat').value), g('mat').value === 'bois' ? 'brut' : 'std');
+    ajuste(g('mat'), matsPour(g('type').value), '');
+    ajuste(g('fin'), finsPour(g('mat').value), '');
   }
   if (m[2] === 'matvolet' || m[2] === 'finvolet') {
-    ajuste(g('finvolet'), finsPour(g('matvolet').value), g('matvolet').value === 'bois' ? 'brut' : 'std');
+    ajuste(g('finvolet'), finsPour(g('matvolet').value), '');
   }
   if (m[2] === 'volet') g('volbox').style.display = g('volet').value === 'aucun' ? 'none' : '';
   if (m[2] === 'ral' || m[2] === 'fin' || m[2] === 'mat' || m[2] === 'type') g('ral').style.display = g('fin').value === 'ral' ? '' : 'none';
@@ -2524,7 +2524,7 @@ function matsPour(type) {
 function finsPour(mat) {
   return mat === 'bois' ? [['brut', 'Bois brut'], ['teinte', 'Bois teinté'], ['ral', 'Couleur RAL']] : [['std', 'Standard (blanc)'], ['ral', 'Couleur RAL']];
 }
-function optionsListe(liste, val) { return liste.map(([k, t]) => `<option value="${k}" ${k === val ? 'selected' : ''}>${t}</option>`).join(''); }
+function optionsListe(liste, val) { return (liste.some(([k]) => k === '') ? liste : [['', '— à choisir —'], ...liste]).map(([k, t]) => `<option value="${k}" ${k === val ? 'selected' : ''}>${t}</option>`).join(''); }
 function ralOptions(val) { return '<option value="">— choisir la couleur —</option>' + RAL_LISTE.map(([k, t]) => `<option value="${k}" ${k === val ? 'selected' : ''}>${k} · ${t}</option>`).join(''); }
 // Texte ajouté à la désignation et à l'affichage : finition et couleur RAL
 function finTxt(fin, ral) {
@@ -3478,7 +3478,7 @@ function pleinesDe(fd) {
 function ficheRendre() {
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c);
-  const sel = (opts, val) => opts.map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const sel = (opts, val) => (opts.some(([v]) => v === '') ? opts : [['', '— à choisir —'], ...opts]).map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const optListe = (liste, val) => `<option value="" ${!val ? 'selected' : ''}>— choisir —</option>` + liste.map(d => `<option value="${esc(d)}" ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const carte = (titre, contenu, src) => `<section ${src ? `data-source="${src}"` : ''} class="sousbloc" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">${titre}</h3>${contenu}</section>`;
   const champ = (lib, html) => `<div style="min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${lib}</label>${html}</div>`;
