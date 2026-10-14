@@ -1126,6 +1126,23 @@ const PNV_APPAREIL = [
 const PNV_PORTES = { '63': 'Bloc-porte fin de chantier 63×204', '73': 'Bloc-porte fin de chantier 73×204', '83': 'Bloc-porte fin de chantier 83×204', '93': 'Bloc-porte fin de chantier 93×204', '103': 'Bloc-porte fin de chantier 103×204' };
 // Sens d'ouverture des portes de passage (information, ne modifie aucun ouvrage)
 const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauche' };
+// Choix du bloc porte (un ouvrage de la bibliothèque par combinaison, voir le lot menuiseries-interieures)
+const BP_CHOIX = {
+  dest: ['de communication', 'acoustique', 'de service isothermique', 'technique coupe-feu EI30', 'palière thermique', 'palière acoustique', 'palière blindage de sécurité'],
+  pousse: ['poussant droit', 'poussant gauche'],
+  ame: ['âme alvéolaire', 'âme pleine', 'âme tubulaire'],
+  type: ['isoplane', 'postformé', 'vitré'],
+  fin: ['rive droite', 'recouvrement'],
+  pose: ['pose traditionnelle', 'pose fin de chantier', 'pose rénovation']
+};
+for (const k of Object.keys(BP_CHOIX)) BP_CHOIX[k] = BP_CHOIX[k].map(t => [t, t]);
+// Désignations des ouvrages « bloc porte 83 × 204 » créés dans la bibliothèque
+function blocPorteDesignations() {
+  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.designation.startsWith('Bloc-porte 83×204 ')).map(o => o.designation))];
+}
+// Nombre de portes de passage d'une pièce (somme des blocs portes) ; largeur : 83 cm
+const LARGEUR_PORTE_NV = 0.83;
+function nbPortesNv(p) { return (p.blocs || []).reduce((a, bl) => a + num(bl.nb), 0); }
 // Spots encastrés, formule de la fiche : Surface (m²) × Lux recommandés = Lumens totaux ; Lumens totaux ÷ Lumens par spot = nombre de spots (arrondi au supérieur)
 // Lux recommandés : valeurs retenues par Mathieu (entrée/couloir 150, chambre/séjour 200, cuisine 300, bureau 350, salle de bains et salle d'eau 400, WC et buanderie/cellier 150)
 const SPOT_LUX = { 'Entrée / dégagement': 150, 'Chambre': 200, 'Séjour': 200, 'Cuisine': 300, 'Bureau': 350, 'Salle de bains': 400, 'Salle d\'eau': 400, 'WC': 150, 'Buanderie / cellier': 150 };
@@ -1248,10 +1265,13 @@ function renderPiecesNv() {
       ${selCrayon('nv-menu-ouv', 'Menuiserie extérieure : type', `<select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-menu-ouv', 'Menuiserie extérieure : type', () => menusPorteBaie().map(o => o.designation), m.ouv, 'Fenêtre (châssis)')}</select>`)}
       <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
-    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center"><strong style="font-size:13px">Portes de passage fin de chantier</strong>
-      ${selCrayon('nv-porte-type', 'Porte de passage fin de chantier : largeur', `<select data-nv="${esc(p.id)}|porteType" style="min-width:0">${optCodes('nv-porte-type', 'Porte de passage fin de chantier : largeur', ['63', '73', '83', '93', '103'].map(t => [t, `${t} × 204`]), p.porteType || '83', '')}</select>`)}
-      <select data-nv="${esc(p.id)}|porteSens" style="min-width:150px"><option value="">Sens d'ouverture</option>${Object.keys(PNV_SENS_PORTE).map(k => `<option value="${k}" ${p.porteSens === k ? 'selected' : ''}>${PNV_SENS_PORTE[k]}</option>`).join('')}</select>
-      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|portes" inputmode="numeric" value="${esc(p.portes || '')}" style="width:60px"></label></div>
+    <div style="margin-top:8px"><strong style="font-size:13px">Portes de passage fin de chantier (bloc porte 83 × 204)</strong></div>
+    ${(p.blocs || []).map((bl, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
+      ${[['dest', 'Destination'], ['pousse', 'Poussant'], ['ame', 'Âme'], ['type', 'Type'], ['fin', 'Finition'], ['pose', 'Pose']].map(([champ, lib]) => `<label style="font-size:12px;flex:1;min-width:150px">${lib}${selCrayon('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), `<select data-nv="${esc(p.id)}|bloc|${k}|${champ}" style="width:100%;min-width:0">${optCodes('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), BP_CHOIX[champ], bl[champ] || '', '— choisir —')}</select>`)}</label>`).join('')}
+      <label style="font-size:12px;flex:1;min-width:200px">Ouvrage de la bibliothèque${selCrayon('bp-ouv', 'Bloc porte : ouvrage', `<select data-nv="${esc(p.id)}|bloc|${k}|ouv" style="width:100%;min-width:0">${optListeOuvrages('bp-ouv', 'Bloc porte : ouvrage', () => blocPorteDesignations(), bl.ouv || '', '— choisir —')}</select>`)}</label>
+      <label style="font-size:12px">Nombre <input data-nv="${esc(p.id)}|bloc|${k}|nb" inputmode="numeric" value="${esc(bl.nb || '')}" style="width:70px"></label>
+      <button type="button" class="btn small danger" data-nv-act="delbloc:${esc(p.id)}:${k}">✕</button></div>`).join('')}
+    <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addbloc:${esc(p.id)}">+ Porte de passage</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
     ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
       ${selCrayon('nv-facade-ouv', 'Façade de placard', `<select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-facade-ouv', 'Façade de placard', () => facadesPlacard().map(o => o.designation), f.ouv || 'OUV-0755', '')}</select>`)}
@@ -1324,18 +1344,18 @@ function genererPiecesNv(c) {
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
       // Linéaire de plinthes = périmètre − portes de passage − façades de placard − portes et baies extérieures − passages libres sans porte
-      const largeurPorte = num(p.porteType || '83') / 100;
+      const largeurPorte = LARGEUR_PORTE_NV;
       const baies = (p.menus || []).filter(m => estPorteBaie(m) && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
-      const lin = Math.max(0, num(p.perim) - num(p.portes) * largeurPorte - facadesLargeur(p) - baies - num(p.passage));
+      const lin = Math.max(0, num(p.perim) - nbPortesNv(p) * largeurPorte - facadesLargeur(p) - baies - num(p.passage));
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
       else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
     }
-    if (num(p.portes) > 0) {
-      const desPorte = PNV_PORTES[p.porteType || '83'];
-      const o = ouvrageParDesig(desPorte);
-      if (!o) manque.push(desPorte);
-      else { const v = { nombre: String(num(p.portes)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+    for (const bl of (p.blocs || [])) {
+      if (!bl.ouv || !(num(bl.nb) > 0)) continue;
+      const o = BIB.ouvrages.find(x => x.id === bl.ouv && !x.supprime);
+      if (!o) { manque.push('Bloc porte (ouvrage à choisir ou supprimé)'); continue; }
+      const v = { nombre: String(num(bl.nb)) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
     }
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
@@ -1598,8 +1618,8 @@ const HAUTEUR_PORTE_M = 2.04;
 // seulement si chaque élément fait au moins 1,50 m² (égal ou supérieur)
 function portesEtPlacardsM2(c) {
   return piecesNvDe(c).reduce((a, p) => {
-    const aireporte = (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M;
-    const portes = aireporteOk(aireporte) ? num(p.portes) * aireporte : 0;
+    const aireporte = LARGEUR_PORTE_NV * HAUTEUR_PORTE_M;
+    const portes = aireporteOk(aireporte) ? nbPortesNv(p) * aireporte : 0;
     const facades = (p.facades || []).reduce((b, f) => {
       if (!(num(f.l) > 0 && num(f.h) > 0)) return b;
       const aire = num(f.l) * num(f.h) / 10000;
@@ -1611,8 +1631,8 @@ function portesEtPlacardsM2(c) {
 // Surface (m²) de toutes les portes de passage et façades de placard, sans seuil (pour la case de formule du cloisonnement)
 function portesEtPlacardsToutesM2(c) {
   return piecesNvDe(c).reduce((a, p) => {
-    const aireporte = (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M;
-    const portes = num(p.portes) * aireporte;
+    const aireporte = LARGEUR_PORTE_NV * HAUTEUR_PORTE_M;
+    const portes = nbPortesNv(p) * aireporte;
     const facades = (p.facades || []).reduce((b, f) => (num(f.l) > 0 && num(f.h) > 0) ? b + num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : b, 0);
     return a + portes + facades;
   }, 0);
@@ -1846,7 +1866,7 @@ function peiDe(c) {
 function peiHauteur(c) { return num(peiDe(c).hauteur); }
 // Surface brute de toutes les portes de passage et façades de placard du configurateur (sans seuil)
 function portesFacadesBrutM2(c) {
-  return piecesNvDe(c).reduce((a, p) => a + num(p.portes) * (num(p.porteType || '83') / 100) * HAUTEUR_PORTE_M
+  return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M
     + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0);
 }
 // Surface totale de toutes les menuiseries extérieures du configurateur, sans seuil
@@ -1953,6 +1973,7 @@ function majPieceNv(c, cle, val) {
   if (!p) return;
   if (champ === 'menu') { p.menus = p.menus || []; if (p.menus[k]) p.menus[k][sous] = val; }
   else if (champ === 'facade') { p.facades = p.facades || []; if (p.facades[k]) p.facades[k][sous] = val; }
+  else if (champ === 'bloc') { p.blocs = p.blocs || []; if (p.blocs[k]) p.blocs[k][sous] = val; }
   else if (champ === 'app') { p.app = p.app || {}; p.app[k] = val; }
   else p[champ] = val;
   lsSet('chantiers', chantiers); marquerChantier(c.id);
@@ -1968,6 +1989,8 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
   else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
+  else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
+  else if (act === 'delbloc') { const p = liste.find(x => x.id === id); if (p) p.blocs.splice(Number(k), 1); }
   else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: 'OUV-0755', l: '', h: '', nb: '1' }); }
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
