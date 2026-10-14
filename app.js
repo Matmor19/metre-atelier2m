@@ -3226,7 +3226,7 @@ function ouvrirGestionListe(cle) {
         rendreGestionListe(); return;
       }
       if (t.id === 'glToutCocher') {
-        const r = listeReglage(cle), surLot = designationsDesLots([ov.dataset.lot]);
+        const r = listeReglage(cle), surLot = designationsTousLots([ov.dataset.lot]);
         r.retires = r.retires.filter(x => !surLot.includes(x));
         surLot.forEach(d => { if (!base.includes(d) && !r.ajoutes.includes(d)) r.ajoutes.push(d); });
         $('glMsg').textContent = await sauverReglage(cle, r); rendreGestionListe(); return;
@@ -3249,8 +3249,9 @@ function rendreGestionListe(seulLaListe) {
   if (!lots.includes(ov.dataset.lot)) ov.dataset.lot = lots[0] || '';
   const lot = ov.dataset.lot, filtre = (ov.dataset.filtre || '').toLowerCase();
   const efficace = listeEffective(cle);
-  const surLot = designationsDesLots(lot ? [lot] : []);
-  const hors = efficace.filter(d => !designationsDesLots(lots).includes(d));
+  // Tous les ouvrages du lot affiché (toutes unités) : un ouvrage décoché reste listé, case vide
+  const surLot = designationsTousLots(lot ? [lot] : []);
+  const hors = efficace.filter(d => !designationsTousLots(lots).includes(d));
   const filtrer = arr => arr.filter(d => !filtre || d.toLowerCase().includes(filtre));
   // Case à cocher fine, à gauche : décocher ne fait que changer la case, l'ouvrage reste affiché
   const ligne = d => `<label style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eee;font-size:14px"><input type="checkbox" data-gl="${esc(d)}" ${efficace.includes(d) ? 'checked' : ''} style="width:16px;height:16px;margin:2px 0 0;flex:0 0 16px;accent-color:#7a5a00"><span>${esc(d)}</span></label>`;
