@@ -61,7 +61,7 @@ input::placeholder{color:var(--mut);opacity:.8}
 /* Lumière qui fait le tour du cadre du bloc où l'on saisit */
 @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
 .bloc{position:relative}
-.bloc::after{content:"";position:absolute;inset:-4px;border-radius:inherit;padding:4px;pointer-events:none;opacity:0;transition:opacity .3s ease;background:conic-gradient(from var(--ang),transparent 0deg,var(--cadre) 40deg,#fff 60deg,var(--cadre) 80deg,transparent 120deg,transparent 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.bloc::after{content:"";position:absolute;inset:-4px;border-radius:inherit;padding:4px;pointer-events:none;opacity:0;transition:opacity .3s ease;background:conic-gradient(from var(--ang),transparent 0deg,var(--cadre) 40deg,#fff 60deg,var(--cadre) 80deg,transparent 120deg,var(--cadre) 160deg,#fff 180deg,var(--cadre) 200deg,transparent 240deg,var(--cadre) 280deg,#fff 300deg,var(--cadre) 320deg,transparent 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
 .bloc:focus-within::after{opacity:1;animation:tourCadre 2.4s linear infinite}
 @keyframes tourCadre{to{--ang:360deg}}
 @media (prefers-reduced-motion: reduce){.bloc button,.bloc button:hover{transition:none;transform:none}.bloc:focus-within::after{animation:none}}
