@@ -3418,8 +3418,12 @@ function dessinerOnglets() {
     let path = svg.firstElementChild;
     if (!path) { path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(path); }
     if (path.getAttribute('d') !== d) path.setAttribute('d', d);
+    if (_ongletsRO && !row.dataset.observe) { row.dataset.observe = '1'; _ongletsRO.observe(row); _ongletsRO.observe(h2); }
   });
 }
+// Recalcul dès que la police est chargée et à chaque changement de taille d'un titre (sinon le coin peut se décaler)
+const _ongletsRO = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => requestAnimationFrame(dessinerOnglets)) : null;
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(dessinerOnglets));
 let _ongletsT = null;
 new MutationObserver(() => { cancelAnimationFrame(_ongletsT); _ongletsT = requestAnimationFrame(dessinerOnglets); }).observe(document.body, { childList: true, subtree: true });
 window.addEventListener('resize', dessinerOnglets);
