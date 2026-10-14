@@ -3033,6 +3033,18 @@ async function reprendreListes() {
   } catch (e) { /* hors ligne : copie de cet appareil */ }
 }
 let listeGereCle = null;
+let listeRetour = null;
+// Ferme l'éditeur, redessine le configurateur avec les listes à jour, et revient à la carte d'origine
+function fermerGestionListe() {
+  const ov = $('gestListe'); if (ov) ov.remove();
+  listeGereCle = null;
+  ficheRendre();
+  const r = listeRetour; listeRetour = null;
+  if (!r) return;
+  const secs = $('vConfig') ? [...$('vConfig').querySelectorAll('section')] : [];
+  if (r.index >= 0 && secs[r.index]) secs[r.index].scrollIntoView({ block: 'center' });
+  else window.scrollTo(0, r.y);
+}
 // Lots attribués à la liste : ceux choisis par l'utilisateur, sinon les lots des ouvrages du code
 function listeLots(cle) {
   const r = listeReglage(cle);
@@ -3073,7 +3085,7 @@ function ouvrirGestionListe(cle) {
     ov.addEventListener('input', e => { if (e.target.id === 'glFiltre') { ov.dataset.filtre = e.target.value; rendreGestionListe(true); } });
     ov.addEventListener('click', async e => {
       const t = e.target;
-      if (t === ov || t.id === 'glFermer') { ov.remove(); listeGereCle = null; return; }
+      if (t === ov || t.id === 'glFermer') { fermerGestionListe(); return; }
       const cle = listeGereCle, base = LISTES_CONF[cle].base();
       if (t.dataset.retirlot) {
         const r = listeReglage(cle); r.lots = listeLots(cle).filter(id => id !== t.dataset.retirlot);
@@ -3446,7 +3458,12 @@ function ficheClick(e) {
   const b = e.target.closest('[data-action]'); if (!b) return;
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c), a = b.dataset.action;
-  if (a === 'gerer-liste') { ouvrirGestionListe(b.dataset.liste); return; }
+  if (a === 'gerer-liste') {
+    // Mémorise la carte d'où l'on vient, pour y revenir à la fermeture
+    const secs = [...$('vConfig').querySelectorAll('section')], sec = b.closest('section');
+    listeRetour = { index: sec ? secs.indexOf(sec) : -1, y: window.scrollY };
+    ouvrirGestionListe(b.dataset.liste); return;
+  }
   if (a === 'addmur') {
     const cat = b.dataset.cat || 'peri';
     const nomCat = { soub: 'Mur de soubassement', peri: 'Mur périphérique', refend: 'Mur de refend', pignon: 'Mur pignon' }[cat];
