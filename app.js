@@ -836,7 +836,7 @@ function remplacementConfig(L, o, precedent) {
 }
 function majLignesDepuisConfigurateur(c) {
   // Jamais pendant une revue (la revue a sa propre collecte)
-  if (!c || _majConfigEnCours || _revueCollecte || !BIB) return;
+  if (!c || c.metreGele || _majConfigEnCours || _revueCollecte || !BIB) return;
   _majConfigEnCours = true;
   try {
     const L = lignesDe(c.id);
@@ -1395,6 +1395,7 @@ function equipementsMaison(c) {
 }
 // Bouton séparé « Ajouter les équipements de la maison » : tableau et détecteurs, calculés sur toutes les pièces
 function genererEquipementsMaison(c) {
+  delete c.metreGele;
   const eq = equipementsMaison(c);
   const L = lignesDe(c.id).filter(l => l.pieceNv !== 'maison');
   const manque = [];
@@ -1419,6 +1420,7 @@ function genererEquipementsMaison(c) {
   return nb ? 'Équipements de la maison ajoutés au métré.' : 'Équipements : aucune ligne.';
 }
 function genererPiecesNv(c) {
+  delete c.metreGele;
   const pcs = piecesNvDe(c);
   // Les équipements de la maison (bouton séparé) sont conservés lors de la génération des pièces
   const L = lignesDe(c.id).filter(l => !l.pieceNv || l.pieceNv === 'maison');
@@ -1759,6 +1761,7 @@ function ajouterBandeJoint(c, L, formule, surface, titre) {
   return true;
 }
 function genererPlatNv(c) {
+  delete c.metreGele;
   const q = platNvDe(c);
   const h = num(q.hauteur);
   // Cloisonnement et doublage : linéaire × hauteur, ou surface m² saisie directement (si les deux sont saisis, le linéaire prime)
@@ -1930,6 +1933,7 @@ function remiseAZeroMetre() {
   if (!confirm('Remise à zéro du métré de ce chantier : toutes les lignes du métré seront effacées, y compris celles saisies à la main. Le configurateur n\'est pas modifié. Continuer ?')) return;
   sauverLignes(c.id, []);
   c.lots = [];
+  c.metreGele = true;   // le métré reste vide tant que « Ajouter au métré » n'est pas relancé
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderMetre();
   if ($('cfgStatut')) $('cfgStatut').textContent = 'Métré du chantier remis à zéro. Le configurateur est conservé.';
@@ -2048,6 +2052,7 @@ function renderPeinture() {
     <p id="peiStatut" class="muted" style="font-size:13px"></p></div>`;
 }
 function genererPeinture(c) {
+  delete c.metreGele;
   const q = peiDe(c);
   const h = peiHauteur(c);
   const L = lignesDe(c.id).filter(l => !l.peiNv);
