@@ -970,9 +970,11 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
-    let blocPrec = null;
+    let blocPrec = null, vuFerm = false;
     const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
     for (const l of ls) {
+      // Sous-titre avant les fermetures et occultations (après toutes les menuiseries)
+      if (l.menBloc === 'ferm' && !vuFerm) { vuFerm = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Fermeture - occultation</td></tr>`; }
       // Sous-titre à chaque début de bloc de plâtrerie (cloisonnement, doublage, plafond)
       if (l.platBloc && l.platBloc !== blocPrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${SOUS_TITRES_PLAT[l.platBloc]}</td></tr>`;
       blocPrec = l.platBloc || null;
@@ -1246,6 +1248,9 @@ function appDefaut(p, cle) {
 function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Façade de placard/i.test(o.designation)); }
 // Largeur totale des façades posées au sol (ml) : elles ne reçoivent pas de plinthe
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
+// Fermetures et occultations : ouvrage de la bibliothèque pour chaque choix (absent = à créer)
+const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182' };
+const MOUST_OUV = { integree: 'OUV-0183' };
 // Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
 const ME_CHOIX = {
   type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre']],
@@ -1372,9 +1377,10 @@ function genererPiecesNv(c) {
   const L = lignesDe(c.id).filter(l => !l.pieceNv);
   const manque = [];
   let nb = 0;
-  const ajoute = (o, valeurs, q, designation, pieceId, option) => {
+  const volets = [];   // fermetures et occultations, mises en fin de liste au métré
+  const ajoute = (o, valeurs, q, designation, pieceId, option, bloc) => {
     ajouterLotSiAbsent(c.id, o.lot);
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, cree: new Date().toISOString() });
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, menBloc: bloc || undefined, cree: new Date().toISOString() });
     nb++;
   };
   for (const p of pcs) {
@@ -1411,6 +1417,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(f.l))} × ${fmt(num(f.h))} cm – ${nom}`, p.id);
     }
     for (const m of (p.menus || [])) {
+      if (m.volet === 'oui' && m.ferm) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
       if (!(num(m.l) > 0 && num(m.h) > 0)) continue;   // sans dimensions, rien n'est calculé
       if (!m.ouv) { manque.push('Menuiserie extérieure : ouvrage non choisi (' + nom + ')'); continue; }
       const o = BIB.ouvrages.find(x => x.id === m.ouv && !x.supprime);
@@ -1453,6 +1460,24 @@ function genererPiecesNv(c) {
       const oD = ouvrageParDesig('Détecteur autonome de fumée');
       if (!oD) manque.push('Détecteur autonome de fumée');
       else { const v = { nombre: String(eq.detecteurs) }; ajoute(oD, v, calcul(oD, v), `${oD.designation} (1 pour 100 m²) – maison`, 'maison'); }
+    }
+  }
+  // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
+  for (const { m, nom, pid } of volets) {
+    const n = num(m.nb) || 1, L_ = num(m.l), H_ = num(m.h);
+    const lib = (ME_CHOIX.ferm.find(([v]) => v === m.ferm) || [])[1] || m.ferm;
+    const idF = FERM_OUV[m.ferm], oF = idF ? BIB.ouvrages.find(x => x.id === idF && !x.supprime) : null;
+    if (!oF) manque.push('Fermeture : ' + lib + ' (pas encore d\'ouvrage dans la bibliothèque)');
+    else {
+      const v = oF.unite === 'm²' ? { nombre: String(n), cote1: String(L_ / 100), cote2: String(H_ / 100) } : { nombre: String(n) };
+      const dimsTxt = oF.unite === 'm²' ? ` ${fmt(L_)} × ${fmt(H_)} cm` : ` (${fmt(L_)} × ${fmt(H_)} cm)`;
+      ajoute(oF, v, calcul(oF, v), `${oF.designation}${dimsTxt} – ${nom}`, pid, false, 'ferm');
+    }
+    if (m.moust) {
+      const libM = (ME_CHOIX.moust.find(([v]) => v === m.moust) || [])[1] || m.moust;
+      const idM = MOUST_OUV[m.moust], oM = idM ? BIB.ouvrages.find(x => x.id === idM && !x.supprime) : null;
+      if (!oM) manque.push('Moustiquaire : ' + libM + ' (pas encore d\'ouvrage dans la bibliothèque)');
+      else { const v = { nombre: String(n) }; ajoute(oM, v, calcul(oM, v), `${oM.designation} (${fmt(L_)} × ${fmt(H_)} cm) – ${nom}`, pid, false, 'ferm'); }
     }
   }
   sauverLignes(c.id, L);
