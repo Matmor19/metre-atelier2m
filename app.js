@@ -970,10 +970,12 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
-    let blocPrec = null, vuFerm = false;
+    let blocPrec = null, vuFerm = false, vuOuv = false, vuCoul = false;
     const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
     for (const l of ls) {
       // Sous-titre avant les fermetures et occultations (après toutes les menuiseries)
+      if (l.menBloc === 'ouv' && !vuOuv) { vuOuv = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Menuiseries ouvrantes</td></tr>`; }
+      if (l.menBloc === 'coul' && !vuCoul) { vuCoul = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Menuiseries coulissantes</td></tr>`; }
       if (l.menBloc === 'ferm' && !vuFerm) { vuFerm = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Fermeture - occultation</td></tr>`; }
       // Sous-titre à chaque début de bloc de plâtrerie (cloisonnement, doublage, plafond)
       if (l.platBloc && l.platBloc !== blocPrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${SOUS_TITRES_PLAT[l.platBloc]}</td></tr>`;
@@ -1269,6 +1271,8 @@ const ME_CHOIX = {
 function menusBlocOuvrages() {
   return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
 }
+// Menuiseries coulissantes (sous-titre « Menuiseries coulissantes » au métré) ; les autres ouvrants vont sous « Menuiseries ouvrantes »
+const MEN_COUL = ['coulissante', 'galandage', 'translation'];
 // Ouvrage de base choisi automatiquement selon type + matériau + nombre de vantaux (pas de combinaisons en bibliothèque)
 const ME_BASE = { 'fen-pvc-1': 'OUV-0162', 'fen-pvc-2': 'OUV-0163', 'pf-pvc-1': 'OUV-0164', 'pf-pvc-2': 'OUV-0165', 'fen-alu-1': 'OUV-0166', 'fen-alu-2': 'OUV-0167', 'fen-bois-1': 'OUV-0168' };
 function baseMenuiserie(m) {
@@ -1427,6 +1431,7 @@ function genererPiecesNv(c) {
   const manque = [];
   let nb = 0;
   const volets = [];   // fermetures et occultations, mises en fin de liste au métré
+  const menusNv = [];  // menuiseries extérieures, regroupées en ouvrantes puis coulissantes
   const ajoute = (o, valeurs, q, designation, pieceId, option, bloc) => {
     ajouterLotSiAbsent(c.id, o.lot);
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, menBloc: bloc || undefined, cree: new Date().toISOString() });
@@ -1472,7 +1477,7 @@ function genererPiecesNv(c) {
       const o = baseMenuiserie(m);
       if (!o) { manque.push('Menuiserie extérieure : pas encore d\'ouvrage de base pour ' + (ME_TXT.type[m.type] || '') + ' ' + (ME_CHOIX.mat.find(([v]) => v === m.mat) || [])[1] + ' ' + (ME_TXT.vantaux[m.vantaux] || '') + ' (' + nom + ')'); continue; }
       const v = { nombre: String(num(m.nb) || 1) };
-      ajoute(o, v, calcul(o, v), `${designationMenuiserie(m)} – ${nom}`, p.id);
+      menusNv.push({ o, v, q: calcul(o, v), designation: `${designationMenuiserie(m)} – ${nom}`, pid: p.id, bloc: MEN_COUL.includes(m.ouvrant) ? 'coul' : 'ouv' });
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
       const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(typePieceNv(p.nom)) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
@@ -1498,6 +1503,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
     }
   }
+  for (const bl of ['ouv', 'coul']) for (const x of menusNv.filter(x => x.bloc === bl)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl);
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
   for (const { m, nom, pid } of volets) {
     const n = num(m.nb) || 1, L_ = num(m.l), H_ = num(m.h);
