@@ -28590,8 +28590,53 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1745",
+      "lot": "menuiseries-exterieures",
+      "designation": "Volet roulant solaire",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1746",
+      "lot": "menuiseries-exterieures",
+      "designation": "Volet battant ou coulissant PVC",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1747",
+      "lot": "menuiseries-exterieures",
+      "designation": "Moustiquaire indépendante",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 101,
-  "prochainNumero": 1745
+  "revision": 102,
+  "prochainNumero": 1748
 }

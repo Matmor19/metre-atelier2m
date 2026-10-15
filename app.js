@@ -1267,8 +1267,8 @@ function designationFacade(f) {
 }
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
 // Fermetures et occultations : ouvrage de la bibliothèque pour chaque choix (absent = à créer)
-const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182' };
-const MOUST_OUV = { integree: 'OUV-0183' };
+const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vr-solaire': 'OUV-1745', 'vb-pvc': 'OUV-1746', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182' };
+const MOUST_OUV = { integree: 'OUV-0183', independante: 'OUV-1747' };
 // Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
 const ME_CHOIX = {
   type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre']],
@@ -1541,6 +1541,13 @@ function genererPiecesNv(c) {
       const v = oF.unite === 'm²' ? { nombre: String(n), cote1: String(L_ / 100), cote2: String(H_ / 100) } : { nombre: String(n) };
       const dimsTxt = oF.unite === 'm²' ? ` ${fmt(L_)} × ${fmt(H_)} cm` : ` (${fmt(L_)} × ${fmt(H_)} cm)`;
       ajoute(oF, v, calcul(oF, v), `${oF.designation}${dimsTxt} – ${nom}`, pid, false, 'ferm');
+      // Volet roulant motorisé : alimentation et commande électriques, ajoutées au lot électricité
+      if (m.ferm === 'vr-motor') for (const idE of ['OUV-0224', 'OUV-0624']) {
+        const oE = BIB.ouvrages.find(x => x.id === idE && !x.supprime);
+        if (!oE) { manque.push('électricité du volet motorisé (' + idE + ')'); continue; }
+        const vE = { nombre: String(n) };
+        ajoute(oE, vE, calcul(oE, vE), `${oE.designation} – ${nom}`, pid);
+      }
     }
     if (m.moust) {
       const libM = (ME_CHOIX.moust.find(([v]) => v === m.moust) || [])[1] || m.moust;
