@@ -1359,6 +1359,7 @@ function renderPiecesNv() {
     <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
       <button type="button" class="btn sec" data-nv-act="add">+ Ajouter une pièce</button>
       <button type="button" class="btn" data-nv-act="gen">Ajouter au métré</button>
+      <button type="button" class="btn sec" data-nv-act="gen-maison">Ajouter les équipements de la maison</button>
     </div>
     <p id="nvStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1385,9 +1386,35 @@ function equipementsMaison(c) {
   const detecteurs = surf > 0 ? Math.ceil(surf / 100) : 0;
   return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf };
 }
+// Bouton séparé « Ajouter les équipements de la maison » : tableau et détecteurs, calculés sur toutes les pièces
+function genererEquipementsMaison(c) {
+  const eq = equipementsMaison(c);
+  const L = lignesDe(c.id).filter(l => l.pieceNv !== 'maison');
+  const manque = [];
+  let nb = 0;
+  const ajoute = (o, v, q, designation) => {
+    ajouterLotSiAbsent(c.id, o.lot);
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: q, surface: null, prix: 'moyen', pieceNv: 'maison', pieceOption: false, cree: new Date().toISOString() });
+    nb++;
+  };
+  if (eq.pieces === 0) return 'Équipements : saisis d\'abord les pièces.';
+  const oT = ouvrageParDesig(eq.tableau);
+  if (!oT) manque.push(eq.tableau);
+  else { const v = { nombre: '1' }; ajoute(oT, v, calcul(oT, v), `${oT.designation} (${eq.modules} modules nécessaires, ${eq.circuits} circuits) – maison`); }
+  if (eq.detecteurs > 0) {
+    const oD = ouvrageParDesig('Détecteur autonome de fumée');
+    if (!oD) manque.push('Détecteur autonome de fumée');
+    else { const v = { nombre: String(eq.detecteurs) }; ajoute(oD, v, calcul(oD, v), `${oD.designation} (1 pour 100 m²) – maison`); }
+  }
+  sauverLignes(c.id, L);
+  renderMetre();
+  if (manque.length) return 'Équipements : ouvrage manquant dans la bibliothèque (' + manque.join(', ') + ').';
+  return nb ? 'Équipements de la maison ajoutés au métré.' : 'Équipements : aucune ligne.';
+}
 function genererPiecesNv(c) {
   const pcs = piecesNvDe(c);
-  const L = lignesDe(c.id).filter(l => !l.pieceNv);
+  // Les équipements de la maison (bouton séparé) sont conservés lors de la génération des pièces
+  const L = lignesDe(c.id).filter(l => !l.pieceNv || l.pieceNv === 'maison');
   const manque = [];
   let nb = 0;
   const volets = [];   // fermetures et occultations, mises en fin de liste au métré
@@ -1460,18 +1487,6 @@ function genererPiecesNv(c) {
       if (!o) { manque.push(desPnv(p, a)); continue; }
       const v = { nombre: String(n) };
       ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
-    }
-  }
-  // Équipements de la maison : un seul tableau adapté, et les détecteurs de fumée (norme, sans couleur)
-  const eq = equipementsMaison(c);
-  if (eq.pieces > 0) {
-    const oT = ouvrageParDesig(eq.tableau);
-    if (!oT) manque.push(eq.tableau);
-    else { const v = { nombre: '1' }; ajoute(oT, v, calcul(oT, v), `${oT.designation} (${eq.modules} modules nécessaires, ${eq.circuits} circuits) – maison`, 'maison'); }
-    if (eq.detecteurs > 0) {
-      const oD = ouvrageParDesig('Détecteur autonome de fumée');
-      if (!oD) manque.push('Détecteur autonome de fumée');
-      else { const v = { nombre: String(eq.detecteurs) }; ajoute(oD, v, calcul(oD, v), `${oD.designation} (1 pour 100 m²) – maison`, 'maison'); }
     }
   }
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
@@ -2111,6 +2126,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: 'OUV-0755', l: '', h: '', nb: '1' }); }
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
+  else if (act === 'gen-maison') { const msg = genererEquipementsMaison(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   lsSet('chantiers', chantiers); marquerChantier(c.id);
   renderPiecesNv(); renderPlatNv(); renderPeinture();
 });

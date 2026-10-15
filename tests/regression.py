@@ -95,7 +95,7 @@ JS_TESTS = r"""(c) => {
   piecesNvDe(cN).push({ id: 'pn-cuisine', nom: 'Cuisine', surf: '9', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-terrasse', nom: 'Terrasse extérieure', surf: '10', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-cellier', nom: 'Cellier', surf: '5', revet: '', portes: '', menus: [], app: {} });
-  genererPiecesNv(cN);
+  genererPiecesNv(cN); genererEquipementsMaison(cN);
   const n1 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
   genererPiecesNv(cN);
   const n2 = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv);
