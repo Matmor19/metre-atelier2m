@@ -1290,7 +1290,7 @@ function menusBlocOuvrages() {
 // Menuiseries coulissantes (sous-titre « Menuiseries coulissantes » au métré) ; les autres ouvrants vont sous « Menuiseries ouvrantes »
 const MEN_COUL = ['coulissante', 'galandage', 'translation'];
 // Ouvrage de base choisi automatiquement selon type + matériau + nombre de vantaux (pas de combinaisons en bibliothèque)
-const ME_BASE = { 'fen-pvc-1': 'OUV-0162', 'fen-pvc-2': 'OUV-0163', 'pf-pvc-1': 'OUV-0164', 'pf-pvc-2': 'OUV-0165', 'fen-alu-1': 'OUV-0166', 'fen-alu-2': 'OUV-0167', 'fen-bois-1': 'OUV-0168' };
+const ME_BASE = { 'fen-pvc-1': 'OUV-1721', 'fen-pvc-2': 'OUV-1722', 'fen-pvc-3': 'OUV-1723', 'fen-pvc-4': 'OUV-1724', 'fen-alu-1': 'OUV-1725', 'fen-alu-2': 'OUV-1726', 'fen-alu-3': 'OUV-1727', 'fen-alu-4': 'OUV-1728', 'fen-bois-1': 'OUV-1729', 'fen-bois-2': 'OUV-1730', 'fen-bois-3': 'OUV-1731', 'fen-bois-4': 'OUV-1732', 'pf-pvc-1': 'OUV-1733', 'pf-pvc-2': 'OUV-1734', 'pf-pvc-3': 'OUV-1735', 'pf-pvc-4': 'OUV-1736', 'pf-alu-1': 'OUV-1737', 'pf-alu-2': 'OUV-1738', 'pf-alu-3': 'OUV-1739', 'pf-alu-4': 'OUV-1740', 'pf-bois-1': 'OUV-1741', 'pf-bois-2': 'OUV-1742', 'pf-bois-3': 'OUV-1743', 'pf-bois-4': 'OUV-1744' };
 function baseMenuiserie(m) {
   const id = ME_BASE[`${m.type}-${m.mat}-${m.vantaux}`];
   return id ? BIB.ouvrages.find(x => x.id === id && !x.supprime) || null : null;

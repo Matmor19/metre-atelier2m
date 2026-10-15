@@ -2936,7 +2936,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0163",
@@ -2951,7 +2952,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0164",
@@ -2966,7 +2968,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0165",
@@ -2981,7 +2984,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0166",
@@ -2996,7 +3000,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0167",
@@ -3011,7 +3016,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0168",
@@ -3026,7 +3032,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0169",
@@ -3041,7 +3048,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0170",
@@ -3056,7 +3064,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0171",
@@ -3071,7 +3080,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0172",
@@ -3086,7 +3096,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0173",
@@ -10082,7 +10093,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0582",
@@ -10097,7 +10109,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0583",
@@ -10112,7 +10125,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0584",
@@ -10142,7 +10156,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0586",
@@ -10157,7 +10172,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "supprime": true
     },
     {
       "id": "OUV-0587",
@@ -28214,8 +28230,368 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1721",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre PVC 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1722",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre PVC 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1723",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre PVC 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1724",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre PVC 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1725",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre alu 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1726",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre alu 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1727",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre alu 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1728",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre alu 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1729",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre bois 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1730",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre bois 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1731",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre bois 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1732",
+      "lot": "menuiseries-exterieures",
+      "designation": "Fenêtre bois 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1733",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre PVC 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1734",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre PVC 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1735",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre PVC 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1736",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre PVC 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1737",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre alu 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1738",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre alu 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1739",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre alu 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1740",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre alu 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1741",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre bois 1 vantail",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1742",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre bois 2 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1743",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre bois 3 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1744",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte-fenêtre bois 4 vantaux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 100,
-  "prochainNumero": 1721
+  "revision": 101,
+  "prochainNumero": 1745
 }
