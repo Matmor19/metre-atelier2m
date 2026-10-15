@@ -1270,7 +1270,8 @@ function menusBlocOuvrages() {
 }
 // Options choisies d'un bloc, en texte pour la désignation du métré
 function libMenuiserie(m) {
-  return ['type', 'vantaux', 'ouvrant', 'vitrage', 'esth', 'secu', 'pose', 'volet', 'ferm', 'moust'].map(c => { const e = (ME_CHOIX[c] || []).find(([v]) => v === m[c]); return m[c] && e ? e[1] : ''; }).filter(Boolean).join(', ');
+  // Volet, fermeture et moustiquaire ont leurs propres lignes au métré : pas répétés ici
+  return ['type', 'vantaux', 'ouvrant', 'vitrage', 'esth', 'secu', 'pose'].map(c => { const e = (ME_CHOIX[c] || []).find(([v]) => v === m[c]); return m[c] && e ? e[1] : ''; }).filter(Boolean).join(', ');
 }
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
 function blocMenuiserie(p, m, k) {
