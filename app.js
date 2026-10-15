@@ -1249,6 +1249,22 @@ function appDefaut(p, cle) {
 // Façades de placard de la bibliothèque (coulissant ou battant), choisies dans une liste
 function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Façade de placard/i.test(o.designation)); }
 // Largeur totale des façades posées au sol (ml) : elles ne reçoivent pas de plinthe
+// Façades de placard : choix du configurateur (comme les menuiseries). Ouvrage de base automatique : coulissant ou battant
+const FA_CHOIX = {
+  vantaux: [['1', '1 vantail'], ['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']],   // battant ou pliant uniquement
+  ouvrant: [['francaise', 'Ouvrant à la française'], ['coulissante', 'Coulissante'], ['acordeon', 'Acodéon']],
+  structure: [['m10', 'Panneau mélaminé standard 10 mm'], ['m12', 'Panneau mélaminé standard 12 mm'], ['m18', 'Panneau mélaminé épais 18 mm'], ['m19', 'Panneau mélaminé épais 19 mm'], ['mdf', 'Panneau MDF à peindre'], ['persienne', 'Persienne ajourée']],
+  finition: [['uni', 'Décor uni (blanc, gris, anthracite)'], ['bois', 'Décor imitation bois (chêne, aspect brut, noyer)'], ['argent', 'Miroir argenté'], ['teinte', 'Miroir teinté (bronze ou gris)'], ['laque', 'Verre laqué']],
+  pose: [['entre', 'Pose entre murs'], ['fileur', 'Pose avec fileur latéral'], ['joue', 'Pose avec joue de terminaison'], ['rampant', 'Pose sous rampant']],
+  amort: [['oui', 'Compris amortisseur de fin de course'], ['non', 'Non compris amortisseur de fin de course']]
+};
+const FA_BASE = { coulissante: 'OUV-0755', francaise: 'OUV-0880', acordeon: 'OUV-0880' };
+function designationFacade(f) {
+  const txt = (champ, v) => (FA_CHOIX[champ].find(([x]) => x === v) || [])[1] || '';
+  const battant = f.ouvrant !== 'coulissante';
+  const dims = num(f.l) > 0 && num(f.h) > 0 ? `${fmt(num(f.l))} x ${fmt(num(f.h))} cm` : '';
+  return ['Façade de placard' + (battant && f.vantaux ? ' ' + txt('vantaux', f.vantaux).toLowerCase() : ''), txt('ouvrant', f.ouvrant), dims, txt('structure', f.structure), txt('finition', f.finition), txt('pose', f.pose), txt('amort', f.amort)].filter(Boolean).join(', ');
+}
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
 // Fermetures et occultations : ouvrage de la bibliothèque pour chaque choix (absent = à créer)
 const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182' };
@@ -1315,6 +1331,20 @@ function blocMenuiserie(p, m, k) {
     <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }
+function blocFacade(p, f, k) {
+  const id = esc(p.id);
+  const sel = (champ, lib, vide) => `<div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">${lib}</div>${selCrayon('fa-' + champ, 'Façade de placard : ' + lib.toLowerCase(), `<select data-nv="${id}|facade|${k}|${champ}" style="width:100%;min-width:0">${optCodes('fa-' + champ, 'Façade de placard : ' + lib.toLowerCase(), FA_CHOIX[champ], f[champ] || '', vide)}</select>`)}</div>`;
+  return `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
+    ${sel('ouvrant', "Type d'ouvrant", '— choisir —')}
+    ${f.ouvrant && f.ouvrant !== 'coulissante' ? sel('vantaux', 'Nombre de vantaux', '— choisir —') : ''}
+    <div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">Dimensions L × H (cm)</div><span style="display:flex;gap:4px"><input data-nv="${id}|facade|${k}|l" inputmode="decimal" value="${esc(f.l || '')}" placeholder="Larg." style="width:50%;min-width:0"><input data-nv="${id}|facade|${k}|h" inputmode="decimal" value="${esc(f.h || '')}" placeholder="Haut." style="width:50%;min-width:0"></span></div>
+    ${sel('structure', 'Structure du panneau', '— choisir —')}
+    ${sel('finition', 'Esthétique & finitions', '— choisir —')}
+    ${sel('pose', 'Type de pose', '— choisir —')}
+    ${sel('amort', 'Amortisseur', '— choisir —')}
+    <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:70px"></div>
+    <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delfacade:${id}:${k}">✕</button></div>`;
+}
 function estPorteBaie(m) { const b = baseMenuiserie(m); return !!b && menusPorteBaie().some(o => o.id === b.id); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
@@ -1346,12 +1376,7 @@ function renderPiecesNv() {
       <button type="button" class="btn small danger" data-nv-act="delbloc:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addbloc:${esc(p.id)}">+ Porte de passage</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
-    ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${selCrayon('nv-facade-ouv', 'Façade de placard', `<select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-facade-ouv', 'Façade de placard', () => facadesPlacard().map(o => o.designation), f.ouv || '', '— choisir —')}</select>`)}
-      <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|facade|${k}|l" inputmode="decimal" value="${esc(f.l || '')}" style="width:70px"></label>
-      <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|facade|${k}|h" inputmode="decimal" value="${esc(f.h || '')}" style="width:70px"></label>
-      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:50px"></label>
-      <button type="button" class="btn small danger" data-nv-act="delfacade:${esc(p.id)}:${k}">✕</button></div>`).join('')}
+    ${(p.facades || []).map((f, k) => blocFacade(p, f, k)).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addfacade:${esc(p.id)}">+ Façade de placard</button>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><label style="font-size:12px">Passage libre sans porte ml (déduit des plinthes) <input data-nv="${esc(p.id)}|passage" inputmode="decimal" value="${esc(p.passage || '')}" style="width:90px"></label></div>
     <div style="margin-top:8px"><strong style="font-size:13px">Appareillage de cette pièce</strong></div>
@@ -1464,12 +1489,13 @@ function genererPiecesNv(c) {
     }
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
-      if (!(num(f.l) > 0 && num(f.h) > 0)) continue;
-      if (!f.ouv) { manque.push('Façade de placard : ouvrage non choisi (' + nom + ')'); continue; }
-      const o = BIB.ouvrages.find(x => x.id === f.ouv && !x.supprime);
+      if (!(num(f.l) > 0 && num(f.h) > 0)) { if (f.ouvrant) manque.push('Façade de placard : dimensions L × H à saisir (' + nom + ')'); continue; }
+      if (!f.ouvrant || !f.structure || !f.finition || !f.pose || !f.amort) { manque.push('Façade de placard : choix incomplets (' + nom + ')'); continue; }
+      if (f.ouvrant !== 'coulissante' && !f.vantaux) { manque.push('Façade de placard : nombre de vantaux à choisir (' + nom + ')'); continue; }
+      const o = BIB.ouvrages.find(x => x.id === FA_BASE[f.ouvrant] && !x.supprime);
       if (!o) { manque.push('façade de placard'); continue; }
       const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
-      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(f.l))} × ${fmt(num(f.h))} cm – ${nom}`, p.id);
+      ajoute(o, v, calcul(o, v), `${designationFacade(f)} – ${nom}`, p.id);
     }
     for (const m of (p.menus || [])) {
       if (m.volet === 'oui' && m.ferm) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
@@ -1527,7 +1553,9 @@ function genererPiecesNv(c) {
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
-  if (uniques.some(d => d.startsWith('Façade de placard : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque façade de placard, sinon elle n\'est pas au métré.';
+  if (uniques.some(d => d.startsWith('Façade de placard : choix incomplets'))) return 'Pièces : termine les choix de chaque façade de placard (type, structure, finition, pose, amortisseur), sinon elle n\'est pas au métré.';
+  if (uniques.some(d => d.startsWith('Façade de placard : nombre de vantaux'))) return 'Pièces : choisis le nombre de vantaux des façades battantes ou pliantes.';
+  if (uniques.some(d => d.startsWith('Façade de placard : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque façade de placard, sinon elle n\'est pas au métré.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : type, matériau'))) return 'Pièces : choisis type, matériau et nombre de vantaux de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : pas encore'))) return 'Pièces : ' + uniques.find(d => d.startsWith('Menuiserie extérieure : pas encore')).replace('Menuiserie extérieure : ', '') + ' — à ajouter à la bibliothèque.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
@@ -2144,7 +2172,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
   else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dim: '83×204', dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
   else if (act === 'delbloc') { const p = liste.find(x => x.id === id); if (p) p.blocs.splice(Number(k), 1); }
-  else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: '', l: '', h: '', nb: '1' }); }
+  else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ vantaux: '', ouvrant: '', structure: '', finition: '', pose: '', amort: '', l: '', h: '', nb: '1' }); }
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   else if (act === 'gen-maison') { const msg = genererEquipementsMaison(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
@@ -2156,7 +2184,7 @@ $('vConfig') && $('vConfig').addEventListener('change', e => {
   if (!t) return;
   const c = chantiers.find(x => x.id === courantId);
   if (c) majPieceNv(c, t.dataset.nv, t.value);
-  if (c && /\|menu\|\d+\|volet$/.test(t.dataset.nv)) renderPiecesNv();   // « Compris volet roulant » fait apparaître Fermeture
+  if (c && /\|menu\|\d+\|volet$|\|facade\|\d+\|ouvrant$/.test(t.dataset.nv)) renderPiecesNv();   // « Compris volet roulant » fait apparaître Fermeture
 });
 
 /* ============ Configurateur des pièces (électricité, plâtrerie, sols, plinthes) ============ */

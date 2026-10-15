@@ -90,7 +90,7 @@ JS_TESTS = r"""(c) => {
   const cN = chantiers.find(x => x.id === c.id);
   piecesNvDe(cN).push({ id: 'pn-test', nom: 'Chambre test', surf: '15', revet: 'OUV-0274', portes: '',
     blocs: [{ dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: 'OUV-0965', nb: '1' }],
-    perim: '15.5', passage: '1', facades: [{ ouv: 'OUV-0755', l: '200', h: '240', nb: '1' }], menus: [{ type: 'fen', vantaux: '1', mat: 'pvc', ouvrant: 'francaise', l: '100', h: '100', nb: '1' }, { type: 'pf', vantaux: '2', mat: 'pvc', ouvrant: 'coulissante', l: '180', h: '210', nb: '1' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
+    perim: '15.5', passage: '1', facades: [{ ouvrant: 'coulissante', structure: 'm18', finition: 'uni', pose: 'entre', amort: 'oui', l: '200', h: '240', nb: '1' }], menus: [{ type: 'fen', vantaux: '1', mat: 'pvc', ouvrant: 'francaise', l: '100', h: '100', nb: '1' }, { type: 'pf', vantaux: '2', mat: 'pvc', ouvrant: 'coulissante', l: '180', h: '210', nb: '1' }], app: { prises: '3', rj45: '1', interrup: '1', points: '1' } });
   piecesNvDe(cN).push({ id: 'pn-bureau', nom: 'Bureau', surf: '', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-cuisine', nom: 'Cuisine', surf: '9', revet: '', portes: '', menus: [], app: {} });
   piecesNvDe(cN).push({ id: 'pn-terrasse', nom: 'Terrasse extérieure', surf: '10', revet: '', portes: '', menus: [], app: {} });
