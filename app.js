@@ -1347,7 +1347,7 @@ function renderPiecesNv() {
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addbloc:${esc(p.id)}">+ Porte de passage</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Façades de placard</strong></div>
     ${(p.facades || []).map((f, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      ${selCrayon('nv-facade-ouv', 'Façade de placard', `<select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-facade-ouv', 'Façade de placard', () => facadesPlacard().map(o => o.designation), f.ouv || 'OUV-0755', '')}</select>`)}
+      ${selCrayon('nv-facade-ouv', 'Façade de placard', `<select data-nv="${esc(p.id)}|facade|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-facade-ouv', 'Façade de placard', () => facadesPlacard().map(o => o.designation), f.ouv || '', '— choisir —')}</select>`)}
       <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|facade|${k}|l" inputmode="decimal" value="${esc(f.l || '')}" style="width:70px"></label>
       <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|facade|${k}|h" inputmode="decimal" value="${esc(f.h || '')}" style="width:70px"></label>
       <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|facade|${k}|nb" inputmode="numeric" value="${esc(f.nb || '')}" style="width:50px"></label>
@@ -1465,7 +1465,8 @@ function genererPiecesNv(c) {
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
       if (!(num(f.l) > 0 && num(f.h) > 0)) continue;
-      const o = BIB.ouvrages.find(x => x.id === (f.ouv || 'OUV-0755') && !x.supprime);
+      if (!f.ouv) { manque.push('Façade de placard : ouvrage non choisi (' + nom + ')'); continue; }
+      const o = BIB.ouvrages.find(x => x.id === f.ouv && !x.supprime);
       if (!o) { manque.push('façade de placard'); continue; }
       const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(f.l))} × ${fmt(num(f.h))} cm – ${nom}`, p.id);
@@ -1526,6 +1527,7 @@ function genererPiecesNv(c) {
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
+  if (uniques.some(d => d.startsWith('Façade de placard : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque façade de placard, sinon elle n\'est pas au métré.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : type, matériau'))) return 'Pièces : choisis type, matériau et nombre de vantaux de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : pas encore'))) return 'Pièces : ' + uniques.find(d => d.startsWith('Menuiserie extérieure : pas encore')).replace('Menuiserie extérieure : ', '') + ' — à ajouter à la bibliothèque.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
@@ -2142,7 +2144,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
   else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dim: '83×204', dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
   else if (act === 'delbloc') { const p = liste.find(x => x.id === id); if (p) p.blocs.splice(Number(k), 1); }
-  else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: 'OUV-0755', l: '', h: '', nb: '1' }); }
+  else if (act === 'addfacade') { const p = liste.find(x => x.id === id); if (p) (p.facades = p.facades || []).push({ ouv: '', l: '', h: '', nb: '1' }); }
   else if (act === 'delfacade') { const p = liste.find(x => x.id === id); if (p) p.facades.splice(Number(k), 1); }
   else if (act === 'gen') { const msg = genererPiecesNv(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
   else if (act === 'gen-maison') { const msg = genererEquipementsMaison(c); if ($('nvStatut')) $('nvStatut').textContent = msg; lsSet('chantiers', chantiers); marquerChantier(c.id); return; }
