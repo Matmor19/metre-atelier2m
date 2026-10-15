@@ -1246,6 +1246,46 @@ function appDefaut(p, cle) {
 function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Façade de placard/i.test(o.designation)); }
 // Largeur totale des façades posées au sol (ml) : elles ne reçoivent pas de plinthe
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
+// Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
+const ME_CHOIX = {
+  type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre']],
+  vantaux: [['1', '1 vantail'], ['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']],
+  ouvrant: [['francaise', 'Ouvrant à la française'], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', 'Oscillo-battant'], ['abattant', 'Abattant'], ['coulissante', 'Coulissante'], ['galandage', 'Coulissante à galandage'], ['translation', 'Coulissante à translation'], ['fixe', 'Châssis fixe'], ['guillotine', 'Ouvrant à guillotine'], ['basculant', 'Ouvrant basculant'], ['pivotant', 'Ouvrant pivotant']],
+  vitrage: [['simple', 'Simple vitrage'], ['double', 'Double vitrage standard'], ['vir', 'Double vitrage VIR'], ['triple', 'Triple vitrage']],
+  esth: [['clair', 'Clair'], ['imprime', 'Imprimé (ou granité)'], ['depoli', 'Dépoli'], ['teinte', 'Teinté']],
+  secu: [['non', 'Vitrage non sécurisé'], ['feuillete', 'Vitrage sécurisé (feuilleté standard) 44.2'], ['sp10', 'Vitrage de haute sécurité (anti-effraction renforcé) SP10'], ['trempe', 'Vitrage trempé thermiquement'], ['arme', 'Vitrage armé']],
+  pose: [['applique', 'Pose en applique'], ['tunnel', 'Pose en tunnel'], ['renovation', 'Pose en rénovation']],
+  volet: [['oui', 'Compris volet roulant'], ['non', 'Non compris volet roulant']],
+  ferm: [['vr-manuel', 'Volet roulant manuel'], ['vr-motor', 'Volet roulant motorisé'], ['vr-solaire', 'Volet roulant solaire'], ['vb-pvc', 'Volet battant ou coulissant PVC'], ['vb-alu', 'Volet battant ou coulissant alu'], ['vb-bois', 'Volet battant ou coulissant bois'], ['brise', 'Brise-soleil orientable'], ['screen', 'Store screen extérieur']],
+  moust: [['integree', 'Moustiquaire intégrée au volet'], ['independante', 'Moustiquaire indépendante']]
+};
+// Ouvrages de la bibliothèque proposés pour un bloc menuiserie extérieure (fenêtres et portes)
+function menusBlocOuvrages() {
+  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
+}
+// Options choisies d'un bloc, en texte pour la désignation du métré
+function libMenuiserie(m) {
+  return ['type', 'vantaux', 'ouvrant', 'vitrage', 'esth', 'secu', 'pose', 'volet', 'ferm', 'moust'].map(c => { const e = (ME_CHOIX[c] || []).find(([v]) => v === m[c]); return m[c] && e ? e[1] : ''; }).filter(Boolean).join(', ');
+}
+// Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
+function blocMenuiserie(p, m, k) {
+  const id = esc(p.id);
+  const sel = (champ, lib, vide) => `<div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">${lib}</div>${selCrayon('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), `<select data-nv="${id}|menu|${k}|${champ}" style="width:100%;min-width:0">${optCodes('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), ME_CHOIX[champ], m[champ] || '', vide)}</select>`)}</div>`;
+  return `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
+    ${sel('type', 'Type', '— choisir —')}
+    ${sel('vantaux', 'Nombre de vantaux', '— choisir —')}
+    ${sel('ouvrant', "Type d'ouvrant", '— choisir —')}
+    <div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">Dimensions L × H (cm)</div><span style="display:flex;gap:4px"><input data-nv="${id}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" placeholder="Larg." style="width:50%;min-width:0"><input data-nv="${id}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" placeholder="Haut." style="width:50%;min-width:0"></span></div>
+    ${sel('vitrage', 'Vitrage', '— choisir —')}
+    ${sel('esth', 'Esthétique', '— choisir —')}
+    ${sel('secu', 'Sécurité', '— choisir —')}
+    ${sel('pose', 'Type de pose', '— choisir —')}
+    ${sel('volet', 'Volet', '— choisir —')}
+    ${m.volet === 'oui' ? sel('ferm', 'Fermeture', '— choisir —') + sel('moust', 'Option fermeture', '— aucune —') : ''}
+    <div style="flex:1;min-width:200px;font-size:12px"><div style="margin-bottom:2px">Ouvrage de la bibliothèque</div>${selCrayon('me-ouv', 'Menuiserie : ouvrage', `<select data-nv="${id}|menu|${k}|ouv" style="width:100%;min-width:0">${optListeOuvrages('me-ouv', 'Menuiserie : ouvrage', () => menusBlocOuvrages(), m.ouv || '', '— choisir —')}</select>`)}</div>
+    <div style="font-size:12px"><div style="margin-bottom:2px">Nombre</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
+    <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
+}
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
@@ -1267,12 +1307,7 @@ function renderPiecesNv() {
       ${selCrayon('nv-revet', 'Revêtement de la pièce', `<select data-nv="${esc(p.id)}|revet" style="flex:1;min-width:0">${optDesignationsId('nv-revet', 'Revêtement de la pièce', () => revets.map(o => o.designation), p.revet, '— choisir —')}</select>`)}
     </div>
     <div style="margin-top:8px"><strong style="font-size:13px">Menuiseries extérieures</strong></div>
-    ${(p.menus || []).map((m, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">
-      <label style="font-size:12px">Larg. cm <input data-nv="${esc(p.id)}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" style="width:70px"></label>
-      <label style="font-size:12px">Haut. cm <input data-nv="${esc(p.id)}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" style="width:70px"></label>
-      <label style="font-size:12px">Nb <input data-nv="${esc(p.id)}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:50px"></label>
-      ${selCrayon('nv-menu-ouv', 'Menuiserie extérieure : type', `<select data-nv="${esc(p.id)}|menu|${k}|ouv" style="flex:1;min-width:0">${optDesignationsId('nv-menu-ouv', 'Menuiserie extérieure : type', () => menusPorteBaie().map(o => o.designation), m.ouv, 'Fenêtre (châssis)')}</select>`)}
-      <button type="button" class="btn small danger" data-nv-act="delmenu:${esc(p.id)}:${k}">✕</button></div>`).join('')}
+    ${(p.menus || []).map((m, k) => blocMenuiserie(p, m, k)).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Portes de passage fin de chantier (bloc porte)</strong></div>
     ${(p.blocs || []).map((bl, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
@@ -1376,13 +1411,13 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(f.l))} × ${fmt(num(f.h))} cm – ${nom}`, p.id);
     }
     for (const m of (p.menus || [])) {
-      const n = num(m.nb) || 1;
-      if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
-      const desM = estPorteBaie(m) ? BIB.ouvrages.find(o => o.id === m.ouv).designation : MENU_DESIG.ouvrant.PVC;
-      const o = ouvrageParDesig(desM);
-      if (!o) { manque.push(desM); continue; }
-      const v = { nombre: String(n) };
-      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm – ${nom}`, p.id);
+      if (!(num(m.l) > 0 && num(m.h) > 0)) continue;   // sans dimensions, rien n'est calculé
+      if (!m.ouv) { manque.push('Menuiserie extérieure : ouvrage non choisi (' + nom + ')'); continue; }
+      const o = BIB.ouvrages.find(x => x.id === m.ouv && !x.supprime);
+      if (!o) { manque.push('Menuiserie extérieure : ouvrage supprimé de la bibliothèque'); continue; }
+      const v = { nombre: String(num(m.nb) || 1) };
+      const opts = libMenuiserie(m);
+      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm${opts ? ' (' + opts + ')' : ''} – ${nom}`, p.id);
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
       const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(typePieceNv(p.nom)) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
@@ -2030,7 +2065,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   const liste = piecesNvDe(c);
   if (act === 'add') liste.push({ id: 'pn' + uid(), nom: '', surf: '', revet: '', menus: [], portes: '', app: {} });
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
-  else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ l: '', h: '', nb: '1' }); }
+  else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ id: 'me' + uid(), type: '', vantaux: '', ouvrant: '', l: '', h: '', vitrage: '', esth: '', secu: '', pose: '', volet: '', ferm: '', moust: '', ouv: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
   else if (act === 'addbloc') { const p = liste.find(x => x.id === id); if (p) (p.blocs = p.blocs || []).push({ dim: '83×204', dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: '1' }); }
   else if (act === 'delbloc') { const p = liste.find(x => x.id === id); if (p) p.blocs.splice(Number(k), 1); }
@@ -2045,6 +2080,7 @@ $('vConfig') && $('vConfig').addEventListener('change', e => {
   if (!t) return;
   const c = chantiers.find(x => x.id === courantId);
   if (c) majPieceNv(c, t.dataset.nv, t.value);
+  if (c && /\|menu\|\d+\|volet$/.test(t.dataset.nv)) renderPiecesNv();   // « Compris volet roulant » fait apparaître Fermeture
 });
 
 /* ============ Configurateur des pièces (électricité, plâtrerie, sols, plinthes) ============ */
