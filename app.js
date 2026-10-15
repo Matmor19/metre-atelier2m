@@ -1431,7 +1431,7 @@ function genererPiecesNv(c) {
     }
     for (const m of (p.menus || [])) {
       if (m.volet === 'oui' && m.ferm) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
-      if (!(num(m.l) > 0 && num(m.h) > 0)) continue;   // sans dimensions, rien n'est calculé
+      if (!(num(m.l) > 0 && num(m.h) > 0)) { if (m.type || m.ouv) manque.push('Menuiserie extérieure : dimensions L × H à saisir (' + nom + ')'); continue; }
       if (!m.ouv) { manque.push('Menuiserie extérieure : ouvrage non choisi (' + nom + ')'); continue; }
       const o = BIB.ouvrages.find(x => x.id === m.ouv && !x.supprime);
       if (!o) { manque.push('Menuiserie extérieure : ouvrage supprimé de la bibliothèque'); continue; }
@@ -1496,6 +1496,8 @@ function genererPiecesNv(c) {
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
+  if (uniques.some(d => d.startsWith('Menuiserie extérieure : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de la bibliothèque de chaque menuiserie extérieure (dernière case du bloc), sinon elle n\'est pas au métré.';
+  if (uniques.some(d => d.startsWith('Menuiserie extérieure : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
   if (uniques.length) return 'Pièces : ouvrage manquant dans la bibliothèque.';
   return nb ? 'Pièces régénérées.' : 'Pièces : aucune ligne.';
 }
