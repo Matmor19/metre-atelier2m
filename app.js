@@ -2074,10 +2074,13 @@ function surfacePiecesPlafond(c) { return piecesNvDe(c).filter(p => (typePieceNv
 function peiMursDetail(c) {
   const pl = platNvDe(c);
   const h = peiHauteur(c) || num(pl.hauteur);
-  const hD = num(pl.hauteurDoub) || h;
+  const hD = h;   // même hauteur que celle du bloc peinture (ou de la plâtrerie à défaut)
   const mlD = num(pl.doub.ml), mlC = num(pl.cloi.ml);
   return { h, hD, mlD, mlC, surfD: mlD * hD, surfC: mlC * h };
 }
+// Portes de passage (surface brute, une fois) et façades de placard (surface brute, une fois ici)
+function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, 0); }
+function facadesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0); }
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val, key, titre) {
   if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
@@ -2091,7 +2094,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : doublage brut + cloisons brutes × 2 (deux faces), moins les portes, placards et menuiseries extérieures (une fois). Portes et placards peints : surface × 2. Plafond : surface en m².</p>
+    <p class="muted">Murs : doublage × hauteur, moins les menuiseries extérieures. Cloisons : cloisonnement × hauteur, moins les portes de passage et les façades de placard (façades × 2), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
@@ -2128,11 +2131,16 @@ function genererPeinture(c) {
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
-      // Murs : doublage brut (une face) + cloisons brutes × 2 (deux faces), moins les portes et placards et les menuiseries extérieures (une fois)
-      const brut = mur.surfD + 2 * mur.surfC;
-      const deduit = portesFacadesBrutM2(c) + menuiseriesTotalM2(c);
-      const net = Math.max(0, brut - deduit);
-      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – doublage ${fmt(mur.surfD)} m² + cloisons 2 × ${fmt(mur.surfC)} m² = ${fmt(brut)} m², moins portes, placards et menuiseries ${fmt(deduit)} m²`);
+      // Murs : doublage × hauteur, moins les menuiseries extérieures
+      // Cloisons : cloisonnement × hauteur, moins les portes de passage et les façades de placard (façades × 2), puis × 2 (deux faces)
+      // Total : murs + cloisons
+      const menus = menuiseriesTotalM2(c);
+      const murNet = Math.max(0, mur.surfD - menus);
+      const portes = portesBrutM2(c), facades = facadesBrutM2(c);
+      const cloisNet = Math.max(0, mur.surfC - portes - 2 * facades);
+      const cloisDouble = cloisNet * 2;
+      const total = murNet + cloisDouble;
+      ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – murs ${fmt(mur.surfD)} m² − menuiseries ${fmt(menus)} m² = ${fmt(murNet)} m² ; cloisons ${fmt(mur.surfC)} m² − portes ${fmt(portes)} m² − façades ${fmt(2 * facades)} m² = ${fmt(cloisNet)} m² × 2 = ${fmt(cloisDouble)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction

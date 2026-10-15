@@ -231,7 +231,7 @@ ATTENDU = {
     'platStale': 0,
     'peiStale': 0,
     'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'metreIntact': 1},
-    'pei': {'murs': 63.73, 'plafond': 12},
+    'pei': {'murs': 47.63, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
     'pieceNv': {'maison': 'OUV-0609=1 OUV-0618=1', 'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 35, 'nApresRegeneration': 35, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
