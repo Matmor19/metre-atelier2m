@@ -2068,6 +2068,8 @@ function menuiseriesTotalM2(c) {
   return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => b + (num(m.l) > 0 && num(m.h) > 0 ? num(m.l) * num(m.h) / 10000 * (num(m.nb) || 1) : 0), 0), 0);
 }
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
+// Plafond : somme des surfaces des pièces du configurateur (terrasse exclue), utilisée si le champ est vide
+function surfacePiecesPlafond(c) { return piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)').reduce((a, p) => a + num(p.surf), 0); }
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val, key, titre) {
   if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
@@ -2096,7 +2098,7 @@ function renderPeinture() {
       ${selCrayon('pei-portesFacades-ouv', 'Peinture : portes et placards', `<select data-pei="portesFacades|ouv" style="flex:1;min-width:0">${optPei(/^Peinture/i, q.portesFacades.ouv, 'pei-portesFacades-ouv', 'Peinture : portes et placards')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
-      <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" style="width:80px"></label>
+      <label style="font-size:12px">Surface m² <input data-pei="plafond|m2" inputmode="decimal" value="${esc(q.plafond.m2 || '')}" placeholder="${esc(fmt(surfacePiecesPlafond(c)))}" style="width:80px"></label> <span class="muted" style="font-size:12px">vide = total des pièces : ${fmt(surfacePiecesPlafond(c))} m²</span>
       ${selCrayon('pei-plafond-ouv', 'Peinture : plafond', `<select data-pei="plafond|ouv" style="flex:1;min-width:0">${optPei(/^Peinture plafond/i, q.plafond.ouv, 'pei-plafond-ouv', 'Peinture : plafond')}</select>`)}</div>
     <div class="row" style="gap:8px;margin-top:10px"><button type="button" class="btn" data-pei-act="gen">Ajouter au métré</button></div>
     <p id="peiStatut" class="muted" style="font-size:13px"></p></div>`;
@@ -2131,7 +2133,7 @@ function genererPeinture(c) {
     if (!o) manque.push('portes et placards');
     else ajoute(o, { nombre: '1', cote1: String(pf * 2), cote2: '1' }, `${o.designation} – portes et façades de placard ${fmt(pf)} m² × 2`);
   }
-  const m2 = num(q.plafond.m2);
+  const m2 = num(q.plafond.m2) || surfacePiecesPlafond(c);
   if (m2 > 0) {
     const o = BIB.ouvrages.find(x => x.id === q.plafond.ouv && !x.supprime);
     if (!o) manque.push('plafond');
