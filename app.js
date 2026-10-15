@@ -2070,6 +2070,14 @@ function menuiseriesTotalM2(c) {
 // Linéaire des murs à peindre : somme des linéaires saisis dans chaque pièce du configurateur de pièces
 // Plafond : somme des surfaces des pièces du configurateur (terrasse exclue), utilisée si le champ est vide
 function surfacePiecesPlafond(c) { return piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)').reduce((a, p) => a + num(p.surf), 0); }
+// Murs à peindre : doublage (une face) et cloisons (deux faces), hauteurs du bloc peinture ou, à défaut, de la plâtrerie
+function peiMursDetail(c) {
+  const pl = platNvDe(c);
+  const h = peiHauteur(c) || num(pl.hauteur);
+  const hD = num(pl.hauteurDoub) || h;
+  const mlD = num(pl.doub.ml), mlC = num(pl.cloi.ml);
+  return { h, hD, mlD, mlC, surfD: mlD * hD, surfC: mlC * h };
+}
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val, key, titre) {
   if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
@@ -2083,14 +2091,14 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : linéaire de chaque pièce × hauteur sous plafond de ce bloc, moins les portes et placards peints (surface × 2) et toutes les menuiseries extérieures. Plafond : surface en m².</p>
+    <p class="muted">Murs : doublage brut + cloisons brutes × 2 (deux faces), moins les portes, placards et menuiseries extérieures (une fois). Portes et placards peints : surface × 2. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Murs</strong>
-      <span style="font-size:13px">Linéaire repris des pièces : ${fmt(peiLineaire(c))} ml</span>
+      <span style="font-size:13px">Doublage ${fmt(peiMursDetail(c).surfD)} m² + cloisons ${fmt(peiMursDetail(c).surfC)} m² × 2 (linéaires de la plâtrerie)</span>
       ${selCrayon('pei-murs-ouv', 'Peinture : murs', `<select data-pei="murs|ouv" style="flex:1;min-width:0">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv, 'pei-murs-ouv', 'Peinture : murs')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Portes et placards</strong>
@@ -2114,16 +2122,17 @@ function genererPeinture(c) {
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', peiNv: true, cree: new Date().toISOString() });
     nb++;
   };
-  const ml = peiLineaire(c);
-  const sansHauteur = ml > 0 && !(h > 0);
-  if (ml > 0 && h > 0) {
+  const mur = peiMursDetail(c);
+  const sansHauteur = (mur.mlD > 0 && !(mur.hD > 0)) || (mur.mlC > 0 && !(mur.h > 0));
+  if ((mur.surfD + mur.surfC) > 0 && !sansHauteur) {
     const o = BIB.ouvrages.find(x => x.id === q.murs.ouv && !x.supprime);
     if (!o) manque.push('murs');
     else {
-      // Murs : linéaire des pièces × hauteur du bloc, moins les portes et placards peints (surface × 2) et les menuiseries extérieures
-      const deduit = portesFacadesBrutM2(c) * 2 + menuiseriesTotalM2(c);
-      const net = Math.max(0, ml * h - deduit);
-      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – ${fmt(ml)} ml × ${fmt(h)} m, moins portes, placards et menuiseries ${fmt(deduit)} m²`);
+      // Murs : doublage brut (une face) + cloisons brutes × 2 (deux faces), moins les portes et placards et les menuiseries extérieures (une fois)
+      const brut = mur.surfD + 2 * mur.surfC;
+      const deduit = portesFacadesBrutM2(c) + menuiseriesTotalM2(c);
+      const net = Math.max(0, brut - deduit);
+      ajoute(o, { nombre: '1', cote1: String(net), cote2: '1' }, `${o.designation} – doublage ${fmt(mur.surfD)} m² + cloisons 2 × ${fmt(mur.surfC)} m² = ${fmt(brut)} m², moins portes, placards et menuiseries ${fmt(deduit)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
