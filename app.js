@@ -1254,6 +1254,7 @@ const MOUST_OUV = { integree: 'OUV-0183' };
 // Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
 const ME_CHOIX = {
   type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre']],
+  mat: [['pvc', 'PVC'], ['alu', 'Aluminium'], ['bois', 'Bois']],
   vantaux: [['1', '1 vantail'], ['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']],
   ouvrant: [['francaise', 'Ouvrant à la française'], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', 'Oscillo-battant'], ['abattant', 'Abattant'], ['coulissante', 'Coulissante'], ['galandage', 'Coulissante à galandage'], ['translation', 'Coulissante à translation'], ['fixe', 'Châssis fixe'], ['guillotine', 'Ouvrant à guillotine'], ['basculant', 'Ouvrant basculant'], ['pivotant', 'Ouvrant pivotant']],
   vitrage: [['simple', 'Simple vitrage'], ['double', 'Double vitrage standard'], ['vir', 'Double vitrage VIR'], ['triple', 'Triple vitrage']],
@@ -1267,6 +1268,12 @@ const ME_CHOIX = {
 // Ouvrages de la bibliothèque proposés pour un bloc menuiserie extérieure (fenêtres et portes)
 function menusBlocOuvrages() {
   return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
+}
+// Ouvrage de base choisi automatiquement selon type + matériau + nombre de vantaux (pas de combinaisons en bibliothèque)
+const ME_BASE = { 'fen-pvc-1': 'OUV-0162', 'fen-pvc-2': 'OUV-0163', 'pf-pvc-1': 'OUV-0164', 'pf-pvc-2': 'OUV-0165', 'fen-alu-1': 'OUV-0166', 'fen-alu-2': 'OUV-0167', 'fen-bois-1': 'OUV-0168' };
+function baseMenuiserie(m) {
+  const id = ME_BASE[`${m.type}-${m.mat}-${m.vantaux}`];
+  return id ? BIB.ouvrages.find(x => x.id === id && !x.supprime) || null : null;
 }
 // Texte des choix pour la désignation du métré (ex. « Fenêtre 2 vantaux, ouvrant à la française, 100 x 200 cm, simple vitrage… »)
 const ME_TXT = {
@@ -1291,6 +1298,7 @@ function blocMenuiserie(p, m, k) {
   const sel = (champ, lib, vide) => `<div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">${lib}</div>${selCrayon('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), `<select data-nv="${id}|menu|${k}|${champ}" style="width:100%;min-width:0">${optCodes('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), ME_CHOIX[champ], m[champ] || '', vide)}</select>`)}</div>`;
   return `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
     ${sel('type', 'Type', '— choisir —')}
+    ${sel('mat', 'Matériau', '— choisir —')}
     ${sel('vantaux', 'Nombre de vantaux', '— choisir —')}
     ${sel('ouvrant', "Type d'ouvrant", '— choisir —')}
     <div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">Dimensions L × H (cm)</div><span style="display:flex;gap:4px"><input data-nv="${id}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" placeholder="Larg." style="width:50%;min-width:0"><input data-nv="${id}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" placeholder="Haut." style="width:50%;min-width:0"></span></div>
@@ -1300,11 +1308,10 @@ function blocMenuiserie(p, m, k) {
     ${sel('pose', 'Type de pose', '— choisir —')}
     ${sel('volet', 'Volet', '— choisir —')}
     ${m.volet === 'oui' ? sel('ferm', 'Fermeture', '— choisir —') + sel('moust', 'Option fermeture', '— aucune —') : ''}
-    <div style="flex:1;min-width:200px;font-size:12px"><div style="margin-bottom:2px">Ouvrage de la bibliothèque</div>${selCrayon('me-ouv', 'Menuiserie : ouvrage', `<select data-nv="${id}|menu|${k}|ouv" style="width:100%;min-width:0">${optListeOuvrages('me-ouv', 'Menuiserie : ouvrage', () => menusBlocOuvrages(), m.ouv || '', '— choisir —')}</select>`)}</div>
     <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }
-function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
+function estPorteBaie(m) { const b = baseMenuiserie(m); return !!b && menusPorteBaie().some(o => o.id === b.id); }
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
   if (!host) return;
@@ -1458,10 +1465,10 @@ function genererPiecesNv(c) {
     }
     for (const m of (p.menus || [])) {
       if (m.volet === 'oui' && m.ferm) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
-      if (!(num(m.l) > 0 && num(m.h) > 0)) { if (m.type || m.ouv) manque.push('Menuiserie extérieure : dimensions L × H à saisir (' + nom + ')'); continue; }
-      if (!m.ouv) { manque.push('Menuiserie extérieure : ouvrage non choisi (' + nom + ')'); continue; }
-      const o = BIB.ouvrages.find(x => x.id === m.ouv && !x.supprime);
-      if (!o) { manque.push('Menuiserie extérieure : ouvrage supprimé de la bibliothèque'); continue; }
+      if (!(num(m.l) > 0 && num(m.h) > 0)) { if (m.type || m.mat) manque.push('Menuiserie extérieure : dimensions L × H à saisir (' + nom + ')'); continue; }
+      if (!m.type || !m.mat || !m.vantaux) { manque.push('Menuiserie extérieure : type, matériau ou vantaux non choisis (' + nom + ')'); continue; }
+      const o = baseMenuiserie(m);
+      if (!o) { manque.push('Menuiserie extérieure : pas encore d\'ouvrage de base pour ' + (ME_TXT.type[m.type] || '') + ' ' + (ME_CHOIX.mat.find(([v]) => v === m.mat) || [])[1] + ' ' + (ME_TXT.vantaux[m.vantaux] || '') + ' (' + nom + ')'); continue; }
       const v = { nombre: String(num(m.nb) || 1) };
       ajoute(o, v, calcul(o, v), `${designationMenuiserie(m)} – ${nom}`, p.id);
     }
@@ -1511,7 +1518,8 @@ function genererPiecesNv(c) {
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
-  if (uniques.some(d => d.startsWith('Menuiserie extérieure : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de la bibliothèque de chaque menuiserie extérieure (dernière case du bloc), sinon elle n\'est pas au métré.';
+  if (uniques.some(d => d.startsWith('Menuiserie extérieure : type, matériau'))) return 'Pièces : choisis type, matériau et nombre de vantaux de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
+  if (uniques.some(d => d.startsWith('Menuiserie extérieure : pas encore'))) return 'Pièces : ' + uniques.find(d => d.startsWith('Menuiserie extérieure : pas encore')).replace('Menuiserie extérieure : ', '') + ' — à ajouter à la bibliothèque.';
   if (uniques.some(d => d.startsWith('Menuiserie extérieure : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque menuiserie extérieure, sinon elle n\'est pas au métré.';
   if (uniques.length) return 'Pièces : ouvrage manquant dans la bibliothèque.';
   return nb ? 'Pièces régénérées.' : 'Pièces : aucune ligne.';
