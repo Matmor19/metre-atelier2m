@@ -4387,10 +4387,11 @@ async function recupererChantiers(msgs) {
   for (const item of liste.chantiers) {
     const id = item.id;
     vus++; syncReq.libelle = 'Réception des chantiers';
-    if (x[id] && x[id].modifie) continue;
+    // Chantier modifié ici et pas encore envoyé : on le garde, sauf si l'autre appareil l'a supprimé
     const j = await post({ action: 'lire_chantier', id });
     const doc = j.ok ? j.chantier : null;
     if (!doc || (x[id] && x[id].maj === doc.maj)) continue;
+    if (x[id] && x[id].modifie && !doc.supprime) continue;
     const { lignes, ...meta } = doc;
     const i = chantiers.findIndex(c => c.id === id);
     if (i >= 0) chantiers[i] = meta; else chantiers.push(meta);
@@ -4398,6 +4399,7 @@ async function recupererChantiers(msgs) {
     x[id] = { maj: doc.maj, modifie: false, supprimeEnvoye: doc.supprime ? true : undefined };
     recus++;
     if (!doc.supprime) msgs.push((meta.nom || id) + ' : reçu de Drive');
+    else msgs.push((meta.nom || id) + ' : supprimé sur un autre appareil, retiré ici');
   }
   lsSet('chantiers', chantiers);
   syncEcrire(x);
