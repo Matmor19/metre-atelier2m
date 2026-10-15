@@ -1267,7 +1267,7 @@ function designationFacade(f) {
 }
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
 // Fermetures et occultations : ouvrage de la bibliothèque pour chaque choix (absent = à créer)
-const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vr-solaire': 'OUV-1745', 'vb-pvc': 'OUV-1746', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182' };
+const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vr-solaire': 'OUV-1745', 'vb-pvc': 'OUV-1746', 'vb-alu': 'OUV-0180', 'vb-bois': 'OUV-0179', 'brise': 'OUV-0592', 'screen': 'OUV-0182', 'banne': 'OUV-0181' };
 const MOUST_OUV = { integree: 'OUV-0183', independante: 'OUV-1747' };
 // Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
 const ME_CHOIX = {
@@ -1279,8 +1279,8 @@ const ME_CHOIX = {
   esth: [['clair', 'Clair'], ['imprime', 'Imprimé (ou granité)'], ['depoli', 'Dépoli'], ['teinte', 'Teinté']],
   secu: [['non', 'Vitrage non sécurisé'], ['feuillete', 'Vitrage sécurisé (feuilleté standard) 44.2'], ['sp10', 'Vitrage de haute sécurité (anti-effraction renforcé) SP10'], ['trempe', 'Vitrage trempé thermiquement'], ['arme', 'Vitrage armé']],
   pose: [['applique', 'Pose en applique'], ['tunnel', 'Pose en tunnel'], ['renovation', 'Pose en rénovation']],
-  volet: [['oui', 'Compris volet roulant'], ['non', 'Non compris volet roulant']],
-  ferm: [['vr-manuel', 'Volet roulant manuel'], ['vr-motor', 'Volet roulant motorisé'], ['vr-solaire', 'Volet roulant solaire'], ['vb-pvc', 'Volet battant ou coulissant PVC'], ['vb-alu', 'Volet battant ou coulissant alu'], ['vb-bois', 'Volet battant ou coulissant bois'], ['brise', 'Brise-soleil orientable'], ['screen', 'Store screen extérieur']],
+  volet: [['oui', 'Compris fermeture'], ['non', 'Non compris fermeture']],
+  ferm: [['vr-manuel', 'Volet roulant manuel'], ['vr-motor', 'Volet roulant motorisé'], ['vr-solaire', 'Volet roulant solaire'], ['vb-pvc', 'Volet battant ou coulissant PVC'], ['vb-alu', 'Volet battant ou coulissant alu'], ['vb-bois', 'Volet battant ou coulissant bois'], ['brise', 'Brise-soleil orientable'], ['screen', 'Store screen extérieur'], ['banne', 'Store banne']],
   moust: [['integree', 'Moustiquaire intégrée au volet'], ['independante', 'Moustiquaire indépendante']]
 };
 // Ouvrages de la bibliothèque proposés pour un bloc menuiserie extérieure (fenêtres et portes)
@@ -1326,8 +1326,9 @@ function blocMenuiserie(p, m, k) {
     ${sel('esth', 'Esthétique', '— choisir —')}
     ${sel('secu', 'Sécurité', '— choisir —')}
     ${sel('pose', 'Type de pose', '— choisir —')}
-    ${sel('volet', 'Volet', '— choisir —')}
-    ${m.volet === 'oui' ? sel('ferm', 'Fermeture', '— choisir —') + sel('moust', 'Option fermeture', '— aucune —') : ''}
+    ${sel('volet', 'Fermeture', '— choisir —')}
+    ${m.volet === 'oui' ? sel('ferm', 'Type de fermeture', '— choisir —') : ''}
+    ${sel('moust', 'Moustiquaire', '— aucune —')}
     <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }
@@ -1498,7 +1499,7 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${designationFacade(f)} – ${nom}`, p.id);
     }
     for (const m of (p.menus || [])) {
-      if (m.volet === 'oui' && m.ferm) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
+      if ((m.volet === 'oui' && m.ferm) || m.moust) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
       if (!(num(m.l) > 0 && num(m.h) > 0)) { if (m.type || m.mat) manque.push('Menuiserie extérieure : dimensions L × H à saisir (' + nom + ')'); continue; }
       if (!m.type || !m.mat || !m.vantaux) { manque.push('Menuiserie extérieure : type, matériau ou vantaux non choisis (' + nom + ')'); continue; }
       const o = baseMenuiserie(m);
@@ -1534,6 +1535,8 @@ function genererPiecesNv(c) {
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
   for (const { m, nom, pid } of volets) {
     const n = num(m.nb) || 1, L_ = num(m.l), H_ = num(m.h);
+    if (!(L_ > 0 && H_ > 0)) { manque.push('Fermeture : dimensions L × H à saisir (' + nom + ')'); continue; }
+    if (m.volet === 'oui' && m.ferm) {
     const lib = (ME_CHOIX.ferm.find(([v]) => v === m.ferm) || [])[1] || m.ferm;
     const idF = FERM_OUV[m.ferm], oF = idF ? BIB.ouvrages.find(x => x.id === idF && !x.supprime) : null;
     if (!oF) manque.push('Fermeture : ' + lib + ' (pas encore d\'ouvrage dans la bibliothèque)');
@@ -1549,10 +1552,13 @@ function genererPiecesNv(c) {
         ajoute(oE, vE, calcul(oE, vE), `${oE.designation} – ${nom}`, pid);
       }
     }
+    }
     if (m.moust) {
       const libM = (ME_CHOIX.moust.find(([v]) => v === m.moust) || [])[1] || m.moust;
-      const idM = MOUST_OUV[m.moust], oM = idM ? BIB.ouvrages.find(x => x.id === idM && !x.supprime) : null;
-      if (!oM) manque.push('Moustiquaire : ' + libM + ' (pas encore d\'ouvrage dans la bibliothèque)');
+      const integreeSansFermeture = m.moust === 'integree' && !(m.volet === 'oui' && m.ferm);
+      const idM = integreeSansFermeture ? null : MOUST_OUV[m.moust], oM = idM ? BIB.ouvrages.find(x => x.id === idM && !x.supprime) : null;
+      if (integreeSansFermeture) manque.push('Moustiquaire intégrée : choisis une fermeture (Compris fermeture) ou la moustiquaire indépendante (' + nom + ')');
+      else if (!oM) manque.push('Moustiquaire : ' + libM + ' (pas encore d\'ouvrage dans la bibliothèque)');
       else { const v = { nombre: String(n) }; ajoute(oM, v, calcul(oM, v), `${oM.designation} (${fmt(L_)} × ${fmt(H_)} cm) – ${nom}`, pid, false, 'ferm'); }
     }
   }
@@ -1560,6 +1566,7 @@ function genererPiecesNv(c) {
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
   if (uniques.some(d => d.startsWith('Bloc porte : ouvrage non choisi'))) return 'Pièces : choisis l\'ouvrage de chaque bloc porte (dernière case de la liste).';
+  if (uniques.some(d => d.startsWith('Moustiquaire intégrée'))) return 'Pièces : la moustiquaire intégrée demande une fermeture choisie ; sinon choisis la moustiquaire indépendante.';
   if (uniques.some(d => d.startsWith('Façade de placard : choix incomplets'))) return 'Pièces : termine les choix de chaque façade de placard (type, structure, finition, pose, amortisseur), sinon elle n\'est pas au métré.';
   if (uniques.some(d => d.startsWith('Façade de placard : nombre de vantaux'))) return 'Pièces : choisis le nombre de vantaux des façades battantes ou pliantes.';
   if (uniques.some(d => d.startsWith('Façade de placard : dimensions'))) return 'Pièces : saisis les dimensions L × H de chaque façade de placard, sinon elle n\'est pas au métré.';
