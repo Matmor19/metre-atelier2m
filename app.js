@@ -2070,12 +2070,16 @@ function menuiseriesTotalM2(c) {
 // Plafond : somme des surfaces des pièces du configurateur (terrasse exclue), utilisée si le champ est vide
 function surfacePiecesPlafond(c) { return piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)').reduce((a, p) => a + num(p.surf), 0); }
 // Murs à peindre : doublage (une face) et cloisons (deux faces), hauteurs du bloc peinture ou, à défaut, de la plâtrerie
+// Si le linéaire est vide, la surface m² saisie dans la plâtrerie est prise telle quelle (sans hauteur nécessaire)
 function peiMursDetail(c) {
   const pl = platNvDe(c);
   const h = peiHauteur(c) || num(pl.hauteur);
   const hD = h;   // même hauteur que celle du bloc peinture (ou de la plâtrerie à défaut)
   const mlD = num(pl.doub.ml), mlC = num(pl.cloi.ml);
-  return { h, hD, mlD, mlC, surfD: mlD * hD, surfC: mlC * h };
+  const m2D = num(pl.doub.m2), m2C = num(pl.cloi.m2);
+  const surfD = mlD > 0 ? mlD * hD : m2D;
+  const surfC = mlC > 0 ? mlC * h : m2C;
+  return { h, hD, mlD, mlC, surfD, surfC };
 }
 // Portes de passage (surface brute, une fois) et façades de placard (surface brute, une fois ici)
 function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, 0); }
@@ -2100,7 +2104,7 @@ function renderPeinture() {
       <span class="muted" style="font-size:12px">(vide = hauteur du bloc plâtrerie)</span></div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Murs</strong>
-      <span style="font-size:13px">Doublage ${fmt(peiMursDetail(c).surfD)} m² + cloisons ${fmt(peiMursDetail(c).surfC)} m² × 2 (linéaires de la plâtrerie)</span>
+      <span style="font-size:13px">Doublage ${fmt(peiMursDetail(c).surfD)} m² + cloisons ${fmt(peiMursDetail(c).surfC)} m² × 2 (linéaires ou surfaces saisis dans la plâtrerie)</span>
       ${selCrayon('pei-murs-ouv', 'Peinture : murs', `<select data-pei="murs|ouv" style="flex:1;min-width:0">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv, 'pei-murs-ouv', 'Peinture : murs')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Portes et placards</strong>
