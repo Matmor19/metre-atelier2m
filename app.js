@@ -1252,7 +1252,7 @@ function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Fa�
 // Façades de placard : choix du configurateur (comme les menuiseries). Ouvrage de base automatique : coulissant ou battant
 const FA_CHOIX = {
   vantaux: [['1', '1 vantail'], ['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']],   // battant ou pliant uniquement
-  ouvrant: [['francaise', 'Ouvrant à la française'], ['coulissante', 'Coulissante'], ['acordeon', 'Acodéon']],
+  ouvrant: [['francaise', 'Ouvrant à la française'], ['coulissante', 'Coulissante'], ['acordeon', 'Accordéon']],
   structure: [['m10', 'Panneau mélaminé standard 10 mm'], ['m12', 'Panneau mélaminé standard 12 mm'], ['m18', 'Panneau mélaminé épais 18 mm'], ['m19', 'Panneau mélaminé épais 19 mm'], ['mdf', 'Panneau MDF à peindre'], ['persienne', 'Persienne ajourée']],
   finition: [['uni', 'Décor uni (blanc, gris, anthracite)'], ['bois', 'Décor imitation bois (chêne, aspect brut, noyer)'], ['argent', 'Miroir argenté'], ['teinte', 'Miroir teinté (bronze ou gris)'], ['laque', 'Verre laqué']],
   pose: [['entre', 'Pose entre murs'], ['fileur', 'Pose avec fileur latéral'], ['joue', 'Pose avec joue de terminaison'], ['rampant', 'Pose sous rampant']],
@@ -1260,7 +1260,7 @@ const FA_CHOIX = {
 };
 const FA_BASE = { coulissante: 'OUV-0755', francaise: 'OUV-0880', acordeon: 'OUV-0880' };
 function designationFacade(f) {
-  const txt = (champ, v) => (FA_CHOIX[champ].find(([x]) => x === v) || [])[1] || '';
+  const txt = (champ, v) => libelleFixe('fa-' + champ, v, (FA_CHOIX[champ].find(([x]) => x === v) || [])[1] || '');
   const battant = f.ouvrant !== 'coulissante';
   const dims = num(f.l) > 0 && num(f.h) > 0 ? `${fmt(num(f.l))} x ${fmt(num(f.h))} cm` : '';
   return ['Façade de placard' + (battant && f.vantaux ? ' ' + txt('vantaux', f.vantaux).toLowerCase() : ''), txt('ouvrant', f.ouvrant), dims, txt('structure', f.structure), txt('finition', f.finition), txt('pose', f.pose), txt('amort', f.amort)].filter(Boolean).join(', ');
@@ -1307,10 +1307,9 @@ const ME_TXT = {
 };
 // Désignation du métré composée à partir des choix du bloc ; volet, fermeture et moustiquaire ont leurs propres lignes
 function designationMenuiserie(m) {
-  const t = ME_TXT.type[m.type] || '', v = ME_TXT.vantaux[m.vantaux] || '';
+  const tx = (c, v) => libelleFixe('me-' + c, v, (ME_TXT[c] || {})[v] || '');
   const dims = num(m.l) > 0 && num(m.h) > 0 ? `${fmt(num(m.l))} x ${fmt(num(m.h))} cm` : '';
-  const reste = ['ouvrant', 'vitrage', 'esth', 'secu', 'pose'].map(c => ME_TXT[c][m[c]] || '');
-  return [[t, v].filter(Boolean).join(' '), ...[ME_TXT.ouvrant[m.ouvrant] || ''], dims, ...reste.slice(1)].filter(Boolean).join(', ');
+  return [[tx('type', m.type), tx('vantaux', m.vantaux)].filter(Boolean).join(' '), tx('ouvrant', m.ouvrant), dims, tx('vitrage', m.vitrage), tx('esth', m.esth), tx('secu', m.secu), tx('pose', m.pose)].filter(Boolean).join(', ');
 }
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
 function blocMenuiserie(p, m, k) {
@@ -3284,7 +3283,9 @@ const LISTES_CONF = {
   protection: { titre: 'Protection des murs enterrés (soubassement)', base: ficheListeProtection }
 };
 function listesReglages() { const L = lsGet('listes', {}); return L && typeof L === 'object' ? L : {}; }
-function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: Array.isArray(r.lots) ? r.lots : null, biblio: !!r.biblio, titre: r.titre || '' }; }
+function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { retires: r.retires || [], ajoutes: r.ajoutes || [], lots: Array.isArray(r.lots) ? r.lots : null, biblio: !!r.biblio, titre: r.titre || '', libelles: r.libelles || {} }; }
+// Libellé d'une valeur fixe : celui qui a été modifié dans la liste, sinon le libellé d'origine
+function libelleFixe(cle, v, defaut) { const o = listeReglage(cle).libelles[v]; return o || defaut; }
 // Liste « bibliothèque » : une liste à valeurs fixes peut être remplacée par les ouvrages de lots choisis
 function designationsTousLots(lots) { return [...new Set(BIB.ouvrages.filter(o => !o.supprime && lots.includes(o.lot)).map(o => o.designation))]; }
 function enregistrerListeBiblio(cle) {
@@ -3513,7 +3514,7 @@ function valeursFixes(cle, defauts) {
   const r = listeReglage(cle);
   if (r.biblio) { enregistrerListeBiblio(cle); return listeEffective(cle).map(d => [d, d]); }
   retirerListeBiblio(cle);
-  return [...defauts, ...r.ajoutes.map(a => [a.v, a.t])].filter(([v]) => !r.retires.includes(v));
+  return [...defauts.map(([v, t]) => [v, r.libelles[v] || t]), ...r.ajoutes.map(a => [a.v, a.t])].filter(([v]) => !r.retires.includes(v));
 }
 let listeValeurCle = null;
 function ouvrirGestionValeurs(cle, titre) {
@@ -3538,6 +3539,17 @@ function ouvrirGestionValeurs(cle, titre) {
           }
           a.des = d;
         } else a.src = e.target.value;
+        sauverReglageEtMessage(listeValeurCle, r, 'gvMsg');
+        return;
+      }
+      const lib = e.target.closest('input[data-libelle]');
+      if (lib) {
+        const r = listeReglage(listeValeurCle), v = lib.dataset.libelle, texte = lib.value.trim();
+        const a = r.ajoutes.find(x => x.v === v);
+        const d = (FIXES_DEFAUTS[listeValeurCle] || []).find(([x]) => x === v);
+        if (a) { if (texte) a.t = texte; }
+        else if (!texte || (d && texte === d[1])) delete r.libelles[v];
+        else r.libelles[v] = texte;
         sauverReglageEtMessage(listeValeurCle, r, 'gvMsg');
         return;
       }
@@ -3612,14 +3624,15 @@ function rendreGestionValeurs(seulLaListe) {
     </div>`;
   const ligne = (v, t, ajout) => {
     const a = ajout ? r.ajoutes.find(x => x.v === v) : null;
-    return `<div style="border-bottom:1px solid #eee;padding:4px 0"><label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" data-v="${esc(v)}" ${r.retires.includes(v) ? '' : 'checked'} style="width:16px;height:16px;margin:0;flex:0 0 16px;accent-color:#7a5a00"><span style="flex:1">${esc(t)}</span>${ajout ? `<button type="button" data-supprajout="${esc(v)}" title="Supprimer cette valeur" style="border:0;background:none;cursor:pointer;color:#a33">✕</button>` : ''}</label>${a ? lienLigne(a) : ''}</div>`;
+    const libelle = `<input data-libelle="${esc(v)}" value="${esc(t)}" title="Modifier le libellé" style="flex:1;min-width:0;padding:4px;font-size:14px">`;
+    return `<div style="border-bottom:1px solid #eee;padding:4px 0"><div style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" data-v="${esc(v)}" ${r.retires.includes(v) ? '' : 'checked'} style="width:16px;height:16px;margin:0;flex:0 0 16px;accent-color:#7a5a00">${libelle}${ajout ? `<button type="button" data-supprajout="${esc(v)}" title="Supprimer cette valeur" style="border:0;background:none;cursor:pointer;color:#a33">✕</button>` : ''}</div>${a ? lienLigne(a) : ''}</div>`;
   };
   const contenu = blocSourceListe(cle, r) + (r.biblio ? '' : `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
       <button type="button" class="btn small sec" id="gvToutCocher">Tout cocher</button>
       <button type="button" class="btn small danger" id="gvToutDecocher">Tout décocher</button>
     </div>
     <div style="font-size:12px;color:#6b5a7a;margin:6px 0">Cochée = proposée dans la liste. Décocher ne fait pas disparaître la valeur de cette fenêtre.</div>
-    ${defauts.map(([v, t]) => ligne(v, t, false)).join('')}
+    ${defauts.map(([v, t]) => ligne(v, r.libelles[v] || t, false)).join('')}
     ${r.ajoutes.map(a => ligne(a.v, a.t, true)).join('')}`);
   if (seulLaListe && $('gvListe')) { $('gvListe').innerHTML = contenu; return; }
   ov.innerHTML = `<div style="background:#fff;color:#222;border-radius:10px;max-width:560px;width:100%;padding:16px;margin:auto">
