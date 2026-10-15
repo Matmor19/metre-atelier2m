@@ -1268,10 +1268,22 @@ const ME_CHOIX = {
 function menusBlocOuvrages() {
   return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
 }
-// Options choisies d'un bloc, en texte pour la désignation du métré
-function libMenuiserie(m) {
-  // Volet, fermeture et moustiquaire ont leurs propres lignes au métré : pas répétés ici
-  return ['type', 'vantaux', 'ouvrant', 'vitrage', 'esth', 'secu', 'pose'].map(c => { const e = (ME_CHOIX[c] || []).find(([v]) => v === m[c]); return m[c] && e ? e[1] : ''; }).filter(Boolean).join(', ');
+// Texte des choix pour la désignation du métré (ex. « Fenêtre 2 vantaux, ouvrant à la française, 100 x 200 cm, simple vitrage… »)
+const ME_TXT = {
+  type: { fen: 'Fenêtre', pf: 'Porte-fenêtre' },
+  vantaux: { '1': '1 vantail', '2': '2 vantaux', '3': '3 vantaux', '4': '4 vantaux' },
+  ouvrant: { francaise: 'ouvrant à la française', anglaise: "ouvrant à l'anglaise", oscillo: 'oscillo-battant', abattant: 'abattant', coulissante: 'coulissante', galandage: 'coulissante à galandage', translation: 'coulissante à translation', fixe: 'châssis fixe', guillotine: 'ouvrant à guillotine', basculant: 'ouvrant basculant', pivotant: 'ouvrant pivotant' },
+  vitrage: { simple: 'simple vitrage', double: 'double vitrage standard', vir: 'double vitrage VIR', triple: 'triple vitrage' },
+  esth: { clair: 'clair', imprime: 'imprimé (ou granité)', depoli: 'dépoli', teinte: 'teinté' },
+  secu: { non: 'non sécurisé', feuillete: 'vitrage feuilleté 44.2', sp10: 'vitrage haute sécurité SP10', trempe: 'vitrage trempé', arme: 'vitrage armé' },
+  pose: { applique: 'pose en applique', tunnel: 'pose en tunnel', renovation: 'pose en rénovation' }
+};
+// Désignation du métré composée à partir des choix du bloc ; volet, fermeture et moustiquaire ont leurs propres lignes
+function designationMenuiserie(m) {
+  const t = ME_TXT.type[m.type] || '', v = ME_TXT.vantaux[m.vantaux] || '';
+  const dims = num(m.l) > 0 && num(m.h) > 0 ? `${fmt(num(m.l))} x ${fmt(num(m.h))} cm` : '';
+  const reste = ['ouvrant', 'vitrage', 'esth', 'secu', 'pose'].map(c => ME_TXT[c][m[c]] || '');
+  return [[t, v].filter(Boolean).join(' '), ...[ME_TXT.ouvrant[m.ouvrant] || ''], dims, ...reste.slice(1)].filter(Boolean).join(', ');
 }
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
 function blocMenuiserie(p, m, k) {
@@ -1289,7 +1301,7 @@ function blocMenuiserie(p, m, k) {
     ${sel('volet', 'Volet', '— choisir —')}
     ${m.volet === 'oui' ? sel('ferm', 'Fermeture', '— choisir —') + sel('moust', 'Option fermeture', '— aucune —') : ''}
     <div style="flex:1;min-width:200px;font-size:12px"><div style="margin-bottom:2px">Ouvrage de la bibliothèque</div>${selCrayon('me-ouv', 'Menuiserie : ouvrage', `<select data-nv="${id}|menu|${k}|ouv" style="width:100%;min-width:0">${optListeOuvrages('me-ouv', 'Menuiserie : ouvrage', () => menusBlocOuvrages(), m.ouv || '', '— choisir —')}</select>`)}</div>
-    <div style="font-size:12px"><div style="margin-bottom:2px">Nombre</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
+    <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }
 function estPorteBaie(m) { return !!m.ouv && menusPorteBaie().some(o => o.id === m.ouv); }
@@ -1424,8 +1436,7 @@ function genererPiecesNv(c) {
       const o = BIB.ouvrages.find(x => x.id === m.ouv && !x.supprime);
       if (!o) { manque.push('Menuiserie extérieure : ouvrage supprimé de la bibliothèque'); continue; }
       const v = { nombre: String(num(m.nb) || 1) };
-      const opts = libMenuiserie(m);
-      ajoute(o, v, calcul(o, v), `${o.designation} ${fmt(num(m.l))} × ${fmt(num(m.h))} cm${opts ? ' (' + opts + ')' : ''} – ${nom}`, p.id);
+      ajoute(o, v, calcul(o, v), `${designationMenuiserie(m)} – ${nom}`, p.id);
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
       const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(typePieceNv(p.nom)) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
