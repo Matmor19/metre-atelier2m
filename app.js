@@ -5801,6 +5801,14 @@ window.addEventListener('storage', e => {
   compterLignes();
 });
 
+// Hauteur de l'en-tête (il peut passer sur deux lignes) : la barre du configurateur se fige juste en dessous
+function majHauteurEntete() {
+  const h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px');
+}
+window.addEventListener('resize', majHauteurEntete);
+if (window.ResizeObserver && document.querySelector('header')) new ResizeObserver(majHauteurEntete).observe(document.querySelector('header'));
+majHauteurEntete();
 /* ============ Démarrage ============ */
 // Remise à zéro unique du chantier « test Claude » : toutes ses lignes sont effacées, le chantier est gardé
 function remiseAZeroTestClaude() {
