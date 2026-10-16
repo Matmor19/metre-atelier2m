@@ -928,12 +928,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Dallage béton sur terre-plein (épaisseur 12 cm)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0045",
@@ -952,7 +953,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0046",
@@ -971,7 +973,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0047",
@@ -990,8 +993,9 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "plan_hourdis"
+      "version": 2,
+      "qte": "plan_hourdis",
+      "archive": true
     },
     {
       "id": "OUV-0048",
@@ -9478,7 +9482,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0541",
@@ -9497,7 +9502,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0542",
@@ -13826,8 +13832,9 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "plan_dalle"
+      "version": 2,
+      "qte": "plan_dalle",
+      "archive": true
     },
     {
       "id": "OUV-0773",
@@ -28635,8 +28642,248 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1748",
+      "lot": "gros-oeuvre",
+      "designation": "Dallage sur terre-plein (Sans isolation)",
+      "detail": "Comprenant le hérisson de 20 cm compacté, le film polyane, l'armature ST25C et la dalle béton C25/30 de 12 cm.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1749",
+      "lot": "gros-oeuvre",
+      "designation": "Dallage sur terre-plein (Avec isolation continue sous dalle)",
+      "detail": "Comprenant le hérisson de 20 cm compacté, le film polyane, l'armature ST25C et la dalle béton C25/30 de 12 cm, incluant la fourniture et pose de panneaux isolants rigides de type XPS/PU (R ≥ 4,00 m².K/W) posés sur lit de sable sous le polyane.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1750",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher sur vide sanitaire (Sans isolation)",
+      "detail": "Fourniture et pose de poutrelles béton armé/précontraint, d'entrevous borgnes de coffrage (béton ou plastique) et coulage de la table de compression.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1751",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher sur vide sanitaire (Avec isolation par entrevous isolants à languette)",
+      "detail": "Fourniture et pose de poutrelles béton armé/précontraint, d'entrevous en polystyrène expansé (PSE) avec languettes sous-poutrelles continues pour traitement thermique complet (Up ≤ 0,23 W/m².K ou R ≥ 4,00 m².K/W).",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1752",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher sur sous-sol / cave non chauffée (Sans isolation)",
+      "detail": "Structure porteuse de type poutrelles/entrevous de coffrage ou prédalles avec armatures de renfort conformes aux Eurocodes 2.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1753",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher sur sous-sol / cave non chauffée (Avec isolation en sous-face)",
+      "detail": "Structure porteuse de type poutrelles/entrevous de coffrage ou prédalles avec armatures de renfort conformes aux Eurocodes 2. Fixation mécanique en sous-face par chevilles étoiles de panneaux isolants de laine de roche ou XPS haute densité (R ≥ 4,50 m².K/W).",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1754",
+      "lot": "gros-oeuvre",
+      "designation": "Dalle pleine en béton armé (Sans isolation)",
+      "detail": "Étaiement, coffrage robuste, façonnage d'un ferraillage dense en double nappe d'aciers haute adhérence et coulage d'une dalle de 15 à 20 cm.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1755",
+      "lot": "gros-oeuvre",
+      "designation": "Dalle pleine en béton armé (Avec isolation sous chape flottante)",
+      "detail": "Dalle pleine en béton armé, ravoirage technique, isolation thermique en panneaux rigides PU/PSE (R ≥ 4,00 m².K/W), film de désolidarisation et chape de finition de 5 cm.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1756",
+      "lot": "gros-oeuvre",
+      "designation": "Dalle alvéolée préfabriquée (Sans isolation)",
+      "detail": "Fourniture, transport, grutage et pose d'éléments de dalles alvéolées en béton précontraint, clavetage des joints au mortier et chaînages périphériques.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1757",
+      "lot": "gros-oeuvre",
+      "designation": "Dalle alvéolée préfabriquée (Avec isolation rapportée en sous-face)",
+      "detail": "Fourniture, transport, grutage et pose d'éléments de dalles alvéolées en béton précontraint, clavetage des joints au mortier et chaînages périphériques, complétée par la fixation en sous-face de panneaux isolants rigides adaptés aux parois minces (R ≥ 4,00 m².K/W).",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1758",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher à solives bois (Sans isolation)",
+      "detail": "Structure porteuse en solives de bois massif ou lamellé-collé traité Classe 2/3, entretoises anti-devers et fixation de panneaux de support OSB 3 de 22 mm. Le calcul de la section et de l'entraxe des solives est à la charge de l'entreprise titulaire du lot.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1759",
+      "lot": "gros-oeuvre",
+      "designation": "Plancher à solives bois (Avec isolation thermique intégrée)",
+      "detail": "Structure porteuse en solives de bois massif ou lamellé-collé traité Classe 2/3, entretoises anti-devers et fixation de panneaux de support OSB 3 de 22 mm, avec isolant thermique en laine minérale ou biosourcée inséré entre les solives (R ≥ 5,00 m².K/W), film pare-vapeur hygro-régulant, fond de coffrage et bandes résilientes acoustiques sous l'OSB. Le calcul de la section et de l'entraxe des solives est à la charge de l'entreprise titulaire du lot.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 102,
-  "prochainNumero": 1748
+  "revision": 103,
+  "prochainNumero": 1760
 }

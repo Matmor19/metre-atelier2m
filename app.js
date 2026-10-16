@@ -516,7 +516,7 @@ $('selLotListe').addEventListener('click', e => {
 function renderOuvrages() {
   figerEntete();
   const q = $('recherche').value.trim().toLowerCase();
-  const liste = BIB.ouvrages.filter(o => !o.supprime && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
+  const liste = BIB.ouvrages.filter(o => ouvActif(o) && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
   const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)} <span class="muted" style="font-size:12px">· ${esc(o.id)}</span></span><span class="tag">${esc(o.unite)}</span></div>`).join('');
   $('listeOuvrages').innerHTML = (lignes || '<p class="muted" style="padding:12px">Aucun ouvrage trouvé dans ce lot.</p>')
     + '<div style="padding:12px"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button></div>';
@@ -986,7 +986,7 @@ function renderMetre() {
       // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
       h += `<tr class="ligne ${surbrillanceLigne(l)}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}</td>
+        <td>${esc(l.designation)}${(BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail ? `<div class="ouv-detail" style="font-style:italic;font-size:12px;color:#6b7280;margin-top:2px">${esc(BIB.ouvrages.find(x => x.id === l.ouvrage).detail)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}${!avecFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le détail de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
@@ -1149,7 +1149,7 @@ const BP_CHOIX = {
 for (const k of Object.keys(BP_CHOIX)) BP_CHOIX[k] = BP_CHOIX[k].map(t => [t, t]);
 // Désignations des ouvrages « bloc porte » (sans la dimension, ajoutée à l'intitulé du métré)
 function blocPorteDesignations() {
-  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.designation.startsWith('Bloc-porte ')).map(o => o.designation))];
+  return [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && o.designation.startsWith('Bloc-porte ')).map(o => o.designation))];
 }
 // Nombre de portes de passage d'une pièce (somme des blocs portes) ; largeur : 83 cm
 const LARGEUR_PORTE_NV = 0.83;
@@ -1192,7 +1192,7 @@ function piecesNvDe(c) {
 function ouvrageParDesig(des) { return BIB.ouvrages.find(o => o.designation === des && !o.supprime); }
 // Portes et baies de la bibliothèque « Menuiseries extérieures » : elles sont déduites du linéaire de plinthes
 function menusPorteBaie() {
-  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Porte|Baie)/i.test(o.designation));
+  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && ouvActif(o) && /^(Porte|Baie)/i.test(o.designation));
 }
 // Appareillage par défaut d'une pièce, d'après les repères NF C 15-100 (infographie Legrand « Les prises de courant »).
 // Une valeur saisie à la main prime toujours.
@@ -1247,7 +1247,7 @@ function appDefaut(p, cle) {
   return surf > 4 ? '1' : '0';
 }
 // Façades de placard de la bibliothèque (coulissant ou battant), choisies dans une liste
-function facadesPlacard() { return BIB.ouvrages.filter(o => !o.supprime && /^Façade de placard/i.test(o.designation)); }
+function facadesPlacard() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Façade de placard/i.test(o.designation)); }
 // Largeur totale des façades posées au sol (ml) : elles ne reçoivent pas de plinthe
 // Façades de placard : choix du configurateur (comme les menuiseries). Ouvrage de base automatique : coulissant ou battant
 const FA_CHOIX = {
@@ -1285,7 +1285,7 @@ const ME_CHOIX = {
 };
 // Ouvrages de la bibliothèque proposés pour un bloc menuiserie extérieure (fenêtres et portes)
 function menusBlocOuvrages() {
-  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && !o.supprime && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
+  return BIB.ouvrages.filter(o => o.lot === 'menuiseries-exterieures' && ouvActif(o) && /^(Fenêtre|Porte-fenêtre|Porte|Baie)/i.test(o.designation));
 }
 // Menuiseries coulissantes (sous-titre « Menuiseries coulissantes » au métré) ; les autres ouvrants vont sous « Menuiseries ouvrantes »
 const MEN_COUL = ['coulissante', 'galandage', 'translation'];
@@ -1352,7 +1352,7 @@ function renderPiecesNv() {
   const c = chantiers.find(x => x.id === courantId);
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const liste = piecesNvDe(c);
-  const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && !o.supprime);
+  const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && ouvActif(o));
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
   const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
@@ -1580,7 +1580,7 @@ function genererPiecesNv(c) {
 // Les lignes produites portent platNv et sont remplacées à chaque génération.
 // Isolants proposés dans la plâtrerie : ouvrages « Isolation … » en m², hors toiture, rampants, combles, planchers, dalles et ITE
 function isolantsPlat() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /^(Isolation|Isolant)/i.test(o.designation)
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && /^(Isolation|Isolant)/i.test(o.designation)
     && !/(toiture|rampant|combles|plancher|dalle|solive|terre-plein|enterr|extérieur|chevron|poutre)/i.test(o.designation)
     && !/\bITE\b/.test(o.designation));
 }
@@ -1641,8 +1641,8 @@ function resultatFormuleJoint(texte, surface) {
   try { const r = Function('"use strict"; return (' + t + ');')(); return Number.isFinite(r) ? r : null; } catch (e) { return null; }
 }
 function optPlat(re, val, key, titre) {
-  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '— choisir —');
-  return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
+  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '— choisir —');
+  return `<option value="">— choisir —</option>` + BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
 // Cadenas des cases de formule « Bande à joint » : verrouillé par défaut (lecture seule), déverrouillable d'un clic
@@ -2086,8 +2086,8 @@ function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(
 function facadesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0); }
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val, key, titre) {
-  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && re.test(o.designation))
+  if (key) return optListeOuvrages(key, titre, () => [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && re.test(o.designation)).map(o => o.designation))], val, '');
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && re.test(o.designation))
     .map(o => `<option value="${esc(o.id)}" ${o.id === val ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
 }
 function renderPeinture() {
@@ -2307,7 +2307,7 @@ function platDe(c) {
 }
 function platListe(re, unite, exclure) {
   return BIB.ouvrages
-    .filter(o => !o.supprime && o.unite === unite && re.test(o.designation) && !(exclure && exclure.test(o.designation)))
+    .filter(o => ouvActif(o) && o.unite === unite && re.test(o.designation) && !(exclure && exclure.test(o.designation)))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 const platSols = () => platListe(/parquet|carrelage|sol |vinyle|moquette|béton ciré|pierre|résine/i, 'm²',
@@ -2860,7 +2860,7 @@ const FICHE_FONDS_DEF = { largeur: '', hauteur: '' };
 
 // Types de murs proposés : élévations de la bibliothèque, puis murs de soutènement et muret
 function typesMurs() {
-  const elev = [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.qte === 'elev_net').map(o => o.designation))];
+  const elev = [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && o.qte === 'elev_net').map(o => o.designation))];
   return elev.concat(SOUT_TYPES.map(t => t.designation));
 }
 function projetDe(c) {
@@ -3241,7 +3241,7 @@ if ($('vConfig')) {
   $('vConfig').addEventListener('click', ficheClick);
 }
 function ficheListeMur() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && FICHE_LOTS_MUR.includes(o.lot))
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && FICHE_LOTS_MUR.includes(o.lot))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Membrane Delta-MS : posée sur le mur de soubassement, sur sa hauteur + 30 cm
@@ -3251,7 +3251,7 @@ const DELTA_SOUB_PLUS = 0.30;
 const HYDRO_SOUB = 'Enduit hydrofuge sur mur de soubassement (face extérieure)';
 // Murs de la bibliothèque (lot gros œuvre) : parois en m²
 function ficheListeMurGO() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && o.lot === 'gros-oeuvre' && /mur|élévation/i.test(o.designation) && !/hydrofuge|membrane|étanchéité|enduit|drainage/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Ouvrages retirés de la seule liste des finitions (ils restent dans la bibliothèque)
@@ -3268,12 +3268,12 @@ const FINITIONS_RETIREES = new Set([
 ]);
 // Finitions : recherche dans toute la bibliothèque (m²)
 function ficheListeFinition() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation) && !FINITIONS_RETIREES.has(o.designation))
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation) && !FINITIONS_RETIREES.has(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Protections des murs enterrés (soubassement) : toute la bibliothèque (m²)
 function ficheListeProtection() {
-  return BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && /hydrofuge|membrane|étanchéité|drainage|enterré|protection/i.test(o.designation))
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && /hydrofuge|membrane|étanchéité|drainage|enterré|protection/i.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // ===== Listes déroulantes du configurateur, modifiables (crayon à gauche de chaque liste) =====
@@ -3291,7 +3291,7 @@ function listeReglage(cle) { const r = listesReglages()[cle] || {}; return { ret
 // Libellé d'une valeur fixe : celui qui a été modifié dans la liste, sinon le libellé d'origine
 function libelleFixe(cle, v, defaut) { const o = listeReglage(cle).libelles[v]; return o || defaut; }
 // Liste « bibliothèque » : une liste à valeurs fixes peut être remplacée par les ouvrages de lots choisis
-function designationsTousLots(lots) { return [...new Set(BIB.ouvrages.filter(o => !o.supprime && lots.includes(o.lot)).map(o => o.designation))]; }
+function designationsTousLots(lots) { return [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && lots.includes(o.lot)).map(o => o.designation))]; }
 function enregistrerListeBiblio(cle) {
   const r = listeReglage(cle);
   LISTES_CONF[cle] = { titre: r.titre || cle, base: () => designationsTousLots(listeReglage(cle).lots || []), biblioFixe: true };
@@ -3363,11 +3363,11 @@ function listeLots(cle) {
   const r = listeReglage(cle);
   if (Array.isArray(r.lots)) return r.lots.filter(id => BIB.lots.some(l => l.id === id));   // liste vide = aucun lot (volontaire)
   const base = LISTES_CONF[cle].base();
-  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && base.includes(o.designation)).map(o => o.lot))];
+  return [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && base.includes(o.designation)).map(o => o.lot))];
 }
 // Ouvrages (m²) d'une liste de lots
 function designationsDesLots(lots) {
-  return [...new Set(BIB.ouvrages.filter(o => !o.supprime && o.unite === 'm²' && lots.includes(o.lot)).map(o => o.designation))];
+  return [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && lots.includes(o.lot)).map(o => o.designation))];
 }
 function sauverReglage(cle, r) { const L = listesReglages(); L[cle] = r; return sauverListes(L); }
 // Enregistre tout de suite sur cet appareil et met à jour l'écran ; l'envoi Drive se termine à côté (sans attendre)
@@ -3645,7 +3645,7 @@ function rendreGestionValeurs(seulLaListe) {
       <input id="gvNouveau" placeholder="Nouvelle valeur à proposer…" style="flex:1;padding:6px;box-sizing:border-box">
       <button type="button" class="btn small" id="gvAjouter">Ajouter</button>
     </div>
-    <datalist id="dlOuvrages">${BIB.ouvrages.filter(o => !o.supprime).map(o => `<option value="${esc(o.designation)}">`).join('')}</datalist>
+    <datalist id="dlOuvrages">${BIB.ouvrages.filter(o => ouvActif(o)).map(o => `<option value="${esc(o.designation)}">`).join('')}</datalist>
     <div id="gvListe" style="max-height:55vh;overflow:auto">${contenu}</div>
     <p id="gvMsg" style="font-size:13px;color:#6b5a7a;margin:8px 0"></p>
     <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">
@@ -3823,12 +3823,12 @@ function ficheRendre() {
       ${champ('HT, hauteur de fouille (m)', inp('data-k="fond" data-champ="rigHt" inputmode="decimal"', fd.rigHt || ''))}
       ${champ('Largeur de la rigole (m)', inp('data-k="fond" data-champ="rigLarg" inputmode="decimal"', fd.rigLarg || ''))}
     </div>
-    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => !o.supprime && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv || '', '— aucune semelle —')}</select>`))}</div>
+    <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => ouvActif(o) && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv || '', '— aucune semelle —')}</select>`))}</div>
     <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
     <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
     ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
-      ${champ('Ouvrage de maçonnerie (une seule ligne au métré, lot gros œuvre)', (() => { const cle = `terr-maco-${e.usage || 'massif'}`, tit = 'Maçonnerie : ' + (e.usage || 'massif'); return selCrayon(cle, tit, `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="ouv" style="width:100%">${optListeOuvrages(cle, tit, () => [...new Set(BIB.ouvrages.filter(o => !o.supprime && (o.unite === 'm²' || o.unite === 'm³') && o.lot === 'gros-oeuvre').map(o => o.designation))], e.ouv || '', '— aucun —')}</select>`) + `<label style="display:flex;gap:6px;align-items:center;font-size:14px;margin-top:4px"><input type="checkbox" data-k="pleine" data-id="${esc(e.id)}" data-champ="coff" ${e.coff ? 'checked' : ''} style="width:16px;height:16px;margin:0"> Coffrage compris (indiqué sur la ligne du métré)</label>`; })())}
+      ${champ('Ouvrage de maçonnerie (une seule ligne au métré, lot gros œuvre)', (() => { const cle = `terr-maco-${e.usage || 'massif'}`, tit = 'Maçonnerie : ' + (e.usage || 'massif'); return selCrayon(cle, tit, `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="ouv" style="width:100%">${optListeOuvrages(cle, tit, () => [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && (o.unite === 'm²' || o.unite === 'm³') && o.lot === 'gros-oeuvre').map(o => o.designation))], e.ouv || '', '— aucun —')}</select>`) + `<label style="display:flex;gap:6px;align-items:center;font-size:14px;margin-top:4px"><input type="checkbox" data-k="pleine" data-id="${esc(e.id)}" data-champ="coff" ${e.coff ? 'checked' : ''} style="width:16px;height:16px;margin:0"> Coffrage compris (indiqué sur la ligne du métré)</label>`; })())}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:6px">
         ${(e.usage || 'massif') === 'plateforme'
           ? champ('Surface (m²)', inp(`data-k="pleine" data-id="${esc(e.id)}" data-champ="s" inputmode="decimal"`, e.s || ''))
@@ -5481,7 +5481,9 @@ $('btnEnvoiBib').onclick = async () => {
 };
 
 /* ============ Bibliothèque : modifier les ouvrages et leurs prix ============ */
-const ouvragesLibres = () => BIB.ouvrages.filter(o => !o.supprime);   // les ouvrages supprimés n'apparaissent plus
+// Ouvrage utilisable (listes, pickers, configurateur) : ni supprimé, ni archivé (déclaration de fonction : utilisable dès le chargement)
+function ouvActif(o) { return !o.supprime && !o.archive; }
+const ouvragesLibres = () => BIB.ouvrages.filter(o => ouvActif(o));   // supprimés et archivés n'apparaissent plus
 function champsBib(unite) { return champsLibre(unite).map(c => ({ cle: c.cle, libelle: c.libelle })); }
 const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
 
@@ -5549,6 +5551,13 @@ function renderBiblio() {
       supprimes.map(o => `<div class="ouv" style="padding:8px 0"><label style="display:flex;gap:8px;align-items:center;flex:1;min-width:0"><input type="checkbox" data-purge-cb="${esc(o.id)}" style="width:auto;height:auto"><span>${esc(o.designation)}</span></label>
         <button class="btn small sec" data-restaurer-ouv="${esc(o.id)}">Restaurer</button></div>`).join('')
       + `<div style="margin-top:10px"><button class="btn small danger" data-purger-ouv>Supprimer définitivement les ouvrages cochés</button></div></details>`;
+  }
+  // Ouvrages archivés (non supprimés, masqués des listes) : restaurables
+  const archives = BIB.ouvrages.filter(o => o.archive && !o.supprime && (!lot || o.lot === lot));
+  if (archives.length) {
+    $('biblioListe').innerHTML += `<details style="padding:0 12px 12px"><summary class="muted">Archivés (${archives.length})</summary>` +
+      archives.map(o => `<div class="ouv" style="padding:8px 0"><span>${esc(o.designation)}</span>
+        <button class="btn small sec" data-desarchiver="${esc(o.id)}">Désarchiver</button></div>`).join('') + `</details>`;
   }
   $('biblioCompte').textContent = `${liste.length} ouvrage(s) affiché(s) sur ${BIB.ouvrages.length}`;
 }
@@ -5846,6 +5855,12 @@ $('btnRenommerLot').onclick = async () => {
   renderBiblio();
 };
 $('biblioListe').addEventListener('click', e => {
+  const d = e.target.closest('[data-desarchiver]');
+  if (d) {
+    const o = BIB.ouvrages.find(x => x.id === d.dataset.desarchiver);
+    if (o) { delete o.archive; o.version = (o.version || 1) + 1; sauverBibliotheque(); renderBiblio(); }
+    return;
+  }
   const r = e.target.closest('[data-restaurer-ouv]');
   if (r) {
     const o = BIB.ouvrages.find(x => x.id === r.dataset.restaurerOuv);
