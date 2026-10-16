@@ -90,6 +90,8 @@ function alignerFondations(L) {
       if (f.ouvrage !== fou.id || !(f.quantite > 0)) continue;
       // Fouille en rigole sans semelle choisie : rien n'est inséré (une semelle déjà liée est retirée)
       if (fouDes === DES_FOND_FOUILLE && !f.semOuv) continue;
+      // Massif avec un ouvrage de maçonnerie choisi : la semelle automatique n'est pas insérée
+      if (fouDes === DES_MASSIF && f.maconChoisi) continue;
       sources.add(f.uid);
       // Semelle choisie dans le bloc Terrassement (fouille en rigole) ; sinon la semelle par défaut
       const bet = (f.semOuv && ouv(f.semOuv)) || ouv(betDes);
@@ -4038,7 +4040,9 @@ function ficheVersMetre() {
     if (e.usage === 'massif') {
       if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
-      // La semelle isolée (gros œuvre) suit la fouille du massif, voir alignerFondations()
+      // La semelle isolée (gros œuvre) suit la fouille du massif, voir alignerFondations().
+      // Si un ouvrage de maçonnerie est choisi pour ce massif, il remplace la semelle automatique (pas de doublon)
+      if (L.length) L[L.length - 1].maconChoisi = !!e.ouv;
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = 1;  // plateforme : toujours 1, pas de nombre
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
