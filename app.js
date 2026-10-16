@@ -3721,6 +3721,10 @@ function ficheRendre() {
   };
 
   const optListe2 = (liste, sel, vide) => `<option value="">${vide}</option>` + liste.map(t => `<option value="${esc(t)}" ${sel === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  // Une case à cocher « … compris » suivie de sa liste déroulante (crayon) : valeur gardée dans le mur
+  const murCaseListe = (m, id, flag, lib, cle, tit) => `<div style="flex:1;min-width:260px">
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" ${id} data-champ="${flag}" ${m[flag] === true ? 'checked' : ''}> ${lib}</label>
+    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => [], m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
   const rangeMur = m => {
     const id = `data-k="mur" data-id="${m.id}"`;
     const pig = m.cat === 'pignon', soub = m.cat === 'soub', refend = m.cat === 'refend';
@@ -3747,11 +3751,12 @@ function ficheRendre() {
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
         <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
-        ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<label><input type="checkbox" ${id} data-champ="chaine" ${m.chaine === true ? 'checked' : ''}> Chaînage compris</label>
-        <label><input type="checkbox" ${id} data-champ="raid" ${m.raid === true ? 'checked' : ''}> Poteau raidisseur compris</label>
-        ${soub ? '' : `<label><input type="checkbox" ${id} data-champ="appui" ${m.appui === true ? 'checked' : ''}> Appui de fenêtre compris</label>
-        <label><input type="checkbox" ${id} data-champ="seuil" ${m.seuil === true ? 'checked' : ''}> Seuil de porte compris</label>`}
-        <div style="flex:1;min-width:240px">${champ('Complément du mur (bibliothèque)', (() => { const cle = soub ? 'soub-complement' : 'elev-complement', tit = soub ? 'Complément du mur de soubassement' : 'Complément du mur en élévation'; return selCrayon(cle, tit, `<select ${id} data-champ="complement" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => [], m.complement || '', '— aucun —')}</select>`); })())}</div>` : ''}
+        ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<div style="display:flex;gap:14px;flex-wrap:wrap;width:100%">
+          ${murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
+          ${murCaseListe(m, id, 'raid', 'Poteau raidisseur compris', 'mur-raid', 'Poteau raidisseur compris (mur)')}
+          ${soub ? '' : murCaseListe(m, id, 'appui', 'Appui de fenêtre compris', 'mur-appui', 'Appui de fenêtre compris (mur)')}
+          ${soub ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
+        </div>` : ''}
         ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
       </div></div>`;
