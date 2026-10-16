@@ -3720,10 +3720,12 @@ function ficheRendre() {
   };
 
   const optListe2 = (liste, sel, vide) => `<option value="">${vide}</option>` + liste.map(t => `<option value="${esc(t)}" ${sel === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  // Appuis de fenêtre de la bibliothèque (ouvrages « Appui de fenêtre … »), proposés dans la liste « Appui de fenêtre compris »
+  const appuisNv = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation);
   // Une case à cocher « … compris » suivie de sa liste déroulante (crayon) : valeur gardée dans le mur
   const murCaseListe = (m, id, flag, lib, cle, tit) => `<div style="flex:1;min-width:260px">
     <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" ${id} data-champ="${flag}" ${m[flag] === true ? 'checked' : ''}> ${lib}</label>
-    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => [], m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
+    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => (cle === 'mur-appui' ? appuisNv() : []), m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
   const rangeMur = m => {
     const id = `data-k="mur" data-id="${m.id}"`;
     const pig = m.cat === 'pignon', soub = m.cat === 'soub', refend = m.cat === 'refend';

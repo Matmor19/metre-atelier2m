@@ -28892,8 +28892,200 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1760",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre préfabriqué en béton (Sans isolation thermique renforcée)",
+      "detail": "Appui en béton armé haute performance, pose sur mortier hydrofuge, façon de rejingot et de larmier (goutte d'eau), joints élastomères aux tableaux.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1761",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre préfabriqué en béton (Avec isolation / Rupteur de pont thermique)",
+      "detail": "Appui en béton armé haute performance, complété par un rupteur de pont thermique (PSE extrudé ou sous-face isolée) assurant la continuité avec l'isolation de la maison, étanchéité périphérique renforcée (compribande).",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1762",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre coulé en place en béton armé (Sans isolation)",
+      "detail": "Coffrage sur site, ferraillage lié aux chaînages d'allèges, coulage du béton C25/30, décoffrage et ragréage soigné.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1763",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre coulé en place en béton armé (Avec isolation intégrée)",
+      "detail": "Coffrage sur site, ferraillage lié aux chaînages d'allèges, coulage du béton C25/30, décoffrage et ragréage soigné, incluant l'intégration d'un panneau isolant rigide (mousse PU ou verre cellulaire haute densité) en sous-face et à l'arrière pour couper le flux thermique avec l'intérieur.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1764",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre en pierre naturelle ou reconstituée (Sans isolation)",
+      "detail": "Appui monolithique (granit, calcaire dur), pose sur mortier de chaux blanche non tachant, façon de pente extérieure et larmier.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1765",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre en pierre naturelle ou reconstituée (Avec isolation sous-face)",
+      "detail": "Appui monolithique (granit, calcaire dur), pose sur un lit préalable d'isolant rigide à forte résistance à la compression (verre cellulaire) pour désolidariser thermiquement la pierre de la maçonnerie.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1766",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre en aluminium plié (Sans isolation sous-face - Pour ITE)",
+      "detail": "Bavette aluminium d'épaisseur minimale 1,5 mm fixée sur le rejingot de la menuiserie, avec coulisseaux latéraux étanches.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1767",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre en aluminium plié (Avec isolation et traitement acoustique - Pour ITE)",
+      "detail": "Bavette aluminium d'épaisseur minimale 1,5 mm fixée sur le rejingot de la menuiserie, avec coulisseaux latéraux étanches, bande de mousse résiliente en sous-face (insonorisation contre les bruits de pluie) posée sur un support de calage isolant préformé en PSE haute densité.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1768",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre en acier laqué plié (Sans isolation sous-face - Pour ITE)",
+      "detail": "Bavette métallique d'épaisseur minimale 0,75 mm fixée sur le rejingot de la menuiserie, avec coulisseaux latéraux étanches.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1769",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre en acier plié (Avec isolation et traitement acoustique - Pour ITE)",
+      "detail": "Bavette métallique d'épaisseur minimale 0,75 mm fixée sur le rejingot de la menuiserie, avec coulisseaux latéraux étanches, bande de mousse résiliente en sous-face (insonorisation contre les bruits de pluie) posée sur un support de calage isolant préformé en PSE haute densité.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1770",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre bois (Sans isolation rapportée)",
+      "detail": "Pièce d'appui décorative en bois durable (douglas, mélèze), fixée sur le chevêtre bois avec membrane pare-pluie standard.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1771",
+      "lot": "ossature-bois",
+      "designation": "Appui de fenêtre bois (Avec isolation et étanchéité 3D)",
+      "detail": "Pièce d'appui décorative en bois durable (douglas, mélèze), fixée sur le chevêtre bois, comprenant un isolant en fibre de bois rigide sous l'appui, associé à une membrane d'étanchéité préformée en 3D dans les angles pour guider les eaux de condensation.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 105,
-  "prochainNumero": 1760
+  "revision": 106,
+  "prochainNumero": 1772
 }
