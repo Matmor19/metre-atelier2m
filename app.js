@@ -375,13 +375,13 @@ function detailHtml(l) {
   }
   if (v.mode === 'plan' || (v.src && /^(Surface du configurateur|Surface mesurée|Calcul suivant plan)/.test(v.src))) return esc(TXT_SURFACE);
   // Surface nette des murs : on liste chaque mur (dimensions prises dans le configurateur du chantier)
-  if (v.src && /^(Calcul du configurateur : )?murs, surface nette/.test(v.src)) {
+  if (v.src && /^(Calcul du configurateur : )?(murs, surface nette|Longueur × hauteur des murs)/.test(v.src)) {
     const c = chantiers.find(x => x.id === courantId);
     const typeLigne = v.typeMur || '';
     const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
     const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>`).join(' ; ');
-    return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
+    return esc(v.src.replace(/^Calcul du configurateur : /, '').replace(/^murs, surface nette$/, 'Longueur × hauteur des murs, moins les menuiseries')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
   let t = detailMorceaux(l).map(m => {
@@ -4148,18 +4148,21 @@ function ficheVersMetre() {
   // Élévation, finition, tableaux, toiture
   // Une ligne par type de mur ; les murs sans type prennent le « Matériau des murs » du chantier
   // Cases cochées des murs en élévation : indiquées dans la désignation, sans changer la quantité
+  // Détail des élévations : la formule du métier (longueur × hauteur, moins les menuiseries), sans mention du configurateur
+  const SRC_ELEV = 'Calcul du configurateur : ' + SRC_QTE.elev_net;
   const ELEV_FL = ['chaînage compris', 'poteau raidisseur compris', 'appui de fenêtre compris', 'seuil de porte compris'];
   for (const [cle, surf] of Object.entries(r.parTypeFl || {})) {
     if (!(surf > 0)) continue;
     const i = cle.lastIndexOf('|'), t = cle.slice(0, i), rest = cle.slice(i + 1), fl = rest.slice(0, 4), pigM = rest[4] === 'P';
     const LIBS = pigM ? ['arase comprise', 'poteau raidisseur compris', 'appui de fenêtre compris'] : ELEV_FL;
-    const comp = LIBS.filter((_, j) => fl[j] === '1').join(', ');
+    // L'appui de fenêtre et la surface nette restent dans le configurateur : rien de tout ça sur le métré
+    const comp = LIBS.filter((_, j) => fl[j] === '1' && LIBS[j] !== 'appui de fenêtre compris').join(', ');
     const suffixe = comp ? ' (' + comp + ')' : '';
     if (t === '') {
       if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
-      ajouter(p.choix.murs, surf, 'Élévation des murs (surface nette)' + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: '' }, null);
+      ajouter(p.choix.murs, surf, 'Élévation des murs' + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: '' }, null);
     } else {
-      ajouter(t, surf, t + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: t }, null);
+      ajouter(t, surf, t + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
     }
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
@@ -4196,7 +4199,7 @@ function ficheVersMetre() {
         if (m.type !== 'fen' || !(num(m.l) > 0)) continue;
         parLargeur[num(m.l)] = (parLargeur[num(m.l)] || 0) + (num(m.nb) || 1);
       }
-      for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
+      for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
     }
   }
   sauverLignes(courantId, L);
