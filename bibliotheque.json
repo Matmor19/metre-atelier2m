@@ -43,6 +43,11 @@
       "ordre": 8
     },
     {
+      "id": "menuiseries-exterieures",
+      "nom": "Menuiseries extérieures",
+      "ordre": 11
+    },
+    {
       "id": "isolation-thermique",
       "nom": "Isolation thermique",
       "ordre": 9
@@ -51,11 +56,6 @@
       "id": "doublages-cloisons-plafonds",
       "nom": "Plâtrerie - Isolation",
       "ordre": 10
-    },
-    {
-      "id": "menuiseries-exterieures",
-      "nom": "Menuiseries extérieures",
-      "ordre": 11
     },
     {
       "id": "menuiseries-interieures",
