@@ -1329,6 +1329,7 @@ function blocMenuiserie(p, m, k) {
     ${sel('volet', 'Fermeture', '— choisir —')}
     ${m.volet === 'oui' ? sel('ferm', 'Type de fermeture', '— choisir —') : ''}
     ${sel('moust', 'Moustiquaire', '— aucune —')}
+    ${m.type === 'fen' ? `<div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">Appui de fenêtre</div>${selCrayon('me-appui', 'Menuiserie : appui de fenêtre', `<select data-nv="${id}|menu|${k}|appui" style="width:100%;min-width:0">${optListeOuvrages('me-appui', 'Menuiserie : appui de fenêtre', () => appuisFenetreBase(), m.appui || '', '— aucun —')}</select>`)}</div>` : ''}
     <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }
@@ -4183,18 +4184,18 @@ function ficheVersMetre() {
       if (o.electrique) ajouter(ALIM_VOLET, q, `Alimentation volet roulant – ${lieu}`);
     }
   }
-  // Appuis de fenêtre : une ligne par largeur (toutes pièces), unité = nombre de fenêtres de cette largeur
+  // Appuis de fenêtre (configurateur de pièces) : une ligne par appui et par largeur, unité = nombre de fenêtres de cette largeur
   const appuisGrp = {};
-  for (const x of menusCalcul(c)) {
-    if (!['ouvrant', 'oscillo', 'coulissant'].includes(x.m.type) || !x.m.appui) continue;
-    const k = x.m.appui + '|' + num(x.m.largeur);
-    appuisGrp[k] = appuisGrp[k] || { id: x.m.appui, L: num(x.m.largeur), n: 0 };
-    appuisGrp[k].n += x.nb;
+  for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) {
+    if (m.type !== 'fen' || !m.appui || !(num(m.l) > 0)) continue;
+    const k = m.appui + '|' + num(m.l);
+    appuisGrp[k] = appuisGrp[k] || { id: m.appui, L: num(m.l), n: 0 };
+    appuisGrp[k].n += num(m.nb) || 1;
   }
   for (const g of Object.values(appuisGrp)) {
     const o = BIB.ouvrages.find(x => x.id === g.id);
     if (!o) { manquants.push('appui de fenêtre'); continue; }
-    ajouter(o.designation, g.n, `${o.designation} – largeur ${fmt(g.L)} m`, { nombre: String(g.n) }, null);
+    ajouter(o.designation, g.n, `${o.designation} – largeur ${fmt(g.L / 100)} m`, { nombre: String(g.n) }, null);
   }
   sauverLignes(courantId, L);
   renderMetre();
