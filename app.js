@@ -3844,9 +3844,12 @@ function ficheRendre() {
     </div>`;
   const contenuPlancher = (() => {
     const pl = p.plancher;
+    const nvDallages = plancherNvOuvrages().filter(o => /^Dallage/.test(o.designation));
+    const nvPlanchers = plancherNvOuvrages().filter(o => !/^Dallage/.test(o.designation));
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Surface de plancher brut (m²), dallage RDC', inp('data-k="plan" data-champ="brut" inputmode="decimal"', pl.brut || ''))}
-      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois']], pl.type || ''))}
+      ${champ('Type de dallage (RDC)', sel2('data-k="plan" data-champ="dallage"', [CHOIX_VIDE, ...nvDallages.map(o => [o.id, o.designation])], pl.dallage || ''))}
+      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois'], ...nvPlanchers.map(o => ['ouv:' + o.id, o.designation])], pl.type || ''))}
       ${champ('Surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
       ${pl.type === 'hourdis' ? champ('Épaisseur de la dalle de compression (cm)', inp('data-k="plan" data-champ="ep" inputmode="decimal" placeholder="ex. 4"', pl.ep)) : ''}
       ${pl.type === 'solivage' ? champ('Retombée des solives (mm)', sel2('data-k="plan" data-champ="retombee"', [CHOIX_VIDE, ['145', '145 mm'], ['175', '175 mm'], ['220', '220 mm']], pl.retombee || '')) : ''}
@@ -4126,7 +4129,17 @@ function ficheVersMetre() {
     });
   }
   // Surface de plancher brut saisie à la main : dallage béton sur terre-plein
-  if (num(p.plancher.brut) > 0) ajouter('Dallage béton sur terre-plein (épaisseur 12 cm)', num(p.plancher.brut), 'Dallage de plancher brut', null, 'surface de plancher brut (saisie)');
+  if (num(p.plancher.brut) > 0) {
+    // Dallage RDC : seulement le type choisi dans le configurateur (rien choisi = rien)
+    const oD = p.plancher.dallage ? BIB.ouvrages.find(x => x.id === p.plancher.dallage && !x.supprime) : null;
+    if (oD) ajouter(oD.designation, num(p.plancher.brut), oD.designation, null, 'surface de plancher brut (saisie)');
+    else manquants.push('type de dallage (RDC)');
+  }
+  // Plancher choisi parmi les nouveaux ouvrages : quantité = surface du plancher
+  if (String(p.plancher.type || '').startsWith('ouv:') && r.plS > 0) {
+    const oP = BIB.ouvrages.find(x => x.id === p.plancher.type.slice(4) && !x.supprime);
+    if (oP) ajouter(oP.designation, r.plS, oP.designation, null, SRC_QTE.surface_plancher);
+  }
   if (p.plancher.type === 'hourdis' && r.plS > 0) {
     ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
     ajouter('Dalle de compression béton armé (sur hourdis)', r.dalleC, 'Dalle de compression ' + num(p.plancher.ep) + ' cm', null, SRC_QTE.plan_dalle);
@@ -5483,6 +5496,8 @@ $('btnEnvoiBib').onclick = async () => {
 /* ============ Bibliothèque : modifier les ouvrages et leurs prix ============ */
 // Ouvrage utilisable (listes, pickers, configurateur) : ni supprimé, ni archivé (déclaration de fonction : utilisable dès le chargement)
 function ouvActif(o) { return !o.supprime && !o.archive; }
+// Dallages et planchers saisis dans le configurateur (OUV-1748 à OUV-1759), non archivés
+function plancherNvOuvrages() { return BIB ? BIB.ouvrages.filter(o => ouvActif(o) && /^OUV-17(4[89]|5\d)$/.test(o.id)) : []; }
 const ouvragesLibres = () => BIB.ouvrages.filter(o => ouvActif(o));   // supprimés et archivés n'apparaissent plus
 function champsBib(unite) { return champsLibre(unite).map(c => ({ cle: c.cle, libelle: c.libelle })); }
 const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
