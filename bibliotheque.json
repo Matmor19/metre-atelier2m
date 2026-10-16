@@ -48,14 +48,14 @@
       "ordre": 11
     },
     {
-      "id": "isolation-thermique",
-      "nom": "Isolation thermique",
-      "ordre": 9
-    },
-    {
       "id": "doublages-cloisons-plafonds",
       "nom": "Plâtrerie - Isolation",
       "ordre": 10
+    },
+    {
+      "id": "isolation-thermique",
+      "nom": "Isolation thermique",
+      "ordre": 9
     },
     {
       "id": "menuiseries-interieures",
@@ -29091,6 +29091,6 @@
       "version": 1
     }
   ],
-  "revision": 108,
+  "revision": 109,
   "prochainNumero": 1772
 }
