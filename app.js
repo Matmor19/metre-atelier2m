@@ -2972,7 +2972,8 @@ function projetCalcul(p) {
     if (x.m.cat === 'soub') { const cle = k + '|' + (x.m.chaine === true ? '1' : '0') + (x.m.raid === true ? '1' : '0'); r.parSoub[cle] = (r.parSoub[cle] || 0) + net; r.soubS += net; }
     else {
       r.parType[k] = (r.parType[k] || 0) + net;
-      const cle = k + '|' + [x.m.chaine, x.m.raid, x.m.appui, x.m.seuil].map(v => (v === true ? '1' : '0')).join('');
+      const pigM = x.m.cat === 'pignon';
+      const cle = k + '|' + [x.m.chaine, x.m.raid, x.m.appui, pigM ? false : x.m.seuil].map(v => (v === true ? '1' : '0')).join('') + (pigM ? 'P' : '-');
       r.parTypeFl[cle] = (r.parTypeFl[cle] || 0) + net;
     }
     // La membrane Delta-MS a sa propre ligne (hauteur + 30 cm) : elle n'est pas comptée une deuxième fois comme finition
@@ -3751,10 +3752,10 @@ function ficheRendre() {
         ${refend ? '' : champ(soub ? 'Protection des murs enterrés' : 'Finition', selFin)}
       </div>
         ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<div style="display:flex;gap:14px;flex-wrap:wrap;width:100%">
-          ${murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
+          ${pig ? murCaseListe(m, id, 'chaine', 'Arase comprise', 'mur-arase', 'Arase comprise (mur pignon)') : murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
           ${murCaseListe(m, id, 'raid', 'Poteau raidisseur compris', 'mur-raid', 'Poteau raidisseur compris (mur)')}
           ${soub ? '' : murCaseListe(m, id, 'appui', 'Appui de fenêtre compris', 'mur-appui', 'Appui de fenêtre compris (mur)')}
-          ${soub ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
+          ${(soub || pig) ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px">
         <label style="display:flex;gap:6px;align-items:center;min-height:40px;margin:0"><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''} style="width:auto;height:auto;margin:0"> Déduire les menuiseries extérieures</label>
@@ -4149,8 +4150,9 @@ function ficheVersMetre() {
   const ELEV_FL = ['chaînage compris', 'poteau raidisseur compris', 'appui de fenêtre compris', 'seuil de porte compris'];
   for (const [cle, surf] of Object.entries(r.parTypeFl || {})) {
     if (!(surf > 0)) continue;
-    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), fl = cle.slice(i + 1);
-    const comp = ELEV_FL.filter((_, j) => fl[j] === '1').join(', ');
+    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), rest = cle.slice(i + 1), fl = rest.slice(0, 4), pigM = rest[4] === 'P';
+    const LIBS = pigM ? ['arase comprise', 'poteau raidisseur compris', 'appui de fenêtre compris'] : ELEV_FL;
+    const comp = LIBS.filter((_, j) => fl[j] === '1').join(', ');
     const suffixe = comp ? ' (' + comp + ')' : '';
     if (t === '') {
       if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
