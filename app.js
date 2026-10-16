@@ -343,6 +343,12 @@ function detailMorceaux(l) {
 // Texte simple (exports CSV, Excel)
 function detail(l) {
   const v0 = l.valeurs || {};
+  // Murs (élévations et soubassements) : même texte que l'écran, sans les cotes techniques (nombre 1, etc.)
+  if (v0.src && /^(Calcul du configurateur : )?(murs, surface nette|Longueur × hauteur des murs)/.test(v0.src)) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = detailHtml(l).replace(/<br\s*\/?>/gi, ' — ').replace(/ ; /g, ' ; ');
+    return tmp.textContent.replace(/\s+/g, ' ').trim();
+  }
   if (v0.src === TXT_SURFACE && v0.cote1 && v0.cote3) {
     const nb0 = num(v0.nombre) > 0 ? num(v0.nombre) : 1;
     return (nb0 !== 1 ? fmt(nb0) + ' × ' : '') + TXT_SURFACE + ' ' + fmt(num(v0.cote1)) + ' m² × hauteur ' + fmt(num(v0.cote3)) + ' m';
