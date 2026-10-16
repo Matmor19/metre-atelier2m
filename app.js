@@ -4104,13 +4104,16 @@ function ficheVersMetre() {
   ajouter(DES_BENNE, num(ch.bennes));
   ajouter(DES_BENNE_TRI, num(ch.bennesTri));
   // Soubassement : chaque mur avec son matériau ; solin en tête sur son linéaire
+  // Un seul article par type de mur : les cases « compris » se règlent dans le configurateur, elles n'apparaissent plus au métré
+  const soubParType = {};
   for (const [cle, surf] of Object.entries(r.parSoub || {})) {
+    const t = cle.slice(0, cle.lastIndexOf('|'));
+    soubParType[t] = (soubParType[t] || 0) + surf;
+  }
+  for (const [t, surf] of Object.entries(soubParType)) {
     if (!(surf > 0)) continue;
-    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), fl = cle.slice(i + 1);
     if (!t) { manquants.push('Matériau du mur de soubassement'); continue; }
-    // Cases cochées : indiquées dans la désignation (comme « coffrage compris »), sans changer la quantité
-    const comp = [fl[0] === '1' ? 'chaînage compris' : '', fl[1] === '1' ? 'poteau raidisseur compris' : ''].filter(Boolean).join(', ');
-    ajouter(t, surf, comp ? t + ' (' + comp + ')' : t, null, SRC_QTE.soub_s);
+    ajouter(t, surf, t, null, SRC_QTE.soub_s);
   }
   // Solin en tête de soubassement : seulement sur les murs de soubassement avec enduit hydrofuge
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
@@ -4151,18 +4154,18 @@ function ficheVersMetre() {
   // Détail des élévations : la formule du métier (longueur × hauteur, moins les menuiseries), sans mention du configurateur
   const SRC_ELEV = 'Calcul du configurateur : ' + SRC_QTE.elev_net;
   const ELEV_FL = ['chaînage compris', 'poteau raidisseur compris', 'appui de fenêtre compris', 'seuil de porte compris'];
+  const elevParType = {};
   for (const [cle, surf] of Object.entries(r.parTypeFl || {})) {
+    const t = cle.slice(0, cle.lastIndexOf('|'));
+    elevParType[t] = (elevParType[t] || 0) + surf;
+  }
+  for (const [t, surf] of Object.entries(elevParType)) {
     if (!(surf > 0)) continue;
-    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), rest = cle.slice(i + 1), fl = rest.slice(0, 4), pigM = rest[4] === 'P';
-    const LIBS = pigM ? ['arase comprise', 'poteau raidisseur compris', 'appui de fenêtre compris'] : ELEV_FL;
-    // L'appui de fenêtre et la surface nette restent dans le configurateur : rien de tout ça sur le métré
-    const comp = LIBS.filter((_, j) => fl[j] === '1' && LIBS[j] !== 'appui de fenêtre compris').join(', ');
-    const suffixe = comp ? ' (' + comp + ')' : '';
     if (t === '') {
       if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
-      ajouter(p.choix.murs, surf, 'Élévation des murs' + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: '' }, null);
+      ajouter(p.choix.murs, surf, 'Élévation des murs', { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: '' }, null);
     } else {
-      ajouter(t, surf, t + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
+      ajouter(t, surf, t, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
     }
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
