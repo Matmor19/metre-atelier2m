@@ -380,7 +380,7 @@ function detailHtml(l) {
     const typeLigne = v.typeMur || '';
     const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
-    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>${m.deduire === true ? ' · ouvertures égales ou supérieures à 1 m² déduites' : ''}`).join(' ; ');
+    const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>`).join(' ; ');
     return esc(v.src.replace(/^Calcul du configurateur : /, '')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
@@ -2951,12 +2951,9 @@ function projetCalcul(p) {
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '') + ' · fenêtre' }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: nbM });
   }
-  // Ouvertures : déduites seulement des murs dont la case « Déduire les ouvertures » est cochée, au prorata de leur surface
-  const cochés = r.murs.filter(x => x.m.deduire === true);
-  const brutCochés = cochés.reduce((a, x) => a + x.brut, 0);
-  for (const x of cochés) x.menu = brutCochés > 0 ? Math.min(x.brut, r.deduit * x.brut / brutCochés) : 0;
   // Fenêtres du configurateur de pièces : toujours déduites des murs périphériques (au prorata de leur surface brute)
-  const periNv = r.murs.filter(x => x.m.cat === 'peri');
+  // Déduction automatique : murs périphériques et pignons (refends et soubassements : pas de fenêtres)
+  const periNv = r.murs.filter(x => x.m.cat === 'peri' || x.m.cat === 'pignon');
   const brutPeri = periNv.reduce((a, x) => a + x.brut, 0);
   if (dedNv > 0 && brutPeri > 0) for (const x of periNv) x.menu = (x.menu || 0) + Math.min(x.brut, dedNv * x.brut / brutPeri);
   r.deduitMenuiseries = r.deduit;
@@ -3758,7 +3755,6 @@ function ficheRendre() {
           ${(soub || pig) ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px">
-        <label style="display:flex;gap:6px;align-items:center;min-height:40px;margin:0"><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''} style="width:auto;height:auto;margin:0"> Déduire les menuiseries extérieures</label>
         ${champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px'))}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
         <span style="font-size:13px">Surface à déduire : <strong>${fmt(((calMurs.murs.find(x => x.m === m) || {}).ded) || 0)} m²</strong></span>
@@ -3970,7 +3966,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre', 'deduire'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers

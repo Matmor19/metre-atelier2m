@@ -216,7 +216,7 @@ ATTENDU = {
     'clotureAuto': 0,
     'surb': {'configDirecte': '', 'semelleLiee': 'ligne-lie', 'manuelle': 'ligne-manuelle', 'configClotureNonMauve': ''},
     'premierLot': 'installation-chantier',
-    'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100, 'regleDeduction': True},
+    'detailElev': {'soubCite': False, 'periCite': True, 'quantite': 100, 'regleDeduction': False},
     'soubQuantite': 10,
     'veilleAucuneAuto': 0,
     'elevApresFenetre': 95.22,
