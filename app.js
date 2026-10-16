@@ -3744,7 +3744,8 @@ function ficheRendre() {
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
         <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
         ${soub && (num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<label><input type="checkbox" ${id} data-champ="chaine" ${m.chaine === true ? 'checked' : ''}> Chaînage compris</label>
-        <label><input type="checkbox" ${id} data-champ="raid" ${m.raid === true ? 'checked' : ''}> Poteau raidisseur compris</label>` : ''}
+        <label><input type="checkbox" ${id} data-champ="raid" ${m.raid === true ? 'checked' : ''}> Poteau raidisseur compris</label>
+        <div style="flex:1;min-width:240px">${champ('Complément du mur (bibliothèque)', selCrayon('soub-complement', 'Complément du mur de soubassement', `<select ${id} data-champ="complement" style="width:100%;padding:6px">${optListeOuvrages('soub-complement', 'Complément du mur de soubassement', () => [], m.complement || '', '— aucun —')}</select>`))}</div>` : ''}
         ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
       </div></div>`;
