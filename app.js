@@ -4185,7 +4185,7 @@ function ficheVersMetre() {
   }
   // Appuis de fenêtre : cochés dans les murs extérieurs. Chaque fenêtre du projet reçoit l'appui choisi dans la liste du mur.
   // Une ligne par largeur, unité = nombre de fenêtres de cette largeur.
-  const appuisChoisis = [...new Set((p.murs || []).filter(m => (m.cat || 'peri') === 'peri' && m.appui === true && m.liste_appui).map(m => m.liste_appui))];
+  const appuisChoisis = [...new Set((p.murs || []).filter(m => ['peri', 'pignon'].includes(m.cat || 'peri') && m.appui === true && m.liste_appui).map(m => m.liste_appui))];
   if (appuisChoisis.length > 1) manquants.push('appuis de fenêtre : un seul appui par projet, plusieurs choisis dans les murs');
   if (appuisChoisis.length === 1) {
     const oA = BIB.ouvrages.find(x => x.id === appuisChoisis[0]);
