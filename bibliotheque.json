@@ -1715,7 +1715,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0085",
@@ -1730,7 +1731,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0086",
@@ -1745,7 +1747,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0087",
@@ -7153,7 +7156,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0405",
@@ -7172,7 +7176,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0406",
@@ -7187,7 +7192,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0407",
@@ -7206,7 +7212,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0408",
@@ -9458,12 +9465,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Radier béton armé"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0540",
@@ -13853,7 +13861,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0774",
@@ -28884,6 +28893,6 @@
       "version": 1
     }
   ],
-  "revision": 103,
+  "revision": 104,
   "prochainNumero": 1760
 }
