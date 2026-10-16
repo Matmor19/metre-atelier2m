@@ -2965,12 +2965,16 @@ function projetCalcul(p) {
   r.deduit = r.murs.reduce((a, x) => a + x.ded, 0);
   r.net = Math.max(0, r.brut - r.deduit);
   // Surfaces nettes : soubassement à part, élévation par type de mur (sans type = choix du chantier), finitions par mur
-  r.parType = {}; r.parSoub = {}; r.parFin = {};
+  r.parType = {}; r.parSoub = {}; r.parFin = {}; r.parTypeFl = {};
   for (const x of r.murs) {
     const net = x.brut - x.ded;
     const k = x.m.type || '';
     if (x.m.cat === 'soub') { const cle = k + '|' + (x.m.chaine === true ? '1' : '0') + (x.m.raid === true ? '1' : '0'); r.parSoub[cle] = (r.parSoub[cle] || 0) + net; r.soubS += net; }
-    else r.parType[k] = (r.parType[k] || 0) + net;
+    else {
+      r.parType[k] = (r.parType[k] || 0) + net;
+      const cle = k + '|' + [x.m.chaine, x.m.raid, x.m.appui, x.m.seuil].map(v => (v === true ? '1' : '0')).join('');
+      r.parTypeFl[cle] = (r.parTypeFl[cle] || 0) + net;
+    }
     // La membrane Delta-MS a sa propre ligne (hauteur + 30 cm) : elle n'est pas comptée une deuxième fois comme finition
     if (x.m.finition && net > 0 && !(x.m.cat === 'soub' && x.m.finition === DELTA_SOUB)) r.parFin[x.m.finition] = (r.parFin[x.m.finition] || 0) + net;
   }
@@ -3743,9 +3747,11 @@ function ficheRendre() {
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
         <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
-        ${soub && (num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<label><input type="checkbox" ${id} data-champ="chaine" ${m.chaine === true ? 'checked' : ''}> Chaînage compris</label>
+        ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<label><input type="checkbox" ${id} data-champ="chaine" ${m.chaine === true ? 'checked' : ''}> Chaînage compris</label>
         <label><input type="checkbox" ${id} data-champ="raid" ${m.raid === true ? 'checked' : ''}> Poteau raidisseur compris</label>
-        <div style="flex:1;min-width:240px">${champ('Complément du mur (bibliothèque)', selCrayon('soub-complement', 'Complément du mur de soubassement', `<select ${id} data-champ="complement" style="width:100%;padding:6px">${optListeOuvrages('soub-complement', 'Complément du mur de soubassement', () => [], m.complement || '', '— aucun —')}</select>`))}</div>` : ''}
+        ${soub ? '' : `<label><input type="checkbox" ${id} data-champ="appui" ${m.appui === true ? 'checked' : ''}> Appui de fenêtre compris</label>
+        <label><input type="checkbox" ${id} data-champ="seuil" ${m.seuil === true ? 'checked' : ''}> Seuil de porte compris</label>`}
+        <div style="flex:1;min-width:240px">${champ('Complément du mur (bibliothèque)', (() => { const cle = soub ? 'soub-complement' : 'elev-complement', tit = soub ? 'Complément du mur de soubassement' : 'Complément du mur en élévation'; return selCrayon(cle, tit, `<select ${id} data-champ="complement" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => [], m.complement || '', '— aucun —')}</select>`); })())}</div>` : ''}
         ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
       </div></div>`;
@@ -4132,13 +4138,18 @@ function ficheVersMetre() {
   }
   // Élévation, finition, tableaux, toiture
   // Une ligne par type de mur ; les murs sans type prennent le « Matériau des murs » du chantier
-  for (const [t, surf] of Object.entries(r.parType || {})) {
+  // Cases cochées des murs en élévation : indiquées dans la désignation, sans changer la quantité
+  const ELEV_FL = ['chaînage compris', 'poteau raidisseur compris', 'appui de fenêtre compris', 'seuil de porte compris'];
+  for (const [cle, surf] of Object.entries(r.parTypeFl || {})) {
     if (!(surf > 0)) continue;
+    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), fl = cle.slice(i + 1);
+    const comp = ELEV_FL.filter((_, j) => fl[j] === '1').join(', ');
+    const suffixe = comp ? ' (' + comp + ')' : '';
     if (t === '') {
       if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
-      ajouter(p.choix.murs, surf, 'Élévation des murs (surface nette)', { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: '' }, null);
+      ajouter(p.choix.murs, surf, 'Élévation des murs (surface nette)' + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: '' }, null);
     } else {
-      ajouter(t, surf, t, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: t }, null);
+      ajouter(t, surf, t + suffixe, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: 'Calcul du configurateur : ' + SRC_QTE.elev_net, typeMur: t }, null);
     }
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
