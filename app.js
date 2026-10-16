@@ -2476,7 +2476,7 @@ function ouvrirConfigurateur() {
       ${subListe(p.portes || [], i, 'portes', x => `Porte · ${esc(x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m`)}
       <div class="row" style="margin-top:4px;flex-wrap:wrap">${selCrayon('pieces-portes', 'Portes : type', `<select id="pl_${i}_portes_type" style="flex:1;min-width:0">${optPortes()}</select>`)}<input id="pl_${i}_portes_nb" inputmode="numeric" placeholder="1" placeholder="Nb" style="width:60px"><input id="pl_${i}_portes_l" inputmode="decimal" placeholder="Larg. m" style="width:80px"><input id="pl_${i}_portes_h" inputmode="decimal" placeholder="Haut. m" style="width:80px"><button type="button" class="btn sec small" data-pladd="${i}:portes">+ Porte</button></div>
       ${menusDe(p).length ? '<p class="muted" style="margin:10px 0 2px">Menuiseries extérieures de la pièce</p>' : ''}
-      ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) + (finTxt(x.fin, x.ral) ? ' · ' + esc(finTxt(x.fin, x.ral)) : '') : ''}${x.appui ? ' · appui ' + esc(APPUI_LIB[x.appui] || x.appui) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
+      ${menusDe(p).map((x, k) => `<div class="ouv"><span>${esc(FICHE_OUV[x.type] || x.type)} · ${num(x.nb)} × ${fmt(num(x.largeur))} × ${fmt(num(x.hauteur))} m${x.materiau ? ' · ' + esc(FICHE_MAT[x.materiau]) + (finTxt(x.fin, x.ral) ? ' · ' + esc(finTxt(x.fin, x.ral)) : '') : ''}${x.appui ? ' · appui ' + esc(appuiNom(x.appui)) : ''}</span><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn small" data-valider-menu="${i}:${k}">Valider</button><button type="button" class="btn small danger" data-pldel="${i}:menus:${k}">✕</button></span></div>`).join('')}
       <div class="sousbloc" style="padding:8px;margin:8px 0"><strong style="display:block;margin-bottom:4px">Ajouter une menuiserie extérieure</strong>
         <label style="display:block;font-size:14px;margin:4px 0">Type</label>${selCrayon('pieces-menus-type', 'Menuiserie : type d\'ouvrant', `<select id="pl_${i}_menus_type" style="width:100%">${optCodes('pieces-menus-type', 'Menuiserie : type d\'ouvrant', Object.entries(FICHE_OUV), '', '')}</select>`)}
         <div class="row" style="gap:6px;flex-wrap:wrap"><div style="flex:1;min-width:90px"><label style="display:block;font-size:14px;margin:4px 0">Nombre</label><input id="pl_${i}_menus_nb" inputmode="numeric" placeholder="1"></div>
@@ -2491,7 +2491,7 @@ function ouvrirConfigurateur() {
           <label style="display:block;font-size:14px;margin:4px 0">Finition du volet</label>${selCrayon('pieces-volet-fin', 'Volet : finition', `<select id="pl_${i}_menus_finvolet" style="width:100%">${optCodes('pieces-volet-fin', 'Volet : finition', finsPour('alu'), 'std', '')}</select>`)}
           ${selCrayon('pieces-volet-ral', 'Volet : couleur RAL', `<select id="pl_${i}_menus_ralvolet" style="width:100%;display:none;margin-top:4px">${optCodes('pieces-volet-ral', 'Volet : couleur RAL', RAL_LISTE.map(([k, t]) => [k, `${k} · ${t}`]), '', '— choisir la couleur —')}</select>`)}
         </div>
-        <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label>${selCrayon('pieces-appui', 'Menuiserie : appui', `<select id="pl_${i}_menus_appui" style="width:100%">${optCodes('pieces-appui', 'Menuiserie : appui', Object.entries(APPUI_LIB), '', '')}</select>`)}
+        <label style="display:block;font-size:14px;margin:4px 0">Appui de fenêtre</label>${selCrayon('pieces-appui', 'Menuiserie : appui', `<select id="pl_${i}_menus_appui" style="width:100%">${optListeOuvrages('pieces-appui', 'Menuiserie : appui', () => appuisFenetreBase(), '', '— aucun —')}</select>`)}
         <div style="margin:6px 0"><label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_elec" style="width:auto;height:auto"> Volet roulant motorisé</label>
         <label style="font-size:14px;margin-right:12px"><input type="checkbox" id="pl_${i}_menus_securit" style="width:auto;height:auto"> Verre sécurit</label>
         <label style="font-size:14px"><input type="checkbox" id="pl_${i}_menus_opaque" style="width:auto;height:auto"> Verre opaque</label></div>
@@ -2884,6 +2884,9 @@ function projetDe(c) {
 // Calculs : murs moins ouvertures de 1 m² ou plus, tableaux (2 côtés × hauteur × épaisseur),
 // toiture développée, fondations (murs porteurs × dimensions de la semelle et de la fouille)
 const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
+// Appui de fenêtre : la menuiserie garde l'identifiant de l'ouvrage « Appui de fenêtre … » de la bibliothèque
+function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
+function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
 // Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
 function validerMenu(c, pc, m) {
   const lieu = nomPiece(pc);
@@ -3767,7 +3770,7 @@ function ficheRendre() {
   const ajouterMur = (cat, texte) => `<button type="button" class="btn sec" data-action="addmur" data-cat="${cat}" style="margin-top:6px">${texte}</button>`;
   const menusResume = (() => {
     const pcs = piecesDe(c).filter(x => menusDe(x).length);
-    const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')}${finTxt(m.fin, m.ral) ? ' · ' + esc(finTxt(m.fin, m.ral)) : ''} · appui ${esc(APPUI_LIB[m.appui] || 'à choisir')}</div>`).join('')).join('');
+    const lignes = pcs.map(pc => `<p style="margin:8px 0 2px"><strong>${esc(nomPiece(pc))}</strong></p>` + menusDe(pc).map(m => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(FICHE_OUV[m.type] || m.type)} · ${num(m.nb)} × ${fmt(num(m.largeur))} × ${fmt(num(m.hauteur))} m · ${esc(FICHE_MAT[m.materiau] || 'matériau à choisir')}${finTxt(m.fin, m.ral) ? ' · ' + esc(finTxt(m.fin, m.ral)) : ''} · appui ${esc(appuiNom(m.appui) || 'à choisir')}</div>`).join('')).join('');
     const anciennes = p.ouvertures.length ? `<p style="color:#b42318;font-weight:600;margin:10px 0 2px">À rattacher à une pièce (pas encore comptées dans le métré) :</p>` + p.ouvertures.map(o => `<div class="ouv" style="font-size:14px;min-height:0;padding:6px 0">${esc(o.nom)} · ${esc(FICHE_OUV[o.type] || o.type)} · ${num(o.largeur)} × ${num(o.hauteur)} m <button type="button" class="btn small danger" data-action="delouv" data-id="${o.id}">Supprimer</button></div>`).join('') : '';
     return (lignes || '<p class="muted">Aucune menuiserie saisie. Saisissez-les dans chaque pièce, bloc B.</p>') + anciennes;
   })();
@@ -4179,6 +4182,19 @@ function ficheVersMetre() {
       ajouter(VOLET_DESIG.roulant, q, `Volet roulant ${matV} – ${lieu}`);
       if (o.electrique) ajouter(ALIM_VOLET, q, `Alimentation volet roulant – ${lieu}`);
     }
+  }
+  // Appuis de fenêtre : une ligne par largeur (toutes pièces), unité = nombre de fenêtres de cette largeur
+  const appuisGrp = {};
+  for (const x of menusCalcul(c)) {
+    if (!['ouvrant', 'oscillo', 'coulissant'].includes(x.m.type) || !x.m.appui) continue;
+    const k = x.m.appui + '|' + num(x.m.largeur);
+    appuisGrp[k] = appuisGrp[k] || { id: x.m.appui, L: num(x.m.largeur), n: 0 };
+    appuisGrp[k].n += x.nb;
+  }
+  for (const g of Object.values(appuisGrp)) {
+    const o = BIB.ouvrages.find(x => x.id === g.id);
+    if (!o) { manquants.push('appui de fenêtre'); continue; }
+    ajouter(o.designation, g.n, `${o.designation} – largeur ${fmt(g.L)} m`, { nombre: String(g.n) }, null);
   }
   sauverLignes(courantId, L);
   renderMetre();
