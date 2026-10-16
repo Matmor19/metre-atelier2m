@@ -4054,7 +4054,9 @@ function ficheVersMetre() {
       if (usage === 'plateforme') q = enM2 ? num(e.s) : num(e.s) * num(e.h);
       else if (usage === 'massif') { const base = num(e.nb) * num(e.L) * num(e.l); q = enM2 ? base : base * num(e.h); }
       else q = enM2 ? num(e.L) * num(e.l) : num(e.L) * num(e.l) * num(e.h);
-      if (o && (o.unite === 'm²' || o.unite === 'm³')) ajouter(o.designation, q, e.coff ? o.designation + ' (coffrage compris)' : undefined, null, 'fouille ' + usage + ' (terrassement)');
+      // Massif : même détail que la fouille du terrassement (nombre, longueur, largeur, hauteur)
+      const valMassif = usage === 'massif' ? { nombre: String(num(e.nb)), cote1: String(num(e.L)), cote2: String(num(e.l)), cote3: String(num(e.h)) } : null;
+      if (o && (o.unite === 'm²' || o.unite === 'm³')) ajouter(o.designation, q, e.coff ? o.designation + ' (coffrage compris)' : undefined, valMassif, valMassif ? null : 'fouille ' + usage + ' (terrassement)');
       else if (o) manquants.push(o.designation + ' (unité non prise en charge)');
     }
   }
@@ -4114,13 +4116,13 @@ function ficheVersMetre() {
   if (num(p.plancher.brut) > 0) {
     // Dallage RDC : seulement le type choisi dans le configurateur (rien choisi = rien)
     const oD = p.plancher.dallage ? BIB.ouvrages.find(x => x.id === p.plancher.dallage && !x.supprime) : null;
-    if (oD) ajouter(oD.designation, num(p.plancher.brut), oD.designation, null, 'surface de plancher brut (saisie)');
+    if (oD) ajouter(oD.designation, num(p.plancher.brut), oD.designation, { nombre: '1', cote1: String(num(p.plancher.brut)), cote2: '1', src: TXT_SURFACE }, null);
     else manquants.push('type de dallage (RDC)');
   }
   // Plancher choisi parmi les nouveaux ouvrages : quantité = surface du plancher
   if (String(p.plancher.type || '').startsWith('ouv:') && r.plS > 0) {
     const oP = BIB.ouvrages.find(x => x.id === p.plancher.type.slice(4) && !x.supprime);
-    if (oP) ajouter(oP.designation, r.plS, oP.designation, null, SRC_QTE.surface_plancher);
+    if (oP) ajouter(oP.designation, r.plS, oP.designation, { nombre: '1', cote1: String(r.plS), cote2: '1', src: TXT_SURFACE }, null);
   }
   // Élévation, finition, tableaux, toiture
   // Une ligne par type de mur ; les murs sans type prennent le « Matériau des murs » du chantier
