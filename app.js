@@ -3702,6 +3702,7 @@ function pleinesDe(fd) {
 function ficheRendre() {
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   const p = projetDe(c);
+  const calMurs = projetCalcul(p);   // surfaces à déduire de chaque mur (menuiseries cochées + ouverture libre)
   const sel = (opts, val) => (opts.some(([v]) => v === '') ? opts : [['', '— à choisir —'], ...opts]).map(([v, t]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const optListe = (liste, val) => `<option value="" ${!val ? 'selected' : ''}>— choisir —</option>` + liste.map(d => `<option value="${esc(d)}" ${d === val ? 'selected' : ''}>${esc(d)}</option>`).join('');
   const carte = (titre, contenu, src) => `<section ${src ? `data-source="${src}"` : ''} class="sousbloc" style="padding:12px;margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">${titre}</h3>${contenu}</section>`;
@@ -3750,15 +3751,17 @@ function ficheRendre() {
         ${refend ? '' : champ(soub ? 'Protection des murs enterrés' : 'Finition', selFin)}
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
-        <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
+        <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label></div>
         ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<div style="display:flex;gap:14px;flex-wrap:wrap;width:100%">
           ${murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
           ${murCaseListe(m, id, 'raid', 'Poteau raidisseur compris', 'mur-raid', 'Poteau raidisseur compris (mur)')}
           ${soub ? '' : murCaseListe(m, id, 'appui', 'Appui de fenêtre compris', 'mur-appui', 'Appui de fenêtre compris (mur)')}
           ${soub ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
-        ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px">
+        ${champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px'))}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
+        <span style="font-size:13px">Surface à déduire : <strong>${fmt(((calMurs.murs.find(x => x.m === m) || {}).ded) || 0)} m²</strong></span>
       </div></div>`;
   };
   const blocMurs = cat => p.murs.filter(m => (m.cat || 'peri') === cat).map(rangeMur).join('')
@@ -3967,7 +3970,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre', 'deduire'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
