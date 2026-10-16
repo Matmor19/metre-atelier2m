@@ -1894,7 +1894,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0095",
@@ -28893,6 +28894,6 @@
       "version": 1
     }
   ],
-  "revision": 104,
+  "revision": 105,
   "prochainNumero": 1760
 }

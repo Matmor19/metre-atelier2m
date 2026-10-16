@@ -2991,15 +2991,6 @@ function projetCalcul(p) {
   // Plancher bas
   const pl = p.plancher || {};
   r.plS = num(pl.surface);
-  r.hourdis = 0; r.dalleC = 0; r.solives = 0;
-  if (pl.type === 'hourdis') { r.hourdis = r.plS; r.dalleC = r.plS * num(pl.ep) / 100; }
-  if (pl.type === 'solivage' && r.plS > 0 && num(pl.portee) > 0) {
-    // Solives parallèles à la portée : nombre = largeur / entraxe + 1, longueur = portée
-    const largeurPerp = r.plS / num(pl.portee);
-    const ent = num(pl.entraxe);
-    r.nbSol = ent > 0 ? Math.ceil(largeurPerp / ent) + 1 : 0;
-    r.solives = r.nbSol * num(pl.portee);
-  }
   return r;
 }
 // Grandeurs calculées à partir du dessin (fiche projet et configurateur), utilisées par les ouvrages « qte »
@@ -3086,8 +3077,6 @@ function ctxQuantites(c) {
     rig_m3: num(p.fond.rigLin) * num(p.fond.rigHt) * num(p.fond.rigLarg),
     soub_s: r.soubS,
     lin_porteur: r.linP,
-    plan_hourdis: r.hourdis,
-    plan_dalle: r.dalleC,
     elev_net: r.net,
     finit_net: r.net,
     murs_choix: p.choix.murs || '',
@@ -3849,15 +3838,9 @@ function ficheRendre() {
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Surface de plancher brut (m²), dallage RDC', inp('data-k="plan" data-champ="brut" inputmode="decimal"', pl.brut || ''))}
       ${champ('Type de dallage (RDC)', sel2('data-k="plan" data-champ="dallage"', [CHOIX_VIDE, ...nvDallages.map(o => [o.id, o.designation])], pl.dallage || ''))}
-      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ['hourdis', 'Hourdis avec dalle de compression'], ['solivage', 'Solivage bois'], ...nvPlanchers.map(o => ['ouv:' + o.id, o.designation])], pl.type || ''))}
+      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ...nvPlanchers.map(o => ['ouv:' + o.id, o.designation])], pl.type || ''))}
       ${champ('Surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
-      ${pl.type === 'hourdis' ? champ('Épaisseur de la dalle de compression (cm)', inp('data-k="plan" data-champ="ep" inputmode="decimal" placeholder="ex. 4"', pl.ep)) : ''}
-      ${pl.type === 'solivage' ? champ('Retombée des solives (mm)', sel2('data-k="plan" data-champ="retombee"', [CHOIX_VIDE, ['145', '145 mm'], ['175', '175 mm'], ['220', '220 mm']], pl.retombee || '')) : ''}
-      ${pl.type === 'solivage' ? champ('Portée des solives (m)', inp('data-k="plan" data-champ="portee" inputmode="decimal"', pl.portee || '')) : ''}
-      ${pl.type === 'solivage' ? champ('Entraxe des solives (m)', inp('data-k="plan" data-champ="entraxe" inputmode="decimal" placeholder="ex. 0,60"', pl.entraxe || '')) : ''}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">${pl.type === 'solivage'
-      ? 'Solivage : OSB 9 mm en fond, isolant entre solives (épaisseur = retombée), OSB 21 mm support de revêtement de sol.'
-      : 'Hourdis : plancher à poutrelles et hourdis, avec dalle de compression en béton.'}</p>`;
+    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Le type de plancher et le type de dallage se choisissent dans la liste ; la quantité est calculée sur la surface saisie.</p>`;
   })();
   $('cfgFiche').innerHTML = `${tabTitre('A. Terrain')}<div class="bloc bloc-lettre">
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -3945,8 +3928,6 @@ function ficheResume() {
     ${ligne('Fouilles en tranchée', fmt(r.fouille) + ' m³', true)}
     ${ligne('Semelles filantes béton', fmt(r.semelle) + ' m³', true)}
     ${ligne('Soubassement : surface des murs porteurs', fmt(r.soubS) + ' m²', true)}
-    ${p.plancher.type === 'hourdis' ? ligne('Plancher hourdis', fmt(r.hourdis) + ' m²', true) + ligne('Dalle de compression', fmt(r.dalleC) + ' m³', true) : ''}
-    ${p.plancher.type === 'solivage' ? ligne('Solives bois', fmt(r.solives) + ' ml', true) + ligne('Isolant entre solives et OSB 9 mm de fond', fmt(r.plS) + ' m²', true) + ligne('OSB 21 mm support de revêtement de sol', fmt(r.plS) + ' m²', true) : ''}
   </table>
   ${r.ouvs.length ? `<p style="font-size:12px;color:#6b5a7a;margin:8px 0 0">${r.ouvs.map(x => `${esc(x.o.nom)} : ${fmt(x.aire)} m² · tableau ${fmt(x.tab)} m²${x.deduit ? ' · déduite des murs' : ''}`).join('<br>')}</p>` : ''}`;
 }
@@ -4139,18 +4120,6 @@ function ficheVersMetre() {
   if (String(p.plancher.type || '').startsWith('ouv:') && r.plS > 0) {
     const oP = BIB.ouvrages.find(x => x.id === p.plancher.type.slice(4) && !x.supprime);
     if (oP) ajouter(oP.designation, r.plS, oP.designation, null, SRC_QTE.surface_plancher);
-  }
-  if (p.plancher.type === 'hourdis' && r.plS > 0) {
-    ajouter('Plancher à poutrelles et hourdis béton d\'étage', r.hourdis, 'Plancher à hourdis avec dalle de compression', null, SRC_QTE.plan_hourdis);
-    ajouter('Dalle de compression béton armé (sur hourdis)', r.dalleC, 'Dalle de compression ' + num(p.plancher.ep) + ' cm', null, SRC_QTE.plan_dalle);
-  }
-  if (p.plancher.type === 'solivage' && r.plS > 0 && r.solives > 0) {
-    const ret = p.plancher.retombee;
-    const solive = { '145': 'Solives bois 145×45 (plancher)', '175': 'Solives 175×45 (plancher, ossature)', '220': 'Solives bois 220×45 (plancher)' }[ret];
-    ajouter(solive, r.solives, 'Solives bois ' + ret + ' mm, entraxe ' + num(p.plancher.entraxe) + ' m');
-    ajouter('Isolation entre solives de plancher', r.plS, 'Isolation entre solives, épaisseur ' + ret + ' mm');
-    ajouter('Panneau OSB 9 mm en sous-face de solivage (fond de plancher)', r.plS, 'OSB 9 mm en fond de plancher');
-    ajouter('Support de parquet : OSB 21 mm', r.plS, 'OSB 21 mm support de revêtement de sol');
   }
   // Élévation, finition, tableaux, toiture
   // Une ligne par type de mur ; les murs sans type prennent le « Matériau des murs » du chantier
