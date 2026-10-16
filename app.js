@@ -77,7 +77,8 @@ let _revueCollecte = null;
 // Fondations : chaque fouille du VRD (tranchée pour semelles filantes, massif) entraîne la semelle béton
 // du gros œuvre qui va avec, avec les mêmes cotes et la même quantité. Si la fouille disparaît, la semelle aussi.
 // Fonction pure : renvoie la nouvelle liste de lignes.
-const pairesFondation = () => [[DES_FOND_FOUILLE, 'OUV-0040'], [DES_MASSIF, DES_SEMELLE_ISO]];   // semelle filante : liée par identifiant (son nom a été précisé dans la bibliothèque)  // appelée à l'enregistrement, pas au chargement
+// Massif : aucune semelle automatique, seul l'ouvrage de maçonnerie choisi entre au métré (comme les semelles filantes)
+const pairesFondation = () => [[DES_FOND_FOUILLE, 'OUV-0040']];   // semelle filante : liée par identifiant (son nom a été précisé dans la bibliothèque)  // appelée à l'enregistrement, pas au chargement
 function alignerFondations(L) {
   if (!BIB || !BIB.ouvrages || !Array.isArray(L)) return L;
   const ouv = d => BIB.ouvrages.find(x => !x.supprime && (x.designation === d || x.id === d));
@@ -90,8 +91,6 @@ function alignerFondations(L) {
       if (f.ouvrage !== fou.id || !(f.quantite > 0)) continue;
       // Fouille en rigole sans semelle choisie : rien n'est inséré (une semelle déjà liée est retirée)
       if (fouDes === DES_FOND_FOUILLE && !f.semOuv) continue;
-      // Massif avec un ouvrage de maçonnerie choisi : la semelle automatique n'est pas insérée
-      if (fouDes === DES_MASSIF && f.maconChoisi) continue;
       sources.add(f.uid);
       // Semelle choisie dans le bloc Terrassement (fouille en rigole) ; sinon la semelle par défaut
       const bet = (f.semOuv && ouv(f.semOuv)) || ouv(betDes);
@@ -3816,7 +3815,7 @@ function ficheRendre() {
     </div>
     <div style="margin-top:8px">${champ('Semelle filante insérée au métré avec ces fouilles (lot gros œuvre, m³)', selCrayon('terr-semelle', 'Semelle filante (fouilles en rigole)', `<select data-k="fond" data-champ="semOuv" style="width:100%">${optListeOuvrages('terr-semelle', 'Semelle filante (fouilles en rigole)', () => BIB.ouvrages.filter(o => ouvActif(o) && o.lot === 'gros-oeuvre' && o.unite === 'm³' && /^Semelles filantes/i.test(o.designation)).map(o => o.designation), fd.semOuv || '', '— aucune semelle —')}</select>`))}</div>
     <p style="font-size:13px;margin:12px 0 4px"><strong>Fouilles en pleine masse</strong></p>
-    <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, le nombre crée aussi les semelles isolées du gros œuvre.</p>
+    <p style="font-size:12px;color:#6b5a7a;margin:0 0 4px">Ajoutez une ligne par fouille. Pour un massif, choisissez l'ouvrage de maçonnerie : sans choix, aucune semelle n'est ajoutée au métré.</p>
     ${pleinesDe(fd).map(e => `<div ${(e.usage || 'massif') === 'massif' ? 'data-source="massif_m3"' : ''} style="border:1px solid #e0c9a6;border-radius:8px;padding:8px;margin-top:6px;background:#fff">
       ${champ('Usage', `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="usage" style="width:100%">${[['plateforme', 'Plateforme / dallage'], ['massif', 'Massif de fondation'], ['divers', 'Trou divers (ex. cuve)']].map(([v, l]) => `<option value="${v}"${(e.usage || 'massif') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`)}
       ${champ('Ouvrage de maçonnerie (une seule ligne au métré, lot gros œuvre)', (() => { const cle = `terr-maco-${e.usage || 'massif'}`, tit = 'Maçonnerie : ' + (e.usage || 'massif'); return selCrayon(cle, tit, `<select data-k="pleine" data-id="${esc(e.id)}" data-champ="ouv" style="width:100%">${optListeOuvrages(cle, tit, () => [...new Set(BIB.ouvrages.filter(o => ouvActif(o) && (o.unite === 'm²' || o.unite === 'm³') && o.lot === 'gros-oeuvre').map(o => o.designation))], e.ouv || '', '— aucun —')}</select>`) + `<label style="display:flex;gap:6px;align-items:center;font-size:14px;margin-top:4px"><input type="checkbox" data-k="pleine" data-id="${esc(e.id)}" data-champ="coff" ${e.coff ? 'checked' : ''} style="width:16px;height:16px;margin:0"> Coffrage compris (indiqué sur la ligne du métré)</label>`; })())}
@@ -4040,9 +4039,7 @@ function ficheVersMetre() {
     if (e.usage === 'massif') {
       if (!(n_ > 0 && L_ > 0 && l_ > 0 && h_ > 0)) continue;
       ajouter(DES_MASSIF, n_ * L_ * l_ * h_, undefined, { nombre: String(n_), ...dims });
-      // La semelle isolée (gros œuvre) suit la fouille du massif, voir alignerFondations().
-      // Si un ouvrage de maçonnerie est choisi pour ce massif, il remplace la semelle automatique (pas de doublon)
-      if (L.length) L[L.length - 1].maconChoisi = !!e.ouv;
+      // Pas de semelle automatique : l'ouvrage de maçonnerie choisi ci-dessous (si il y en a un) est seul au métré
     } else if (e.usage === 'plateforme') {
       const S_ = num(e.s), H_ = num(e.h), N_ = 1;  // plateforme : toujours 1, pas de nombre
       if (S_ > 0 && H_ > 0) ajouter(DES_PLATEFORME, N_ * S_ * H_, undefined, { nombre: String(N_), cote1: String(S_), cote2: '1', cote3: String(H_), src: TXT_SURFACE });
