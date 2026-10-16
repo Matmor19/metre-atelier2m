@@ -1304,13 +1304,14 @@
       "unite": "ml",
       "type": "maconnee",
       "saisie": "metre",
+      "archive": true,
       "champs": [
         {
           "cle": "cote1",
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2
     },
     {
       "id": "OUV-0063",
@@ -29090,6 +29091,6 @@
       "version": 1
     }
   ],
-  "revision": 107,
+  "revision": 108,
   "prochainNumero": 1772
 }
