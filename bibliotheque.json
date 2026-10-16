@@ -3285,8 +3285,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "ml_appuis_alu"
+      "version": 2,
+      "qte": "ml_appuis_alu",
+      "archive": true
     },
     {
       "id": "OUV-0185",
@@ -15700,8 +15701,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "ml_appuis_acier"
+      "version": 2,
+      "qte": "ml_appuis_acier",
+      "archive": true
     },
     {
       "id": "OUV-0871",
@@ -15716,8 +15718,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "ml_appuis_beton"
+      "version": 2,
+      "qte": "ml_appuis_beton",
+      "archive": true
     },
     {
       "id": "OUV-0872",
@@ -15732,8 +15735,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "ml_appuis_beton_pierre"
+      "version": 2,
+      "qte": "ml_appuis_beton_pierre",
+      "archive": true
     },
     {
       "id": "OUV-0873",
@@ -29086,6 +29090,6 @@
       "version": 1
     }
   ],
-  "revision": 106,
+  "revision": 107,
   "prochainNumero": 1772
 }
