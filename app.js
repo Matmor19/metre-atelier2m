@@ -2969,7 +2969,7 @@ function projetCalcul(p) {
   for (const x of r.murs) {
     const net = x.brut - x.ded;
     const k = x.m.type || '';
-    if (x.m.cat === 'soub') { r.parSoub[k] = (r.parSoub[k] || 0) + net; r.soubS += net; }
+    if (x.m.cat === 'soub') { const cle = k + '|' + (x.m.chaine === true ? '1' : '0') + (x.m.raid === true ? '1' : '0'); r.parSoub[cle] = (r.parSoub[cle] || 0) + net; r.soubS += net; }
     else r.parType[k] = (r.parType[k] || 0) + net;
     // La membrane Delta-MS a sa propre ligne (hauteur + 30 cm) : elle n'est pas comptée une deuxième fois comme finition
     if (x.m.finition && net > 0 && !(x.m.cat === 'soub' && x.m.finition === DELTA_SOUB)) r.parFin[x.m.finition] = (r.parFin[x.m.finition] || 0) + net;
@@ -3743,6 +3743,8 @@ function ficheRendre() {
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
         <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label>
+        ${soub && (num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<label><input type="checkbox" ${id} data-champ="chaine" ${m.chaine === true ? 'checked' : ''}> Chaînage compris</label>
+        <label><input type="checkbox" ${id} data-champ="raid" ${m.raid === true ? 'checked' : ''}> Poteau raidisseur compris</label>` : ''}
         ${m.cat === 'peri' || !m.cat ? champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px')) : ''}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
       </div></div>`;
@@ -3953,7 +3955,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
@@ -4086,10 +4088,13 @@ function ficheVersMetre() {
   ajouter(DES_BENNE, num(ch.bennes));
   ajouter(DES_BENNE_TRI, num(ch.bennesTri));
   // Soubassement : chaque mur avec son matériau ; solin en tête sur son linéaire
-  for (const [t, surf] of Object.entries(r.parSoub || {})) {
+  for (const [cle, surf] of Object.entries(r.parSoub || {})) {
     if (!(surf > 0)) continue;
+    const i = cle.lastIndexOf('|'), t = cle.slice(0, i), fl = cle.slice(i + 1);
     if (!t) { manquants.push('Matériau du mur de soubassement'); continue; }
-    ajouter(t, surf, t, null, SRC_QTE.soub_s);
+    // Cases cochées : indiquées dans la désignation (comme « coffrage compris »), sans changer la quantité
+    const comp = [fl[0] === '1' ? 'chaînage compris' : '', fl[1] === '1' ? 'poteau raidisseur compris' : ''].filter(Boolean).join(', ');
+    ajouter(t, surf, comp ? t + ' (' + comp + ')' : t, null, SRC_QTE.soub_s);
   }
   // Solin en tête de soubassement : seulement sur les murs de soubassement avec enduit hydrofuge
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
