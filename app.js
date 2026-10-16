@@ -381,7 +381,7 @@ function detailHtml(l) {
     const murs = c ? projetDe(c).murs.filter(m => (m.type || '') === typeLigne && m.cat !== 'soub' && num(m.longueur) > 0 && num(m.hauteur) > 0) : [];   // les murs de soubassement ont leur propre article
     // Mêmes couleurs que dans les formules : longueur en vert, hauteur en bleu
     const liste = murs.map((m, i) => `${esc(m.nom || 'Mur ' + (i + 1))} : <span style="color:${COTE_COULEUR.Longueur};font-weight:700">${esc(fmt(num(m.longueur)))} m</span> × <span style="color:${COTE_COULEUR.Hauteur};font-weight:700">${esc(fmt(num(m.hauteur)))} m</span>`).join(' ; ');
-    return esc(v.src.replace(/^Calcul du configurateur : /, '').replace(/^murs, surface nette$/, 'Longueur × hauteur des murs, moins les menuiseries')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
+    return esc(v.src.replace(/^Calcul du configurateur : /, '').replace(/^murs, surface nette$/, 'Longueur × hauteur des murs, moins les menuiseries égales ou supérieures à 1 m²')) + (liste ? `<br><span style="font-size:11.5px">${liste}</span>` : '');
   }
   if (v.src) return esc(v.src.replace(/^Calcul du configurateur : /, ''));
   let t = detailMorceaux(l).map(m => {
