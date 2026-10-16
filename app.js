@@ -4183,18 +4183,21 @@ function ficheVersMetre() {
       if (o.electrique) ajouter(ALIM_VOLET, q, `Alimentation volet roulant – ${lieu}`);
     }
   }
-  // Appuis de fenêtre : une ligne par largeur (toutes pièces), unité = nombre de fenêtres de cette largeur
-  const appuisGrp = {};
-  for (const x of menusCalcul(c)) {
-    if (!['ouvrant', 'oscillo', 'coulissant'].includes(x.m.type) || !x.m.appui) continue;
-    const k = x.m.appui + '|' + num(x.m.largeur);
-    appuisGrp[k] = appuisGrp[k] || { id: x.m.appui, L: num(x.m.largeur), n: 0 };
-    appuisGrp[k].n += x.nb;
-  }
-  for (const g of Object.values(appuisGrp)) {
-    const o = BIB.ouvrages.find(x => x.id === g.id);
-    if (!o) { manquants.push('appui de fenêtre'); continue; }
-    ajouter(o.designation, g.n, `${o.designation} – largeur ${fmt(g.L)} m`, { nombre: String(g.n) }, null);
+  // Appuis de fenêtre : cochés dans les murs extérieurs. Chaque fenêtre du projet reçoit l'appui choisi dans la liste du mur.
+  // Une ligne par largeur, unité = nombre de fenêtres de cette largeur.
+  const appuisChoisis = [...new Set((p.murs || []).filter(m => (m.cat || 'peri') === 'peri' && m.appui === true && m.liste_appui).map(m => m.liste_appui))];
+  if (appuisChoisis.length > 1) manquants.push('appuis de fenêtre : un seul appui par projet, plusieurs choisis dans les murs');
+  if (appuisChoisis.length === 1) {
+    const oA = BIB.ouvrages.find(x => x.id === appuisChoisis[0]);
+    if (!oA) manquants.push('appui de fenêtre');
+    else {
+      const parLargeur = {};
+      for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) {
+        if (m.type !== 'fen' || !(num(m.l) > 0)) continue;
+        parLargeur[num(m.l)] = (parLargeur[num(m.l)] || 0) + (num(m.nb) || 1);
+      }
+      for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
+    }
   }
   sauverLignes(courantId, L);
   renderMetre();
