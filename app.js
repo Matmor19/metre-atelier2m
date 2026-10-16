@@ -3750,8 +3750,6 @@ function ficheRendre() {
         ${champ('Mur (bibliothèque, lot gros œuvre)', selMat)}
         ${refend ? '' : champ(soub ? 'Protection des murs enterrés' : 'Finition', selFin)}
       </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:6px;font-size:13px">
-        <label><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''}> Déduire les menuiseries extérieures</label></div>
         ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<div style="display:flex;gap:14px;flex-wrap:wrap;width:100%">
           ${murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
           ${murCaseListe(m, id, 'raid', 'Poteau raidisseur compris', 'mur-raid', 'Poteau raidisseur compris (mur)')}
@@ -3759,6 +3757,7 @@ function ficheRendre() {
           ${soub ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px">
+        <label style="display:flex;gap:6px;align-items:center;min-height:40px;margin:0"><input type="checkbox" ${id} data-champ="deduire" ${m.deduire === true ? 'checked' : ''} style="width:auto;height:auto;margin:0"> Déduire les menuiseries extérieures</label>
         ${champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px'))}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
         <span style="font-size:13px">Surface à déduire : <strong>${fmt(((calMurs.murs.find(x => x.m === m) || {}).ded) || 0)} m²</strong></span>
