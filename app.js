@@ -2946,7 +2946,7 @@ const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette pér
 const regardsBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Regards de visite/.test(o.designation)).map(o => o.designation);
 const nappeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Nappe |Plaques de protection mécanique)/.test(o.designation)).map(o => o.designation);
 const araseBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Bande d'arase étanche/.test(o.designation)).map(o => o.designation);
-function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Seuil /.test(o.designation)).map(o => o.designation); }
+function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^(Seuil |Bavette pliée en aluminium)/.test(o.designation)).map(o => o.designation); }
 function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
 // Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
 function validerMenu(c, pc, m) {

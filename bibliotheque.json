@@ -1091,12 +1091,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Cloisons en aggloméré de ciment 10 cm (distribution)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0052",
@@ -1215,12 +1216,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Cloisons en brique creuse 7 cm (distribution)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0057",
@@ -30305,6 +30307,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 124,
+  "revision": 125,
   "prochainNumero": 1832
 }
