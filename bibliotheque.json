@@ -1493,12 +1493,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Enduit extérieur monocouche sur façade"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0072",
@@ -1517,12 +1518,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Enduit extérieur traditionnel deux couches sur maçonnerie"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0073",
@@ -9762,12 +9764,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Enduit de façade monocouche"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0555",
@@ -29993,6 +29996,6 @@
       "version": 1
     }
   ],
-  "revision": 115,
+  "revision": 116,
   "prochainNumero": 1816
 }
