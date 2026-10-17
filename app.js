@@ -1636,6 +1636,7 @@ function platNvDe(c) { const q = c.platNv = c.platNv || {}; q.hauteur = q.hauteu
   q.pla = q.pla || { m2: '', ouv: '', isol: '', joint: '' };
   for (const k of ['cloi', 'doub', 'pla']) { q[k].hydro = q[k].hydro || ''; q[k].feu = q[k].feu || ''; }
   q.cloi.acou = q.cloi.acou || '';
+  q.enduit = q.enduit || { ouv: '' };
   if (!q.pla.hydroInit) { q.pla.hydro = 'S'; q.pla.hydroInit = true; }
   // Formule de la bande à joint du plafond : S × 3,80 (proposée une seule fois, ensuite modifiable librement)
   if (!q.pla.jointInit) { q.pla.joint = 'S * 3,8'; q.pla.jointInit = true; }
@@ -1742,6 +1743,7 @@ function renderPlatNv() {
       ${champMlHydro(q, cle, 'hydro', 'Plus-value plaque hydrofuge', R[cle].hydro)}
       ${cle === 'cloi' ? champMlHydro(q, cle, 'acou', 'Plus-value plaque acoustique') : ''}
       ${champPlaqueFeu(cle, q[cle].feu, R[cle].feu)}`;
+  const en = enduitIntSurf(c);
   host.innerHTML = `${tabTitre('C. Plâtrerie et isolation (bloc séparé)')}<div class="bloc bloc-lettre">
     <p class="muted">Cloisonnement : hauteur sous plafond. Doublage : hauteur de doublage (peut être différente). Surface = linéaire × hauteur.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
@@ -1750,6 +1752,8 @@ function renderPlatNv() {
     <p class="muted" style="font-size:13px;margin:4px 0 0">Portes de passage et façades de placard déduites du cloisonnement (1,50 m² et plus) : ${fmt(portesEtPlacardsM2(c))} m².</p>
     ${ligne('doub', 'Doublage', /^(Doublage|Système Optima|Rail montant doublé)/i, `<label style="font-size:12px">Hauteur de doublage m <input data-plat="hauteurDoub" inputmode="decimal" value="${esc(q.hauteurDoub || '')}" style="width:90px"></label>`)}
     <p class="muted" style="font-size:13px;margin:4px 0 0">Menuiseries extérieures déduites du doublage : ${fmt(menuiseriesExtM2(c))} m² (fenêtres, portes-fenêtres, baies et portes d'entrée d'au moins 1,50 m²).</p>
+    <div class="row" style="gap:6px;margin-top:6px;align-items:center"><span class="muted" style="font-size:12px;min-width:120px;font-weight:600">Enduit intérieur</span>${selCrayon('plat-enduit-ouv', 'Enduit intérieur', `<select data-plat="enduit|ouv" style="flex:1;min-width:0">${optPlat(/^Enduit intérieur traditionnel/i, q.enduit.ouv, 'plat-enduit-ouv', 'Enduit intérieur')}</select>`)}</div>
+    <p class="muted" style="font-size:13px;margin:2px 0 0">Enduit intérieur : périmètre des murs périphériques ${fmt(en.linP)} m × hauteur de doublage ${fmt(en.hk)} m, moins menuiseries extérieures ${fmt(en.ded)} m² = ${fmt(en.net)} m².</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;background:rgba(224,123,26,0.55);border-radius:6px;padding:6px 8px;">
       <strong style="font-size:15px;min-width:120px;color:#fff;font-weight:600">Plafond</strong>
       <label style="font-size:12px">Surface m² <input data-plat="pla|m2" inputmode="decimal" value="${esc(q.pla.m2 || '')}" style="width:80px"></label>
@@ -1777,6 +1781,23 @@ function menuiseriesToutesM2(c) {
   return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => {
     if (!(num(m.l) > 0 && num(m.h) > 0)) return b;
     return b + num(m.l) * num(m.h) / 10000 * (num(m.nb) || 1);
+  }, 0), 0);
+}
+// Enduit intérieur : périmètre des murs périphériques × hauteur de doublage, moins toutes les menuiseries extérieures
+function enduitIntSurf(c) {
+  const linP = (projetDe(c).murs || []).filter(m => (m.cat || 'peri') === 'peri').reduce((a, m) => a + num(m.longueur), 0);
+  const hk = num(platNvDe(c).hauteurDoub);
+  const brut = linP * hk, ded = menuiseriesToutesM2(c);
+  return { linP, hk, brut, ded, net: Math.max(0, brut - ded) };
+}
+// Habillages des menuiseries (ml) : côtés (2 × hauteur) de chaque menuiserie, plus la largeur (sous-face du linteau) sauf volet roulant
+function habillageMl(c) {
+  return piecesNvDe(c).reduce((a, p) => a + (p.menus || []).reduce((b, m) => {
+    if (!(num(m.l) > 0 && num(m.h) > 0)) return b;
+    const nb = num(m.nb) || 1;
+    const cotes = 2 * num(m.h) / 100;
+    const linteau = m.volet === 'roulant' ? 0 : num(m.l) / 100;
+    return b + (cotes + linteau) * nb;
   }, 0), 0);
 }
 // Hauteur standard des portes de passage (bloc-porte fin de chantier 204 cm)
@@ -1894,6 +1915,16 @@ function genererPlatNv(c) {
     if (cle === 'cloi') ajouteMlPlus(ouvAcou, 'plus-value acoustique', titre, num(q.cloi.acou), hk);
     ajouteFeu(titre, q[cle].feu);
     for (let i = d0; i < L.length; i++) L[i].platBloc = cle;
+  }
+  // Enduit intérieur (plâtre projeté ou chaux-sable) : périmètre des murs périphériques × hauteur de doublage, moins les menuiseries extérieures
+  const oEnd = q.enduit && q.enduit.ouv ? BIB.ouvrages.find(x => x.id === q.enduit.ouv && !x.supprime) : null;
+  const enSurf = enduitIntSurf(c);
+  if (q.enduit && q.enduit.ouv && !oEnd) manque.push('enduit intérieur');
+  if (oEnd && enSurf.net > 0) {
+    ajouterLotSiAbsent(c.id, oEnd.lot);
+    const vE = { nombre: '1', cote1: String(enSurf.net), cote2: '1' };
+    L.push({ uid: uid(), lot: oEnd.lot, ouvrage: oEnd.id, designation: `${oEnd.designation} – périmètre ${fmt(enSurf.linP)} m × hauteur de doublage ${fmt(enSurf.hk)} m, moins menuiseries extérieures : ${fmt(enSurf.ded)} m²`, unite: oEnd.unite, valeurs: vE, quantite: calcul(oEnd, vE), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    nb++;
   }
   // Plafond : saisi directement en m², sans hauteur
   const m2 = num(q.pla.m2);
@@ -2894,6 +2925,13 @@ const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Bét
 function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
 // Seuils de porte de la bibliothèque (ouvrages « Seuil … »), proposés dans la liste « Seuil de porte compris » des murs
 // Drainage et arase des murs périphériques : une liste par élément ; rien choisi = rien au métré
+const habTabBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Habillage des tableaux/.test(o.designation)).map(o => o.designation);
+const habBandeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Réalisation de bandes de peinture/.test(o.designation)).map(o => o.designation);
+// Deux choix optionnels (tableaux, bandes de peinture), en ml, sur une même ligne ; rien choisi = rien au métré
+function habillagesMenuiseries(p) {
+  const bloc = (cle, titre, base) => `<div style="flex:1;min-width:240px"><div style="font-size:13px;margin-bottom:3px">${titre}</div>${selCrayon('hab-' + cle, titre, `<select data-k="choix" data-champ="hab${cle}" style="width:100%;padding:6px">${optListeOuvrages('hab-' + cle, titre, base, (p.choix || {})['hab' + cle] || '', '— aucun —')}</select>`)}</div>`;
+  return `<div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:8px"><strong style="font-size:13px">Habillages des menuiseries (ml)</strong><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">${bloc('Tab', 'Habillage des tableaux', habTabBase)}${bloc('Bande', 'Bandes de peinture', habBandeBase)}</div><p class="muted" style="font-size:12px;margin:4px 0 0">Linéaire : côtés (hauteur × 2) de chaque menuiserie, plus la largeur sauf volet roulant.</p></div>`;
+}
 const drainBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Système complet de drainage|Ouvrage global de drainage)/.test(o.designation)).map(o => o.designation);
 const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette périphérique/.test(o.designation)).map(o => o.designation);
 const regardsBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Regards de visite/.test(o.designation)).map(o => o.designation);
@@ -3277,7 +3315,7 @@ const FINITIONS_RETIREES = new Set([
 ]);
 // Finitions : recherche dans toute la bibliothèque (m²)
 function ficheListeFinition() {
-  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation) && !FINITIONS_RETIREES.has(o.designation))
+  return BIB.ouvrages.filter(o => ouvActif(o) && o.unite === 'm²' && /enduit|bardage|crépi|peinture|lasure|revêtement|parement|plaque|placo|papier|tapisserie|lambris|vêture|finition/i.test(o.designation) && !/carrelage|faïence|doublage/i.test(o.designation) && !FINITIONS_RETIREES.has(o.designation) && !/^Enduit intérieur /.test(o.designation))
     .map(o => o.designation).filter((d, i, t) => t.indexOf(d) === i);
 }
 // Protections des murs enterrés (soubassement) : toute la bibliothèque (m²)
@@ -3901,7 +3939,7 @@ function ficheRendre() {
     </div>
     ${tabTitre('2. Gros œuvre + matériaux de finition')}<div class="bloc">
     ${carte('Murs de soubassement (mur au-dessus des fondations)', blocMurs('soub') + ajouterMur('soub', '+ Ajouter un mur de soubassement'))}
-    ${carte('Murs périphériques', blocMurs('peri') + ajouterMur('peri', '+ Ajouter un mur périphérique'))}
+    ${carte('Murs périphériques', blocMurs('peri') + ajouterMur('peri', '+ Ajouter un mur périphérique') + habillagesMenuiseries(p))}
     ${carte('Murs de refend (sans finition)', blocMurs('refend') + ajouterMur('refend', '+ Ajouter un mur de refend'))}
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
@@ -4188,6 +4226,9 @@ function ficheVersMetre() {
   if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
   // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
   ajouter(p.choix.tableaux || r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
+  const habMl = habillageMl(c);
+  for (const id of [p.choix.habTab, p.choix.habBande]) { const o = id && BIB.ouvrages.find(x => x.id === id); if (o && habMl > 0) ajouter(o.designation, habMl, o.designation, null, null); }
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
   else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
   for (const x of menusCalcul(c)) {
