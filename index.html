@@ -75,6 +75,11 @@ input::placeholder{color:var(--mut);opacity:.8}
 .bloc:focus-within::after{opacity:1;animation:tourCadre 2.4s linear infinite}
 @keyframes tourCadre{to{--ang:360deg}}
 @media (prefers-reduced-motion: reduce){.bloc button,.bloc button:hover{transition:none;transform:none}.bloc:focus-within::after{animation:none}}
+/* Blocs A à D (terrain, pièces, plâtrerie, peinture) : fond gris clair, comme les lots 1 à 13 ont leur fond orange */
+#vConfig .bloc.bloc-lettre{background:#f1f3f5}
+#vConfig .bloc.bloc-lettre .sousbloc{background:#e4e7eb!important;border-color:#8b939c!important}
+#vConfig .bloc.bloc-lettre .sousbloc h3{color:#374151!important}
+#vConfig .bloc.bloc-lettre .sousbloc .btn.sec{color:#374151!important;border-color:#374151!important}
 #vConfig .sousbloc{background:#fdebd8!important;border:2px solid #e07b1a!important;border-radius:10px!important;box-shadow:none!important;color:#1d2330}
 #vConfig .sousbloc h3{color:#9a4a0e!important;border-bottom:none!important;padding-bottom:0}
 #vConfig .sousbloc label{color:#1d2330!important}
