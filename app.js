@@ -1462,14 +1462,14 @@ function renderPiecesNv() {
   const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && ouvActif(o));
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
   const carte = (p) => { const rep = piecesRepliees.has(p.id); return `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <button type="button" class="btn sec small" data-piece-act="fold:${esc(p.id)}" title="${rep ? 'Déplier la pièce' : 'Replier la pièce'}" style="padding:2px 8px">${rep ? '▸' : '▾'}</button>
-      <button type="button" class="btn sec small" data-piece-act="haut:${esc(p.id)}" title="Monter la pièce" style="padding:2px 8px">↑</button>
-      <button type="button" class="btn sec small" data-piece-act="bas:${esc(p.id)}" title="Descendre la pièce" style="padding:2px 8px">↓</button>
-      <span data-glisser-piece="${esc(p.id)}" title="Glisser pour changer l'ordre des pièces" style="cursor:grab;touch-action:none;user-select:none;font-size:20px;padding:0 6px;color:var(--mut)">⋮⋮</span>
-      <input list="dlPiecesNv" data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce (ex. Chambre parentale)" style="flex:1;font-weight:700">
-      <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="width:60px">
-      <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
+    <div class="row" style="justify-content:flex-start;align-items:center;gap:6px">
+      <button type="button" class="btn sec small" data-piece-act="fold:${esc(p.id)}" title="${rep ? 'Déplier la pièce' : 'Replier la pièce'}" style="flex:0 0 auto;padding:2px 10px;font-size:16px">${rep ? '▸' : '▾'}</button>
+      <button type="button" class="btn sec small" data-piece-act="haut:${esc(p.id)}" title="Monter la pièce" style="flex:0 0 auto;padding:2px 10px;font-size:16px">↑</button>
+      <button type="button" class="btn sec small" data-piece-act="bas:${esc(p.id)}" title="Descendre la pièce" style="flex:0 0 auto;padding:2px 10px;font-size:16px">↓</button>
+      <span data-glisser-piece="${esc(p.id)}" title="Glisser pour changer l'ordre des pièces" style="cursor:grab;touch-action:none;user-select:none;font-size:20px;padding:0 6px;color:var(--mut);flex:0 0 auto">⋮⋮</span>
+      <input list="dlPiecesNv" data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce (ex. Chambre parentale)" style="flex:1 1 160px;min-width:0;font-weight:700">
+      <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="flex:0 0 64px;width:64px">
+      <button type="button" class="btn small danger" style="flex:0 0 auto" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
     </div>
     <div class="piece-corps" style="${rep ? 'display:none' : ''}">
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
