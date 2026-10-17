@@ -966,6 +966,21 @@ function nomPieceMetre(id) {
   const p = c ? piecesNvDe(c).find(x => x.id === id) : null;
   return p ? (p.nom || 'Pièce') + (p.qualif ? ' ' + p.qualif : '') : 'Pièce';
 }
+// Sous-titres du métré (menuiseries, plâtrerie, pièces), calculés une seule fois pour l'écran, l'impression, les documents par lot et l'Excel
+const SOUS_TITRES_MEN = { ouv: 'Menuiseries ouvrantes', coul: 'Menuiseries coulissantes', ferm: 'Fermeture - occultation' };
+const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
+function titresAvantLignes(lotId, ls) {
+  const vus = new Set();
+  let platPrec = null, piecePrec = null;
+  return ls.map(l => {
+    const t = [];
+    if (SOUS_TITRES_MEN[l.menBloc] && !vus.has(l.menBloc)) { vus.add(l.menBloc); t.push(SOUS_TITRES_MEN[l.menBloc]); }
+    if (l.platBloc && l.platBloc !== platPrec) t.push(SOUS_TITRES_PLAT[l.platBloc]);
+    platPrec = l.platBloc || null;
+    if (SOUS_PIECE_LOTS.has(lotId)) { const cleP = l.pieceNv || null; if (cleP && cleP !== piecePrec) t.push(nomPieceMetre(cleP)); piecePrec = cleP; }
+    return t;
+  });
+}
 function renderMetre() {
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
@@ -1005,22 +1020,9 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
-    let blocPrec = null, piecePrec = null, vuFerm = false, vuOuv = false, vuCoul = false;
-    const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
-    for (const l of ls) {
-      // Sous-titre avant les fermetures et occultations (après toutes les menuiseries)
-      if (l.menBloc === 'ouv' && !vuOuv) { vuOuv = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Menuiseries ouvrantes</td></tr>`; }
-      if (l.menBloc === 'coul' && !vuCoul) { vuCoul = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Menuiseries coulissantes</td></tr>`; }
-      if (l.menBloc === 'ferm' && !vuFerm) { vuFerm = true; h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">Fermeture - occultation</td></tr>`; }
-      // Sous-titre à chaque début de bloc de plâtrerie (cloisonnement, doublage, plafond)
-      if (l.platBloc && l.platBloc !== blocPrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${SOUS_TITRES_PLAT[l.platBloc]}</td></tr>`;
-      blocPrec = l.platBloc || null;
-      // Titre de pièce (électricité, revêtements de sol) : une fois à chaque changement de pièce
-      if (SOUS_PIECE_LOTS.has(lotId)) {
-        const cleP = l.pieceNv || null;
-        if (cleP && cleP !== piecePrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${esc(nomPieceMetre(cleP))}</td></tr>`;
-        piecePrec = cleP;
-      }
+    const titres = titresAvantLignes(lotId, ls);
+    for (const [ii, l] of ls.entries()) {
+      for (const t of titres[ii]) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
@@ -5013,9 +5015,15 @@ function donneesDocument() {
       const montant = pu != null ? l.quantite * pu : null;
       if (montant != null) total += montant;
       return { num: nums[l.uid], designation: l.designation, unite: l.unite,
-               quantite: l.quantite, detail: detail(l), detailHtml: detailHtml(l), pu, montant };
+               quantite: l.quantite, detail: detail(l), detailHtml: detailHtml(l), pu, montant, titres: [] };
     })
   }));
+  // Sous-titres calculés comme à l'écran (même fonction)
+  for (const lot of lots) {
+    const ls = L.filter(l => l.lot === lot.id);
+    const tt = titresAvantLignes(lot.id, ls);
+    lot.lignes.forEach((ligne, k) => { ligne.titres = tt[k]; });
+  }
   return { titre: c.nom, client: c.client || null, date: new Date().toLocaleDateString('fr-FR'), lots,
            avecPrix, total };
 }
@@ -5030,6 +5038,7 @@ function htmlImpression(d, logo, pg) {
     corps += `<tr class="lot"><td colspan="${nc}">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     for (const l of lot.lignes) {
+      for (const t of l.titres) corps += `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
       corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
@@ -5076,6 +5085,7 @@ function htmlImpression(d, logo, pg) {
   table.metre tr { page-break-inside: avoid; }
   table.metre tr.gen { page-break-inside: auto; }
   table.metre tr.gen td { background: #fbfbfb; border-bottom: none; padding: 2mm 2mm 3mm; font-size: 8.5pt; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
   .gen-s { color: #2b2b2b; margin-bottom: 0.5mm; }
@@ -5083,6 +5093,7 @@ function htmlImpression(d, logo, pg) {
   .gen-sec li { margin: 0 0 0.5mm; }
   .vide { font-weight: 400; color: #8a8a8a; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
   table.metre tr.tot td { font-weight: 700; border-top: 2px solid #E07838; border-bottom: none; padding-top: 3mm; }
 </style></head><body>
 <section class="garde">
@@ -5144,7 +5155,7 @@ function htmlParLot(d, type, logo) {
     </section>`;
     // Détail du lot (généralités en tête pour le CDPGF)
     const gen = cdpgf ? genHtml(lot.id, lot.ordre) : '';
-    const lignes = lot.lignes.map(l => `<tr>
+    const lignes = lot.lignes.map(l => `${l.titres.map(t => `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
         <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
@@ -5195,6 +5206,7 @@ function htmlParLot(d, type, logo) {
   .pied { margin-top: auto; border-top: 1px solid #ddd; padding-top: 4mm; color: #6b6b6b; font-size: 8.5pt; }
   .rappel { color: #8a8a8a; font-size: 8pt; margin-bottom: 3mm; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
   .gen-bloc { background: #fbfbfb; border-left: 3px solid #E07838; padding: 3mm 4mm; margin: 0 0 5mm; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
@@ -5453,6 +5465,12 @@ async function pdfCdpgfFormulaire() {
     enteteTable();
     const noms = [];
     lot.lignes.forEach((l, i) => {
+      for (const t of l.titres) {
+        if (y - 18 < BAS) { nouvellePage(); enteteTable(); }
+        page.drawRectangle({ x: M, y: y - 16, width: LARG, height: 16, color: GRIS_CLAIR });
+        ecrire(t, M + 4, y - 11, 8.5, helvB, NOIR);
+        y -= 16;
+      }
       const des = decoupeTexte(l.designation, helvB, 8.5, C.des - 8);
       const det = l.detail ? decoupeTexte(l.detail, helv, 7.2, C.des - 8) : [];
       const rh = Math.max(24, 8 + des.length * 10.5 + det.length * 8.8 + 4);
@@ -5611,11 +5629,12 @@ async function exporterExcel() {
   const nc = avecPrix ? 7 : 5;
   const lettres = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, nc);
   const m = [['N°', 'Désignation', 'Quantité', 'Unité', 'Détail', ...(avecPrix ? ['P.U. HT ind.', 'Montant HT ind.'] : [])]];
-  const lignesLot = [], lignesLigne = [];
+  const lignesLot = [], lignesLigne = [], lignesTitre = [];
   for (const lot of d.lots) {
     lignesLot.push(m.length);
     m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)', ...(avecPrix ? [''] : []), ...(avecPrix ? [''] : [])].slice(0, nc));
     for (const l of lot.lignes) {
+      for (const t of l.titres) { lignesTitre.push(m.length); m.push(['', t, '', '', '', ...(avecPrix ? ['', ''] : [])]); }
       lignesLigne.push(m.length);
       m.push([l.num, l.designation, l.quantite, l.unite, l.detail, ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
     }
@@ -5633,6 +5652,7 @@ async function exporterExcel() {
     style(ws2, 'A' + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F4F4F4' } } });
     for (const c of lettres.slice(1)) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
   }
+  for (const r of lignesTitre) for (const c of lettres) style(ws2, c + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F3F6F9' } } });
   for (const r of lignesLigne) {
     style(ws2, 'A' + (r + 1), { font: { bold: true, color: orange } });
     ws2['D' + (r + 1)].z = '#,##0.00';
