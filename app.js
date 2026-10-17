@@ -2927,12 +2927,14 @@ function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^
 // Drainage et arase des murs périphériques : une liste par élément ; rien choisi = rien au métré
 const habTabBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Habillage des tableaux/.test(o.designation)).map(o => o.designation);
 const habAngBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Chaînage d'angle harpe/.test(o.designation)).map(o => o.designation);
+const habChaBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Avant-toit/.test(o.designation)).map(o => o.designation);
 const habBandeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Réalisation de bandes de peinture/.test(o.designation)).map(o => o.designation);
 // Deux choix optionnels (tableaux, bandes de peinture), en ml, sur une même ligne ; rien choisi = rien au métré
 function habillagesMenuiseries(p) {
   const bloc = (cle, titre, base) => `<div style="flex:1;min-width:240px"><div style="font-size:13px;margin-bottom:3px">${titre}</div>${selCrayon('hab-' + cle, titre, `<select data-k="choix" data-champ="hab${cle}" style="width:100%;padding:6px">${optListeOuvrages('hab-' + cle, titre, base, (p.choix || {})['hab' + cle] || '', '— aucun —')}</select>`)}</div>`;
   return `<div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:8px"><strong style="font-size:13px">Habillages des menuiseries (ml)</strong><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">${bloc('Tab', 'Habillage des tableaux', habTabBase)}${bloc('Bande', 'Bandes de peinture', habBandeBase)}</div><p class="muted" style="font-size:12px;margin:4px 0 0">Linéaire : côtés (hauteur × 2) de chaque menuiserie, plus la largeur sauf volet roulant.</p></div>
-  <div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:8px"><strong style="font-size:13px">Chaînage d'angle en pierre (ml, option)</strong><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><div style="flex:2;min-width:240px">${selCrayon('hab-Ang', "Chaînage d'angle en pierre", `<select data-k="choix" data-champ="habAng" style="width:100%;padding:6px">${optListeOuvrages('hab-Ang', "Chaînage d'angle en pierre", habAngBase, (p.choix || {}).habAng || '', '— aucun —')}</select>`)}</div><div style="flex:1;min-width:140px"><div style="font-size:13px;margin-bottom:3px">Nombre de chaînes d'angle</div><input data-k="choix" data-champ="habAngNb" inputmode="numeric" value="${esc((p.choix || {}).habAngNb || '')}" style="width:100%;padding:6px"></div></div><p class="muted" style="font-size:12px;margin:4px 0 0">Calcul : nombre × hauteur moyenne des murs périphériques.</p></div>`;
+  <div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:8px"><strong style="font-size:13px">Chaînage d'angle en pierre (ml, option)</strong><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><div style="flex:2;min-width:240px">${selCrayon('hab-Ang', "Chaînage d'angle en pierre", `<select data-k="choix" data-champ="habAng" style="width:100%;padding:6px">${optListeOuvrages('hab-Ang', "Chaînage d'angle en pierre", habAngBase, (p.choix || {}).habAng || '', '— aucun —')}</select>`)}</div><div style="flex:1;min-width:140px"><div style="font-size:13px;margin-bottom:3px">Nombre de chaînes d'angle</div><input data-k="choix" data-champ="habAngNb" inputmode="numeric" value="${esc((p.choix || {}).habAngNb || '')}" style="width:100%;padding:6px"></div></div><p class="muted" style="font-size:12px;margin:4px 0 0">Calcul : nombre × hauteur moyenne des murs périphériques.</p></div>
+  <div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:8px"><strong style="font-size:13px">Chaînage sur le mur périphérique (ml)</strong><div style="margin-top:4px">${selCrayon('hab-Cha', 'Chaînage périphérique', `<select data-k="choix" data-champ="habCha" style="width:100%;padding:6px">${optListeOuvrages('hab-Cha', 'Chaînage périphérique', habChaBase, (p.choix || {}).habCha || '', '— aucun —')}</select>`)}</div><p class="muted" style="font-size:12px;margin:4px 0 0">Calcul : linéaire du mur périphérique.</p></div>`;
 }
 const drainBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Système complet de drainage|Ouvrage global de drainage)/.test(o.designation)).map(o => o.designation);
 const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette périphérique/.test(o.designation)).map(o => o.designation);
@@ -4227,6 +4229,12 @@ function ficheVersMetre() {
   // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
   const habMl = habillageMl(c);
   for (const id of [p.choix.habTab, p.choix.habBande]) { const o = id && BIB.ouvrages.find(x => x.id === id); if (o && habMl > 0) ajouter(o.designation, habMl, o.designation, null, null); }
+  // Chaînage sur le mur périphérique (ml) : linéaire du mur périphérique
+  {
+    const oCha = p.choix.habCha && BIB.ouvrages.find(x => x.id === p.choix.habCha);
+    const linPeri = (p.murs || []).filter(m => (m.cat || 'peri') === 'peri').reduce((a, m) => a + num(m.longueur), 0);
+    if (oCha && linPeri > 0) ajouter(oCha.designation, linPeri, oCha.designation, null, null);
+  }
   // Chaînages d'angle en pierre (ml) : nombre saisi × hauteur moyenne des murs périphériques
   {
     const oAng = p.choix.habAng && BIB.ouvrages.find(x => x.id === p.choix.habAng);
