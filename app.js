@@ -2041,12 +2041,12 @@ function genererPlatNv(c) {
     const v = { nombre: '1', cote1: String(net), cote2: '1' };
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
     nb++;
-    // 2. Isolant : surface brute − toutes les déductions (sans seuil), × 1,05
+    // 2. Isolant : même surface nette que la plaque, × 1,05 (chute et découpe)
     if (q[cle].isol) {
       const oI = BIB.ouvrages.find(x => x.id === q[cle].isol && !x.supprime);
       if (!oI) manque.push('isolant ' + titre);
       else {
-        const surfIsol = Math.max(0, surfBrute - (cle === 'doub' ? menuiseriesToutesM2(c) : portesEtPlacardsToutesM2(c)));
+        const surfIsol = net;   // même surface nette que la plaque placo (mêmes déductions), puis + 5 % de chute et découpe
         ajouterLotSiAbsent(c.id, o.lot);
         const vI = { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
         L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² × 1,05 = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
