@@ -3941,7 +3941,7 @@ function ficheRendre() {
     </div>
     ${tabTitre('2. Gros œuvre + matériaux de finition')}<div class="bloc">
     ${carte('Murs de soubassement (mur au-dessus des fondations)', blocMurs('soub') + ajouterMur('soub', '+ Ajouter un mur de soubassement'))}
-    ${carte('Murs périphériques', blocMurs('peri') + ajouterMur('peri', '+ Ajouter un mur périphérique') + habillagesMenuiseries(p))}
+    ${carte('Murs périphériques', blocMurs('peri') + (p.murs.some(m => (m.cat || 'peri') === 'peri') ? '' : ajouterMur('peri', '+ Ajouter le mur périphérique')) + habillagesMenuiseries(p))}
     ${carte('Murs de refend (sans finition)', blocMurs('refend') + ajouterMur('refend', '+ Ajouter un mur de refend'))}
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
