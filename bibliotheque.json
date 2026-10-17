@@ -774,7 +774,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0038",
@@ -1432,7 +1433,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0069",
@@ -8981,7 +8983,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0511",
@@ -8996,7 +8999,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0512",
@@ -29753,6 +29757,6 @@
       "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
     }
   ],
-  "revision": 113,
+  "revision": 114,
   "prochainNumero": 1803
 }
