@@ -2927,7 +2927,7 @@ function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^
 // Drainage et arase des murs périphériques : une liste par élément ; rien choisi = rien au métré
 const habTabBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Habillage des tableaux/.test(o.designation)).map(o => o.designation);
 const habAngBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Chaînage d'angle harpe/.test(o.designation)).map(o => o.designation);
-const habChaBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Avant-toit/.test(o.designation)).map(o => o.designation);
+const habChaBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Corniche de couronnement/.test(o.designation)).map(o => o.designation);
 const habBandeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Réalisation de bandes de peinture/.test(o.designation)).map(o => o.designation);
 // Deux choix optionnels (tableaux, bandes de peinture), en ml, sur une même ligne ; rien choisi = rien au métré
 function habillagesMenuiseries(p) {

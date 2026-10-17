@@ -30211,7 +30211,7 @@
     {
       "id": "OUV-1826",
       "lot": "gros-oeuvre",
-      "designation": "Avant-toit : corniche de couronnement en pierre de taille (chaînage)",
+      "designation": "Corniche de couronnement en pierre de taille (chaînage)",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30221,10 +30221,10 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Fourniture et mise en œuvre d'une corniche de couronnement périphérique supérieure formant assise, composée de pierres de taille massives façonnées en forme de corbeaux (modillons/corbelets) faisant saillie pour soutenir l'avant-toit. Les pierres doivent être de haute dureté (granit brut ou calcaire dense) pour supporter la descente de charge et résister au cisaillement. L'ouvrage est livré et posé complet sans aucune exclusion, incluant obligatoirement : l'application de la règle des trois tiers pour la stabilité mécanique (encastrement des deux tiers de la longueur de la pierre dans l'épaisseur du mur porteur, seul le dernier tiers restant en saillie visible sous le toit) ; le scellement des blocs au cœur du mur à l'aide d'un mortier technique à retrait compensé pour garantir un serrage et un blocage sous pression ; le réglage de l'alignement au cordeau à l'aide d'un bastaing de guidage en sous-face assurant l'horizontalité des éléments de corniche ; le façonnage de la goutte d'eau (larmier) sur la sous-face de la saillie pour empêcher les infiltrations d'eau de ruissellement vers la façade ; le coulage, à l'arrière ou au cœur des pierres creusées (si éléments pré-percés ou U-corniche), du ferraillage horizontal du chaînage de couronnement (aciers HA fixés selon étude béton) lié aux chaînages verticaux, avec enrobage en béton fluide C25/30 ; la réalisation des joints verticaux étanches au mortier de chaux hydrofuge entre chaque bloc de pierre, le nettoyage des parements et la mise en œuvre des échafaudages de tête de mur."
     }
   ],
-  "revision": 120,
+  "revision": 121,
   "prochainNumero": 1827
 }
