@@ -29755,8 +29755,244 @@
         "val": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) de forte section pour murs de soutènement ou refends lourds - épaisseur 27.5 cm"
       },
       "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
+    },
+    {
+      "id": "OUV-1803",
+      "lot": "gros-oeuvre",
+      "designation": "Enduit gobetis et mortier hydrofuge de ciment (Imperméabilisation de Catégorie 3)",
+      "detail": "Application d'un corps d'enduit de dressement au mortier de ciment (épaisseur mini 15 mm) adjuvanté d'un hydrofuge de masse en poudre ou liquide. Finition talochée fine. Destiné aux murs de vide sanitaire ou locaux non habitables (DTU 20.1).",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1804",
+      "lot": "gros-oeuvre",
+      "designation": "Revêtement bitumineux épais (Enduit d'imprégnation - Type Black)",
+      "detail": "Application à la brosse ou au rouleau d'un revêtement bitumineux formant un film continu étanche en deux couches croisées à saturation sur paroi préalablement dressée.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1805",
+      "lot": "gros-oeuvre",
+      "designation": "Revêtement d'étanchéité souple bicomposant cimenteux (Mortier osmotique élastique)",
+      "detail": "Application en couches croisées d'un mortier flexible à base de ciment et polymères synthétiques, avec intégration d'une trame en fibre de verre de renfort au droit des angles rentrants et liaisons semelles/murs.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1806",
+      "lot": "gros-oeuvre",
+      "designation": "Étanchéité par membrane bitumineuse soudée à chaud (Locaux de Catégorie 1)",
+      "detail": "Application préalable d'un vernis d'imprégnation à froid (EIF) et soudage au chalumeau d'une membrane élastomère SBS d'épaisseur minimale 3 ou 4 mm avec lès à recouvrement de 10 cm. Destiné aux murs de sous-sols habitables.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1807",
+      "lot": "gros-oeuvre",
+      "designation": "Nappe de protection et de drainage à plots en polyéthylène haute densité (PEHD) (Delta-MS)",
+      "detail": "Pose verticale d'une membrane semi-rigide alvéolaire à excroissances (type Delta-MS), plots orientés vers le mur. Inclus le profilé métallique de finition haute (bandeau de rive) anti-intrusion de terre et les pointes de fixation avec rondelles d'étanchéité.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1808",
+      "lot": "gros-oeuvre",
+      "designation": "Nappe composite de protection avec géotextile filtrant intégré",
+      "detail": "Fourniture et pose d'une nappe en PEHD associée en usine à un feutre géotextile non tissé filtrant côté terre, assurant la filtration des particules fines et guidant l'eau vers le réseau bas.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1809",
+      "lot": "gros-oeuvre",
+      "designation": "Plaques de protection mécanique en polystyrène drainant",
+      "detail": "Panneaux rigides en polystyrène expansé moulé ou extrudé munis de rainures de drainage sur la face externe, fixés provisoirement par plots de colle sans solvant avant remblai.",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1810",
+      "lot": "gros-oeuvre",
+      "designation": "Système complet de drainage en pied de mur par drain agricole annelé flexible",
+      "detail": "Fourniture et pose d'un système de drainage périphérique complet. Le prix au mètre linéaire comprend obligatoirement : le reprofilage manuel du fond de fouille avec réglage de la pente continue minimale de 0,5 %, la mise en œuvre d'un lit de pose, la fourniture et la pose du tuyau de drain annelé en PVC (Ø 100 mm minimum perforé à 360°), le déversement d'un massif filtrant continu en graviers propres concassés ou alluvionnaires lavés (granulométrie 10/20 ou 20/40) d'un volume minimal de 0,20 m³ par mètre linéaire, et l'enveloppement total et étanche du massif par un feutre géotextile non tissé imputrescible (recouvrement mini de 20 cm) pour bloquer les particules fines. Sont inclus tous les manchons, raccordements aux boîtes d'angles et chutes.",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1811",
+      "lot": "gros-oeuvre",
+      "designation": "Système complet de drainage de haute performance par drain routier rigide à fond plat",
+      "detail": "Fourniture et pose d'un complexe technique de drainage routier en PVC rigide à forte résistance mécanique (CR4 ou CR8, Ø 110 mm), avec base plane rectiligne et fentes de captage en partie supérieure. L'ouvrage inclut l'intégralité des composants sans aucune exclusion : terrassement de la rigole, lit de calage régulier en sable ou gravillon, alignement du drain à fond plat (pente descendante constante ≥ 0,5 %), remblayage enveloppant complet par un massif de cailloux lavés sédimentaires calibrés 20/40 (minimum 20 cm d'enrobage autour du tube), et encapsulage global du massif par une membrane géotextile filtrante à haute perméabilité. Sont compris les tés de dérivation, raccords de jonction et couplages étanches aux regards de bouclage.",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1812",
+      "lot": "gros-oeuvre",
+      "designation": "Ouvrage global de drainage par tuyau drainant pré-enrobé (Système sans gravier)",
+      "detail": "Fourniture et mise en œuvre d'un système de drainage linéaire autonome pré-industrialisé, composé d'un collecteur en polyéthylène perforé enveloppé en usine d'un média filtrant synthétique à haute porosité (fibres de PSE sous filet formant le volume de substitution au gravier traditionnel), le tout pré-gainé d'un géotextile de filtration externe. Comprend le réglage de la tranchée en fond de fouille à la pente minimale de 0,5 %, l'emboîtement des longueurs, les bagues de verrouillage, les liaisons aux regards et le premier remblai de protection en matériaux fins triés.",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1813",
+      "lot": "gros-oeuvre",
+      "designation": "Cunette périphérique en béton de forme en pied de fondation",
+      "detail": "Réalisation en pied de mur enterré d'une cunette de guidage gravitaire coulée en béton de classe C16/20 ou C20/25, façonnée en gorge ou U arrondi pour asseoir le drain.",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1814",
+      "lot": "gros-oeuvre",
+      "designation": "Regards de visite et de curage aux angles (Regards de bouclage)",
+      "detail": "Fourniture et pose à chaque changement de direction de regards préfabriqués en béton ou polypropylène (section mini 30x30 cm), avec opercules de raccordement des drains, rehausses et tampons étanches ou grilles de fermeture.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1815",
+      "lot": "gros-oeuvre",
+      "designation": "Bande d'arase étanche en pied de mur (Coupure de capillarité)",
+      "detail": "Barrière d'étanchéité horizontale implantée à au moins 20 cm au-dessus du sol fini extérieur, réalisée par une chape de mortier hydrofuge riche lissée (ép. 2 cm) ou par la pose d'une membrane bitumineuse armée prise entre deux lits de mortier.",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 114,
-  "prochainNumero": 1803
+  "revision": 115,
+  "prochainNumero": 1816
 }
