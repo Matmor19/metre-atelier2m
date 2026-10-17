@@ -30211,7 +30211,7 @@
     {
       "id": "OUV-1826",
       "lot": "gros-oeuvre",
-      "designation": "Corniche de couronnement en pierre de taille (chaînage)",
+      "designation": "Chaînage de couronnement supérieur en pierre de taille avec corbeaux sous avant-toit",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30221,10 +30221,10 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 2,
-      "detail": "Fourniture et mise en œuvre d'une corniche de couronnement périphérique supérieure formant assise, composée de pierres de taille massives façonnées en forme de corbeaux (modillons/corbelets) faisant saillie pour soutenir l'avant-toit. Les pierres doivent être de haute dureté (granit brut ou calcaire dense) pour supporter la descente de charge et résister au cisaillement. L'ouvrage est livré et posé complet sans aucune exclusion, incluant obligatoirement : l'application de la règle des trois tiers pour la stabilité mécanique (encastrement des deux tiers de la longueur de la pierre dans l'épaisseur du mur porteur, seul le dernier tiers restant en saillie visible sous le toit) ; le scellement des blocs au cœur du mur à l'aide d'un mortier technique à retrait compensé pour garantir un serrage et un blocage sous pression ; le réglage de l'alignement au cordeau à l'aide d'un bastaing de guidage en sous-face assurant l'horizontalité des éléments de corniche ; le façonnage de la goutte d'eau (larmier) sur la sous-face de la saillie pour empêcher les infiltrations d'eau de ruissellement vers la façade ; le coulage, à l'arrière ou au cœur des pierres creusées (si éléments pré-percés ou U-corniche), du ferraillage horizontal du chaînage de couronnement (aciers HA fixés selon étude béton) lié aux chaînages verticaux, avec enrobage en béton fluide C25/30 ; la réalisation des joints verticaux étanches au mortier de chaux hydrofuge entre chaque bloc de pierre, le nettoyage des parements et la mise en œuvre des échafaudages de tête de mur."
+      "version": 3,
+      "detail": "Mise en œuvre d'une corniche périphérique supérieure composée de blocs de pierre de taille massifs façonnés en corbeaux saillants pour le soutien de l'avant-toit. L'ouvrage comprend : l'application de la règle de stabilité (2/3 encastrés dans le mur, 1/3 en saillie), le scellement au mortier technique à retrait compensé sous pression, le réglage d'alignement parfait, le façonnage du larmier (goutte d'eau) en sous-face, l'intégration et le coulage du ferraillage de chaînage horizontal supérieur en béton fluide C25/30 à l'arrière des blocs, les joints étanches hydrofuges et les échafaudages de tête de mur."
     }
   ],
-  "revision": 122,
+  "revision": 123,
   "prochainNumero": 1827
 }
