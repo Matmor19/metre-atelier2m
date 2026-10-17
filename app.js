@@ -340,7 +340,8 @@ function detailMorceaux(l) {
   if (mode) mode.cotes.forEach((c, i) => { noms['cote' + (i + 1)] = c[0]; });   // L, l ou H selon le mode
   return Object.entries(l.valeurs)
     .filter(([k, v]) => v !== '' && v != null)
-    .map(([k, v]) => ({ nom: noms[k] || '', v }));
+    // Valeurs numériques arrondies à deux décimales (ex. 144,9819 → 144,98), comme partout ailleurs
+    .map(([k, v]) => ({ nom: noms[k] || '', v: /^-?\d+([.,]\d+)?$/.test(String(v).trim()) ? fmt(Number(String(v).replace(',', '.'))) : v }));
 }
 // Texte simple (exports CSV, Excel)
 function detail(l) {
