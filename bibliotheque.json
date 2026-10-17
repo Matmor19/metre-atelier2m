@@ -29089,8 +29089,232 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1772",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil préfabriqué en béton (Sans isolation thermique renforcée)",
+      "detail": "Seuil en béton armé haute performance posé sur mortier hydrofuge, avec façonnage de rejingots arrière/latéraux et larmier de rejet d'eau.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1773",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil préfabriqué en béton (Avec isolation / Rupteur de pont thermique intégré)",
+      "detail": "Seuil en béton armé haute performance posé sur mortier hydrofuge, avec façonnage de rejingots arrière/latéraux et larmier de rejet d'eau, associée à la pose d'un isolant rigide à forte densité (XPS, PU ou verre cellulaire) à l'arrière ou au centre pour assurer la continuité thermique avec l'intérieur.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1774",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil coulé en place en béton armé (Sans isolation)",
+      "detail": "Coffrage sur site, ferraillage d'ancrage lié aux chaînages, coulage du béton C25/30 hydrofugé, chape de pente extérieure lissée et ragréage.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1775",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil coulé en place en béton armé (Avec isolation intégrée)",
+      "detail": "Coffrage sur site, ferraillage d'ancrage lié aux chaînages, coulage du béton C25/30 hydrofugé, chape de pente extérieure lissée et ragréage incluant un isolant rigide de forte densité faisant office de coffrage perdu ou de coupure physique complète entre la partie extérieure et intérieure du seuil.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1776",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil en pierre naturelle ou reconstituée (Sans isolation)",
+      "detail": "Pose d'un seuil monolithique (granit, calcaire dur, bleu de Belgique) sur mortier de chaux blanche non tachant, façon de pente extérieure, larmier et joints d'étanchéité neutres.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1777",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil en pierre naturelle ou reconstituée (Avec isolation en sous-face et face arrière)",
+      "detail": "Pose d'un seuil monolithique (granit, calcaire dur, bleu de Belgique) sur mortier de chaux blanche non tachant, façon de pente extérieure, larmier et joints d'étanchéité neutres, et calage sur un lit continu préalable de blocs isolants en verre cellulaire haute résistance à la compression pour désolidariser thermiquement la pierre de la maçonnerie intérieure.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1778",
+      "lot": "ossature-bois",
+      "designation": "Bavette pliée en aluminium (Sans isolation sous-face - Pour ITE)",
+      "detail": "Bavette en aluminium plié (ép. mini 2,0 mm) fixée sur le rejingot de la menuiserie, avec embouts et coulisseaux d'étanchéité latéraux.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1779",
+      "lot": "ossature-bois",
+      "designation": "Bavette pliée en aluminium (Avec isolation et renfort de charge - Pour ITE)",
+      "detail": "Bavette en aluminium plié (ép. mini 2,0 mm) fixée sur le rejingot de la menuiserie, avec embouts et coulisseaux d'étanchéité latéraux posée sur un support isolant préformé (PSE haute densité) reprenant les charges piétonnes, complétée par une bande d'amortissement acoustique sous l'alu (bruit de pluie).",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1780",
+      "lot": "ossature-bois",
+      "designation": "Seuil métallique pliée (Sans isolation sous-face - Pour ITE)",
+      "detail": "Seuil métallique plié (ép. mini 0,75 mm) fixé sur le rejingot de la menuiserie, avec embouts et coulisseaux d'étanchéité latéraux.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1781",
+      "lot": "ossature-bois",
+      "designation": "Seuil métallique pliée (Avec isolation et renfort de charge - Pour ITE)",
+      "detail": "Seuil métallique plié (ép. mini 0,75 mm) fixé sur le rejingot de la menuiserie, avec embouts et coulisseaux d'étanchéité latéraux posée sur un support isolant préformé (PSE haute densité) reprenant les charges piétonnes, complétée par une bande d'amortissement acoustique sous l'alu (bruit de pluie).",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1782",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil technique encastré PMR / Seuil plat (Sans isolation)",
+      "detail": "Profilé extra-plat ou encastré (≤ 20 mm), réalisation d'une réservation spécifique et intégration en avant du seuil d'une grille de drainage ou d'un caniveau raccordé aux eaux pluviales.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1783",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil technique encastré PMR / Seuil plat (Avec isolation et étanchéité liquide sous-jacente)",
+      "detail": "Profilé extra-plat ou encastré (≤ 20 mm), réalisation d'une réservation spécifique et intégration en avant du seuil d'une grille de drainage ou d'un caniveau raccordé aux eaux pluviales posé sur une traverse ou un pré-cadre technique thermo-isolé, doublé d'une étanchéité continue de type Système d'Étanchéité Liquide (SEL) ou membrane EPDM sous le seuil.",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1784",
+      "lot": "ossature-bois",
+      "designation": "Seuil pour construction à ossature bois / COB (Sans isolation rapportée)",
+      "detail": "Pièce d'appui en bois de classe d'emploi 4 ou feuille métallique larmée posée sur le chevêtre en bois, avec film pare-pluie pour rejeter l'eau en avant du bardage.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
+    },
+    {
+      "id": "OUV-1785",
+      "lot": "ossature-bois",
+      "designation": "Seuil pour construction à ossature bois / COB (Avec isolation et étanchéité tridimensionnelle)",
+      "detail": "Pièce d'appui en bois de classe d'emploi 4 ou feuille métallique larmée posée sur le chevêtre en bois, avec film pare-pluie pour rejeter l'eau en avant du bardage avec isolant thermique rigide en sous-face (fibre de bois dense ou liège), protégée par une membrane d'étanchéité souple préformée en 3D remontant sur les montants bois.",
+      "unite": "u",
+      "type": "ossature_bois",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1
     }
   ],
-  "revision": 109,
-  "prochainNumero": 1772
+  "revision": 110,
+  "prochainNumero": 1786
 }

@@ -2892,6 +2892,8 @@ function projetDe(c) {
 const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
 // Appui de fenêtre : la menuiserie garde l'identifiant de l'ouvrage « Appui de fenêtre … » de la bibliothèque
 function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
+// Seuils de porte de la bibliothèque (ouvrages « Seuil … »), proposés dans la liste « Seuil de porte compris » des murs
+function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Seuil /.test(o.designation)).map(o => o.designation); }
 function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
 // Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
 function validerMenu(c, pc, m) {
@@ -3734,7 +3736,7 @@ function ficheRendre() {
   // Une case à cocher « … compris » suivie de sa liste déroulante (crayon) : valeur gardée dans le mur
   const murCaseListe = (m, id, flag, lib, cle, tit) => `<div style="flex:1;min-width:260px">
     <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" ${id} data-champ="${flag}" ${m[flag] === true ? 'checked' : ''}> ${lib}</label>
-    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => (cle === 'mur-appui' ? appuisNv() : []), m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
+    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => (cle === 'mur-appui' ? appuisNv() : cle === 'mur-seuil' ? seuilsNvBase() : []), m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
   const rangeMur = m => {
     const id = `data-k="mur" data-id="${m.id}"`;
     const pig = m.cat === 'pignon', soub = m.cat === 'soub', refend = m.cat === 'refend';
@@ -4210,6 +4212,16 @@ function ficheVersMetre() {
       }
       for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
     }
+  }
+  // Seuils de porte : même procédure que les appuis. Les murs cochés « Seuil de porte compris » donnent leur seuil à toutes les portes du projet.
+  // Une ligne par type de seuil, unité = nombre de portes.
+  const seuilsChoisis = [...new Set((p.murs || []).filter(m => !['soub', 'pignon'].includes(m.cat || 'peri') && m.seuil === true && m.liste_seuil).map(m => m.liste_seuil))];
+  if (seuilsChoisis.length > 1) manquants.push('seuils de porte : un seul seuil par projet, plusieurs choisis dans les murs');
+  if (seuilsChoisis.length === 1) {
+    const oS = BIB.ouvrages.find(x => x.id === seuilsChoisis[0]);
+    const nPortes = piecesNvDe(c).reduce((a, pc) => a + nbPortesNv(pc), 0);
+    if (!oS) manquants.push('seuil de porte');
+    else if (nPortes > 0) ajouter(oS.designation, nPortes, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nPortes) }, null);
   }
   sauverLignes(courantId, L);
   renderMetre();
