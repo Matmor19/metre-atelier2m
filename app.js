@@ -411,6 +411,24 @@ function route(nom) {
   if (nom === 'config') requestAnimationFrame(dessinerOnglets);
 }
 
+// Ligne calculée par le configurateur (ou par un de ses blocs) : on peut revenir à son onglet
+function origineLigne(l) {
+  return !!(l.platNv || l.projet || l.plat || l.auto || l.peiNv || (l.valeurs && l.valeurs.src));
+}
+// Onglet du configurateur où se fait le calcul, d'après le lot de la ligne
+const ONGLET_DU_LOT = { 'installation-chantier': '0', 'terrassement-vrd': '1', 'gros-oeuvre': '2', 'ossature-bois': '2', 'charpente-structure-bois': '3', 'couverture-zinguerie': '4', 'menuiseries-exterieures': '5', 'isolation-thermique': '6', 'doublages-cloisons-plafonds': 'C', 'electricite': '8', 'plomberie-sanitaire': '9', 'revetements-sols': '10', 'chauffage-vmc-climatisation': '11', 'cuisine': '12', 'peinture-finitions': 'D', 'revetements-muraux': 'D' };
+function allerAuConfigurateur(lot) {
+  ouvrirConfig();
+  const onglet = ONGLET_DU_LOT[lot];
+  requestAnimationFrame(() => {
+    const h = [...document.querySelectorAll('#vConfig h2.lot-titre')].find(x => onglet && x.textContent.trim().startsWith(onglet + '.'));
+    if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-retour]');
+  if (b) allerAuConfigurateur(b.dataset.retour);
+});
 function compterLignes() {
   const n = courantId ? lignesDe(courantId).length : 0;
   $('nbLignes').textContent = n;
@@ -993,7 +1011,7 @@ function renderMetre() {
       // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
       h += `<tr class="ligne ${surbrillanceLigne(l)}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}${(BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail ? `<div class="ouv-detail" style="font-style:italic;font-size:12px;color:#6b7280;margin-top:2px">${esc(BIB.ouvrages.find(x => x.id === l.ouvrage).detail)}</div>` : ''}</td>
+        <td>${esc(l.designation)}${origineLigne(l) ? ` <button class="btn small sec" data-retour="${esc(l.lot)}" title="Revenir au configurateur à l'endroit du calcul" style="margin-left:4px;min-height:26px;padding:2px 8px">↩ Configurateur</button>` : ''}${(BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail ? `<div class="ouv-detail" style="font-style:italic;font-size:12px;color:#6b7280;margin-top:2px">${esc(BIB.ouvrages.find(x => x.id === l.ouvrage).detail)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}${!avecFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le détail de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
