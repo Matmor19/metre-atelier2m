@@ -336,10 +336,10 @@ function categorieCote(nom) {
 function detailMorceaux(l) {
   // Menuiseries et fermetures : le nombre reprend déjà la quantité, on indique « suivant plan » à la place
   if (l.menBloc) return [{ nom: '', v: 'suivant plan' }];
-  // Électricité : les lignes produites par la norme indiquent la norme ; une ligne ajoutée à la main garde son détail (nombre)
+  // Électricité : les lignes de la norme indiquent « norme NF C 15-100 » ; un ajout hors norme n'a aucun détail
   const oE = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const elecNorme = !!(oE && oE.lot === 'electricite');
-  if (elecNorme && (l.pieceNv || l.projet || l.auto)) return [{ nom: '', v: 'norme NF C 15-100' }];
+  if (elecNorme) return (l.pieceNv || l.projet || l.auto) ? [{ nom: '', v: 'norme NF C 15-100' }] : [];
   // Appuis de fenêtre : longueur reprise des menuiseries, indiquée suivant plan
   { const oA = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage); if (oA && /^Appui de fenêtre /.test(oA.designation)) return [{ nom: '', v: 'suivant plan' }]; }
   const noms = { nombre: 'nb', cote1: 'L', cote2: 'l', cote3: 'h', largeur_cm: 'larg.', hauteur_cm: 'haut.' };
@@ -353,7 +353,7 @@ function detailMorceaux(l) {
     .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1') && !(l.modeLigne === 'lxh' && k === 'nombre') && !(l.modeLigne === 'coef' && k === 'cote2'))
     // Valeurs numériques arrondies à deux décimales (ex. 144,9819 → 144,98), comme partout ailleurs
     .map(([k, v]) => ({ nom: noms[k] || '', v: /^-?\d+([.,]\d+)?$/.test(String(v).trim()) ? fmt(Number(String(v).replace(',', '.'))) : v }));
-  return det.length ? det : (elecNorme ? [{ nom: 'nb', v: fmt(num(l.quantite)) }] : det);
+  return det;
 }
 // Texte simple (exports CSV, Excel)
 function detail(l) {
