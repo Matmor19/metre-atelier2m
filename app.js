@@ -1545,7 +1545,7 @@ function genererPiecesNv(c) {
       const o = baseMenuiserie(m);
       if (!o) { manque.push('Menuiserie extérieure : pas encore d\'ouvrage de base pour ' + (ME_TXT.type[m.type] || '') + ' ' + (ME_CHOIX.mat.find(([v]) => v === m.mat) || [])[1] + ' ' + (ME_TXT.vantaux[m.vantaux] || '') + ' (' + nom + ')'); continue; }
       const v = { nombre: String(num(m.nb) || 1) };
-      menusNv.push({ o, v, q: calcul(o, v), designation: `${designationMenuiserie(m)} – ${nom}`, pid: p.id, bloc: MEN_COUL.includes(m.ouvrant) ? 'coul' : 'ouv' });
+      menusNv.push({ o, v, q: calcul(o, v), base: designationMenuiserie(m), nom, designation: `${designationMenuiserie(m)} – ${nom}`, pid: p.id, bloc: MEN_COUL.includes(m.ouvrant) ? 'coul' : 'ouv' });
     }
     if (eclairagePiece(p) === 'spots' && nbSpots(p) > 0) {
       const desSpot = ['Salle de bains', 'Salle d\'eau'].includes(typePieceNv(p.nom)) ? 'Spot encastré LED étanche IP65 (salle de bain)' : 'Spot encastré LED';
@@ -1571,7 +1571,19 @@ function genererPiecesNv(c) {
       ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
     }
   }
-  for (const bl of ['ouv', 'coul']) for (const x of menusNv.filter(x => x.bloc === bl)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl);
+  // Réunit les lignes identiques (même ouvrage, mêmes dimensions et options, hors pièce) : quantités additionnées, pièces citées
+  const reunir = (items) => {
+    const groupes = new Map();
+    for (const x of items) {
+      const cle = x.o.id + '|' + x.base + '|' + x.bloc;
+      const g = groupes.get(cle);
+      if (!g) groupes.set(cle, { ...x, nombre: num(x.v.nombre), pieces: [x.nom] });
+      else { g.nombre += num(x.v.nombre); g.q += x.q; if (!g.pieces.includes(x.nom)) g.pieces.push(x.nom); }
+    }
+    return [...groupes.values()].map(g => ({ o: g.o, v: { ...g.v, nombre: String(g.nombre) }, q: g.q, pid: g.pid, bloc: g.bloc, designation: `${g.base} – ${g.pieces.join(', ')}` }));
+  };
+  for (const bl of ['ouv', 'coul']) for (const x of reunir(menusNv.filter(x => x.bloc === bl))) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl);
+  const fermL = [];   // fermetures et moustiquaires, réunies ensuite par dimensions
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
   for (const { m, nom, pid } of volets) {
     const n = num(m.nb) || 1, L_ = num(m.l), H_ = num(m.h);
@@ -1583,7 +1595,7 @@ function genererPiecesNv(c) {
     else {
       const v = oF.unite === 'm²' ? { nombre: String(n), cote1: String(L_ / 100), cote2: String(H_ / 100) } : { nombre: String(n) };
       const dimsTxt = oF.unite === 'm²' ? ` ${fmt(L_)} × ${fmt(H_)} cm` : ` (${fmt(L_)} × ${fmt(H_)} cm)`;
-      ajoute(oF, v, calcul(oF, v), `${oF.designation}${dimsTxt} – ${nom}`, pid, false, 'ferm');
+      fermL.push({ o: oF, v, q: calcul(oF, v), base: `${oF.designation}${dimsTxt}`, nom, pid, bloc: 'ferm' });
       // Volet roulant motorisé : alimentation et commande électriques, ajoutées au lot électricité
       if (m.ferm === 'vr-motor') for (const idE of ['OUV-0224', 'OUV-0624']) {
         const oE = BIB.ouvrages.find(x => x.id === idE && !x.supprime);
@@ -1599,9 +1611,10 @@ function genererPiecesNv(c) {
       const idM = integreeSansFermeture ? null : MOUST_OUV[m.moust], oM = idM ? BIB.ouvrages.find(x => x.id === idM && !x.supprime) : null;
       if (integreeSansFermeture) manque.push('Moustiquaire intégrée : choisis une fermeture (Compris fermeture) ou la moustiquaire indépendante (' + nom + ')');
       else if (!oM) manque.push('Moustiquaire : ' + libM + ' (pas encore d\'ouvrage dans la bibliothèque)');
-      else { const v = { nombre: String(n) }; ajoute(oM, v, calcul(oM, v), `${oM.designation} (${fmt(L_)} × ${fmt(H_)} cm) – ${nom}`, pid, false, 'ferm'); }
+      else { const v = { nombre: String(n) }; fermL.push({ o: oM, v, q: calcul(oM, v), base: `${oM.designation} (${fmt(L_)} × ${fmt(H_)} cm)`, nom, pid, bloc: 'ferm' }); }
     }
   }
+  for (const x of reunir(fermL)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, 'ferm');
   sauverLignes(c.id, L);
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
