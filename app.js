@@ -2897,7 +2897,7 @@ function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^
 const drainBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Système complet de drainage|Ouvrage global de drainage)/.test(o.designation)).map(o => o.designation);
 const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette périphérique/.test(o.designation)).map(o => o.designation);
 const regardsBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Regards de visite/.test(o.designation)).map(o => o.designation);
-const nappeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Nappe /.test(o.designation)).map(o => o.designation);
+const nappeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Nappe |Plaques de protection mécanique)/.test(o.designation)).map(o => o.designation);
 const araseBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Bande d'arase étanche/.test(o.designation)).map(o => o.designation);
 function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Seuil /.test(o.designation)).map(o => o.designation); }
 function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
@@ -4229,9 +4229,11 @@ function ficheVersMetre() {
   ajouterDrainage(p.choix.regards, num(p.choix.regardsNb));
   // Nappe : surface des murs de soubassement + 0,60 m de hauteur (relevé de 15 à 20 cm au-dessus du mur, 40 à 45 cm sous le drain)
   const soubLongNappe = (p.murs || []).filter(m => m.cat === 'soub').reduce((a, m) => a + num(m.longueur), 0);
-  const surfNappe = r.soubS + 0.6 * soubLongNappe;
+  // Les plaques de protection ne prennent pas le relevé : seule la nappe le prend
   const oNappe = p.choix.nappe && BIB.ouvrages.find(x => x.id === p.choix.nappe);
-  if (oNappe && surfNappe > 0) ajouter(oNappe.designation, surfNappe, oNappe.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surfNappe.toFixed(2), cote2: '1', src: 'Murs de soubassement + 0,60 m de relevé' }, null);
+  const avecReleve = oNappe && /^Nappe /.test(oNappe.designation);
+  const surfNappe = r.soubS + (avecReleve ? 0.6 * soubLongNappe : 0);
+  if (oNappe && surfNappe > 0) ajouter(oNappe.designation, surfNappe, oNappe.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surfNappe.toFixed(2), cote2: '1', src: avecReleve ? 'Murs de soubassement + 0,60 m de relevé' : 'Murs de soubassement' }, null);
   // Seuils de porte : même procédure que les appuis. Les murs cochés « Seuil de porte compris » donnent leur seuil à toutes les portes du projet.
   // Une ligne par type de seuil, unité = nombre de portes.
   const seuilsChoisis = [...new Set((p.murs || []).filter(m => !['soub', 'pignon'].includes(m.cat || 'peri') && m.seuil === true && m.liste_seuil).map(m => m.liste_seuil))];
