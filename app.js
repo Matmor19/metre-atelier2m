@@ -1451,6 +1451,8 @@ function blocFacade(p, f, k) {
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delfacade:${id}:${k}">✕</button></div>`;
 }
 function estPorteBaie(m) { const b = baseMenuiserie(m); return !!b && menusPorteBaie().some(o => o.id === b.id); }
+// Pièces repliées dans le configurateur (on ne voit que le nom de la pièce)
+const piecesRepliees = new Set();
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
   if (!host) return;
@@ -1459,13 +1461,17 @@ function renderPiecesNv() {
   const liste = piecesNvDe(c);
   const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && ouvActif(o));
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
-  const carte = (p) => `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
+  const carte = (p) => { const rep = piecesRepliees.has(p.id); return `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
+      <button type="button" class="btn sec small" data-piece-act="fold:${esc(p.id)}" title="${rep ? 'Déplier la pièce' : 'Replier la pièce'}" style="padding:2px 8px">${rep ? '▸' : '▾'}</button>
+      <button type="button" class="btn sec small" data-piece-act="haut:${esc(p.id)}" title="Monter la pièce" style="padding:2px 8px">↑</button>
+      <button type="button" class="btn sec small" data-piece-act="bas:${esc(p.id)}" title="Descendre la pièce" style="padding:2px 8px">↓</button>
       <span data-glisser-piece="${esc(p.id)}" title="Glisser pour changer l'ordre des pièces" style="cursor:grab;touch-action:none;user-select:none;font-size:20px;padding:0 6px;color:var(--mut)">⋮⋮</span>
       <input list="dlPiecesNv" data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce (ex. Chambre parentale)" style="flex:1;font-weight:700">
       <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="width:60px">
       <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
     </div>
+    <div class="piece-corps" style="${rep ? 'display:none' : ''}">
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
       <label style="font-size:12px">Surface au sol m² <input data-nv="${esc(p.id)}|surf" inputmode="decimal" value="${esc(p.surf || '')}" style="width:90px"></label>
       <label style="font-size:12px">Linéaire ml <input data-nv="${esc(p.id)}|perim" inputmode="decimal" value="${esc(p.perim || '')}" style="width:90px"></label>
@@ -1492,7 +1498,7 @@ function renderPiecesNv() {
       ${PNV_APPAREIL.map(a => a.cle === 'points' && eclairagePiece(p) === 'spots'
         ? `<span class="muted" style="font-size:12px">Spots encastrés calculés : ${nbSpots(p)}</span>`
         : `<label style="font-size:12px">${esc(a.libelle)} <input data-nv="${esc(p.id)}|app|${a.cle}" inputmode="numeric" value="${esc(appDefaut(p, a.cle))}" style="width:60px"></label>`).join('')}
-    </div></div>`;
+    </div></div></div>`; };
   host.innerHTML = `<datalist id="dlPiecesNv">${Object.keys(ELEC_PIECE_TYPES).map(t => `<option value="${esc(t)}">`).join('')}</datalist>${tabTitre('B. Configurateur de pièces')}<div class="bloc bloc-lettre">
     <p class="muted">Pour chaque pièce : surface au sol et revêtement, portes fin de chantier, menuiseries extérieures et appareillage de la pièce uniquement.</p>
     ${liste.map(carte).join('') || '<p class="muted">Aucune pièce.</p>'}
@@ -2377,6 +2383,22 @@ function majPieceNv(c, cle, val) {
   lsSet('chantiers', chantiers); marquerChantier(c.id);
 }
 $('vConfig') && $('vConfig').addEventListener('click', e => {
+  const pa = e.target.closest('[data-piece-act]');
+  if (pa) {
+    const c = chantiers.find(x => x.id === courantId);
+    if (!c) return;
+    const [act, id] = pa.dataset.pieceAct.split(':');
+    if (act === 'fold') { piecesRepliees.has(id) ? piecesRepliees.delete(id) : piecesRepliees.add(id); renderPiecesNv(); return; }
+    // Monter ou descendre la pièce d'une place, puis remettre les lignes dans le même ordre
+    const liste = piecesNvDe(c);
+    const i = liste.findIndex(p => p.id === id), j = act === 'haut' ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= liste.length) return;
+    [liste[i], liste[j]] = [liste[j], liste[i]];
+    sauverLignes(c.id, ordonnerLignesPieces(c));
+    lsSet('chantiers', chantiers); marquerChantier(c.id);
+    renderPiecesNv(); renderPlatNv(); renderPeinture();
+    return;
+  }
   const b = e.target.closest('[data-nv-act]');
   if (!b) return;
   const c = chantiers.find(x => x.id === courantId);
