@@ -1617,6 +1617,14 @@ function genererPiecesNv(c) {
     }
   }
   for (const x of reunir(fermL)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, 'ferm');
+  // Électricité : toutes les lignes d'une pièce sont réunies, dans l'ordre des pièces (alimentation et commande des volets comprises)
+  {
+    const ordre = new Map(pcs.map((p, i) => [p.id, i]));
+    const pos = [];
+    L.forEach((l, i) => { if (l.lot === 'electricite' && ordre.has(l.pieceNv)) pos.push(i); });
+    const triees = pos.map((i, k) => ({ l: L[i], k })).sort((x, y) => (ordre.get(x.l.pieceNv) - ordre.get(y.l.pieceNv)) || (x.k - y.k)).map(x => x.l);
+    pos.forEach((i, k) => { L[i] = triees[k]; });
+  }
   sauverLignes(c.id, L);
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
