@@ -809,12 +809,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Béton de propreté sous fondations"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0040",
@@ -1365,12 +1360,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Coffrage et décoffrage (voiles et semelles)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0065",
@@ -1683,12 +1673,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Contreventement OSB 12 mm (murs)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0083",
@@ -1707,12 +1692,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Panneaux OSB 18 mm (contreventement renforcé)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0084",
@@ -2470,12 +2450,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Panneau liège 60 mm (façade)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0130",
@@ -2494,12 +2469,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Panneau liège 30 mm (façade)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0131",
@@ -2537,12 +2507,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Frein-vapeur ou membrane hygro-variable"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0133",
@@ -2561,12 +2526,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Pare-vapeur"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0134",
@@ -2715,12 +2675,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloisons en carreaux de plâtre"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0149",
@@ -2854,12 +2809,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bandes à joints et ponçage BA13"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0158",
@@ -2878,12 +2828,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit de finition intérieur sur maçonnerie"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0159",
@@ -2902,12 +2847,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit de finition sur plâtre (sous-couche)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0160",
@@ -2926,12 +2866,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit plâtre projeté intérieur"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0161",
@@ -5011,12 +4946,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Faïence murale salle d'eau"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0288",
@@ -5035,12 +4965,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Crédence cuisine"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0289",
@@ -5059,12 +4984,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Carrelage mural autre pièce"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0290",
@@ -5102,12 +5022,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Habillage de baignoire en faïence"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0292",
@@ -5141,12 +5056,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit décoratif (tadelakt ou chaux)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0294",
@@ -5165,12 +5075,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Papier peint ou toile de verre"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0295",
@@ -5204,12 +5109,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Impression et sous-couche"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0297",
@@ -5228,12 +5128,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture murs et plafonds (2 couches)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0298",
@@ -5283,12 +5178,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture extérieure sur enduit"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0301",
@@ -5307,12 +5197,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Lasure ou vernis bois extérieur (bardage, terrasse)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0302",
@@ -5365,12 +5250,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit de rebouchage et lissage"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0305",
@@ -6957,12 +6837,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Contreventement OSB 9 mm (murs)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0391",
@@ -6981,12 +6856,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Contreventement OSB 12 mm (murs, fixations renforcées)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0392",
@@ -7005,12 +6875,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Contreventement OSB 15 mm (murs à forte sollicitation)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0393",
@@ -7029,12 +6894,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Contreventement par panneaux de fibre de bois dure"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0394",
@@ -7083,12 +6943,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Pare-vapeur hygrovariable intérieur (membrane continue)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0397",
@@ -7137,12 +6992,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Pare-pluie HPV posé sur ossature (façade)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0400",
@@ -7267,12 +7117,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Traitement préventif de l'ossature (classe 2 minimum)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0410",
@@ -9983,12 +9828,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Isolation phonique des murs et planchers"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0568",
@@ -10096,11 +9936,6 @@
         }
       ],
       "version": 2,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bande et enduit de joints sur plaque de plâtre compris ponçage"
-      },
       "mesure": "l"
     },
     {
@@ -11742,12 +11577,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Faïence salle de bains 20×20"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0680",
@@ -11781,12 +11611,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Papier peint"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0682",
@@ -11805,12 +11630,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit décoratif (tadelakt, chaux, béton ciré)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0683",
@@ -11848,12 +11668,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Panneau décoratif mural"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0685",
@@ -11872,12 +11687,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Carrelage mural"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0686",
@@ -11896,12 +11706,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit de finition sur plâtre"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0687",
@@ -11950,12 +11755,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture acrylique murs deux couches"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0690",
@@ -11994,12 +11794,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture boiseries et menuiseries"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0692",
@@ -12018,12 +11813,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture sur métal (radiateurs, garde-corps)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0693",
@@ -12042,12 +11832,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Lasure bois extérieur"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0694",
@@ -12066,12 +11851,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Peinture de façade"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0695",
@@ -12090,12 +11870,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Sous-couche d'impression"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0696",
@@ -12114,12 +11889,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit de lissage sur plâtre"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0697",
@@ -12172,12 +11942,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Huile sur bois"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0700",
@@ -12196,12 +11961,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Ponçage de surfaces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0701",
@@ -12904,12 +12664,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage bois vertical en lames"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0745",
@@ -12928,12 +12683,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage bois horizontal à clins"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0746",
@@ -12952,12 +12702,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage composite (WPC)"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0747",
@@ -12976,12 +12721,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage PVC"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0748",
@@ -13000,12 +12740,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage fibre-ciment"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0749",
@@ -13024,12 +12759,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage métallique en tôle nervurée"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0750",
@@ -13048,12 +12778,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Bardage zinc à joint debout"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0751",
@@ -13072,12 +12797,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison 74 mm : rail et montants 48, BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0752",
@@ -13096,12 +12816,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison 90 mm : rail et montants 70, BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0753",
@@ -13120,12 +12835,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison 100 mm : rail et montants 98, BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0899",
@@ -13144,12 +12854,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison phonique 100 mm : rail et montants 48, 2 x BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0900",
@@ -13168,12 +12873,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison phonique 142 mm : rail et montants 70, 2 x BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0901",
@@ -13192,12 +12892,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Cloison phonique 150 mm : rail et montants 98, 2 x BA13 deux faces"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0902",
@@ -16189,12 +15884,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 15-45, épaisseur 50 à 75 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0933",
@@ -16213,12 +15903,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 75, épaisseur 105 à 115 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0934",
@@ -16237,12 +15922,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 100, épaisseur 130 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0935",
@@ -16261,12 +15941,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 120, épaisseur 150 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0936",
@@ -16285,12 +15960,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 140, épaisseur 170 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0937",
@@ -16309,12 +15979,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 160, épaisseur 190 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0938",
@@ -16333,12 +15998,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Système Optima 200, épaisseur 210 à 230 mm"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0939",
@@ -16357,12 +16017,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Rail montant doublé 48 BA13"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0940",
@@ -16381,12 +16036,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Rail montant doublé 70 BA13"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0941",
@@ -16405,12 +16055,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Rail montant doublé 90 BA13"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0942",
@@ -16429,12 +16074,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus PSE épaisseur 100 R 3,15"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0943",
@@ -16453,12 +16093,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus PSE épaisseur 120 R 3,80"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0944",
@@ -16477,12 +16112,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus PSE épaisseur 140 R 4,40 à 4,50"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0945",
@@ -16501,12 +16131,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus laine minérale épaisseur 100 R 3 à 3,15"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0946",
@@ -16525,12 +16150,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus laine minérale épaisseur 120 R 3,75"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0947",
@@ -16549,12 +16169,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Doublage collé placo plus laine minérale épaisseur 140 R 4,35"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0948",
@@ -16573,12 +16188,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Plus-value plaque hydrofuge"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0949",
@@ -16597,12 +16207,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Plus-value plaque coupe-feu"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0950",
@@ -16621,12 +16226,7 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Plus-value plaque acoustique"
-      }
+      "version": 1
     },
     {
       "id": "OUV-0952",
@@ -29516,7 +29116,7 @@
     {
       "id": "OUV-1793",
       "lot": "gros-oeuvre",
-      "designation": "Murs en briques creuses de terre cuite - Épaisseur 36.5 cm (Murs porteurs)",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 36,5 cm (Murs porteurs)",
       "unite": "m²",
       "type": "brique",
       "saisie": "metre",
@@ -29591,7 +29191,7 @@
     {
       "id": "OUV-1796",
       "lot": "gros-oeuvre",
-      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 36.5 cm",
+      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 36,5 cm",
       "unite": "m²",
       "type": "commun",
       "saisie": "metre",
@@ -29741,7 +29341,7 @@
     {
       "id": "OUV-1802",
       "lot": "gros-oeuvre",
-      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) de forte section pour murs de soutènement ou refends lourds - épaisseur 27.5 cm",
+      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) de forte section pour murs de soutènement ou refends lourds - épaisseur 27,5 cm",
       "unite": "m²",
       "type": "agglomere",
       "saisie": "metre",
@@ -30017,11 +29617,6 @@
         }
       ],
       "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit extérieur traditionnel en 3 couches (mortier de ciment et chaux hydraulique)"
-      },
       "detail": "Application en trois couches successives (gobetis d'accrochage, corps d'enduit de dressement à la règle de 10 à 15 mm, couche de finition fine à la chaux hydraulique NHL). Inclus le marouflage systématique d'une bande de treillis en fibre de verre (largeur 30 cm) sur les liaisons de matériaux différents ou coffres de volets roulants, ainsi que la fourniture des baguettes d'angles."
     },
     {
@@ -30042,11 +29637,6 @@
         }
       ],
       "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit monocouche semi-allégé OC2 - Finition grattée"
-      },
       "detail": "Fourniture et projection mécanique d'un enduit monocouche industriel teinté dans la masse de classe OC2 (adapté aux briques et parpaings creux). Épaisseur minimale finie de 15 mm, grattage manuel au gratton ou à la taloche à clous après début de prise. Inclus baguettes d'angle techniques et entoilage des points singuliers."
     },
     {
@@ -30067,11 +29657,6 @@
         }
       ],
       "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit monocouche semi-allégé OC2 - Finition talochée"
-      },
       "detail": "Application mécanisée en deux passes successives ou une couche épaisse réglée à la règle pour garantir une épaisseur finale constante de 12 à 15 mm. Talochage manuel homogène à la taloche éponge ou plastique immédiatement après ressuage. Inclus la protection étanche totale de toutes les menuiseries par film adhésif."
     },
     {
@@ -30092,11 +29677,6 @@
         }
       ],
       "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit monocouche semi-allégé OC2 - Finition écrasée"
-      },
       "detail": "Projection d'un corps d'enduit puis d'une seconde passe sous forme de grain (brut de projection) écrasée partiellement à la taloche inox ou au couteau à enduire large. Inclus les échafaudages de toutes hauteurs et la pose des cornières d'arêtes."
     },
     {
@@ -30117,11 +29697,6 @@
         }
       ],
       "version": 1,
-      "qte": "elev_net",
-      "si": {
-        "cle": "murs_choix",
-        "val": "Enduit mince organique RPE (revêtement plastique épais) sur isolant extérieur"
-      },
       "detail": "Application sur panneaux isolants extérieurs préalablement fixés. Comprend l'application du sous-enduit de calage, le marouflage immédiat d'une armature générale en tissu de fibre de verre traitée anti-alcalis (recouvrement de 10 cm entre lés), l'application d'un primaire d'accrochage teinté et la mise en œuvre du RPE grain fin siloxane ou acrylique. Inclus profils d'angle entoilés et profilés d'arrêt bas de départ avec goutte d'eau."
     },
     {
@@ -30309,6 +29884,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 126,
+  "revision": 127,
   "prochainNumero": 1832
 }
