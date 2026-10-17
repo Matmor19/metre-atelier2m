@@ -413,6 +413,7 @@ function detailHtml(l) {
 
 /* ============ Affichage ============ */
 function route(nom) {
+  if (nom === 'config') piecesDepliees.clear();   // à chaque arrivée dans le configurateur, les pièces sont repliées
   const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio', import: 'vImport' };
   if (PAGE === 'tableau') nom = 'tableau';
   for (const k of Object.keys(vues)) { const el = $(vues[k]); if (el) el.classList.toggle('hidden', k !== nom); }
@@ -1462,7 +1463,8 @@ function blocFacade(p, f, k) {
 }
 function estPorteBaie(m) { const b = baseMenuiserie(m); return !!b && menusPorteBaie().some(o => o.id === b.id); }
 // Pièces repliées dans le configurateur (on ne voit que le nom de la pièce)
-const piecesRepliees = new Set();
+// Pièces dépliées : toutes repliées par défaut ; réinitialisé à chaque arrivée dans le configurateur
+const piecesDepliees = new Set();
 function renderPiecesNv() {
   const host = $('cfgPiecesNv');
   if (!host) return;
@@ -1471,7 +1473,7 @@ function renderPiecesNv() {
   const liste = piecesNvDe(c);
   const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && ouvActif(o));
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
-  const carte = (p) => { const rep = piecesRepliees.has(p.id); return `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
+  const carte = (p) => { const rep = !piecesDepliees.has(p.id); return `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:flex-start;align-items:center;gap:6px">
       <button type="button" class="btn sec small" data-piece-act="fold:${esc(p.id)}" title="${rep ? 'Déplier la pièce' : 'Replier la pièce'}" style="flex:0 0 auto;padding:2px 10px;font-size:16px">${rep ? '▸' : '▾'}</button>
       <button type="button" class="btn sec small" data-piece-act="haut:${esc(p.id)}" title="Monter la pièce" style="flex:0 0 auto;padding:2px 10px;font-size:16px">↑</button>
@@ -2401,7 +2403,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
     const c = chantiers.find(x => x.id === courantId);
     if (!c) return;
     const [act, id] = pa.dataset.pieceAct.split(':');
-    if (act === 'fold') { piecesRepliees.has(id) ? piecesRepliees.delete(id) : piecesRepliees.add(id); renderPiecesNv(); return; }
+    if (act === 'fold') { piecesDepliees.has(id) ? piecesDepliees.delete(id) : piecesDepliees.add(id); renderPiecesNv(); return; }
     // Monter ou descendre la pièce d'une place, puis remettre les lignes dans le même ordre
     const liste = piecesNvDe(c);
     const i = liste.findIndex(p => p.id === id), j = act === 'haut' ? i - 1 : i + 1;
@@ -2418,7 +2420,7 @@ $('vConfig') && $('vConfig').addEventListener('click', e => {
   if (!c) return;
   const [act, id, k] = b.dataset.nvAct.split(':');
   const liste = piecesNvDe(c);
-  if (act === 'add') liste.push({ id: 'pn' + uid(), nom: '', surf: '', revet: '', menus: [], portes: '', app: {} });
+  if (act === 'add') { liste.push({ id: 'pn' + uid(), nom: '', surf: '', revet: '', menus: [], portes: '', app: {} }); piecesDepliees.add(liste[liste.length - 1].id); }   // la nouvelle pièce s'ouvre pour la saisie
   else if (act === 'del') c.elec.piecesNv = liste.filter(p => p.id !== id);
   else if (act === 'addmenu') { const p = liste.find(x => x.id === id); if (p) (p.menus = p.menus || []).push({ id: 'me' + uid(), type: '', vantaux: '', ouvrant: '', l: '', h: '', vitrage: '', esth: '', secu: '', pose: '', volet: '', ferm: '', moust: '', ouv: '', nb: '1' }); }
   else if (act === 'delmenu') { const p = liste.find(x => x.id === id); if (p) p.menus.splice(Number(k), 1); }
