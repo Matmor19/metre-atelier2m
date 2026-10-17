@@ -1994,6 +1994,9 @@ function genererPlatNv(c) {
 // et ne remet que ce qui est encore saisi. Les lignes saisies à la main ne sont pas touchées.
 function genererMetreConfigurateur(c) {
   const msgs = [genererPiecesNv(c), genererPlatNv(c), genererPeinture(c)];
+  // Le bouton remet le métré en service : les lignes de la fiche (murs, toiture, charpente, terrain…) sont alors recréées aussi
+  delete c.metreGele;
+  majLignesDepuisConfigurateur(c);
   renderMetre();
   // Message court : « Métré régénéré. », suivi seulement des éléments manquants
   const manquants = msgs.filter(m => m && /manquant/.test(m));
@@ -4304,6 +4307,12 @@ function ficheVersMetre() {
       if (hMoy > 0) ajouter(oAng.designation, nAng * hMoy, oAng.designation, null, null);
       else manquants.push('hauteur des murs périphériques (chaînage d\'angle)');
     }
+  }
+  // Charpente et écran de sous-toiture : l'ouvrage de la bibliothèque correspond à la variante (type de toit, pente, charpente, écran)
+  for (const o of BIB.ouvrages) {
+    if (!ouvActif(o) || !o.si || !['charpente_variante', 'ecran'].includes(o.si.cle) || !o.qte) continue;
+    const v = qteValeur(o, ctxQuantites(c));
+    if (v && num(v.cote1) > 0) ajouter(o.designation, num(v.cote1), undefined, null, SRC_QTE[o.qte] || null);
   }
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
   else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
