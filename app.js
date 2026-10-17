@@ -1996,6 +1996,7 @@ function remiseAZeroConfigurateur(c, demander = true) {
 }
 // Vide les cases du configurateur du chantier, sans toucher aux lignes du métré ni aux lots
 function razConfigurateur(c) {
+  const terrainGarde = refKanbanDe(c) && c.projet && c.projet.terrain ? JSON.parse(JSON.stringify(c.projet.terrain)) : null;   // chantier Kanban : terrain gardé
   const f = $('vConfig');
   if (f) {
     f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
@@ -2005,7 +2006,7 @@ function razConfigurateur(c) {
     });
   }
   delete c.projet;
-  c.surfKanbanNon = true;   // la surface du Kanban n'est pas reprise à nouveau après une remise à zéro
+  if (terrainGarde) projetDe(c).terrain = terrainGarde;
   c.elec = { pieces: [], piecesNv: [] };
   c.platNv = {};
   c.peinture = {};
@@ -2029,6 +2030,7 @@ if ($('btnRazMetre')) $('btnRazMetre').addEventListener('click', remiseAZeroMetr
 // Restent : le terrain (fiche client) et l'identité du dossier (référence Kanban, client).
 function razTotale(c) {
   // Le terrain (fiche client) est gardé : on le mémorise avant de vider les cases
+  const terrainGarde = refKanbanDe(c) && c.projet && c.projet.terrain ? JSON.parse(JSON.stringify(c.projet.terrain)) : null;   // chantier Kanban : terrain gardé
   const f = $('vConfig');
   if (f) {
     f.querySelectorAll('input:not([type=checkbox]):not([type=button]),select,textarea').forEach(el => {
@@ -2038,7 +2040,7 @@ function razTotale(c) {
     });
   }
   delete c.projet;                 // les blocs du configurateur repartent de leurs valeurs par défaut (projetDe)
-  c.surfKanbanNon = true;   // la surface du Kanban n'est pas reprise à nouveau après une remise à zéro
+  if (terrainGarde) projetDe(c).terrain = terrainGarde;
   c.elec = { pieces: [], piecesNv: [] };
   c.platNv = {};
   c.peinture = {};
@@ -4040,7 +4042,7 @@ function refKanbanDe(c) { return (c.kanbanRef || (c.client && c.client.ref) || '
 const _surfEssayee = {};
 function surfaceAuto(c) {
   const ref = refKanbanDe(c);
-  if (!ref || c.surfKanbanNon || projetDe(c).terrain.surface || _surfEssayee[c.id + '|' + ref]) return;
+  if (!ref || projetDe(c).terrain.surface || _surfEssayee[c.id + '|' + ref]) return;
   _surfEssayee[c.id + '|' + ref] = true;
   kanbanSurface(c, true);
 }
