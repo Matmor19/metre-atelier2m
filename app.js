@@ -2049,7 +2049,7 @@ function genererPlatNv(c) {
         const surfIsol = net;   // même surface nette que la plaque placo (mêmes déductions), puis + 5 % de chute et découpe
         ajouterLotSiAbsent(c.id, o.lot);
         const vI = { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
-        L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² plus 5 % de chute et de découpe = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+        L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² plus 5 % marge de découpe = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
         nb++;
       }
     }
