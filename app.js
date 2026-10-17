@@ -2897,6 +2897,7 @@ function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^
 const drainBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Système complet de drainage|Ouvrage global de drainage)/.test(o.designation)).map(o => o.designation);
 const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette périphérique/.test(o.designation)).map(o => o.designation);
 const regardsBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Regards de visite/.test(o.designation)).map(o => o.designation);
+const nappeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Nappe /.test(o.designation)).map(o => o.designation);
 const araseBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Bande d'arase étanche/.test(o.designation)).map(o => o.designation);
 function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Seuil /.test(o.designation)).map(o => o.designation); }
 function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
@@ -3905,7 +3906,7 @@ function ficheRendre() {
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Plancher bas', contenuPlancher)}
-    ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
+    ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur', 'nappe|Nappe de protection (murs de soubassement)'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase, nappe: nappeBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
     ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', listeAvecCrayon('murs', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(listeEffective('murs'), p.choix.murs)}</select>`))
       + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`))
       + `<div style="margin-top:8px"><div style="font-size:13px"><strong>Gérer les listes des murs (sans ajouter de mur)</strong></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${[['murGO', 'Type de mur'], ['finition', 'Finition des murs'], ['protection', 'Protection (soubassement)']].map(([k, l]) => `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${k}">✏️ ${l}</button>`).join('')}</div></div>`)}
@@ -4226,6 +4227,11 @@ function ficheVersMetre() {
   ajouterDrainage(p.choix.cunette, longPeriDr);
   ajouterDrainage(p.choix.arase, longPeriDr);
   ajouterDrainage(p.choix.regards, num(p.choix.regardsNb));
+  // Nappe : surface des murs de soubassement + 0,60 m de hauteur (relevé de 15 à 20 cm au-dessus du mur, 40 à 45 cm sous le drain)
+  const soubLongNappe = (p.murs || []).filter(m => m.cat === 'soub').reduce((a, m) => a + num(m.longueur), 0);
+  const surfNappe = r.soubS + 0.6 * soubLongNappe;
+  const oNappe = p.choix.nappe && BIB.ouvrages.find(x => x.id === p.choix.nappe);
+  if (oNappe && surfNappe > 0) ajouter(oNappe.designation, surfNappe, oNappe.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surfNappe.toFixed(2), cote2: '1', src: 'Murs de soubassement + 0,60 m de relevé' }, null);
   // Seuils de porte : même procédure que les appuis. Les murs cochés « Seuil de porte compris » donnent leur seuil à toutes les portes du projet.
   // Une ligne par type de seuil, unité = nombre de portes.
   const seuilsChoisis = [...new Set((p.murs || []).filter(m => !['soub', 'pignon'].includes(m.cat || 'peri') && m.seuil === true && m.liste_seuil).map(m => m.liste_seuil))];
