@@ -2930,6 +2930,8 @@ const habAngBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Chaînage d['
 const habChaBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Chaînage de couronnement/.test(o.designation)).map(o => o.designation);
 const linStdBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Linteaux en béton armé coulés/.test(o.designation)).map(o => o.designation);
 const linGpBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Linteaux de grandes portées/.test(o.designation)).map(o => o.designation);
+const chaineHorizBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Chaînages horizontaux/.test(o.designation)).map(o => o.designation);
+const raidBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Poteaux raidisseurs/.test(o.designation)).map(o => o.designation);
 const habBandeBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Réalisation de bandes de peinture/.test(o.designation)).map(o => o.designation);
 // Deux choix optionnels (tableaux, bandes de peinture), en ml, sur une même ligne ; rien choisi = rien au métré
 function habillagesMenuiseries(p) {
@@ -3787,7 +3789,7 @@ function ficheRendre() {
   // Une case à cocher « … compris » suivie de sa liste déroulante (crayon) : valeur gardée dans le mur
   const murCaseListe = (m, id, flag, lib, cle, tit) => `<div style="flex:1;min-width:260px">
     <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" ${id} data-champ="${flag}" ${m[flag] === true ? 'checked' : ''}> ${lib}</label>
-    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => (cle === 'mur-appui' ? appuisNv() : cle === 'mur-seuil' ? seuilsNvBase() : []), m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
+    ${selCrayon(cle, tit, `<select ${id} data-champ="liste_${flag}" style="width:100%;padding:6px">${optListeOuvrages(cle, tit, () => (cle === 'mur-appui' ? appuisNv() : cle === 'mur-seuil' ? seuilsNvBase() : cle === 'mur-chaine' ? chaineHorizBase() : cle === 'mur-raid' ? raidBase() : []), m['liste_' + flag] || '', '— aucun —')}</select>`)}</div>`;
   const rangeMur = m => {
     const id = `data-k="mur" data-id="${m.id}"`;
     const pig = m.cat === 'pignon', soub = m.cat === 'soub', refend = m.cat === 'refend';
@@ -3815,6 +3817,7 @@ function ficheRendre() {
         ${(num(m.longueur) > 0 || num(m.hauteur) > 0 || m.type) ? `<div style="display:flex;gap:14px;flex-wrap:wrap;width:100%">
           ${pig ? murCaseListe(m, id, 'chaine', 'Arase comprise', 'mur-arase', 'Arase comprise (mur pignon)') : murCaseListe(m, id, 'chaine', 'Chaînage compris', 'mur-chaine', 'Chaînage compris (mur)')}
           ${murCaseListe(m, id, 'raid', 'Poteau raidisseur compris', 'mur-raid', 'Poteau raidisseur compris (mur)')}
+          ${m.raid === true ? champ('Nombre de poteaux', inp(`${id} data-champ="nbPoteaux" inputmode="numeric"`, m.nbPoteaux, '120px')) : ''}
           ${soub ? '' : murCaseListe(m, id, 'appui', 'Appui de fenêtre compris', 'mur-appui', 'Appui de fenêtre compris (mur)')}
           ${(soub || pig) ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
@@ -4251,6 +4254,18 @@ function ficheVersMetre() {
       const q = long * g.nb;
       ajouter(o.designation, q, `${o.designation} – ${fmt(long)} m (${fmt(g.w)} m + 0,40 m) × ${g.nb} menuiserie${g.nb > 1 ? 's' : ''} de même largeur`, null, null);
     });
+  }
+  // Chaînages et poteaux raidisseurs, mur par mur : chaînage = longueur du mur ; poteau = nombre saisi × hauteur du mur
+  for (const m of (p.murs || [])) {
+    const cat = m.cat || 'peri';
+    if (cat !== 'pignon' && m.chaine === true && m.liste_chaine && num(m.longueur) > 0) {
+      const o = BIB.ouvrages.find(x => x.id === m.liste_chaine);
+      if (o) ajouter(o.designation, num(m.longueur), `${o.designation} – ${m.nom || 'mur'} : longueur ${fmt(num(m.longueur))} m`, null, null);
+    }
+    if (m.raid === true && m.liste_raid && num(m.nbPoteaux) > 0 && num(m.hauteur) > 0) {
+      const o = BIB.ouvrages.find(x => x.id === m.liste_raid);
+      if (o) ajouter(o.designation, num(m.nbPoteaux) * num(m.hauteur), `${o.designation} – ${m.nom || 'mur'} : ${fmt(num(m.nbPoteaux))} poteaux × hauteur ${fmt(num(m.hauteur))} m`, null, null);
+    }
   }
   // Chaînage sur le mur périphérique (ml) : linéaire du mur périphérique
   {
