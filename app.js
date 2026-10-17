@@ -958,6 +958,14 @@ function surbrillanceLigne(l) {
   return manuelle ? 'ligne-manuelle' : '';
 }
 
+// Lots regroupés par pièce au métré : un titre par pièce (ex. « Chambre 1 »), puis ses lignes
+const SOUS_PIECE_LOTS = new Set(['electricite', 'revetements-sols']);
+function nomPieceMetre(id) {
+  if (id === 'maison') return 'Maison (hors pièces)';
+  const c = chantiers.find(x => x.id === courantId);
+  const p = c ? piecesNvDe(c).find(x => x.id === id) : null;
+  return p ? (p.nom || 'Pièce') + (p.qualif ? ' ' + p.qualif : '') : 'Pièce';
+}
 function renderMetre() {
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
@@ -997,7 +1005,7 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
-    let blocPrec = null, vuFerm = false, vuOuv = false, vuCoul = false;
+    let blocPrec = null, piecePrec = null, vuFerm = false, vuOuv = false, vuCoul = false;
     const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
     for (const l of ls) {
       // Sous-titre avant les fermetures et occultations (après toutes les menuiseries)
@@ -1007,6 +1015,12 @@ function renderMetre() {
       // Sous-titre à chaque début de bloc de plâtrerie (cloisonnement, doublage, plafond)
       if (l.platBloc && l.platBloc !== blocPrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${SOUS_TITRES_PLAT[l.platBloc]}</td></tr>`;
       blocPrec = l.platBloc || null;
+      // Titre de pièce (électricité, revêtements de sol) : une fois à chaque changement de pièce
+      if (SOUS_PIECE_LOTS.has(lotId)) {
+        const cleP = l.pieceNv || null;
+        if (cleP && cleP !== piecePrec) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${esc(nomPieceMetre(cleP))}</td></tr>`;
+        piecePrec = cleP;
+      }
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
