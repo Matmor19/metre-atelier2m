@@ -4428,7 +4428,10 @@ function ficheVersMetre() {
       if (!o) return;
       const long = g.w + 0.4;
       const q = long * g.nb;
-      ajouter(o.designation, q, `${o.designation} – ${fmt(long)} m (${fmt(g.w)} m + 0,40 m) × ${g.nb} menuiserie${g.nb > 1 ? 's' : ''} de même largeur`, null, null);
+      // Détail écrit : largeur d'ouverture + 2 × 0,20 m d'appui, × nombre de menuiseries (comme le calcul réellement fait)
+      ajouter(o.designation, q, `${o.designation} – ${fmt(long)} m (${fmt(g.w)} m + 0,40 m) × ${g.nb} menuiserie${g.nb > 1 ? 's' : ''} de même largeur`, { nombre: String(g.nb), cote1: String(long) }, null, null);
+      const lLin = L[L.length - 1];
+      if (lLin && lLin.ouvrage === o.id) { lLin.modeLigne = 'texte'; lLin.detailTexte = `${fmt(g.w)} m d'ouverture + 2 × 0,20 m d'appui = ${fmt(long)} m × ${g.nb} menuiserie${g.nb > 1 ? 's' : ''} = ${fmt(q)} ml`; }
     });
   }
   // Chaînages et poteaux raidisseurs, mur par mur : chaînage = longueur du mur ; poteau = nombre saisi × hauteur du mur
