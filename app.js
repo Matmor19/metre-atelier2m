@@ -5771,6 +5771,7 @@ function formulaireOuvrage(o, lotChoisi, cotesInit, draftRestaure) {
       <p class="muted" style="margin:4px 0 8px;font-size:12px">Si vous choisissez un ouvrage, les cotes (longueur, largeur, hauteur) de cet ouvrage sont reprises automatiquement dans le métré et suivent ses modifications.</p>
       <label for="b_rappel">Formule de rappel (explication, affichée à la saisie)</label>
       <textarea id="b_rappel" name="rappel" rows="3" placeholder="ex. Longueur du mur × hauteur sous plafond, déduire les ouvertures ≥ 1 m²" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.rappel || '')}</textarea>
+      <label for="b_detail">Détail (texte affiché sous le titre de l'ouvrage dans le métré)</label><textarea id="b_detail" name="detail" rows="6" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit">${esc(v.detail || '')}</textarea>
       <div class="card" style="margin-top:12px">
         <strong>Prix indicatifs HT (€)</strong>
         <div class="row" style="margin-top:8px">
@@ -5942,6 +5943,7 @@ function enregistrerOuvrage(id) {
   const effacer = f.elements.effacer ? f.elements.effacer.checked : false;
   const mesure = f.elements.mesure ? f.elements.mesure.value : '';
   const rappel = f.elements.rappel ? f.elements.rappel.value.trim() : '';
+  const detail = f.elements.detail ? f.elements.detail.value.trim() : '';
   const lie = f.elements.lie ? f.elements.lie.value : '';
   const lieConf = '';   // ancien choix « source configurateur » : remplacé par les cotes reliées une à une
   const ancien = id ? (BIB.ouvrages.find(x => x.id === id).prix_indicatif || {}) : {};
@@ -5961,6 +5963,7 @@ function enregistrerOuvrage(id) {
     else if (o.unite !== unite || !o.champs || o.mesure) o.champs = champsBib(unite);
     if (mesure) o.mesure = mesure; else delete o.mesure;
     if (rappel) o.rappel = rappel; else delete o.rappel;
+    if (detail) o.detail = detail; else delete o.detail;
     if (lie && lie !== o.id) o.liePar = lie; else delete o.liePar;
     if (lieConf) o.lieConfig = lieConf; else delete o.lieConfig;
     if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT)); else delete o.cotes;
@@ -5973,6 +5976,7 @@ function enregistrerOuvrage(id) {
     const o = { id: 'OUV-' + String(n).padStart(4, '0'), lot, designation: des, unite, type: 'commun', saisie: 'metre', champs: (mesure ? champsPourMode(unite, mesure) : champsBib(unite)), version: 1 };
     if (mesure) o.mesure = mesure;
     if (rappel) o.rappel = rappel;
+    if (detail) o.detail = detail;
     if (lie) o.liePar = lie;
     if (lieConf) o.lieConfig = lieConf;
     if (Object.keys(COTES_EDIT).length) o.cotes = JSON.parse(JSON.stringify(COTES_EDIT));
