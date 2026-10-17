@@ -33,6 +33,8 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre tr.lot.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
     table.metre tr.lot.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
     table.metre tr.ligne.cible-avant td{box-shadow:inset 0 3px 0 var(--acc2)}
+    [data-piece].cible-avant{box-shadow:0 -4px 0 var(--acc2)}
+    [data-piece].cible-apres{box-shadow:0 4px 0 var(--acc2)}
     table.metre tr.ligne.cible-apres td{box-shadow:inset 0 -3px 0 var(--acc2)}
     table.metre td.pu,table.metre td.mt{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
     table.metre tfoot td{font-weight:700;border-top:2px solid var(--line);padding-top:10px}
@@ -669,6 +671,62 @@ function finGlisse(e) {
     deplacerLigne(g.uid, tr, apres);
   }
 }
+// Ordre des pièces : glisser la poignée ⋮⋮ d'une carte de pièce pour la placer avant ou après une autre
+let glissePiece = null, glisseY = null, glisseDefil = null;
+// Carte sous le pointeur : l'élément visé, sinon la carte dont la hauteur contient le pointeur (la barre fixe peut recouvrir l'en-tête)
+const cartePieceSous = (x, y) => {
+  const el = document.elementFromPoint(x, y);
+  const t = el ? el.closest('[data-piece]') : null;
+  if (t) return t;
+  return [...document.querySelectorAll('[data-piece]')].find(c => { const r = c.getBoundingClientRect(); return y >= r.top && y <= r.bottom; }) || null;
+};
+const effacerCiblesPiece = () => document.querySelectorAll('[data-piece].cible-avant, [data-piece].cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('[data-glisser-piece]');
+  if (!h) return;
+  e.preventDefault();
+  glissePiece = h.dataset.glisserPiece;
+  document.body.classList.add('en-glisse');
+  // Défilement automatique près des bords de l'écran : la carte visée peut être hors de la zone visible
+  glisseDefil = setInterval(() => {
+    if (glisseY == null) return;
+    if (glisseY < 90) window.scrollBy(0, -14);
+    else if (glisseY > window.innerHeight - 90) window.scrollBy(0, 14);
+  }, 30);
+});
+document.addEventListener('pointermove', e => {
+  if (!glissePiece) return;
+  glisseY = e.clientY;
+  effacerCiblesPiece();
+  const t = cartePieceSous(e.clientX, e.clientY);
+  if (!t || t.dataset.piece === glissePiece) return;
+  const r = t.getBoundingClientRect();
+  t.classList.add(e.clientY < r.top + r.height / 2 ? 'cible-avant' : 'cible-apres');
+});
+function finGlissePiece(e) {
+  if (!glissePiece) return;
+  const id = glissePiece;
+  glissePiece = null;
+  clearInterval(glisseDefil); glisseDefil = null; glisseY = null;
+  document.body.classList.remove('en-glisse');
+  effacerCiblesPiece();
+  if (e.type !== 'pointerup') return;
+  const t = cartePieceSous(e.clientX, e.clientY);
+  const c = chantiers.find(x => x.id === courantId);
+  if (!t || !c || t.dataset.piece === id) return;
+  const r = t.getBoundingClientRect();
+  const apres = e.clientY >= r.top + r.height / 2;
+  const liste = piecesNvDe(c);
+  const [piece] = liste.splice(liste.findIndex(p => p.id === id), 1);
+  let idx = liste.findIndex(p => p.id === t.dataset.piece);
+  if (apres) idx += 1;
+  liste.splice(idx, 0, piece);
+  sauverLignes(c.id, ordonnerLignesPieces(c));
+  lsSet('chantiers', chantiers); marquerChantier(c.id);
+  renderPiecesNv(); renderPlatNv(); renderPeinture();
+}
+document.addEventListener('pointerup', finGlissePiece);
+document.addEventListener('pointercancel', finGlissePiece);
 // Déplace un ouvrage du métré : il change de lot si besoin. La numérotation se recalcule
 // toute seule, puisqu'elle suit l'ordre des lignes dans chaque lot.
 function deplacerLigne(uid, tr, apres) {
@@ -1397,8 +1455,9 @@ function renderPiecesNv() {
   const liste = piecesNvDe(c);
   const revets = BIB.ouvrages.filter(o => o.lot === 'revetements-sols' && ouvActif(o));
   const optRev = sel => `<option value="">— choisir —</option>` + revets.map(o => `<option value="${esc(o.id)}" ${o.id === sel ? 'selected' : ''}>${esc(o.designation)}</option>`).join('');
-  const carte = (p) => `<div class="sousbloc" style="padding:10px;margin:10px 0">
+  const carte = (p) => `<div class="sousbloc" data-piece="${esc(p.id)}" style="padding:10px;margin:10px 0">
     <div class="row" style="justify-content:space-between;align-items:center">
+      <span data-glisser-piece="${esc(p.id)}" title="Glisser pour changer l'ordre des pièces" style="cursor:grab;touch-action:none;user-select:none;font-size:20px;padding:0 6px;color:var(--mut)">⋮⋮</span>
       <input list="dlPiecesNv" data-nv="${esc(p.id)}|nom" value="${esc(p.nom || '')}" placeholder="Nom de la pièce (ex. Chambre parentale)" style="flex:1;font-weight:700">
       <input data-nv="${esc(p.id)}|qualif" inputmode="numeric" value="${esc(p.qualif || '')}" placeholder="n°" title="Numéro (Chambre 1, Chambre 2…)" style="width:60px">
       <button type="button" class="btn small danger" data-nv-act="del:${esc(p.id)}">Supprimer la pièce</button>
@@ -1505,6 +1564,16 @@ function genererEquipementsMaison(c) {
   renderMetre();
   if (manque.length) return 'Installation électrique : ouvrage manquant dans la bibliothèque (' + manque.join(', ') + ').';
   return nb ? 'Installation électrique de la maison ajoutée au métré.' : 'Installation électrique : aucune ligne.';
+}
+// Ordre des pièces : les lignes des lots revêtements et électricité suivent l'ordre des pièces du configurateur
+// (les lignes sans pièce ou de la maison ne bougent pas). Renvoie la liste des lignes triée.
+function ordonnerLignesPieces(c, L = lignesDe(c.id)) {
+  const ordre = new Map(piecesNvDe(c).map((p, i) => [p.id, i]));
+  const pos = [];
+  L.forEach((l, i) => { if (SOUS_PIECE_LOTS.has(l.lot) && ordre.has(l.pieceNv)) pos.push(i); });
+  const triees = pos.map((i, k) => ({ l: L[i], k })).sort((x, y) => (ordre.get(x.l.pieceNv) - ordre.get(y.l.pieceNv)) || (x.k - y.k)).map(x => x.l);
+  pos.forEach((i, k) => { L[i] = triees[k]; });
+  return L;
 }
 function genererPiecesNv(c) {
   delete c.metreGele;
@@ -1633,14 +1702,8 @@ function genererPiecesNv(c) {
   }
   for (const x of reunir(fermL)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, 'ferm');
   if (pcs.length) nb += ajouterEquipementsMaison(c, L, manque);
-  // Électricité : toutes les lignes d'une pièce sont réunies, dans l'ordre des pièces (alimentation et commande des volets comprises)
-  {
-    const ordre = new Map(pcs.map((p, i) => [p.id, i]));
-    const pos = [];
-    L.forEach((l, i) => { if (l.lot === 'electricite' && ordre.has(l.pieceNv)) pos.push(i); });
-    const triees = pos.map((i, k) => ({ l: L[i], k })).sort((x, y) => (ordre.get(x.l.pieceNv) - ordre.get(y.l.pieceNv)) || (x.k - y.k)).map(x => x.l);
-    pos.forEach((i, k) => { L[i] = triees[k]; });
-  }
+  // Lignes de chaque pièce réunies dans l'ordre des pièces (électricité, revêtements, alimentation et commande des volets comprises)
+  ordonnerLignesPieces(c, L);
   sauverLignes(c.id, L);
   renderMetre();
   const uniques = manque.filter((d, i, t) => t.indexOf(d) === i);
