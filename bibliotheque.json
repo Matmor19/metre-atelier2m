@@ -3334,7 +3334,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0187",
@@ -10349,7 +10350,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0596",
@@ -30307,6 +30309,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 125,
+  "revision": 126,
   "prochainNumero": 1832
 }
