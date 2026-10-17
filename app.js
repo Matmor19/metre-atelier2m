@@ -526,7 +526,7 @@ function renderOuvrages() {
   const liste = BIB.ouvrages.filter(o => ouvActif(o) && o.lot === lotCourant && (!q || o.designation.toLowerCase().includes(q)));
   const lignes = liste.map(o => `<div class="ouv" data-ouv="${esc(o.id)}"><span>${esc(o.designation)} <span class="muted" style="font-size:12px">· ${esc(o.id)}</span></span><span class="tag">${esc(o.unite)}</span></div>`).join('');
   $('listeOuvrages').innerHTML = (lignes || '<p class="muted" style="padding:12px">Aucun ouvrage trouvé dans ce lot.</p>')
-    + '<div style="padding:12px"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button></div>';
+    + '<div style="padding:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" id="bLibre2">+ Ouvrage libre dans ce lot</button><button class="btn sec" id="bLigneLibre">+ Ligne libre (titre, unité et quantité libres)</button></div>';
 }
 
 /* ============ Lots du chantier et numérotation ============ */
@@ -4531,6 +4531,39 @@ function ouvrirLibre() {
   });
 }
 
+// Ligne libre dans le métré : titre, unité et quantité saisis librement, sans passer par la bibliothèque
+function ouvrirLigneLibre() {
+  const lots = BIB.lots.map(l => `<option value="${esc(l.id)}" ${l.id === lotCourant ? 'selected' : ''}>${esc(l.nom)}</option>`).join('');
+  $('sheet').innerHTML = `<h2 style="margin:0 0 4px;font-size:18px">Ligne libre</h2>
+    <p class="muted">La ligne entre directement dans le métré. Elle n'est pas ajoutée à la bibliothèque.</p>
+    <form id="fLigneLibre">
+      <label for="ll_des">Titre</label><input id="ll_des" name="designation" required>
+      <label for="ll_lot">Lot</label><select id="ll_lot" name="lot">${lots}</select>
+      <label for="ll_unite">Unité (libre)</label><input id="ll_unite" name="unite" value="u">
+      <label for="ll_qte">Quantité</label><input id="ll_qte" name="quantite" inputmode="decimal" required>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn sec" id="bAnnulerLL">Annuler</button>
+        <button type="submit" class="btn">Ajouter au métré</button>
+      </div>
+    </form>`;
+  const f = $('fLigneLibre');
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    const q = Number(String(f.elements.quantite.value).trim().replace(',', '.'));
+    if (!(q > 0)) { alert('La quantité doit être un nombre supérieur à 0.'); return; }
+    const designation = f.elements.designation.value.trim();
+    const unite = f.elements.unite.value.trim() || 'u';
+    const lot = f.elements.lot.value;
+    ajouterLotSiAbsent(courantId, lot);
+    const L = lignesDe(courantId);
+    L.push({ uid: uid(), lot, ouvrage: null, designation, unite, valeurs: { nombre: String(q) }, quantite: q, surface: null, libre: true, ligneLibre: true, cree: new Date().toISOString() });
+    sauverLignes(courantId, L);
+    renderMetre();
+    fermer();
+  });
+  $('bAnnulerLL').onclick = () => fermer();
+}
+
 /* ============ Chantiers ============ */
 function ouvrirChantier(id) {
   courantId = id;
@@ -4737,6 +4770,7 @@ $('recherche').oninput = renderOuvrages;
 
 $('listeOuvrages').addEventListener('click', e => {
   if (e.target.closest('#bLibre2')) { ouvrirModal(); ouvrirLibre(); return; }
+  if (e.target.closest('#bLigneLibre')) { ouvrirModal(); ouvrirLigneLibre(); return; }
   const li = e.target.closest('[data-ouv]');
   if (!li) return;
   const o = BIB.ouvrages.find(x => x.id === li.dataset.ouv);
