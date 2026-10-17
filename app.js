@@ -2893,6 +2893,11 @@ const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Bét
 // Appui de fenêtre : la menuiserie garde l'identifiant de l'ouvrage « Appui de fenêtre … » de la bibliothèque
 function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
 // Seuils de porte de la bibliothèque (ouvrages « Seuil … »), proposés dans la liste « Seuil de porte compris » des murs
+// Drainage et arase des murs périphériques : une liste par élément ; rien choisi = rien au métré
+const drainBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^(Système complet de drainage|Ouvrage global de drainage)/.test(o.designation)).map(o => o.designation);
+const cunetteBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Cunette périphérique/.test(o.designation)).map(o => o.designation);
+const regardsBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Regards de visite/.test(o.designation)).map(o => o.designation);
+const araseBase = () => BIB.ouvrages.filter(o => ouvActif(o) && /^Bande d'arase étanche/.test(o.designation)).map(o => o.designation);
 function seuilsNvBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Seuil /.test(o.designation)).map(o => o.designation); }
 function appuiNom(id) { if (!id) return ''; const o = BIB.ouvrages.find(x => x.id === id); return o ? o.designation : (APPUI_LIB[id] || id); }
 // Valider une menuiserie : ses lignes entrent directement dans le métré (sans passer par la revue)
@@ -3900,6 +3905,7 @@ function ficheRendre() {
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Plancher bas', contenuPlancher)}
+    ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
     ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', listeAvecCrayon('murs', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(listeEffective('murs'), p.choix.murs)}</select>`))
       + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`))
       + `<div style="margin-top:8px"><div style="font-size:13px"><strong>Gérer les listes des murs (sans ajouter de mur)</strong></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${[['murGO', 'Type de mur'], ['finition', 'Finition des murs'], ['protection', 'Protection (soubassement)']].map(([k, l]) => `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${k}">✏️ ${l}</button>`).join('')}</div></div>`)}
@@ -4213,6 +4219,13 @@ function ficheVersMetre() {
       for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
     }
   }
+  // Drainage et arase : longueur des murs périphériques (regards : nombre saisi). Rien choisi = rien.
+  const longPeriDr = (p.murs || []).filter(m => (m.cat || 'peri') === 'peri').reduce((a, m) => a + num(m.longueur), 0);
+  const ajouterDrainage = (id, q) => { const o = id && BIB.ouvrages.find(x => x.id === id); if (o && q > 0) ajouter(o.designation, q, o.designation.replace(/\s*\([^)]*\)/g, ''), null, null); };
+  ajouterDrainage(p.choix.drain, longPeriDr);
+  ajouterDrainage(p.choix.cunette, longPeriDr);
+  ajouterDrainage(p.choix.arase, longPeriDr);
+  ajouterDrainage(p.choix.regards, num(p.choix.regardsNb));
   // Seuils de porte : même procédure que les appuis. Les murs cochés « Seuil de porte compris » donnent leur seuil à toutes les portes du projet.
   // Une ligne par type de seuil, unité = nombre de portes.
   const seuilsChoisis = [...new Set((p.murs || []).filter(m => !['soub', 'pignon'].includes(m.cat || 'peri') && m.seuil === true && m.liste_seuil).map(m => m.liste_seuil))];
