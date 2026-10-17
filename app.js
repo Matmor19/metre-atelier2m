@@ -352,7 +352,8 @@ function detailMorceaux(l) {
 }
 // Texte simple (exports CSV, Excel)
 function detail(l) {
-  if (l.modeLigne === 'texte' && l.detailTexte) return l.detailTexte;
+  // Détail écrit à la main ou par le calcul : même texte à l'écran et dans les exports
+  if (l.detailTexte && (l.modeLigne === 'texte' || !avecFormule(l))) return l.detailTexte;
   const v0 = l.valeurs || {};
   // Murs (élévations et soubassements) : même texte que l'écran, sans les cotes techniques (nombre 1, etc.)
   if (v0.src && /^(Calcul du configurateur : )?(murs, surface nette|Longueur × hauteur des murs)/.test(v0.src)) {
@@ -2025,7 +2026,7 @@ function genererPlatNv(c) {
     if (!(pv.surf > 0)) return;
     const o = ouvPlusValue(idOuv);
     if (!o) { manque.push(nomPV + ' ' + titre); return; }
-    ajouteM2(o, `${o.designation} – ${titre} : ${pv.n} plaques × ${fmt(PLAQUE_ML)} m × ${fmt(hh)} m = ${fmt(pv.surf)} m²`, pv.surf, `longueur (${pv.n} plaques × ${fmt(PLAQUE_ML)} m) × hauteur ${fmt(hh)} m`);
+    ajouteM2(o, `${o.designation} – ${titre} : ${pv.n} plaques × ${fmt(PLAQUE_ML)} m × ${fmt(hh)} m = ${fmt(pv.surf)} m²`, pv.surf, `${fmt(pv.n * PLAQUE_ML)} ml (${pv.n} plaques × ${fmt(PLAQUE_ML)} m) × hauteur ${fmt(hh)} m`);
   };
   const ajouteFeu = (titre, valeur) => {
     const m2 = num(valeur);
