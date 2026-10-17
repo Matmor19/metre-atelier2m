@@ -336,12 +336,13 @@ function categorieCote(nom) {
 function detailMorceaux(l) {
   const noms = { nombre: 'nb', cote1: 'L', cote2: 'l', cote3: 'h', largeur_cm: 'larg.', hauteur_cm: 'haut.' };
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
-  const mode = l.modeLigne ? modeDe(o.unite, l.modeLigne) : (o && o.mesure ? modeDe(o.unite, o.mesure) : null);
+  const mode = l.modeLigne && l.modeLigne !== 'coef' ? modeDe(o.unite, l.modeLigne) : (o && o.mesure ? modeDe(o.unite, o.mesure) : null);
   if (mode) mode.cotes.forEach((c, i) => { noms['cote' + (i + 1)] = c[0]; });   // L, l ou H selon le mode
+  if (l.modeLigne === 'coef') { noms.nombre = 'coef.'; noms.cote1 = 'S'; }   // bande à joint : surface S × coefficient
   // Un m² n'a pas de largeur : le « l 1 » enregistré est un simple coefficient neutre (L × 1 = L), on ne l'affiche pas
   const m2 = o && o.unite === 'm²';
   return Object.entries(l.valeurs)
-    .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1') && !(l.modeLigne && k === 'nombre'))
+    .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1') && !(l.modeLigne === 'lxh' && k === 'nombre') && !(l.modeLigne === 'coef' && k === 'cote2'))
     // Valeurs numériques arrondies à deux décimales (ex. 144,9819 → 144,98), comme partout ailleurs
     .map(([k, v]) => ({ nom: noms[k] || '', v: /^-?\d+([.,]\d+)?$/.test(String(v).trim()) ? fmt(Number(String(v).replace(',', '.'))) : v }));
 }
@@ -1982,8 +1983,10 @@ function ajouterBandeJoint(c, L, formule, surface, titre) {
   const r = resultatFormuleJoint(formule, surface);
   if (!oJ || r === null) return false;
   ajouterLotSiAbsent(c.id, oJ.lot);
-  const vJ = { nombre: '1', cote1: String(r), cote2: '1' };
-  L.push({ uid: uid(), lot: oJ.lot, ouvrage: oJ.id, designation: `${oJ.designation} – ${titre}, ${fmt(r)} ${oJ.unite || 'm²'}`, unite: oJ.unite, valeurs: vJ, quantite: calcul(oJ, vJ), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+  // Formule « S × coefficient » : le détail affiche la surface S et le coefficient (ex. « S 138,08 × coef. 1,1 »)
+  const coef = String(formule || '').trim().replace(',', '.').match(/^S\s*[×x*]\s*(\d+(\.\d+)?)$/i);
+  const vJ = coef ? { nombre: coef[1], cote1: String(surface), cote2: '1' } : { nombre: '1', cote1: String(r), cote2: '1' };
+  L.push({ uid: uid(), lot: oJ.lot, ouvrage: oJ.id, designation: `${oJ.designation} – ${titre}, ${fmt(r)} ${oJ.unite || 'm²'}`, unite: oJ.unite, valeurs: vJ, quantite: calcul(oJ, vJ), surface: null, prix: 'moyen', ...(coef ? { modeLigne: 'coef' } : {}), platNv: true, cree: new Date().toISOString() });
   return true;
 }
 function genererPlatNv(c) {
