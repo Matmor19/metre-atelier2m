@@ -3189,7 +3189,7 @@ function projetCalcul(p) {
   // Menuiseries rattachées aux pièces : chacune compte pour son nombre (nb × pièces identiques)
   for (const x of menusCalcul(piecesCourantes())) {
     const aire = num(x.m.largeur) * num(x.m.hauteur);
-    const tab = 2 * num(x.m.hauteur) * e * x.nb;
+    const tab = (2 * num(x.m.hauteur) + num(x.m.largeur)) * x.nb;   // tableaux au mètre linéaire : 2 côtés + linteau (m)
     if (aire >= SEUIL_DEDUCTION) r.deduit += aire * x.nb;
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: nomPiece(x.piece) + ' · ' + FICHE_OUV[x.m.type] }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: x.nb });
@@ -3201,7 +3201,7 @@ function projetCalcul(p) {
     if (!(num(m.l) > 0 && num(m.h) > 0)) continue;
     const nbM = num(m.nb) || 1;
     const aire = num(m.l) * num(m.h) / 10000;          // cm × cm → m²
-    const tab = 2 * (num(m.h) / 100) * e * nbM;        // tableaux : 2 côtés × hauteur (m) × épaisseur
+    const tab = (2 * num(m.h) + num(m.l)) / 100 * nbM;   // tableaux au mètre linéaire : 2 côtés + linteau (m)
     if (aire >= SEUIL_DEDUCTION) dedNv += aire * nbM;
     r.tableaux += tab;
     r.ouvs.push({ o: { nom: (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '') + ' · fenêtre' }, aire, tab, deduit: aire >= SEUIL_DEDUCTION, nb: nbM });
@@ -4193,14 +4193,14 @@ function ficheResume() {
     ${ligne('Murs (longueur × hauteur)', fmt(r.brut) + ' m²')}
     ${ligne('Ouvertures égales ou supérieures à 1 m² déduites', '− ' + fmt(r.deduit) + ' m²')}
     ${ligne('Élévation nette des murs (finition)', fmt(r.net) + ' m²', true)}
-    ${ligne('Tableaux de menuiseries (2 côtés × hauteur × épaisseur)', fmt(r.tableaux) + ' m²', true)}
+    ${ligne('Tableaux de menuiseries (linéaire : 2 côtés + linteau)', fmt(r.tableaux) + ' ml', true)}
     ${ligne('Toiture (surface développée)', fmt(r.toiture) + ' m²', true)}
     ${ligne('Linéaire des murs porteurs', fmt(r.linP) + ' ml')}
     ${ligne('Fouilles en tranchée', fmt(r.fouille) + ' m³', true)}
     ${ligne('Semelles filantes béton', fmt(r.semelle) + ' m³', true)}
     ${ligne('Soubassement : surface des murs porteurs', fmt(r.soubS) + ' m²', true)}
   </table>
-  ${r.ouvs.length ? `<p style="font-size:12px;color:#6b5a7a;margin:8px 0 0">${r.ouvs.map(x => `${esc(x.o.nom)} : ${fmt(x.aire)} m² · tableau ${fmt(x.tab)} m²${x.deduit ? ' · déduite des murs' : ''}`).join('<br>')}</p>` : ''}`;
+  ${r.ouvs.length ? `<p style="font-size:12px;color:#6b5a7a;margin:8px 0 0">${r.ouvs.map(x => `${esc(x.o.nom)} : ${fmt(x.aire)} m² · tableau ${fmt(x.tab)} ml${x.deduit ? ' · déduite des murs' : ''}`).join('<br>')}</p>` : ''}`;
 }
 function ficheChange(e) {
   const t = e.target, k = t.dataset.k; if (!k) return;
@@ -4422,7 +4422,6 @@ function ficheVersMetre() {
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
   for (const [f, surf] of Object.entries(r.parFin || {})) if (surf > 0) ajouter(f, surf, f, null, SRC_QTE.finit_net);
-  if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
   // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
   // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
   const habMl = habillageMl(c);
