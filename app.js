@@ -336,6 +336,8 @@ function categorieCote(nom) {
 function detailMorceaux(l) {
   // Menuiseries et fermetures : le nombre reprend déjà la quantité, on indique « suivant plan » à la place
   if (l.menBloc) return [{ nom: '', v: 'suivant plan' }];
+  // Appuis de fenêtre : longueur reprise des menuiseries, indiquée suivant plan
+  { const oA = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage); if (oA && /^Appui de fenêtre /.test(oA.designation)) return [{ nom: '', v: 'suivant plan' }]; }
   const noms = { nombre: 'nb', cote1: 'L', cote2: 'l', cote3: 'h', largeur_cm: 'larg.', hauteur_cm: 'haut.' };
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const mode = l.modeLigne && l.modeLigne !== 'coef' ? modeDe(o.unite, l.modeLigne) : (o && o.mesure ? modeDe(o.unite, o.mesure) : null);
