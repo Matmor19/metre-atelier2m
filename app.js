@@ -4409,9 +4409,7 @@ function ficheVersMetre() {
   // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
   // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
   const habMl = habillageMl(c);
-  // Un habillage des tableaux en ml (choisi dans la fiche) remplace le tableau calculé en m² : une seule ligne pour les tableaux
-  const habTabMl = !!(p.choix.habTab && BIB.ouvrages.find(x => x.id === p.choix.habTab) && habMl > 0);
-  if (!habTabMl) ajouter(r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  // Les tableaux de menuiseries se comptent uniquement au mètre linéaire (habillage choisi dans la fiche) : plus de ligne en m²
   for (const id of [p.choix.habTab, p.choix.habBande]) {
     const o = id && BIB.ouvrages.find(x => x.id === id);
     if (!(o && habMl > 0)) continue;

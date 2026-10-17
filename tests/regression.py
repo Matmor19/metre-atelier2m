@@ -220,9 +220,9 @@ ATTENDU = {
     'soubQuantite': 10,
     'veilleAucuneAuto': 0,
     'elevApresFenetre': 95.22,
-    'tableauxAuto': 2.05,
-    'tableauSousEnduit': True,
-    'tableauxDesig': 'OUV-0071',
+    'tableauxAuto': None,   # plus de tableau automatique en m² : les tableaux sont au ml (habillage choisi)
+    'tableauSousEnduit': False,
+    'tableauxDesig': None,
     'veilleMessage': True,
     'plat': {'quantite': 18.51},
     'platPla': {'quantite': 12},
