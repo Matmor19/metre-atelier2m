@@ -418,7 +418,6 @@ function detailHtml(l) {
 
 /* ============ Affichage ============ */
 function route(nom) {
-  if (nom === 'config') piecesDepliees.clear();   // à chaque arrivée dans le configurateur, les pièces sont repliées
   const vues = { chantiers: 'vChantiers', metre: 'vMetre', tableau: 'vTableau', config: 'vConfig', reglages: 'vReglages', biblio: 'vBiblio', import: 'vImport' };
   if (PAGE === 'tableau') nom = 'tableau';
   for (const k of Object.keys(vues)) { const el = $(vues[k]); if (el) el.classList.toggle('hidden', k !== nom); }
@@ -426,7 +425,11 @@ function route(nom) {
   const onglet = { chantiers: 'btnChantiers', metre: 'btnChantiers', tableau: 'btnChantiers', config: 'btnConfig', reglages: 'btnReglages' };
   ['btnChantiers', 'btnConfig', 'btnReglages'].forEach(id => { const b = $(id); if (b) b.classList.toggle('actif', onglet[nom] === id); });
   if (nom === 'metre' || nom === 'tableau') compterLignes();
-  if (nom === 'config') requestAnimationFrame(dessinerOnglets);
+  if (nom === 'config') {
+    piecesDepliees.clear();   // à chaque arrivée dans le configurateur, les pièces sont repliées
+    renderPiecesNv();         // et redessinées repliées, même si la vue était déjà affichée
+    requestAnimationFrame(dessinerOnglets);
+  }
 }
 
 // Ligne calculée par le configurateur (ou par un de ses blocs) : on peut revenir à son onglet
@@ -3470,6 +3473,7 @@ function sauverFiche(c) { lsSet('chantiers', chantiers); marquerChantier(c.id); 
 function ouvrirFiche() { ouvrirConfig(); }
 function ouvrirConfig() {
   if (!courantId) { alert('Ouvrez d\'abord un chantier.'); return; }
+  piecesDepliees.clear();   // à chaque entrée dans le configurateur, toutes les pièces sont repliées
   ficheRendre();
   ouvrirConfigurateur();
   route('config');
