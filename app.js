@@ -3940,11 +3940,11 @@ function ficheRendre() {
     const nvDallages = plancherNvOuvrages().filter(o => /^Dallage/.test(o.designation));
     const nvPlanchers = plancherNvOuvrages().filter(o => !/^Dallage/.test(o.designation));
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${champ('Surface de plancher brut (m²), dallage RDC', inp('data-k="plan" data-champ="brut" inputmode="decimal"', pl.brut || ''))}
-      ${champ('Type de dallage (RDC)', sel2('data-k="plan" data-champ="dallage"', [CHOIX_VIDE, ...nvDallages.map(o => [o.id, o.designation])], pl.dallage || ''))}
-      ${champ('Type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ...nvPlanchers.map(o => ['ouv:' + o.id, o.designation])], pl.type || ''))}
-      ${champ('Surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
-    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Le type de plancher et le type de dallage se choisissent dans la liste ; la quantité est calculée sur la surface saisie.</p>`;
+      ${champ('RDC : surface du dallage (m²)', inp('data-k="plan" data-champ="brut" inputmode="decimal"', pl.brut || ''))}
+      ${champ('RDC : type de dallage', sel2('data-k="plan" data-champ="dallage"', [CHOIX_VIDE, ...nvDallages.map(o => [o.id, o.designation])], pl.dallage || ''))}
+      ${champ('Étage (R+1) : type de plancher', sel2('data-k="plan" data-champ="type"', [CHOIX_VIDE, ...nvPlanchers.map(o => ['ouv:' + o.id, o.designation])], pl.type || ''))}
+      ${champ('Étage (R+1) : surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
+    </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Le dallage concerne le rez-de-chaussée (RDC). Le plancher concerne l'étage (R+1) : ne le renseignez que si la maison a un étage. Les quantités sont calculées sur les surfaces saisies.</p>`;
   })();
   $('cfgFiche').innerHTML = `${tabTitre('A. Terrain')}<div class="bloc bloc-lettre">
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -3976,7 +3976,7 @@ function ficheRendre() {
     ${carte('Murs de refend (sans finition)', blocMurs('refend') + ajouterMur('refend', '+ Ajouter un mur de refend'))}
     ${carte('Murs pignons (demi-pignons pour les toits monopente)', blocMurs('pignon') + ajouterMur('pignon', '+ Ajouter un mur pignon'))}
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
-    ${carte('Plancher bas', contenuPlancher)}
+    ${carte('Planchers : RDC (dallage) et étage (R+1)', contenuPlancher)}
     ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur', 'nappe|Nappe de protection (murs de soubassement)'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase, nappe: nappeBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
     </div>
     ${tabTitre('3. Charpente')}<div class="bloc">
