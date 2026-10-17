@@ -1049,6 +1049,10 @@ function renderMetre() {
     if (JSON.stringify(apres) !== JSON.stringify(avant)) sauverLignes(courantId, apres); }
   majLignesLiees(courantId);
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
+  // Électricité et revêtements suivent l'ordre des pièces du configurateur (les lignes désordonnées sont remises en ordre)
+  { const cOrdre = chantiers.find(x => x.id === courantId);
+    const avantOrdre = lignesDe(courantId), apresOrdre = ordonnerLignesPieces(cOrdre, avantOrdre.slice());
+    if (JSON.stringify(apresOrdre) !== JSON.stringify(avantOrdre)) sauverLignes(courantId, apresOrdre); }
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
   const nums = numeroLignes(courantId);
