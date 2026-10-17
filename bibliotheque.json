@@ -1014,12 +1014,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en aggloméré de ciment 20 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0049",
@@ -1038,12 +1039,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en aggloméré de ciment 15 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0050",
@@ -1062,12 +1064,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en aggloméré de ciment 10 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0051",
@@ -1110,12 +1113,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en brique monomur 30 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0053",
@@ -1134,12 +1138,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en brique creuse 20 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0054",
@@ -1158,12 +1163,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en brique creuse 15 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0055",
@@ -1182,12 +1188,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Élévation murs en brique pleine 20 cm (surface nette)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0056",
@@ -9533,12 +9540,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Mur en béton banché"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0543",
@@ -29315,6 +29323,6 @@
       "version": 1
     }
   ],
-  "revision": 110,
+  "revision": 111,
   "prochainNumero": 1786
 }
