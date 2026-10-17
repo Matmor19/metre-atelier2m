@@ -4407,10 +4407,20 @@ function ficheVersMetre() {
   for (const [f, surf] of Object.entries(r.parFin || {})) if (surf > 0) ajouter(f, surf, f, null, SRC_QTE.finit_net);
   if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
   // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
-  ajouter(r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
   // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
   const habMl = habillageMl(c);
-  for (const id of [p.choix.habTab, p.choix.habBande]) { const o = id && BIB.ouvrages.find(x => x.id === id); if (o && habMl > 0) ajouter(o.designation, habMl, o.designation, null, null); }
+  // Un habillage des tableaux en ml (choisi dans la fiche) remplace le tableau calculé en m² : une seule ligne pour les tableaux
+  const habTabMl = !!(p.choix.habTab && BIB.ouvrages.find(x => x.id === p.choix.habTab) && habMl > 0);
+  if (!habTabMl) ajouter(r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  for (const id of [p.choix.habTab, p.choix.habBande]) {
+    const o = id && BIB.ouvrages.find(x => x.id === id);
+    if (!(o && habMl > 0)) continue;
+    const n0 = L.length;
+    ajouter(o.designation, habMl, o.designation, null, null);
+    // Détail écrit : linéaire en ml et épaisseur du mur périphérique (sur l'ouvrage, au mètre linéaire)
+    const lHab = L[L.length - 1];
+    if (L.length > n0 && lHab.ouvrage === o.id) { lHab.modeLigne = 'texte'; lHab.detailTexte = `${fmt(habMl)} ml (2 × hauteur + largeur, par menuiserie) – épaisseur du mur périphérique ${fmt((r.epMoy || 0) * 100)} cm`; }
+  }
   // Linteaux : largeur de chaque menuiserie + 0,40 m, regroupées par largeur ; une ligne par longueur
   {
     const groupes = {};
