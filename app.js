@@ -338,8 +338,10 @@ function detailMorceaux(l) {
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
   const mode = o && o.mesure ? modeDe(o.unite, o.mesure) : null;
   if (mode) mode.cotes.forEach((c, i) => { noms['cote' + (i + 1)] = c[0]; });   // L, l ou H selon le mode
+  // Un m² n'a pas de largeur : le « l 1 » enregistré est un simple coefficient neutre (L × 1 = L), on ne l'affiche pas
+  const m2 = o && o.unite === 'm²';
   return Object.entries(l.valeurs)
-    .filter(([k, v]) => v !== '' && v != null)
+    .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1'))
     // Valeurs numériques arrondies à deux décimales (ex. 144,9819 → 144,98), comme partout ailleurs
     .map(([k, v]) => ({ nom: noms[k] || '', v: /^-?\d+([.,]\d+)?$/.test(String(v).trim()) ? fmt(Number(String(v).replace(',', '.'))) : v }));
 }
