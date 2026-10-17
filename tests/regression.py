@@ -114,7 +114,7 @@ JS_TESTS = r"""(c) => {
   R.pointsCuisineRetour = lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'pn-cuisine' && x.ouvrage === 'OUV-0614').length;
   R.pieceNv = { maison: lsGet('lignes.' + c.id, []).filter(x => x.pieceNv === 'maison').map(x => x.ouvrage + '=' + x.quantite).join(' '), plafCouleur: R.plafCouleur, plafPlafonnier: R.plafPlafonnier, plafVVsupp: R.plafVVsupp, spotsCuisine: R.spotsCuisine, pointsCuisineSpots: R.pointsCuisineSpots, pointsCuisineRetour: R.pointsCuisineRetour, n: n1.length, nApresRegeneration: n2.length, surbrillance: [...new Set(n1.map(surbrillanceLigne))].join(','),
     prises: (n1.find(x => x.ouvrage === 'OUV-0611') || {}).quantite || 0,
-    rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && /Bureau/.test(x.designation)).length),
+    rjBureau: (n1.filter(x => x.ouvrage === 'OUV-0216' && x.pieceNv === 'pn-bureau').length),
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
     plinthesSousRevet: (n1.findIndex(x => x.ouvrage === 'OUV-0881') === n1.findIndex(x => x.ouvrage === 'OUV-0274') + 1),
     terrasse: n1.filter(x => x.pieceNv === 'pn-terrasse' && ['OUV-0615', 'OUV-0223', 'OUV-0893'].includes(x.ouvrage)).length,

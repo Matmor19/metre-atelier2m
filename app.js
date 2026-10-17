@@ -1001,6 +1001,7 @@ function rafraichirDesignations(id) {
     let nl = l;
     if (!l.platNv && o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
+    if (l.pieceNv && SOUS_PIECE_LOTS.has(l.lot)) return nl;   // ligne de pièce : son descriptif (sans le nom de la pièce) est gardé tel quel
     if (!o.designation || o.designation === l.designation) return nl;
     change = true;
     return Object.assign({}, nl, { designation: o.designation });
@@ -1608,6 +1609,8 @@ function genererPiecesNv(c) {
   const menusNv = [];  // menuiseries extérieures, regroupées en ouvrantes puis coulissantes
   const ajoute = (o, valeurs, q, designation, pieceId, option, bloc) => {
     ajouterLotSiAbsent(c.id, o.lot);
+    // Électricité et revêtements : le titre de la pièce est déjà au-dessus, on ne le répète pas dans le descriptif
+    if (pieceId && SOUS_PIECE_LOTS.has(o.lot)) designation = designation.replace(/ – [^–]*$/, '');
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, menBloc: bloc || undefined, cree: new Date().toISOString() });
     nb++;
   };
