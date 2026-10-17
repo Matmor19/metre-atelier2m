@@ -336,12 +336,12 @@ function categorieCote(nom) {
 function detailMorceaux(l) {
   const noms = { nombre: 'nb', cote1: 'L', cote2: 'l', cote3: 'h', largeur_cm: 'larg.', hauteur_cm: 'haut.' };
   const o = BIB && BIB.ouvrages.find(x => x.id === l.ouvrage);
-  const mode = o && o.mesure ? modeDe(o.unite, o.mesure) : null;
+  const mode = l.modeLigne ? modeDe(o.unite, l.modeLigne) : (o && o.mesure ? modeDe(o.unite, o.mesure) : null);
   if (mode) mode.cotes.forEach((c, i) => { noms['cote' + (i + 1)] = c[0]; });   // L, l ou H selon le mode
   // Un m² n'a pas de largeur : le « l 1 » enregistré est un simple coefficient neutre (L × 1 = L), on ne l'affiche pas
   const m2 = o && o.unite === 'm²';
   return Object.entries(l.valeurs)
-    .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1'))
+    .filter(([k, v]) => v !== '' && v != null && !(m2 && k === 'cote2' && String(v) === '1') && !(l.modeLigne && k === 'nombre'))
     // Valeurs numériques arrondies à deux décimales (ex. 144,9819 → 144,98), comme partout ailleurs
     .map(([k, v]) => ({ nom: noms[k] || '', v: /^-?\d+([.,]\d+)?$/.test(String(v).trim()) ? fmt(Number(String(v).replace(',', '.'))) : v }));
 }
@@ -2041,8 +2041,9 @@ function genererPlatNv(c) {
     const net = Math.max(0, surfBrute - ded);
     const libDed = cle === 'doub' ? 'menuiseries de 1,50 m² et plus' : 'portes et façades de placard de 1,50 m² et plus';
     const base = viaMl ? `${fmt(ml)} ml × ${fmt(hk)} m` : `${fmt(m2s)} m² saisis`;
-    const v = { nombre: '1', cote1: String(net), cote2: '1' };
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+    // Saisi en linéaire × hauteur : le détail affiche L (linéaire) et H (hauteur) ; les déductions passent dans « nombre » (coefficient)
+    const v = viaMl ? { nombre: String(surfBrute > 0 ? net / surfBrute : 1), cote1: String(ml), cote2: String(hk) } : { nombre: '1', cote1: String(net), cote2: '1' };
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation} – ${base}, moins ${libDed} : ${fmt(ded)} m²`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', ...(viaMl ? { modeLigne: 'lxh' } : {}), platNv: true, cree: new Date().toISOString() });
     nb++;
     // 2. Isolant : même surface nette que la plaque, × 1,05 (chute et découpe)
     if (q[cle].isol) {
@@ -2051,8 +2052,8 @@ function genererPlatNv(c) {
       else {
         const surfIsol = net;   // même surface nette que la plaque placo (mêmes déductions), puis + 5 % de chute et découpe
         ajouterLotSiAbsent(c.id, o.lot);
-        const vI = { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
-        L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² plus 5 % marge de découpe = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', platNv: true, cree: new Date().toISOString() });
+        const vI = viaMl ? { nombre: String(surfBrute > 0 ? surfIsol * 1.05 / surfBrute : 1), cote1: String(ml), cote2: String(hk) } : { nombre: '1', cote1: String(surfIsol * 1.05), cote2: '1' };
+        L.push({ uid: uid(), lot: o.lot, ouvrage: oI.id, designation: `${oI.designation} – ${titre}, ${fmt(surfIsol)} m² plus 5 % marge de découpe = ${fmt(surfIsol * 1.05)} m²`, unite: oI.unite, valeurs: vI, quantite: calcul(oI, vI), surface: null, prix: 'moyen', ...(viaMl ? { modeLigne: 'lxh' } : {}), platNv: true, cree: new Date().toISOString() });
         nb++;
       }
     }
