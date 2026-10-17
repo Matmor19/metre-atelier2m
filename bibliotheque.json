@@ -487,8 +487,9 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "qte": "drain_ml"
+      "version": 2,
+      "qte": "drain_ml",
+      "archive": true
     },
     {
       "id": "OUV-0022",
@@ -1465,12 +1466,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Étanchéité des murs enterrés (couche bitumineuse)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0071",
@@ -2663,12 +2665,13 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "elev_net",
       "si": {
         "cle": "murs_choix",
         "val": "Isolation des murs enterrés (XPS)"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0140",
@@ -13791,8 +13794,9 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "soub_s"
+      "version": 2,
+      "qte": "soub_s",
+      "archive": true
     },
     {
       "id": "OUV-0770",
@@ -13811,8 +13815,9 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1,
-      "qte": "soub_s"
+      "version": 2,
+      "qte": "soub_s",
+      "archive": true
     },
     {
       "id": "OUV-0771",
@@ -29748,6 +29753,6 @@
       "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
     }
   ],
-  "revision": 112,
+  "revision": 113,
   "prochainNumero": 1803
 }
