@@ -417,17 +417,19 @@ function origineLigne(l) {
 }
 // Onglet du configurateur où se fait le calcul, d'après le lot de la ligne
 const ONGLET_DU_LOT = { 'installation-chantier': '0', 'terrassement-vrd': '1', 'gros-oeuvre': '2', 'ossature-bois': '2', 'charpente-structure-bois': '3', 'couverture-zinguerie': '4', 'menuiseries-exterieures': '5', 'isolation-thermique': '6', 'doublages-cloisons-plafonds': 'C', 'electricite': '8', 'plomberie-sanitaire': '9', 'revetements-sols': '10', 'chauffage-vmc-climatisation': '11', 'cuisine': '12', 'peinture-finitions': 'D', 'revetements-muraux': 'D' };
-function allerAuConfigurateur(lot) {
+function allerAuConfigurateur(lot, mur) {
   ouvrirConfig();
   const onglet = ONGLET_DU_LOT[lot];
   requestAnimationFrame(() => {
-    const h = [...document.querySelectorAll('#vConfig h2.lot-titre')].find(x => onglet && x.textContent.trim().startsWith(onglet + '.'));
-    if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Le mur d'origine est repéré par sa carte ; sinon l'onglet de la famille de travaux
+    const carteMur = mur ? document.querySelector(`#vConfig [data-k="mur"][data-id="${mur}"]`) : null;
+    const cible = carteMur ? carteMur.closest('div[style*="border-bottom"]') || carteMur : [...document.querySelectorAll('#vConfig h2.lot-titre')].find(x => onglet && x.textContent.trim().startsWith(onglet + '.'));
+    if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-retour]');
-  if (b) allerAuConfigurateur(b.dataset.retour);
+  if (b) allerAuConfigurateur(b.dataset.retour, b.dataset.mur);
 });
 function compterLignes() {
   const n = courantId ? lignesDe(courantId).length : 0;
@@ -1011,7 +1013,7 @@ function renderMetre() {
       // Surlignage « saisie manuelle » : une ligne d'un ouvrage relié (configurateur, ligne source ou cotes liées) n'en est pas une
       h += `<tr class="ligne ${surbrillanceLigne(l)}" data-uid="${esc(l.uid)}" data-lot="${esc(lotId)}">
         <td class="numl"><span class="poignee" data-glisser-ligne="${esc(l.uid)}" title="Glisser pour déplacer l'ouvrage">⋮⋮</span>${nums[l.uid]}</td>
-        <td>${esc(l.designation)}${origineLigne(l) ? ` <button class="btn small sec" data-retour="${esc(l.lot)}" title="Revenir au configurateur à l'endroit du calcul" style="margin-left:4px;min-height:26px;padding:2px 8px">↩ Configurateur</button>` : ''}${(BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail ? `<div class="ouv-detail" style="font-style:italic;font-size:12px;color:#6b7280;margin-top:2px">${esc(BIB.ouvrages.find(x => x.id === l.ouvrage).detail)}</div>` : ''}</td>
+        <td>${esc(l.designation)}${origineLigne(l) ? ` <button class="btn small sec" data-retour="${esc(l.lot)}" data-mur="${esc((l.origine || {}).mur || '')}" title="Revenir au configurateur à l'endroit du calcul" style="margin-left:4px;min-height:26px;padding:2px 8px">↩ Configurateur</button>` : ''}${(BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail ? `<div class="ouv-detail" style="font-style:italic;font-size:12px;color:#6b7280;margin-top:2px">${esc(BIB.ouvrages.find(x => x.id === l.ouvrage).detail)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td>
         <td>${esc(l.unite)}</td>
         <td class="detail">${detailHtml(l)}${!avecFormule(l) ? ` <button class="btn small sec" data-desig="${esc(l.uid)}" title="Modifier le détail de cette ligne" style="margin-left:4px;min-height:28px;padding:2px 7px">✎</button>` : ''}</td>
@@ -4112,7 +4114,7 @@ function ficheVersMetre() {
     if (unite === 'ml') return { nombre: '1', cote1: q.toFixed(2) };
     return { nombre: String(q) };
   };
-  const ajouter = (des, q, designation, valeursFixes, src) => {
+  const ajouter = (des, q, designation, valeursFixes, src, origine) => {
     if (!des) { if (q > 0) manquants.push('(choix non fait)'); return; }
     const o = BIB.ouvrages.find(x => !x.supprime && x.designation === des);
     if (!o) { manquants.push(des); return; }
@@ -4122,10 +4124,11 @@ function ficheVersMetre() {
     const lot = o.lot;
     ajouterLotSiAbsent(courantId, lot);
     L.push({ uid: uid(), lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
-             valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, cree: new Date().toISOString(),
+             valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, origine: origine || null, cree: new Date().toISOString(),
              qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined });
     nb++;
   };
+  const murDuType = (t, soub) => { const m = (p.murs || []).find(x => (x.type || '') === t && ((x.cat || 'peri') === 'soub') === !!soub); return m ? { mur: m.id } : null; };
   // Fondations : uniquement si des fouilles en rigole sont saisies dans le terrassement
   const fdim = p.fond || FICHE_FONDS_DEF;
   // Fouilles en pleine masse (plateforme, massifs, trous divers) : indépendantes des rigoles
@@ -4191,7 +4194,7 @@ function ficheVersMetre() {
   for (const [t, surf] of Object.entries(soubParType)) {
     if (!(surf > 0)) continue;
     if (!t) { manquants.push('Matériau du mur de soubassement'); continue; }
-    ajouter(t, surf, t, null, SRC_QTE.soub_s);
+    ajouter(t, surf, t, null, SRC_QTE.soub_s, murDuType(t, true));
   }
   // Solin en tête de soubassement : seulement sur les murs de soubassement avec enduit hydrofuge
   ajouter('Solin en aluminium fixé en tête de mur de soubassement', r.linSolin, 'Solin aluminium fixé en tête de soubassement');
@@ -4242,7 +4245,7 @@ function ficheVersMetre() {
     if (t === '') {
       manquants.push('Type de mur (mur sans type)'); continue;
     } else {
-      ajouter(t, surf, t.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
+      ajouter(t, surf, t.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null, murDuType(t, false));
     }
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
@@ -4278,11 +4281,11 @@ function ficheVersMetre() {
     const cat = m.cat || 'peri';
     if (cat !== 'pignon' && m.chaine === true && m.liste_chaine && num(m.longueur) > 0) {
       const o = BIB.ouvrages.find(x => x.id === m.liste_chaine);
-      if (o) ajouter(o.designation, num(m.longueur), `${o.designation} – ${m.nom || 'mur'} : longueur ${fmt(num(m.longueur))} m`, null, null);
+      if (o) ajouter(o.designation, num(m.longueur), `${o.designation} – ${m.nom || 'mur'} : longueur ${fmt(num(m.longueur))} m`, null, null, { mur: m.id });
     }
     if (m.raid === true && m.liste_raid && num(m.nbPoteaux) > 0 && num(m.hauteur) > 0) {
       const o = BIB.ouvrages.find(x => x.id === m.liste_raid);
-      if (o) ajouter(o.designation, num(m.nbPoteaux) * num(m.hauteur), `${o.designation} – ${m.nom || 'mur'} : ${fmt(num(m.nbPoteaux))} poteaux × hauteur ${fmt(num(m.hauteur))} m`, null, null);
+      if (o) ajouter(o.designation, num(m.nbPoteaux) * num(m.hauteur), `${o.designation} – ${m.nom || 'mur'} : ${fmt(num(m.nbPoteaux))} poteaux × hauteur ${fmt(num(m.hauteur))} m`, null, null, { mur: m.id });
     }
   }
   // Chaînage sur le mur périphérique (ml) : linéaire du mur périphérique
