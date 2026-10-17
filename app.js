@@ -350,6 +350,7 @@ function detailMorceaux(l) {
 }
 // Texte simple (exports CSV, Excel)
 function detail(l) {
+  if (l.modeLigne === 'texte' && l.detailTexte) return l.detailTexte;
   const v0 = l.valeurs || {};
   // Murs (élévations et soubassements) : même texte que l'écran, sans les cotes techniques (nombre 1, etc.)
   if (v0.src && /^(Calcul du configurateur : )?(murs, surface nette|Longueur × hauteur des murs)/.test(v0.src)) {
@@ -381,7 +382,7 @@ const SOUT_TYPES = [
 function detailHtml(l) {
   const v = l.valeurs || {};
   // Texte du détail corrigé à la main (ligne sans formule de cotes)
-  if (l.detailTexte && !avecFormule(l)) return esc(l.detailTexte);
+  if (l.detailTexte && (l.modeLigne === 'texte' || !avecFormule(l))) return esc(l.detailTexte);
   // Plateforme saisie en surface × hauteur : surface mesurée suivant plan, puis × hauteur
   if (v.src === TXT_SURFACE && v.cote1 && v.cote3) {
     const nb = num(v.nombre) > 0 ? num(v.nombre) : 1;
@@ -4455,7 +4456,12 @@ function ficheVersMetre() {
     const hauts = (p.murs || []).filter(m => (m.cat || 'peri') === 'peri' && num(m.hauteur) > 0).map(m => num(m.hauteur));
     const hMoy = hauts.length ? hauts.reduce((a, b) => a + b, 0) / hauts.length : 0;
     if (oAng && nAng > 0) {
-      if (hMoy > 0) ajouter(oAng.designation, nAng * hMoy, oAng.designation, null, null);
+      if (hMoy > 0) {
+        // Détail écrit : nombre de chaînages × hauteur moyenne = longueur, comme le calcul réellement fait
+        ajouter(oAng.designation, nAng * hMoy, oAng.designation, { nombre: String(nAng), cote1: String(hMoy) }, null, null);
+        const lAng = L[L.length - 1];
+        if (lAng && lAng.ouvrage === oAng.id) { lAng.modeLigne = 'texte'; lAng.detailTexte = `${fmt(nAng)} chaînage(s) d'angle × hauteur moyenne ${fmt(hMoy)} m = ${fmt(nAng * hMoy)} ml`; }
+      }
       else manquants.push('hauteur des murs périphériques (chaînage d\'angle)');
     }
   }
