@@ -3137,7 +3137,7 @@ function ctxQuantites(c) {
     lin_porteur: r.linP,
     elev_net: r.net,
     finit_net: r.net,
-    murs_choix: p.choix.murs || '',
+    murs_choix: '',
     finition_choix: p.choix.finition || '',
     // Pièces : mêmes totaux que la génération plâtrerie / sols / peinture / portes (clé « des:: » + désignation)
     ...((() => {
@@ -3945,9 +3945,6 @@ function ficheRendre() {
     ${rigoleActive ? '' : carte('Fondations', contenuFond)}
     ${carte('Plancher bas', contenuPlancher)}
     ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur', 'nappe|Nappe de protection (murs de soubassement)'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase, nappe: nappeBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
-    ${carte('Matériaux (utilisés dans le métré)', champ('Matériau des murs (élévation)', listeAvecCrayon('murs', `<select data-k="choix" data-champ="murs" style="width:100%;padding:6px">${optListe(listeEffective('murs'), p.choix.murs)}</select>`))
-      + champ('Tableaux de menuiseries', listeAvecCrayon('tableaux', `<select data-k="choix" data-champ="tableaux" style="width:100%;padding:6px">${optListe(listeEffective('tableaux'), p.choix.tableaux)}</select>`))
-      + `<div style="margin-top:8px"><div style="font-size:13px"><strong>Gérer les listes des murs (sans ajouter de mur)</strong></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${[['murGO', 'Type de mur'], ['finition', 'Finition des murs'], ['protection', 'Protection (soubassement)']].map(([k, l]) => `<button type="button" class="btn small sec" data-action="gerer-liste" data-liste="${k}">✏️ ${l}</button>`).join('')}</div></div>`)}
     </div>
     ${tabTitre('3. Charpente')}<div class="bloc">
     ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
@@ -4215,8 +4212,7 @@ function ficheVersMetre() {
   for (const [t, surf] of Object.entries(elevParType)) {
     if (!(surf > 0)) continue;
     if (t === '') {
-      if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
-      ajouter(p.choix.murs, surf, 'Élévation des murs', { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: '' }, null);
+      manquants.push('Type de mur (mur sans type)'); continue;
     } else {
       ajouter(t, surf, t.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
     }
@@ -4225,7 +4221,7 @@ function ficheVersMetre() {
   for (const [f, surf] of Object.entries(r.parFin || {})) if (surf > 0) ajouter(f, surf, f, null, SRC_QTE.finit_net);
   if (!(r.epMoy > 0) && menusCalcul(c).length) manquants.push('Épaisseur du mur fini (murs périphériques) pour les tableaux');
   // Tableaux : revêtement choisi dans le configurateur, sinon finition extérieure du mur périphérique (automatique dès qu'une fenêtre est saisie)
-  ajouter(p.choix.tableaux || r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
+  ajouter(r.finTab, r.tableaux, 'Tableaux de menuiseries (2 côtés)', null, 'épaisseur du mur × hauteur des ouvertures');
   // Habillages des menuiseries (ml) : même linéaire pour le tableau et la bande de peinture
   const habMl = habillageMl(c);
   for (const id of [p.choix.habTab, p.choix.habBande]) { const o = id && BIB.ouvrages.find(x => x.id === id); if (o && habMl > 0) ajouter(o.designation, habMl, o.designation, null, null); }
