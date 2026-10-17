@@ -1438,7 +1438,7 @@ function renderPiecesNv() {
     <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
       <button type="button" class="btn sec" data-nv-act="add">+ Ajouter une pièce</button>
       <button type="button" class="btn" data-nv-act="gen">Ajouter au métré</button>
-      <button type="button" class="btn sec" data-nv-act="gen-maison">Ajouter les équipements de la maison</button>
+      <button type="button" class="btn sec" data-nv-act="gen-maison">Ajouter l'installation électrique de la maison</button>
     </div>
     <p id="nvStatut" class="muted" style="font-size:13px"></p></div>`;
 }
@@ -1463,39 +1463,54 @@ function equipementsMaison(c) {
     : modules <= 48 ? 'Tableau électrique 48 modules avec protections'
     : 'Tableau électrique 4 rangées (logement > 100 m²)';
   const detecteurs = surf > 0 ? Math.ceil(surf / 100) : 0;
-  return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf };
+  // Liste de l'installation : tout ce qui se compte (les câbles et gaines en mètres se saisissent à la main)
+  const rj = pcs.reduce((a, p) => a + num(appDefaut(p, 'rj45')), 0);
+  const nbEau = pcs.filter(p => /salle d.(eau|bain)/i.test((typePieceNv(p.nom) || '') + ' ' + (p.nom || ''))).length;
+  const items = [
+    { des: tableau, n: 1, info: `${modules} modules nécessaires, ${circuits} circuits` },
+    { des: 'Disjoncteur de branchement', n: 1 },
+    { des: 'Disjoncteur divisionnaire (1 par circuit)', n: circuits, info: `${circuits} circuits` },
+    { des: 'Interrupteur différentiel 30 mA', n: ddr, info: `${ddr} pour ${circuits} circuits` },
+    { des: 'Prise de terre (piquet et ruban)', n: 1 },
+    { des: 'Liaison équipotentielle', n: 1 },
+  ];
+  if (nbEau) items.push({ des: "Liaison équipotentielle de salle d'eau", n: nbEau, info: 'une par pièce d\'eau' });
+  if (rj > 0) items.push({ des: 'Tableau télécommunication', n: 1 });
+  if (detecteurs > 0) items.push({ des: 'Détecteur autonome de fumée', n: detecteurs, info: '1 pour 100 m²' });
+  return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf, items };
 }
-// Bouton séparé « Ajouter les équipements de la maison » : tableau et détecteurs, calculés sur toutes les pièces
+// Installation électrique de la maison (hors pièces), calculée sur toutes les pièces
+function ajouterEquipementsMaison(c, L, manque) {
+  const eq = equipementsMaison(c);
+  let nb = 0;
+  for (const it of eq.items) {
+    const o = ouvrageParDesig(it.des);
+    if (!o) { manque.push(it.des); continue; }
+    const v = { nombre: String(it.n) };
+    ajouterLotSiAbsent(c.id, o.lot);
+    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation: `${o.designation}${it.info ? ' (' + it.info + ')' : ''} – maison`, unite: o.unite, valeurs: v, quantite: calcul(o, v), surface: null, prix: 'moyen', pieceNv: 'maison', pieceOption: false, cree: new Date().toISOString() });
+    nb++;
+  }
+  return nb;
+}
+// Bouton « Ajouter l'installation électrique de la maison » : même calcul que « Ajouter au métré »
 function genererEquipementsMaison(c) {
   delete c.metreGele;
   const eq = equipementsMaison(c);
+  if (eq.pieces === 0) return 'Équipements : saisis d\'abord les pièces.';
   const L = lignesDe(c.id).filter(l => l.pieceNv !== 'maison');
   const manque = [];
-  let nb = 0;
-  const ajoute = (o, v, q, designation) => {
-    ajouterLotSiAbsent(c.id, o.lot);
-    L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs: v, quantite: q, surface: null, prix: 'moyen', pieceNv: 'maison', pieceOption: false, cree: new Date().toISOString() });
-    nb++;
-  };
-  if (eq.pieces === 0) return 'Équipements : saisis d\'abord les pièces.';
-  const oT = ouvrageParDesig(eq.tableau);
-  if (!oT) manque.push(eq.tableau);
-  else { const v = { nombre: '1' }; ajoute(oT, v, calcul(oT, v), `${oT.designation} (${eq.modules} modules nécessaires, ${eq.circuits} circuits) – maison`); }
-  if (eq.detecteurs > 0) {
-    const oD = ouvrageParDesig('Détecteur autonome de fumée');
-    if (!oD) manque.push('Détecteur autonome de fumée');
-    else { const v = { nombre: String(eq.detecteurs) }; ajoute(oD, v, calcul(oD, v), `${oD.designation} (1 pour 100 m²) – maison`); }
-  }
+  const nb = ajouterEquipementsMaison(c, L, manque);
   sauverLignes(c.id, L);
   renderMetre();
-  if (manque.length) return 'Équipements : ouvrage manquant dans la bibliothèque (' + manque.join(', ') + ').';
-  return nb ? 'Équipements de la maison ajoutés au métré.' : 'Équipements : aucune ligne.';
+  if (manque.length) return 'Installation électrique : ouvrage manquant dans la bibliothèque (' + manque.join(', ') + ').';
+  return nb ? 'Installation électrique de la maison ajoutée au métré.' : 'Installation électrique : aucune ligne.';
 }
 function genererPiecesNv(c) {
   delete c.metreGele;
   const pcs = piecesNvDe(c);
   // Les équipements de la maison (bouton séparé) sont conservés lors de la génération des pièces
-  const L = lignesDe(c.id).filter(l => !l.pieceNv || l.pieceNv === 'maison');
+  const L = lignesDe(c.id).filter(l => !l.pieceNv);   // les équipements de la maison sont recalculés à chaque génération
   const manque = [];
   let nb = 0;
   const volets = [];   // fermetures et occultations, mises en fin de liste au métré
@@ -1617,6 +1632,7 @@ function genererPiecesNv(c) {
     }
   }
   for (const x of reunir(fermL)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, 'ferm');
+  if (pcs.length) nb += ajouterEquipementsMaison(c, L, manque);
   // Électricité : toutes les lignes d'une pièce sont réunies, dans l'ordre des pièces (alimentation et commande des volets comprises)
   {
     const ordre = new Map(pcs.map((p, i) => [p.id, i]));
