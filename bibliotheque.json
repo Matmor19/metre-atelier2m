@@ -29321,8 +29321,433 @@
         }
       ],
       "version": 1
+    },
+    {
+      "id": "OUV-1786",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 10 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 10 cm"
+      },
+      "detail": "Montage de parpaings courants de 10 cm au mortier traditionnel dosé à 350 kg/m³. Comprend la fourniture des blocs courants, le mortier de liaison, les coupes, les échafaudages et le nettoyage des bavures."
+    },
+    {
+      "id": "OUV-1787",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 15 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 15 cm"
+      },
+      "detail": "Montage de parpaings courants de 15 cm au mortier traditionnel. Comprend l'élévation des parties droites, le harpage, les coupes d'ajustement et les échafaudages de travail (DTU 20.1)."
+    },
+    {
+      "id": "OUV-1788",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 20 cm (Murs porteurs)",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en agglomérés de ciment creux (parpaings) - Épaisseur 20 cm (Murs porteurs)"
+      },
+      "detail": "Montage exclusif des parpaings de structure courants de 20 cm au mortier traditionnel dosé à 350 kg/m³, avec réalisation de l'arase étanche hydrofuge en pied de mur. Comprenant l'élévation des parties droites, le harpage, les coupes d'ajustement et les échafaudages de travail (DTU 20.1)."
+    },
+    {
+      "id": "OUV-1789",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 10 cm",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 10 cm"
+      },
+      "detail": "Montage de briques creuses de 10 cm au mortier traditionnel ou par encollage à joint mince (briques rectifiées). Comprend les briques courantes, le liant, les coupes et les échafaudages."
+    },
+    {
+      "id": "OUV-1790",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 15 cm",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 15 cm"
+      },
+      "detail": "Montage de briques creuses de 15 cm (pose traditionnelle ou collée). Comprend l'élévation courante et les échafaudages à toutes hauteurs de niveau."
+    },
+    {
+      "id": "OUV-1791",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 20 cm (Murs porteurs)",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 20 cm (Murs porteurs)"
+      },
+      "detail": "Montage des briques de structure courantes de 20 cm à perforations verticales par technique de joint mince de mortier-colle. Comprend la brique courante, le liant et l'arase étanche de pied de mur."
+    },
+    {
+      "id": "OUV-1792",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 30 cm (Murs porteurs)",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 30 cm (Murs porteurs)"
+      },
+      "detail": "Montage de briques courantes alvéolées rectifiées au rouleau applicateur à joint mince de mortier-colle. Comprend le calage du premier rang sur arase, les coupes droites/biaises, le contrôle permanent du niveau et d'aplomb et les échafaudages."
+    },
+    {
+      "id": "OUV-1793",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 36.5 cm (Murs porteurs)",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 36.5 cm (Murs porteurs)"
+      },
+      "detail": "Montage de briques courantes alvéolées rectifiées au rouleau applicateur à joint mince de mortier-colle. Comprend le calage du premier rang sur arase, les coupes droites/biaises, le contrôle permanent du niveau et d'aplomb et les échafaudages."
+    },
+    {
+      "id": "OUV-1794",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en briques creuses de terre cuite - Épaisseur 42 cm (Murs porteurs)",
+      "unite": "m²",
+      "type": "brique",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en briques creuses de terre cuite - Épaisseur 42 cm (Murs porteurs)"
+      },
+      "detail": "Élévation de blocs à forte inertie. Briques alvéolées rectifiées posées au rouleau applicateur à joint mince de mortier-colle. Comprend le calage du premier rang sur arase, les coupes droites/biaises, le contrôle permanent du niveau et d'aplomb et les échafaudages."
+    },
+    {
+      "id": "OUV-1795",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 30 cm",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 30 cm"
+      },
+      "detail": "Blocs courants pleins posés à joints minces croisés (1 à 3 mm) au mortier-colle blanc appliqué au peigne cranté. Inclus l'arase hydrofuge de base, le ponçage régulier des lits de pose à la planche abrasive pour planéité parfaite, et les échafaudages."
+    },
+    {
+      "id": "OUV-1796",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 36.5 cm",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 36.5 cm"
+      },
+      "detail": "Blocs courants pleins posés à joints minces croisés (1 à 3 mm) au mortier-colle blanc appliqué au peigne cranté. Inclus l'arase hydrofuge de base, le ponçage régulier des lits de pose à la planche abrasive pour planéité parfaite, et les échafaudages."
+    },
+    {
+      "id": "OUV-1797",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 42 cm",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 42 cm"
+      },
+      "detail": "Blocs courants pleins posés à joints minces croisés (1 à 3 mm) au mortier-colle blanc appliqué au peigne cranté. Inclus l'arase hydrofuge de base, le ponçage régulier des lits de pose à la planche abrasive pour planéité parfaite, et les échafaudages."
+    },
+    {
+      "id": "OUV-1798",
+      "lot": "gros-oeuvre",
+      "designation": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 50 cm",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs en béton cellulaire monobloc (Ciporex) - épaisseur 50 cm"
+      },
+      "detail": "Blocs courants pleins posés à joints minces croisés (1 à 3 mm) au mortier-colle blanc appliqué au peigne cranté. Inclus l'arase hydrofuge de base, le ponçage régulier des lits de pose à la planche abrasive pour planéité parfaite, et les échafaudages."
+    },
+    {
+      "id": "OUV-1799",
+      "lot": "gros-oeuvre",
+      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 15 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 15 cm"
+      },
+      "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
+    },
+    {
+      "id": "OUV-1800",
+      "lot": "gros-oeuvre",
+      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 20 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 20 cm"
+      },
+      "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
+    },
+    {
+      "id": "OUV-1801",
+      "lot": "gros-oeuvre",
+      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 25 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) - épaisseur 25 cm"
+      },
+      "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
+    },
+    {
+      "id": "OUV-1802",
+      "lot": "gros-oeuvre",
+      "designation": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) de forte section pour murs de soutènement ou refends lourds - épaisseur 27.5 cm",
+      "unite": "m²",
+      "type": "agglomere",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Hauteur ou largeur (m)"
+        }
+      ],
+      "version": 1,
+      "qte": "elev_net",
+      "si": {
+        "cle": "murs_choix",
+        "val": "Murs banchés à l'aide de blocs de coffrage en béton (Blocs à bancher) de forte section pour murs de soutènement ou refends lourds - épaisseur 27.5 cm"
+      },
+      "detail": "Pose des blocs de coffrage perdu en agglomérés de ciment entièrement à sec par emboîtement et joints croisés. Montage par passes successives (hauteur max 1,50 m), coulage continu du noyau en béton fluide C25/30 à la pompe ou à la benne et ébarbage des balèvres et vibration mécanique."
     }
   ],
-  "revision": 111,
-  "prochainNumero": 1786
+  "revision": 112,
+  "prochainNumero": 1803
 }

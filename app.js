@@ -4173,7 +4173,7 @@ function ficheVersMetre() {
       if (!p.choix.murs) { manquants.push('Type de mur (ou choix du matériau des murs)'); continue; }
       ajouter(p.choix.murs, surf, 'Élévation des murs', { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: '' }, null);
     } else {
-      ajouter(t, surf, t, { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
+      ajouter(t, surf, t.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surf.toFixed(2), cote2: '1', src: SRC_ELEV, typeMur: t }, null);
     }
   }
   // Finitions et protections choisies mur par mur (surface nette de chaque mur)
