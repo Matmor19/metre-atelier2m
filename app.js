@@ -4157,6 +4157,7 @@ function ficheRendre() {
   $('cfgFiche').innerHTML = `${tabTitre('A. Terrain')}<div class="bloc bloc-lettre">
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', refKanbanDe(c), '100%'))}</div></div>
+      <div id="cfgEtudeKanban" style="grid-column:1/-1"></div>
       ${champ('Surface du terrain (m²)', inp('data-k="terr" data-champ="surface" inputmode="decimal"', p.terrain.surface))}
       ${champ('Périmètre du terrain (ml)', inp('data-k="terr" data-champ="perimetre" inputmode="decimal"', p.terrain.perimetre))}
       ${champ('Surface à décaper (m²)', inp('data-k="terr" data-champ="decap" inputmode="decimal"', p.terrain.decap || ''))}
@@ -4167,6 +4168,7 @@ function ficheRendre() {
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Sert à la clôture et aux protections du chantier.</p>`)}
     </div>`;
   surfaceAuto(c);
+  etudeKanbanAfficher(c);
   $('cfgFicheSuite').innerHTML = `    ${tabTitre('0. Installation de chantier')}<div class="bloc">
     ${carte('Installation de chantier (forfaits à ajouter ou non)', champ('Branchement provisoire d\'eau', `<select data-k="chant" data-champ="eau" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.eau || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
       + champ('Branchement provisoire d\'électricité', `<select data-k="chant" data-champ="elec" style="width:100%;padding:6px">${['', 'oui', 'non'].map(v => `<option value="${v}" ${(p.chantier.elec || '') === v ? 'selected' : ''}>${{ '': '— à choisir —', oui: 'Oui', non: 'Non' }[v]}</option>`).join('')}</select>`)
@@ -4268,6 +4270,43 @@ function ficheChange(e) {
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
 const KANBAN_LECTURE = 'https://script.google.com/macros/s/AKfycbwLGYVnT9HvYgLJNzEP1QCa8b-BQw18eZ0vse2hXixZT4LwrFv3-bt4X4i--gX8eqDoKw/exec';
 // Référence Kanban : celle saisie, sinon celle du client Kanban choisi pour ce métré
+// Étude de faisabilité du dossier Kanban (zones sismique, de vent et de neige, argile, radon, risques, PLU) : affichée en lecture seule
+const _kanbanDossiers = {};
+function etudeKanbanHtml(card) {
+  const f = card.faisa || {}, e = card.euro || {};
+  const v = x => (x === undefined || x === null || x === '' || (Array.isArray(x) && !x.length)) ? '—' : esc(Array.isArray(x) ? x.join(', ') : String(x));
+  const lignes = [
+    ['Zone sismique', v(f.sismicite)],
+    ['Zone de vent', v(e.vent)],
+    ['Zone de neige', v(e.neige)],
+    ['Altitude (m)', v(e.alt)],
+    ['Catégorie', v(e.cat)],
+    ['Hauteur de référence (m)', v(e.h)],
+    ['Retrait-gonflement des argiles', v(f.argile)],
+    ['Radon (niveau)', v(f.radon)],
+    ['Risques naturels', v(f.risques)],
+    ['Zones du PLU', v((f.zones || []).map(z => z.code))],
+  ];
+  const lien = f.georisquesUrl ? ` <a href="${esc(f.georisquesUrl)}" target="_blank" rel="noopener">Rapport Géorisques</a>` : '';
+  return `<div style="border-top:1px solid var(--mut);padding-top:8px;margin-top:4px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:6px">Étude de faisabilité (Kanban, lecture seule)${lien}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:14px">
+      ${lignes.map(([lib, val]) => `<div><b>${lib}</b> : ${val}</div>`).join('')}
+    </div></div>`;
+}
+function etudeKanbanAfficher(c) {
+  const box = $('cfgEtudeKanban'); if (!box) return;
+  const ref = refKanbanDe(c);
+  if (!ref) { box.innerHTML = ''; return; }
+  if (_kanbanDossiers[ref]) { box.innerHTML = etudeKanbanHtml(_kanbanDossiers[ref]); return; }
+  box.innerHTML = '<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Lecture de l\'étude de faisabilité…</p>';
+  fetch(KANBAN_LECTURE).then(r => r.json()).then(db => {
+    const card = [...(db.cards || []), ...(db.archived || [])].find(x => x.ref === ref);
+    if (!card) return;
+    _kanbanDossiers[ref] = card;
+    if (refKanbanDe(c) === ref && $('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = etudeKanbanHtml(card);
+  }).catch(() => { if ($('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = '<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Étude de faisabilité : Kanban injoignable pour le moment.</p>'; });
+}
 function refKanbanDe(c) { return (c.kanbanRef || (c.client && c.client.ref) || '').toString().trim(); }
 // Surface reprise automatiquement, une seule fois par dossier, et seulement si la surface est encore vide
 const _surfEssayee = {};
