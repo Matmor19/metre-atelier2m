@@ -3091,6 +3091,38 @@
       "detail": "Fourniture et pose d'une porte d'entrée monobloc en acier traité contre la corrosion (cataphorèse ou galvanisation) et thermolaqué en usine (Ud ≤ 1,3 W/m².K). L'ouvrage comprend : le dormant et l'ouvrant à double paroi d'acier avec âme isolante en mousse polyuréthane haute densité, la serrure de sécurité automatique 5 points, les paumelles renforcées réglables, le cylindre de sécurité, le seuil plat PMR en aluminium, la quincaillerie complète, l'étanchéité périphérique double joint, les fixations maçonnerie et les réglages de compression."
     },
     {
+      "id": "OUV-1837",
+      "lot": "menuiseries-interieures",
+      "designation": "Façade de placard coulissante (unité)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une façade de placard coulissante, comptée à l'unité. Dimensions L × H, structure du panneau, finition, type de pose et amortisseur selon le configurateur."
+    },
+    {
+      "id": "OUV-1838",
+      "lot": "menuiseries-interieures",
+      "designation": "Façade de placard battante (unité)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une façade de placard battante ou accordéon, comptée à l'unité. Nombre de vantaux, dimensions L × H, structure du panneau, finition, type de pose et amortisseur selon le configurateur."
+    },
+    {
       "id": "OUV-1835",
       "lot": "menuiseries-exterieures",
       "designation": "Porte d'entrée Mixte Bois/Aluminium (Haut de gamme)",
@@ -29964,6 +29996,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 128,
-  "prochainNumero": 1837
+  "revision": 129,
+  "prochainNumero": 1839
 }

@@ -118,7 +118,7 @@ JS_TESTS = r"""(c) => {
     plinthes: (n1.find(x => x.ouvrage === 'OUV-0881') || {}).quantite || 0,
     plinthesSousRevet: (n1.findIndex(x => x.ouvrage === 'OUV-0881') === n1.findIndex(x => x.ouvrage === 'OUV-0274') + 1),
     terrasse: n1.filter(x => x.pieceNv === 'pn-terrasse' && ['OUV-0615', 'OUV-0223', 'OUV-0893'].includes(x.ouvrage)).length,
-    facade: Math.round(((n1.find(x => x.ouvrage === 'OUV-0755') || {}).quantite || 0) * 100) / 100,
+    facade: Math.round(((n1.find(x => x.ouvrage === 'OUV-1837') || {}).quantite || 0) * 100) / 100,
     circuitsCuisine: n1.filter(x => ['OUV-0882', 'OUV-0883', 'OUV-0884'].includes(x.ouvrage)).length,
     circuitsCellier: n1.filter(x => ['OUV-0885', 'OUV-0886', 'OUV-0887'].includes(x.ouvrage)).length,
     hotte: n1.filter(x => x.ouvrage === 'OUV-0888').length };
@@ -233,7 +233,7 @@ ATTENDU = {
     'raz': {'plat': 1, 'pieces': 1, 'pei': 1, 'metreIntact': 1},
     'pei': {'murs': 47.63, 'plafond': 12},
     'peiPF': {'quantite': 12.99},
-    'pieceNv': {'maison': 'OUV-0609=1 OUV-0737=1 OUV-0738=10 OUV-0739=2 OUV-0220=1 OUV-0221=1 OUV-0360=1 OUV-0618=1', 'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 41, 'nApresRegeneration': 41, 'facade': 4.8, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
+    'pieceNv': {'maison': 'OUV-0609=1 OUV-0737=1 OUV-0738=10 OUV-0739=2 OUV-0220=1 OUV-0221=1 OUV-0360=1 OUV-0618=1', 'plafCouleur': 2, 'plafPlafonnier': 1, 'plafVVsupp': 1, 'spotsCuisine': '6', 'pointsCuisineSpots': 0, 'pointsCuisineRetour': 1, 'rjBureau': 1, 'n': 41, 'nApresRegeneration': 41, 'facade': 1, 'terrasse': 3, 'plinthes': 9.87, 'plinthesSousRevet': True, 'surbrillance': '', 'prises': 3, 'circuitsCuisine': 3, 'circuitsCellier': 3, 'hotte': 1},
 }
 
 echecs = 0

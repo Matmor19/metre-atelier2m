@@ -1395,12 +1395,13 @@ const FA_CHOIX = {
   pose: [['entre', 'Pose entre murs'], ['fileur', 'Pose avec fileur latéral'], ['joue', 'Pose avec joue de terminaison'], ['rampant', 'Pose sous rampant']],
   amort: [['oui', 'Compris amortisseur de fin de course'], ['non', 'Non compris amortisseur de fin de course']]
 };
-const FA_BASE = { coulissante: 'OUV-0755', francaise: 'OUV-0880', acordeon: 'OUV-0880' };
+const FA_BASE = { coulissante: 'OUV-1837', francaise: 'OUV-1838', acordeon: 'OUV-1838' };   // comptées à l'unité
 function designationFacade(f) {
   const txt = (champ, v) => libelleFixe('fa-' + champ, v, (FA_CHOIX[champ].find(([x]) => x === v) || [])[1] || '');
   const battant = f.ouvrant !== 'coulissante';
-  const dims = num(f.l) > 0 && num(f.h) > 0 ? `${fmt(num(f.l))} x ${fmt(num(f.h))} cm` : '';
-  return ['Façade de placard' + (battant && f.vantaux ? ' ' + txt('vantaux', f.vantaux).toLowerCase() : ''), txt('ouvrant', f.ouvrant), dims, txt('structure', f.structure), txt('finition', f.finition), txt('pose', f.pose), txt('amort', f.amort)].filter(Boolean).join(', ');
+  const dims = num(f.l) > 0 && num(f.h) > 0 ? `${fmt(num(f.l))}×${fmt(num(f.h))} cm` : '';
+  // Même logique que le bloc porte : dimension en tête, puis tous les choix tels que saisis
+  return ['Façade de placard', dims, battant && f.vantaux ? txt('vantaux', f.vantaux).toLowerCase() : '', txt('ouvrant', f.ouvrant), txt('structure', f.structure), txt('finition', f.finition), txt('pose', f.pose), txt('amort', f.amort)].filter(Boolean).join(', ');
 }
 function facadesLargeur(p) { return (p.facades || []).filter(f => num(f.l) > 0).reduce((a, f) => a + (num(f.nb) || 1) * num(f.l) / 100, 0); }
 // Fermetures et occultations : ouvrage de la bibliothèque pour chaque choix (absent = à créer)
@@ -1669,7 +1670,7 @@ function genererPiecesNv(c) {
       if (f.ouvrant !== 'coulissante' && !f.vantaux) { manque.push('Façade de placard : nombre de vantaux à choisir (' + nom + ')'); continue; }
       const o = BIB.ouvrages.find(x => x.id === FA_BASE[f.ouvrant] && !x.supprime);
       if (!o) { manque.push('façade de placard'); continue; }
-      const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
+      const v = { nombre: String(n) };   // à l'unité : les dimensions figurent dans la désignation
       menusIntNv.push({ o, v, q: calcul(o, v), base: designationFacade(f), nom, designation: `${designationFacade(f)} – ${nom}`, pid: p.id });
     }
     for (const m of (p.menus || [])) {
