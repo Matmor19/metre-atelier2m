@@ -1009,7 +1009,7 @@ function rafraichirDesignations(id) {
     let nl = l;
     if (!l.platNv && o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
-    if (l.pieceNv && SOUS_PIECE_LOTS.has(l.lot)) return nl;   // ligne de pièce : son descriptif (sans le nom de la pièce) est gardé tel quel
+    if (l.pieceNv && (SOUS_PIECE_LOTS.has(l.lot) || l.lot === 'menuiseries-interieures')) return nl;   // ligne de pièce : son descriptif (blocs portes, façades : dimensions et choix) est gardé tel quel
     if (!o.designation || o.designation === l.designation) return nl;
     change = true;
     return Object.assign({}, nl, { designation: o.designation });

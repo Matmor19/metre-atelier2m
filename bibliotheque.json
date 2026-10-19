@@ -3103,8 +3103,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "detail": "Fourniture et pose d'une façade de placard coulissante, comptée à l'unité. Dimensions L × H, structure du panneau, finition, type de pose et amortisseur selon le configurateur."
+      "version": 1
     },
     {
       "id": "OUV-1838",
@@ -3119,8 +3118,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "detail": "Fourniture et pose d'une façade de placard battante ou accordéon, comptée à l'unité. Nombre de vantaux, dimensions L × H, structure du panneau, finition, type de pose et amortisseur selon le configurateur."
+      "version": 1
     },
     {
       "id": "OUV-1835",
@@ -29996,6 +29994,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 129,
+  "revision": 130,
   "prochainNumero": 1839
 }
