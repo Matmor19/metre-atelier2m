@@ -5194,7 +5194,7 @@ function donneesDocument() {
       const montant = pu != null ? l.quantite * pu : null;
       if (montant != null) total += montant;
       return { num: nums[l.uid], designation: l.designation, unite: l.unite,
-               quantite: l.quantite, detail: detail(l), detailHtml: detailHtml(l), pu, montant, titres: [] };
+               quantite: l.quantite, detail: detail(l), detailHtml: detailHtml(l), desc: ((BIB.ouvrages.find(x => x.id === l.ouvrage) || {}).detail || ''), pu, montant, titres: [] };
     })
   }));
   // Sous-titres calculés comme à l'écran (même fonction)
@@ -5218,7 +5218,7 @@ function htmlImpression(d, logo, pg) {
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     for (const l of lot.lignes) {
       for (const t of l.titres) corps += `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
-      corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
+      corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
     }
@@ -5335,7 +5335,7 @@ function htmlParLot(d, type, logo) {
     // Détail du lot (généralités en tête pour le CDPGF)
     const gen = cdpgf ? genHtml(lot.id, lot.ordre) : '';
     const lignes = lot.lignes.map(l => `${l.titres.map(t => `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
-        <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}</td>
+        <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
     // Totaux : Total HT, puis trois lignes de TVA (un taux par ligne, car un projet peut mélanger plusieurs taux), puis Total TTC
@@ -5651,7 +5651,7 @@ async function pdfCdpgfFormulaire() {
         y -= 16;
       }
       const des = decoupeTexte(l.designation, helvB, 8.5, C.des - 8);
-      const det = l.detail ? decoupeTexte(l.detail, helv, 7.2, C.des - 8) : [];
+      const det = [...(l.detail ? decoupeTexte(l.detail, helv, 7.2, C.des - 8) : []), ...(l.desc ? decoupeTexte(l.desc, helv, 7.2, C.des - 8) : [])];
       const rh = Math.max(24, 8 + des.length * 10.5 + det.length * 8.8 + 4);
       if (y - rh < BAS) { nouvellePage(); enteteTable(); }
       const bas = y - rh;
@@ -5815,7 +5815,7 @@ async function exporterExcel() {
     for (const l of lot.lignes) {
       for (const t of l.titres) { lignesTitre.push(m.length); m.push(['', t, '', '', '', ...(avecPrix ? ['', ''] : [])]); }
       lignesLigne.push(m.length);
-      m.push([l.num, l.designation, l.quantite, l.unite, l.detail, ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
+      m.push([l.num, l.designation, l.quantite, l.unite, [l.desc, l.detail].filter(Boolean).join(' — '), ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
     }
   }
   let ligneTotal = null;
