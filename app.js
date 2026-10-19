@@ -1648,7 +1648,7 @@ function genererPiecesNv(c) {
     if (p.revet && surf > 0) {
       const o = BIB.ouvrages.find(x => x.id === p.revet);
       if (!o) manque.push('revêtement de ' + nom);
-      else { const v = { nombre: '1', cote1: String(surf), cote2: '1' }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+      else { const v = { nombre: '1', cote1: String(surf), cote2: '1' }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); const lR = L[L.length - 1]; if (lR) { lR.modeLigne = 'texte'; lR.detailTexte = 'surface indiquée sur plan'; } }
     }
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
