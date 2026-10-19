@@ -4062,6 +4062,13 @@ function ficheRendre() {
             ${champ('Charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), toit.charpente))}
             ${toit.charpente === 'traditionnelle' ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" data-k="toit" data-champ="chevronnage" ${toit.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
+            <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Pénétrations, noues et croupes</div>
+            ${champ('Pénétrations en charpente industrielle (nombre)', inp('data-k="toit" data-champ="nbPenetInd" inputmode="decimal"', toit.nbPenetInd))}
+            ${champ('Pénétrations en charpente traditionnelle (nombre)', inp('data-k="toit" data-champ="nbPenetTrad" inputmode="decimal"', toit.nbPenetTrad))}
+            ${champ('Noues de pénétration, charpente industrielle (ml)', inp('data-k="toit" data-champ="mlNoueInd" inputmode="decimal"', toit.mlNoueInd))}
+            ${champ('Noues de pénétration, charpente traditionnelle (ml)', inp('data-k="toit" data-champ="mlNoueTrad" inputmode="decimal"', toit.mlNoueTrad))}
+            ${champ('Croupe en charpente industrielle (m² projeté au sol)', inp('data-k="toit" data-champ="m2CroupeInd" inputmode="decimal"', toit.m2CroupeInd))}
+            ${champ('Croupe en charpente traditionnelle (m² de rampant)', inp('data-k="toit" data-champ="m2CroupeTrad" inputmode="decimal"', toit.m2CroupeTrad))}
     </div>`;
   const contenuIso = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
@@ -4537,6 +4544,13 @@ function ficheVersMetre() {
     ajouter(desOuv('OUV-1840'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
     if (p.toiture.chevronnage) ajouter(desOuv('OUV-1841'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
   }
+  // Pénétrations (u), noues de pénétration (ml) et croupes (m²) saisies dans la fiche Charpente
+  ajouter(desOuv('OUV-1871'), num(p.toiture.nbPenetInd));
+  ajouter(desOuv('OUV-1872'), num(p.toiture.nbPenetTrad));
+  ajouter(desOuv('OUV-1873'), num(p.toiture.mlNoueInd));
+  ajouter(desOuv('OUV-1874'), num(p.toiture.mlNoueTrad));
+  ajouter(desOuv('OUV-1875'), num(p.toiture.m2CroupeInd), undefined, null, SRC_QTE.surface_toiture_plan);
+  ajouter(desOuv('OUV-1876'), num(p.toiture.m2CroupeTrad), undefined, null, SRC_QTE.surface_toiture);
   // Accessoires de tuiles : faîtage, rives, noues, tuiles à douille (longueurs et nombres saisis dans la fiche)
   if (p.toiture.type !== 'plat' && COUV_OUV[couvDe(p.toiture)]) {
     ajouter(desOuv('OUV-1846'), num(p.toiture.faite));
