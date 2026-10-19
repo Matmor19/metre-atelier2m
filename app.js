@@ -1700,9 +1700,11 @@ function genererPiecesNv(c) {
       if (!g) groupes.set(cle, { ...x, nombre: num(x.v.nombre), pieces: [x.nom] });
       else { g.nombre += num(x.v.nombre); g.q += x.q; if (!g.pieces.includes(x.nom)) g.pieces.push(x.nom); }
     }
-    return [...groupes.values()].map(g => ({ o: g.o, v: { ...g.v, nombre: String(g.nombre) }, q: g.q, pid: g.pid, bloc: g.bloc, designation: `${g.base} – ${g.pieces.join(', ')}` }));
+    return [...groupes.values()].map(g => ({ o: g.o, v: { ...g.v, nombre: String(g.nombre) }, q: g.q, pid: g.pid, bloc: g.bloc, designation: g.base, pieces: g.pieces.join(', ') }));
   };
-  for (const bl of ['ouv', 'coul']) for (const x of reunir(menusNv.filter(x => x.bloc === bl))) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl);
+  // Menuiseries : le nom de la pièce n'est plus dans le descriptif ; il est indiqué dans le détail (ex. « chambre 1, chambre 2 »)
+  const ajouteMen = (x, bl) => { ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl); const lM = L[L.length - 1]; if (lM && x.pieces) lM.detailTexte = x.pieces; };
+  for (const bl of ['ouv', 'coul']) for (const x of reunir(menusNv.filter(x => x.bloc === bl))) ajouteMen(x, bl);
   const fermL = [];   // fermetures et moustiquaires, réunies ensuite par dimensions
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
   for (const { m, nom, pid } of volets) {
@@ -1734,7 +1736,7 @@ function genererPiecesNv(c) {
       else { const v = { nombre: String(n) }; fermL.push({ o: oM, v, q: calcul(oM, v), base: `${oM.designation} (${fmt(L_)} × ${fmt(H_)} cm)`, nom, pid, bloc: 'ferm' }); }
     }
   }
-  for (const x of reunir(fermL)) ajoute(x.o, x.v, x.q, x.designation, x.pid, false, 'ferm');
+  for (const x of reunir(fermL)) ajouteMen(x, 'ferm');
   if (pcs.length) nb += ajouterEquipementsMaison(c, L, manque);
   // Lignes de chaque pièce réunies dans l'ordre des pièces (électricité, revêtements, alimentation et commande des volets comprises)
   ordonnerLignesPieces(c, L);
