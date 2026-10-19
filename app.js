@@ -1636,6 +1636,7 @@ function genererPiecesNv(c) {
     L.push({ uid: uid(), lot: o.lot, ouvrage: o.id, designation, unite: o.unite, valeurs, quantite: q, surface: null, prix: 'moyen', pieceNv: pieceId, pieceOption: !!option, menBloc: bloc || undefined, cree: new Date().toISOString() });
     nb++;
   };
+  const menusIntNv = [];   // blocs portes et façades de placard, réunis après la boucle des pièces
   for (const p of pcs) {
     const nom = (p.nom || 'Pièce') + (p.qualif ? ' ' + p.qualif : '');   // « Chambre » + numéro
     const surf = num(p.surf);
@@ -1658,7 +1659,8 @@ function genererPiecesNv(c) {
       if (!(num(bl.nb) > 0)) continue;
       const r = ouvrageBloc(bl);
       if (r.manque) { manque.push(r.manque); continue; }
-      const v = { nombre: String(num(bl.nb)) }; ajouteDansPiece(r.o, v, calcul(r.o, v), r.intitule, p.id, nom);
+      const v = { nombre: String(num(bl.nb)) };
+      menusIntNv.push({ o: r.o, v, q: calcul(r.o, v), base: r.intitule, nom, designation: `${r.intitule} – ${nom}`, pid: p.id });
     }
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
@@ -1668,7 +1670,7 @@ function genererPiecesNv(c) {
       const o = BIB.ouvrages.find(x => x.id === FA_BASE[f.ouvrant] && !x.supprime);
       if (!o) { manque.push('façade de placard'); continue; }
       const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
-      ajouteDansPiece(o, v, calcul(o, v), designationFacade(f), p.id, nom);
+      menusIntNv.push({ o, v, q: calcul(o, v), base: designationFacade(f), nom, designation: `${designationFacade(f)} – ${nom}`, pid: p.id });
     }
     for (const m of (p.menus || [])) {
       if ((m.volet === 'oui' && m.ferm) || m.moust) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
@@ -1717,6 +1719,8 @@ function genererPiecesNv(c) {
   // Menuiseries : le nom de la pièce n'est plus dans le descriptif ; il est indiqué dans le détail (ex. « chambre 1, chambre 2 »)
   const ajouteMen = (x, bl) => { ajoute(x.o, x.v, x.q, x.designation, x.pid, false, bl); const lM = L[L.length - 1]; if (lM && x.pieces) lM.detailTexte = x.pieces; };
   for (const bl of ['ouv', 'coul']) for (const x of reunir(menusNv.filter(x => x.bloc === bl))) ajouteMen(x, bl);
+  // Menuiseries intérieures (blocs portes, façades de placard) : identiques réunies, pièces citées dans le détail
+  for (const x of reunir(menusIntNv)) ajouteMen(x);
   const fermL = [];   // fermetures et moustiquaires, réunies ensuite par dimensions
   // Fermeture - occultation : volet, store ou moustiquaire par menuiserie, sous le sous-titre du métré
   for (const { m, nom, pid } of volets) {
