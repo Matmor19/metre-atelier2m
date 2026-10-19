@@ -1616,6 +1616,8 @@ function genererPiecesNv(c) {
   let nb = 0;
   const volets = [];   // fermetures et occultations, mises en fin de liste au métré
   const menusNv = [];  // menuiseries extérieures, regroupées en ouvrantes puis coulissantes
+  // Menuiseries intérieures (blocs-portes, façades de placard) : le nom de la pièce est indiqué dans le détail, pas dans le descriptif
+  const ajouteDansPiece = (o, valeurs, q, designation, pieceId, nomPc) => { ajoute(o, valeurs, q, designation, pieceId); const lP = L[L.length - 1]; if (lP) lP.detailTexte = nomPc; };
   const ajoute = (o, valeurs, q, designation, pieceId, option, bloc) => {
     ajouterLotSiAbsent(c.id, o.lot);
     // Électricité et revêtements : le titre de la pièce est déjà au-dessus, on ne le répète pas dans le descriptif
@@ -1646,7 +1648,7 @@ function genererPiecesNv(c) {
       if (!bl.ouv) { manque.push('Bloc porte : ouvrage non choisi'); continue; }
       const o = BIB.ouvrages.find(x => x.id === bl.ouv && !x.supprime);
       if (!o) { manque.push('Bloc porte : ouvrage supprimé de la bibliothèque'); continue; }
-      const v = { nombre: String(num(bl.nb)) }; ajoute(o, v, calcul(o, v), `${intituleBloc(o.designation, bl.dim)} – ${nom}`, p.id);
+      const v = { nombre: String(num(bl.nb)) }; ajouteDansPiece(o, v, calcul(o, v), intituleBloc(o.designation, bl.dim), p.id, nom);
     }
     for (const f of (p.facades || [])) {
       const n = num(f.nb) || 1;
@@ -1656,7 +1658,7 @@ function genererPiecesNv(c) {
       const o = BIB.ouvrages.find(x => x.id === FA_BASE[f.ouvrant] && !x.supprime);
       if (!o) { manque.push('façade de placard'); continue; }
       const v = { nombre: String(n), cote1: String(num(f.l) / 100), cote2: String(num(f.h) / 100) };
-      ajoute(o, v, calcul(o, v), `${designationFacade(f)} – ${nom}`, p.id);
+      ajouteDansPiece(o, v, calcul(o, v), designationFacade(f), p.id, nom);
     }
     for (const m of (p.menus || [])) {
       if ((m.volet === 'oui' && m.ferm) || m.moust) volets.push({ m, nom, pid: p.id });   // traités après toutes les menuiseries
