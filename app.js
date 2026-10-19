@@ -4299,7 +4299,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && champ === 'type') || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && (champ === 'type' || champ === 'charpente')) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
