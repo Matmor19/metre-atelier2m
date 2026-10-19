@@ -1797,7 +1797,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0090",
@@ -1816,7 +1817,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0091",
@@ -1847,7 +1849,8 @@
         }
       ],
       "version": 1,
-      "qte": "ml_rive"
+      "qte": "ml_rive",
+      "archive": true
     },
     {
       "id": "OUV-0093",
@@ -1871,7 +1874,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "traditionnelle"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0094",
@@ -1915,7 +1919,8 @@
       "si": {
         "cle": "ecran",
         "val": "pare"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0096",
@@ -1934,7 +1939,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0097",
@@ -1958,7 +1964,8 @@
       "si": {
         "cle": "finition_choix",
         "val": "Contre-lattage pour bardage"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0098",
@@ -1973,7 +1980,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0099",
@@ -1992,7 +2000,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0100",
@@ -2026,7 +2035,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0102",
@@ -2045,7 +2055,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0103",
@@ -2064,7 +2075,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0104",
@@ -2083,7 +2095,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0105",
@@ -2102,7 +2115,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0106",
@@ -2121,7 +2135,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0107",
@@ -2141,7 +2156,8 @@
       "si": {
         "cle": "gouttiere",
         "val": "pvc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0108",
@@ -2161,7 +2177,8 @@
       "si": {
         "cle": "gouttiere",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0109",
@@ -2181,7 +2198,8 @@
       "si": {
         "cle": "descente",
         "val": "pvc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0110",
@@ -2201,7 +2219,8 @@
       "si": {
         "cle": "descente",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0111",
@@ -2221,7 +2240,8 @@
       "si": {
         "cle": "couvertine",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0112",
@@ -2241,7 +2261,8 @@
       "si": {
         "cle": "couvertine",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0113",
@@ -2261,7 +2282,8 @@
       "si": {
         "cle": "toit_type",
         "val": "plat"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0114",
@@ -2276,7 +2298,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0115",
@@ -2291,7 +2314,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0116",
@@ -2306,7 +2330,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0117",
@@ -2321,7 +2346,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0118",
@@ -2336,7 +2362,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0119",
@@ -2356,7 +2383,8 @@
       "si": {
         "cle": "toit_type",
         "val": "plat"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0120",
@@ -2371,7 +2399,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0121",
@@ -2386,7 +2415,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0122",
@@ -2401,7 +2431,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0123",
@@ -2416,7 +2447,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0124",
@@ -2431,7 +2463,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0129",
@@ -6736,7 +6769,8 @@
         "max": 950,
         "nb_prix": 2,
         "source": "analyse des devis du dossier ATELIER 2M, octobre 2026"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0379",
@@ -7266,7 +7300,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "deux-pans|<30"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0412",
@@ -7290,7 +7325,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "deux-pans|30-45"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0413",
@@ -7314,7 +7350,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "deux-pans|>45"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0414",
@@ -7338,7 +7375,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "monopente|<30"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0415",
@@ -7362,7 +7400,8 @@
       "si": {
         "cle": "charpente_variante",
         "val": "monopente|30-45"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0416",
@@ -7381,7 +7420,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0417",
@@ -7400,7 +7440,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0418",
@@ -7419,7 +7460,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0419",
@@ -7434,7 +7476,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0420",
@@ -7449,7 +7492,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0421",
@@ -7464,7 +7508,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0422",
@@ -7479,7 +7524,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0423",
@@ -7494,7 +7540,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0424",
@@ -7509,7 +7556,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0425",
@@ -7524,7 +7572,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0426",
@@ -7539,7 +7588,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0427",
@@ -7554,7 +7604,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0428",
@@ -7569,7 +7620,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0429",
@@ -7584,7 +7636,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0430",
@@ -7599,7 +7652,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0431",
@@ -7614,7 +7668,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0432",
@@ -7629,7 +7684,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0433",
@@ -7644,7 +7700,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0434",
@@ -7659,7 +7716,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0435",
@@ -7674,7 +7732,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0436",
@@ -7689,7 +7748,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0437",
@@ -7704,7 +7764,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0438",
@@ -7719,7 +7780,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0439",
@@ -7738,7 +7800,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0440",
@@ -7753,7 +7816,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0441",
@@ -7768,7 +7832,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0442",
@@ -7783,7 +7848,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0443",
@@ -7798,7 +7864,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0444",
@@ -7813,7 +7880,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0445",
@@ -7828,7 +7896,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0446",
@@ -7843,7 +7912,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0447",
@@ -7858,7 +7928,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0448",
@@ -7877,7 +7948,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0449",
@@ -7892,7 +7964,8 @@
           "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0450",
@@ -7911,7 +7984,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0451",
@@ -7930,7 +8004,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0452",
@@ -7949,7 +8024,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0453",
@@ -7968,7 +8044,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0454",
@@ -7987,7 +8064,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0455",
@@ -8006,7 +8084,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0456",
@@ -8025,7 +8104,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0457",
@@ -8044,7 +8124,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0458",
@@ -8063,7 +8144,8 @@
           "libelle": "Hauteur ou largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0459",
@@ -8087,7 +8169,8 @@
       "si": {
         "cle": "ecran",
         "val": "hpv"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0460",
@@ -8107,7 +8190,8 @@
       "si": {
         "cle": "gouttiere",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0461",
@@ -8122,7 +8206,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0462",
@@ -8142,7 +8227,8 @@
       "si": {
         "cle": "descente",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0463",
@@ -8157,7 +8243,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0464",
@@ -8172,7 +8259,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0465",
@@ -8187,7 +8275,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0466",
@@ -8202,7 +8291,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0467",
@@ -8217,7 +8307,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0468",
@@ -8232,7 +8323,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0469",
@@ -8247,7 +8339,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0470",
@@ -8262,7 +8355,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0471",
@@ -8277,7 +8371,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0472",
@@ -8292,7 +8387,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0473",
@@ -8307,7 +8403,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0474",
@@ -8322,7 +8419,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0475",
@@ -8337,7 +8435,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0476",
@@ -8352,7 +8451,8 @@
           "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0477",
@@ -8367,7 +8467,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0478",
@@ -8382,7 +8483,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0479",
@@ -8397,7 +8499,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0480",
@@ -8412,7 +8515,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0481",
@@ -13730,7 +13834,8 @@
       "si": {
         "cle": "couvertine",
         "val": "acier"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0776",
@@ -13750,7 +13855,8 @@
       "si": {
         "cle": "couvertine",
         "val": "acier"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0777",
@@ -13769,7 +13875,8 @@
           "libelle": "Largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0778",
@@ -13788,7 +13895,8 @@
           "libelle": "Largeur (m)"
         }
       ],
-      "version": 1
+      "version": 1,
+      "archive": true
     },
     {
       "id": "OUV-0779",
@@ -13808,7 +13916,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0780",
@@ -13828,7 +13937,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0781",
@@ -13848,7 +13958,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0782",
@@ -13868,7 +13979,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0783",
@@ -13888,7 +14000,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-beton"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0784",
@@ -13908,7 +14021,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-beton"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0785",
@@ -13928,7 +14042,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-beton"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0786",
@@ -13948,7 +14063,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-meca-beton"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0787",
@@ -13968,7 +14084,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-plate-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0788",
@@ -13988,7 +14105,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-plate-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0789",
@@ -14008,7 +14126,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-plate-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0790",
@@ -14028,7 +14147,8 @@
       "si": {
         "cle": "couverture",
         "val": "tuile-plate-tc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0791",
@@ -14048,7 +14168,8 @@
       "si": {
         "cle": "couverture",
         "val": "ardoise"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0792",
@@ -14068,7 +14189,8 @@
       "si": {
         "cle": "couverture",
         "val": "ardoise"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0793",
@@ -14088,7 +14210,8 @@
       "si": {
         "cle": "couverture",
         "val": "ardoise"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0794",
@@ -14108,7 +14231,8 @@
       "si": {
         "cle": "couverture",
         "val": "ardoise"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0795",
@@ -14128,7 +14252,8 @@
       "si": {
         "cle": "couverture",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0796",
@@ -14148,7 +14273,8 @@
       "si": {
         "cle": "couverture",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0797",
@@ -14168,7 +14294,8 @@
       "si": {
         "cle": "couverture",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0798",
@@ -14188,7 +14315,8 @@
       "si": {
         "cle": "couverture",
         "val": "zinc"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0799",
@@ -14208,7 +14336,8 @@
       "si": {
         "cle": "couverture",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0800",
@@ -14228,7 +14357,8 @@
       "si": {
         "cle": "couverture",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0801",
@@ -14248,7 +14378,8 @@
       "si": {
         "cle": "couverture",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0802",
@@ -14268,7 +14399,8 @@
       "si": {
         "cle": "couverture",
         "val": "alu"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0803",
@@ -14288,7 +14420,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0804",
@@ -14308,7 +14441,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0805",
@@ -14328,7 +14462,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0806",
@@ -14348,7 +14483,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0807",
@@ -14368,7 +14504,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-non-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0808",
@@ -14388,7 +14525,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-non-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0809",
@@ -14408,7 +14546,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-non-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0810",
@@ -14428,7 +14567,8 @@
       "si": {
         "cle": "couverture",
         "val": "bac-non-isole"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0811",
@@ -14444,7 +14584,8 @@
         }
       ],
       "version": 1,
-      "qte": "nb_douille"
+      "qte": "nb_douille",
+      "archive": true
     },
     {
       "id": "OUV-0812",
@@ -14460,7 +14601,8 @@
         }
       ],
       "version": 1,
-      "qte": "nb_sortie125"
+      "qte": "nb_sortie125",
+      "archive": true
     },
     {
       "id": "OUV-0813",
@@ -14476,7 +14618,8 @@
         }
       ],
       "version": 1,
-      "qte": "conduit_bois_ml"
+      "qte": "conduit_bois_ml",
+      "archive": true
     },
     {
       "id": "OUV-0814",
@@ -14492,7 +14635,8 @@
         }
       ],
       "version": 1,
-      "qte": "poele_bois_n"
+      "qte": "poele_bois_n",
+      "archive": true
     },
     {
       "id": "OUV-0815",
@@ -14508,7 +14652,8 @@
         }
       ],
       "version": 1,
-      "qte": "poele_bois_n"
+      "qte": "poele_bois_n",
+      "archive": true
     },
     {
       "id": "OUV-0816",
@@ -15168,7 +15313,8 @@
       "si": {
         "cle": "poele_conduit",
         "val": "simple"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0849",
@@ -15188,7 +15334,8 @@
       "si": {
         "cle": "poele_conduit",
         "val": "conc80"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0850",
@@ -15208,7 +15355,8 @@
       "si": {
         "cle": "poele_conduit",
         "val": "conc100"
-      }
+      },
+      "archive": true
     },
     {
       "id": "OUV-0851",
@@ -15224,7 +15372,8 @@
         }
       ],
       "version": 1,
-      "qte": "poele_gran_n"
+      "qte": "poele_gran_n",
+      "archive": true
     },
     {
       "id": "OUV-0852",
@@ -15240,7 +15389,8 @@
         }
       ],
       "version": 1,
-      "qte": "poele_gran_n"
+      "qte": "poele_gran_n",
+      "archive": true
     },
     {
       "id": "OUV-0853",
@@ -15404,7 +15554,8 @@
         }
       ],
       "version": 1,
-      "qte": "cuve_on"
+      "qte": "cuve_on",
+      "archive": true
     },
     {
       "id": "OUV-0862",
@@ -30326,6 +30477,6 @@
       "detail": "Pièce d'étanchéité tridimensionnelle façonnée à la main à la jonction supérieure de la noue, sous le faîtage ou l'arêtier. L'ouvrage comprend : la fourniture d'une feuille de plomb coulé d'épaisseur minimale 2,0 mm, le battage et l'emboutissage manuel sur chantier pour épouser parfaitement le point de rencontre des deux versants et de la noue, et la soudure étanche ou le pontage au mastic polyuréthane avec la bande de noue inférieure."
     }
   ],
-  "revision": 132,
+  "revision": 133,
   "prochainNumero": 1858
 }
