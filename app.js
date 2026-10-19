@@ -1449,6 +1449,8 @@ function designationMenuiserie(m) {
   const mat = (ME_CHOIX.mat.find(([v]) => v === m.mat) || [])[1] || '';
   const dims = num(m.l) > 0 && num(m.h) > 0 ? `${fmt(num(m.l))}×${fmt(num(m.h))} cm` : '';
   // Même logique que le bloc porte et la façade : dimensions en tête, puis tous les choix (type, matériau, vantaux…)
+  // Porte d'entrée : seuls type, matériau, vantaux et dimensions comptent (les autres choix sont cachés dans le configurateur)
+  if (m.type === 'pe') return [dims, [tx('type', m.type), mat, tx('vantaux', m.vantaux)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   return [dims, [tx('type', m.type), mat, tx('vantaux', m.vantaux)].filter(Boolean).join(' '), tx('ouvrant', m.ouvrant), tx('vitrage', m.vitrage), tx('esth', m.esth), tx('secu', m.secu), tx('pose', m.pose)].filter(Boolean).join(', ');
 }
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
