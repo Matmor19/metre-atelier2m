@@ -1,4 +1,4 @@
-const CACHE = 'metre2m-v533';
+const CACHE = 'metre2m-v534';
 const FICHIERS = ['./', 'index.html', 'tableau.html', 'app.js', 'bibliotheque.json', 'generalites.json', 'generalites_renovation.json', 'generalites_extension.json', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -1085,6 +1085,9 @@ function titresAvantLignes(lotId, ls) {
   });
 }
 function renderMetre() {
+  // Dossier Kanban du chantier courant lu une fois (pour la page de garde et les généralités)
+  const cc = chantiers.find(x => x.id === courantId), rc = cc ? refKanbanDe(cc) : '';
+  if (rc && !(rc in _kanbanDossiers)) dossierKanban(rc).then(() => { if (typeof renderMetre === 'function') renderMetre(); }).catch(() => {});
   if (!courantId || !BIB) return;
   nettoyerSuffixeRigoles(courantId);
   rafraichirDesignations(courantId);
@@ -4297,7 +4300,7 @@ const KANBAN_LECTURE = 'https://script.google.com/macros/s/AKfycbwLGYVnT9HvYgLJN
 // Référence Kanban : celle saisie, sinon celle du client Kanban choisi pour ce métré
 // Étude de faisabilité du dossier Kanban (zones sismique, de vent et de neige, argile, radon, risques, PLU) : affichée en lecture seule
 const _kanbanDossiers = {};
-function etudeKanbanHtml(card) {
+function etudeKanbanHtml(card, pourImpression) {
   const f = card.faisa || {}, e = card.euro || {};
   const v = x => (x === undefined || x === null || x === '' || (Array.isArray(x) && !x.length)) ? '—' : esc(Array.isArray(x) ? x.join(', ') : String(x));
   const lignes = [
@@ -4312,6 +4315,7 @@ function etudeKanbanHtml(card) {
     ['Risques naturels', v(f.risques)],
     ['Zones du PLU', v((f.zones || []).map(z => z.code))],
   ];
+  if (pourImpression) return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:14px">${lignes.map(([lib, val]) => `<div><b>${lib}</b> : ${val}</div>`).join('')}</div>`;
   const lien = f.georisquesUrl ? ` <a href="${esc(f.georisquesUrl)}" target="_blank" rel="noopener">Rapport Géorisques</a>` : '';
   return `<div style="border-top:1px solid var(--mut);padding-top:8px;margin-top:4px">
     <div style="font-weight:600;font-size:14px;margin-bottom:6px">Étude de faisabilité (Kanban, lecture seule)${lien}</div>
@@ -4319,18 +4323,35 @@ function etudeKanbanHtml(card) {
       ${lignes.map(([lib, val]) => `<div><b>${lib}</b> : ${val}</div>`).join('')}
     </div></div>`;
 }
+// Lecture d'un dossier du Kanban (une fois, puis mémorisée ; null si le dossier n'existe pas)
+const _kanbanEnCours = {};
+function dossierKanban(ref) {
+  if (ref in _kanbanDossiers) return Promise.resolve(_kanbanDossiers[ref]);
+  if (_kanbanEnCours[ref]) return _kanbanEnCours[ref];
+  _kanbanEnCours[ref] = fetch(KANBAN_LECTURE).then(r => r.json()).then(db => {
+    const card = [...(db.cards || []), ...(db.archived || [])].find(x => x.ref === ref) || null;
+    _kanbanDossiers[ref] = card; delete _kanbanEnCours[ref];
+    return card;
+  }).catch(err => { delete _kanbanEnCours[ref]; throw err; });
+  return _kanbanEnCours[ref];
+}
+// Étude de faisabilité du chantier courant, pour la page de garde imprimée
+function etudeCouranteImpression() {
+  const c = chantiers.find(x => x.id === courantId); const ref = c ? refKanbanDe(c) : '';
+  const card = ref && _kanbanDossiers[ref];
+  if (!card) return '';
+  return `<div class="bloc"><h2>Étude de faisabilité</h2>${etudeKanbanHtml(card, true)}</div>`;
+}
 function etudeKanbanAfficher(c) {
   const box = $('cfgEtudeKanban'); if (!box) return;
   const ref = refKanbanDe(c);
   if (!ref) { box.innerHTML = ''; return; }
   if (_kanbanDossiers[ref]) { box.innerHTML = etudeKanbanHtml(_kanbanDossiers[ref]); return; }
   box.innerHTML = '<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Lecture de l\'étude de faisabilité…</p>';
-  fetch(KANBAN_LECTURE).then(r => r.json()).then(db => {
-    const card = [...(db.cards || []), ...(db.archived || [])].find(x => x.ref === ref);
-    if (!card) return;
-    _kanbanDossiers[ref] = card;
+  dossierKanban(ref).then(card => {
+    if (!card) { if ($('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = ''; return; }
     if (refKanbanDe(c) === ref && $('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = etudeKanbanHtml(card);
-    if (typeof renderMetre === 'function') renderMetre();   // les généralités du métré se mettent à jour
+    if (typeof renderMetre === 'function') renderMetre();   // généralités et page de garde se mettent à jour
   }).catch(() => { if ($('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = '<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Étude de faisabilité : Kanban injoignable pour le moment.</p>'; });
 }
 function refKanbanDe(c) { return (c.kanbanRef || (c.client && c.client.ref) || '').toString().trim(); }
@@ -5398,6 +5419,7 @@ function htmlImpression(d, logo, pg) {
     ${ligne('Adresse du client', cl.addr)}${ligne('Adresse du chantier', cl.cadr)}${ligne('Nature du projet', cl.nat)}
     ${ligne('Surface', surf)}${ligne('Résumé', cl.resume)}
   </table></div>
+  ${etudeCouranteImpression()}
   <div class="pied">Métré établi le ${esc(d.date)} · ${esc(ATELIER.nom)} · ${esc(ATELIER.mail)}</div>
 </section>
 <section>
