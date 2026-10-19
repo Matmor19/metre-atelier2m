@@ -4625,6 +4625,13 @@ function ficheVersMetre() {
   }
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
   else if (COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv(COUV_OUV[couvDe(p.toiture)]), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  // Toiture incomplète : on le signale, sinon la charpente et la couverture restent absentes sans explication
+  if (p.toiture.type && p.toiture.type !== 'plat') {
+    if (!(num(p.toiture.surface) > 0 || num(p.toiture.surfCouv) > 0)) manquants.push('surface de toiture (fiche Charpente)');
+    if (p.toiture.charpente === 'fermette' && !(num(p.toiture.surface) > 0)) manquants.push('surface au sol couverte pour les fermettes (fiche Charpente)');
+    if (!p.toiture.couverture) manquants.push('couverture (fiche Couverture)');
+    else if (!COUV_OUV[couvDe(p.toiture)]) manquants.push('couverture « ' + p.toiture.couverture + ' » non reliée au métré');
+  }
   // Charpente : fermettes (m² projeté au sol), charpente traditionnelle et chevronnage (m² de rampant)
   if (p.toiture.charpente === 'fermette') ajouter(desOuv('OUV-1839'), num(p.toiture.surface), undefined, null, SRC_QTE.surface_toiture_plan);
   if (p.toiture.charpente === 'traditionnelle') {
