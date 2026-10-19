@@ -1009,7 +1009,7 @@ function rafraichirDesignations(id) {
     let nl = l;
     if (!l.platNv && o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
-    if (l.pieceNv && (SOUS_PIECE_LOTS.has(l.lot) || l.lot === 'menuiseries-interieures')) return nl;   // ligne de pièce : son descriptif (blocs portes, façades : dimensions et choix) est gardé tel quel
+    if (l.pieceNv && (SOUS_PIECE_LOTS.has(l.lot) || l.lot === 'menuiseries-interieures' || l.menBloc)) return nl;   // lignes du configurateur (menuiseries, blocs, façades) : désignation gardée   // ligne de pièce : son descriptif (blocs portes, façades : dimensions et choix) est gardé tel quel
     if (!o.designation || o.designation === l.designation) return nl;
     change = true;
     return Object.assign({}, nl, { designation: o.designation });
@@ -1446,8 +1446,10 @@ const ME_TXT = {
 // Désignation du métré composée à partir des choix du bloc ; volet, fermeture et moustiquaire ont leurs propres lignes
 function designationMenuiserie(m) {
   const tx = (c, v) => libelleFixe('me-' + c, v, (ME_TXT[c] || {})[v] || '');
-  const dims = num(m.l) > 0 && num(m.h) > 0 ? `${fmt(num(m.l))} x ${fmt(num(m.h))} cm` : '';
-  return [[tx('type', m.type), tx('vantaux', m.vantaux)].filter(Boolean).join(' '), tx('ouvrant', m.ouvrant), dims, tx('vitrage', m.vitrage), tx('esth', m.esth), tx('secu', m.secu), tx('pose', m.pose)].filter(Boolean).join(', ');
+  const mat = (ME_CHOIX.mat.find(([v]) => v === m.mat) || [])[1] || '';
+  const dims = num(m.l) > 0 && num(m.h) > 0 ? `${fmt(num(m.l))}×${fmt(num(m.h))} cm` : '';
+  // Même logique que le bloc porte et la façade : dimensions en tête, puis tous les choix (type, matériau, vantaux…)
+  return [dims, [tx('type', m.type), mat, tx('vantaux', m.vantaux)].filter(Boolean).join(' '), tx('ouvrant', m.ouvrant), tx('vitrage', m.vitrage), tx('esth', m.esth), tx('secu', m.secu), tx('pose', m.pose)].filter(Boolean).join(', ');
 }
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
 function blocMenuiserie(p, m, k) {
