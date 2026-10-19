@@ -1415,7 +1415,7 @@ function menusBlocOuvrages() {
 // Menuiseries coulissantes (sous-titre « Menuiseries coulissantes » au métré) ; les autres ouvrants vont sous « Menuiseries ouvrantes »
 const MEN_COUL = ['coulissante', 'galandage', 'translation'];
 // Ouvrage de base choisi automatiquement selon type + matériau + nombre de vantaux (pas de combinaisons en bibliothèque)
-const ME_BASE = { 'pe-pvc-1': 'OUV-0173', 'pe-alu-1': 'OUV-0173', 'pe-bois-1': 'OUV-0173', 'fen-pvc-1': 'OUV-1721', 'fen-pvc-2': 'OUV-1722', 'fen-pvc-3': 'OUV-1723', 'fen-pvc-4': 'OUV-1724', 'fen-alu-1': 'OUV-1725', 'fen-alu-2': 'OUV-1726', 'fen-alu-3': 'OUV-1727', 'fen-alu-4': 'OUV-1728', 'fen-bois-1': 'OUV-1729', 'fen-bois-2': 'OUV-1730', 'fen-bois-3': 'OUV-1731', 'fen-bois-4': 'OUV-1732', 'pf-pvc-1': 'OUV-1733', 'pf-pvc-2': 'OUV-1734', 'pf-pvc-3': 'OUV-1735', 'pf-pvc-4': 'OUV-1736', 'pf-alu-1': 'OUV-1737', 'pf-alu-2': 'OUV-1738', 'pf-alu-3': 'OUV-1739', 'pf-alu-4': 'OUV-1740', 'pf-bois-1': 'OUV-1741', 'pf-bois-2': 'OUV-1742', 'pf-bois-3': 'OUV-1743', 'pf-bois-4': 'OUV-1744' };
+const ME_BASE = { 'pe-pvc-1': 'OUV-1834', 'pe-alu-1': 'OUV-1832', 'pe-bois-1': 'OUV-1833', 'fen-pvc-1': 'OUV-1721', 'fen-pvc-2': 'OUV-1722', 'fen-pvc-3': 'OUV-1723', 'fen-pvc-4': 'OUV-1724', 'fen-alu-1': 'OUV-1725', 'fen-alu-2': 'OUV-1726', 'fen-alu-3': 'OUV-1727', 'fen-alu-4': 'OUV-1728', 'fen-bois-1': 'OUV-1729', 'fen-bois-2': 'OUV-1730', 'fen-bois-3': 'OUV-1731', 'fen-bois-4': 'OUV-1732', 'pf-pvc-1': 'OUV-1733', 'pf-pvc-2': 'OUV-1734', 'pf-pvc-3': 'OUV-1735', 'pf-pvc-4': 'OUV-1736', 'pf-alu-1': 'OUV-1737', 'pf-alu-2': 'OUV-1738', 'pf-alu-3': 'OUV-1739', 'pf-alu-4': 'OUV-1740', 'pf-bois-1': 'OUV-1741', 'pf-bois-2': 'OUV-1742', 'pf-bois-3': 'OUV-1743', 'pf-bois-4': 'OUV-1744' };
 function baseMenuiserie(m) {
   const id = ME_BASE[`${m.type}-${m.mat}-${m.vantaux}`];
   return id ? BIB.ouvrages.find(x => x.id === id && !x.supprime) || null : null;
@@ -1439,20 +1439,21 @@ function designationMenuiserie(m) {
 // Un bloc menuiserie extérieure : mêmes principes que le bloc porte (listes à crayon, dimensions, ouvrage de la bibliothèque, nombre)
 function blocMenuiserie(p, m, k) {
   const id = esc(p.id);
+  const porte = m.type === 'pe';   // porte d'entrée : seuls le type, le matériau, les vantaux, les dimensions et le nombre comptent
   const sel = (champ, lib, vide) => `<div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">${lib}</div>${selCrayon('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), `<select data-nv="${id}|menu|${k}|${champ}" style="width:100%;min-width:0">${optCodes('me-' + champ, 'Menuiserie : ' + lib.toLowerCase(), ME_CHOIX[champ], m[champ] || '', vide)}</select>`)}</div>`;
   return `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
     ${sel('type', 'Type', '— choisir —')}
     ${sel('mat', 'Matériau', '— choisir —')}
     ${sel('vantaux', 'Nombre de vantaux', '— choisir —')}
-    ${sel('ouvrant', "Type d'ouvrant", '— choisir —')}
+    ${porte ? '' : sel('ouvrant', "Type d'ouvrant", '— choisir —')}
     <div style="flex:1;min-width:150px;font-size:12px"><div style="margin-bottom:2px">Dimensions L × H (cm)</div><span style="display:flex;gap:4px"><input data-nv="${id}|menu|${k}|l" inputmode="decimal" value="${esc(m.l || '')}" placeholder="Larg." style="width:50%;min-width:0"><input data-nv="${id}|menu|${k}|h" inputmode="decimal" value="${esc(m.h || '')}" placeholder="Haut." style="width:50%;min-width:0"></span></div>
-    ${sel('vitrage', 'Vitrage', '— choisir —')}
-    ${sel('esth', 'Esthétique', '— choisir —')}
-    ${sel('secu', 'Sécurité', '— choisir —')}
-    ${sel('pose', 'Type de pose', '— choisir —')}
-    ${sel('volet', 'Fermeture', '— choisir —')}
-    ${m.volet === 'oui' ? sel('ferm', 'Type de fermeture', '— choisir —') : ''}
-    ${sel('moust', 'Moustiquaire', '— aucune —')}
+    ${porte ? '' : sel('vitrage', 'Vitrage', '— choisir —')}
+    ${porte ? '' : sel('esth', 'Esthétique', '— choisir —')}
+    ${porte ? '' : sel('secu', 'Sécurité', '— choisir —')}
+    ${porte ? '' : sel('pose', 'Type de pose', '— choisir —')}
+    ${porte ? '' : sel('volet', 'Fermeture', '— choisir —')}
+    ${!porte && m.volet === 'oui' ? sel('ferm', 'Type de fermeture', '— choisir —') : ''}
+    ${porte ? '' : sel('moust', 'Moustiquaire', '— aucune —')}
     <div style="font-size:12px"><div style="margin-bottom:2px">Unité</div><input data-nv="${id}|menu|${k}|nb" inputmode="numeric" value="${esc(m.nb || '')}" style="width:70px"></div>
     <button type="button" class="btn small danger" style="align-self:flex-end;flex:0 0 auto" data-nv-act="delmenu:${id}:${k}">✕</button></div>`;
 }

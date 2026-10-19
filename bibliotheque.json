@@ -3075,6 +3075,86 @@
       "version": 1
     },
     {
+      "id": "OUV-1836",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte d'entrée en Acier (Sécurité et isolation renforcée)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une porte d'entrée monobloc en acier traité contre la corrosion (cataphorèse ou galvanisation) et thermolaqué en usine (Ud ≤ 1,3 W/m².K). L'ouvrage comprend : le dormant et l'ouvrant à double paroi d'acier avec âme isolante en mousse polyuréthane haute densité, la serrure de sécurité automatique 5 points, les paumelles renforcées réglables, le cylindre de sécurité, le seuil plat PMR en aluminium, la quincaillerie complète, l'étanchéité périphérique double joint, les fixations maçonnerie et les réglages de compression."
+    },
+    {
+      "id": "OUV-1835",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte d'entrée Mixte Bois/Aluminium (Haut de gamme)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une porte d'entrée combinant la chaleur du bois en face intérieure et la durabilité de l'aluminium laqué en face extérieure (Ud ≤ 1,0 W/m².K). L'ouvrage comprend : le complexe thermo-isolant central haute densité, la serrure de sécurité 5 points à pênes basculants, le vitrage anti-effraction classe P4A minimum, la quincaillerie complète de finition, le seuil PMR thermique, la pose technique étanche et les réglages de compression des joints."
+    },
+    {
+      "id": "OUV-1834",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte d'entrée en PVC renforcé (Économique et performante)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une porte d'entrée en PVC blanc ou teinté masse/plaxé, avec renforts périmétriques systématiques en acier galvanisé intégrés dans les profilés (Ud ≤ 1,2 W/m².K). L'ouvrage comprend : le panneau isolant renforcé ou vitrage de sécurité, la serrure de sécurité 5 points à relevage de béquille, les paumelles lourdes, le seuil aluminium plat, les fixations par pattes ou vis de menuiserie, et l'application des cordons de mastic d'étanchéité intérieur/extérieur."
+    },
+    {
+      "id": "OUV-1833",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte d'entrée en Bois massif ou lamellé-collé (Tradition ou Contemporaine)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une porte d'entrée en bois (essence feuillu dur type Chêne ou exotique rouge) traitée IFH (Insecticide, Fongicide, Hydrofuge) en usine (Ud ≤ 1,4 W/m².K). L'ouvrage comprend : la structure de forte épaisseur, les joints d'étanchéité acoustique et thermique périphériques sur l'ouvrant et le dormant, la serrure de sécurité 5 points, les fiches renforcées, le seuil bas profilé PMR, le traitement de finition (peinture ou lasure usine), la quincaillerie complète, la mise en œuvre conforme au DTU 36.5 avec calfeutrement étanche à l'air et à l'eau."
+    },
+    {
+      "id": "OUV-1832",
+      "lot": "menuiseries-exterieures",
+      "designation": "Porte d'entrée pleine ou vitrée en Aluminium (Haute performance)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "menuiseries",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'une porte d'entrée monobloc en aluminium à rupture de pont thermique (Ud ≤ 1,3 W/m².K). L'ouvrage comprend : le dormant et l'ouvrant à ouvrant caché, le triple vitrage feuilleté retardateur d'effraction (si vitrée), la serrure de sécurité automatique 5 points (dont 2 crochets), le cylindre de haute sécurité débrayable avec carte de propriété, les paumelles renforcées réglables en 3D, la béquille intérieure/barre de tirage extérieure, le seuil plat PMR en aluminium anodisé, l'étanchéité périphérique par compribande et cordon de mastic élastomère, les fixations mécaniques et les réglages de fin de chantier."
+    },
+    {
       "id": "OUV-0174",
       "lot": "menuiseries-exterieures",
       "designation": "Porte de service",
@@ -29884,6 +29964,6 @@
       "detail": "Mise en œuvre d'éléments porteurs semi-préfabriqués en béton précontraint servant de fond de moule technique. L'ouvrage comprend : la fourniture, le grutage et la pose du pré-linteau sur lit de mortier hydrofuge (ancrage minimal de 20 cm de part et d'autre), l'étaiement central provisoire, la mise en place du ferraillage complémentaire supérieur et le coulage de la table de compression en béton C25/30."
     }
   ],
-  "revision": 127,
-  "prochainNumero": 1832
+  "revision": 128,
+  "prochainNumero": 1837
 }
