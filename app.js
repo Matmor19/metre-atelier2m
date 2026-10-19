@@ -199,11 +199,36 @@ function basculerTravaux(valeur) {
   marquerChantier(courantId);
   renderMetre();
 }
+// Données du dossier (étude de faisabilité du Kanban) reprises dans les généralités des lots concernés
+function genDossier(lotId) {
+  const c = chantiers.find(x => x.id === courantId); if (!c) return [];
+  const card = _kanbanDossiers[refKanbanDe(c)]; if (!card) return [];
+  const f = card.faisa || {}, e = card.euro || {};
+  if (lotId === 'gros-oeuvre') {
+    return [`Zone sismique du dossier : ${f.sismicite || 'non renseignée dans le Kanban (à vérifier avant chiffrage)'}. Appliquer les règles parasismiques correspondantes (Eurocode 8 et arrêtés), avec chaînage et ancrages adaptés.`];
+  }
+  if (lotId === 'charpente-structure-bois' || lotId === 'couverture-zinguerie') {
+    const donnees = [e.vent ? `zone de vent ${e.vent}` : null, e.neige ? `zone de neige ${e.neige}` : null,
+      (e.alt !== undefined && e.alt !== null && e.alt !== '') ? `altitude ${e.alt} m` : null, e.cat ? `catégorie ${e.cat}` : null].filter(Boolean);
+    if (!donnees.length) return ['Zones de vent et de neige non renseignées dans le Kanban (à vérifier avant chiffrage).'];
+    const suite = lotId === 'charpente-structure-bois'
+      ? 'Charpente à dimensionner pour la zone de neige, la zone de vent et l\'altitude du dossier.'
+      : 'Fixations de la couverture, de l\'écran et de la zinguerie adaptées à la zone de vent et à l\'altitude du dossier.';
+    return [`Données du dossier : ${donnees.join(', ')}. ${suite}`];
+  }
+  return [];
+}
+// Sections des généralités d'un lot, complétées par les données du dossier s'il y en a
+function sectionsDuLot(lotId) {
+  const g = genDuLot(lotId); if (!g) return [];
+  const dos = genDossier(lotId);
+  return dos.length ? [...g.sections, { titre: 'Données du dossier (étude de faisabilité)', points: dos }] : g.sections;
+}
 function genHtml(lotId, numLot) {
   const g = genDuLot(lotId);
   if (!g) return '';
   let h = `<div class="gen-bloc"><div class="gen-titre">${numLot}.0 · Généralités : ${esc(g.titre)}</div>`;
-  g.sections.forEach((s, k) => {
+  sectionsDuLot(lotId).forEach((s, k) => {
     h += `<div class="gen-sec"><div class="gen-s"><strong>${numLot}.${k + 1} ${esc(s.titre)}</strong></div><ul>${s.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
   });
   return h + '</div>';
@@ -4305,6 +4330,7 @@ function etudeKanbanAfficher(c) {
     if (!card) return;
     _kanbanDossiers[ref] = card;
     if (refKanbanDe(c) === ref && $('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = etudeKanbanHtml(card);
+    if (typeof renderMetre === 'function') renderMetre();   // les généralités du métré se mettent à jour
   }).catch(() => { if ($('cfgEtudeKanban')) $('cfgEtudeKanban').innerHTML = '<p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Étude de faisabilité : Kanban injoignable pour le moment.</p>'; });
 }
 function refKanbanDe(c) { return (c.kanbanRef || (c.client && c.client.ref) || '').toString().trim(); }
@@ -5719,7 +5745,7 @@ async function pdfCdpgfFormulaire() {
       const g = genDuLot(lot.id);
       if (g) {
         ligne('Généralités : ' + g.titre, M, LARG, 9, helvB, ORANGE);
-        for (const sct of g.sections) {
+        for (const sct of sectionsDuLot(lot.id)) {
           ligne(sct.titre, M, LARG, 8, helvB, NOIR);
           for (const p of sct.points) ligne('• ' + p, M + 8, LARG - 8, 7.6, helv, GRIS);
         }
