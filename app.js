@@ -2972,7 +2972,7 @@ const FICHE_VOLET = { 'aucun': 'Pas de volet', 'battant': 'Volet battant', 'roul
 const FICHE_TOIT = { 'deux-pans': 'Deux pans', 'monopente': 'Monopente', 'plat': 'Toit plat (pente minimale 3,5 %)' };
 // Choix de la fiche : « — à choisir — » par défaut, rien n'est proposé tant que vous n'avez pas choisi
 const CHOIX_VIDE = ['', '— à choisir —'];
-const FICHE_CHARP = { aucune: 'Aucune (je saisis moi-même)', fermette: 'Fermettes industrielles (selon la pente)', traditionnelle: 'Charpente traditionnelle' };
+const FICHE_CHARP = { aucune: 'Aucune (je saisis moi-même)', fermette: 'Fermettes industrielles (combles perdus ou aménageables)', traditionnelle: 'Charpente traditionnelle (combles apparents)' };
 const FICHE_ECRAN = { aucun: 'Aucun (je saisis moi-même)', hpv: 'Écran de sous-toiture HPV', pare: 'Pare-pluie et sous-toiture' };
 const FICHE_ISO_TOIT = { aucune: 'Aucune (je saisis moi-même)', rampant: 'Isolation des rampants (laine de roche)', combles: 'Isolation de combles perdus (ouate soufflée)', laine: 'Laine de verre entre chevrons' };
 const FICHE_DESC = { pvc: 'PVC', alu: 'Aluminium', zinc: 'Zinc' };
@@ -3065,10 +3065,8 @@ const ETANCH_DESIG = {
 };
 const FICHE_GOUT = { pvc: 'PVC', alu: 'Aluminium', zinc: 'Zinc demi-ronde' };
 const FICHE_COUV = {
-  'tuile-meca-tc': 'Tuiles mécaniques terre cuite', 'tuile-meca-beton': 'Tuiles mécaniques béton',
-  'tuile-plate-tc': 'Tuiles plates terre cuite', 'ardoise': 'Ardoise naturelle ou fibrociment',
-  'zinc': 'Zinc à joint debout', 'alu': 'Aluminium à joint debout',
-  'bac-isole': 'Bac acier isolé (sandwich)', 'bac-non-isole': 'Bac acier non isolé'
+  'tuile-canal': 'Tuiles canal (surface courante)', 'tuile-plate-tc': 'Tuiles plates (surface courante)',
+  'tuile-meca-tc': 'Tuiles mécaniques (surface courante)', 'tuile-romane-canal': 'Tuiles romanes canal (surface courante)'
 };
 // Anciens choix de la fiche (avant la liste élargie) : ramenés au nouveau nom
 function couvDe(toit) {
@@ -3084,16 +3082,10 @@ const MENU_DESIG = {
   'porte-fenetre': { 'PVC': 'Porte-fenêtre PVC ou alu', 'alu': 'Porte-fenêtre PVC ou alu', 'bois': 'Porte-fenêtre PVC ou alu' }
 };
 const VOLET_DESIG = { 'battant-bois': 'Volet battant bois', 'battant-alu': 'Volet battant aluminium', 'roulant': 'Volet roulant électrique' };
-const COUV_DESIG = {
-  'tuile-meca-tc': 'Couverture en tuiles mécaniques à emboîtement (surface développée)',
-  'tuile-meca-beton': 'Couverture en tuiles béton (surface développée)',
-  'tuile-plate-tc': 'Couverture en tuiles plates (surface développée)',
-  'ardoise': 'Couverture en ardoises naturelles ou fibrociment',
-  'zinc': 'Couverture en zinc à joint debout (surface développée)',
-  'alu': 'Couverture en aluminium à joint debout (surface développée)',
-  'bac-isole': 'Couverture en bac acier isolé (panneau sandwich, surface développée)',
-  'bac-non-isole': 'Couverture en bac acier à joint debout (surface développée)'
-};
+// Couverture : ouvrage de la bibliothèque pour chaque tuile (surface courante)
+const COUV_OUV = { 'tuile-canal': 'OUV-1842', 'tuile-plate-tc': 'OUV-1843', 'tuile-meca-tc': 'OUV-1844', 'tuile-romane-canal': 'OUV-1845' };
+// Désignation de la bibliothèque à partir de son numéro (les lignes du configurateur sont retrouvées par ce nom)
+function desOuv(id) { const o = BIB && BIB.ouvrages.find(x => x.id === id); return o ? o.designation : undefined; }
 const ALIM_VOLET = 'Alimentation volet roulant électrique';
 const FICHE_LOTS_MUR = ['gros-oeuvre', 'ossature-bois', 'isolation-thermique', 'doublages-cloisons-plafonds', 'revetements-muraux', 'peinture-finitions'];
 const DES_FOND_FOUILLE = 'Fouilles en tranchée pour semelles filantes';
@@ -4068,6 +4060,7 @@ function ficheRendre() {
             ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
             ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"' + (plat ? ' placeholder="minimum 3,5"' : ' placeholder="ex. 30"'), toit.pente))}
             ${champ('Charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), toit.charpente))}
+            ${toit.charpente === 'traditionnelle' ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" data-k="toit" data-champ="chevronnage" ${toit.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
     </div>`;
   const contenuIso = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -4087,6 +4080,14 @@ function ficheRendre() {
             ${champ(plat ? 'Nombre d\'évacuations d\'eau pluviale (unité)' : 'Nombre de descentes d\'eau (unité)', inp('data-k="toit" data-champ="nbDesc" inputmode="decimal"', toit.nbDesc))}
             ${champ('Hauteur des descentes (m)', inp('data-k="toit" data-champ="hautDesc" inputmode="decimal"', toit.hautDesc))}
             ${champ('Matériau des descentes', choix('data-k="toit" data-champ="descente"', Object.entries(FICHE_DESC), toit.descente))}
+            ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
+            ${champ('Fronton de faîtage (nombre)', inp('data-k="toit" data-champ="nbFronton" inputmode="decimal"', toit.nbFronton))}
+            ${champ('Chatière de ventilation (nombre)', inp('data-k="toit" data-champ="nbChatiere" inputmode="decimal"', toit.nbChatiere))}
+            ${champ('Demi-tuile ou tuile double (nombre)', inp('data-k="toit" data-champ="nbDemiTuile" inputmode="decimal"', toit.nbDemiTuile))}
+            ${champ('Abergement de cheminée en zinc (nombre)', inp('data-k="toit" data-champ="nbAbergement" inputmode="decimal"', toit.nbAbergement))}
+            ${champ('Selle en plomb de tête de noue (nombre)', inp('data-k="toit" data-champ="nbSelle" inputmode="decimal"', toit.nbSelle))}
+            ${champ('Bande de solin en zinc (ml)', inp('data-k="toit" data-champ="mlSolin" inputmode="decimal"', toit.mlSolin))}
+            ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}`}
     </div>`;
   const eq = p.equip || {};
   const EQ_GRP = {
@@ -4529,7 +4530,30 @@ function ficheVersMetre() {
     if (v && num(v.cote1) > 0) ajouter(o.designation, num(v.cote1), undefined, null, SRC_QTE[o.qte] || null);
   }
   if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
-  else if (couvDe(p.toiture)) ajouter(COUV_DESIG[couvDe(p.toiture)], r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  else if (COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv(COUV_OUV[couvDe(p.toiture)]), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  // Charpente : fermettes (m² projeté au sol), charpente traditionnelle et chevronnage (m² de rampant)
+  if (p.toiture.charpente === 'fermette') ajouter(desOuv('OUV-1839'), num(p.toiture.surface), undefined, null, SRC_QTE.surface_toiture_plan);
+  if (p.toiture.charpente === 'traditionnelle') {
+    ajouter(desOuv('OUV-1840'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+    if (p.toiture.chevronnage) ajouter(desOuv('OUV-1841'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  }
+  // Accessoires de tuiles : faîtage, rives, noues, tuiles à douille (longueurs et nombres saisis dans la fiche)
+  if (p.toiture.type !== 'plat' && COUV_OUV[couvDe(p.toiture)]) {
+    ajouter(desOuv('OUV-1846'), num(p.toiture.faite));
+    ajouter(desOuv('OUV-1847'), num(p.toiture.rive));
+    ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
+    ajouter(desOuv('OUV-1851'), ventilationNb(p));
+  }
+  // Accessoires saisis en nombre ou en ml (fiche Couverture)
+  if (p.toiture.type !== 'plat') {
+    ajouter(desOuv('OUV-1849'), num(p.toiture.nbFronton));
+    ajouter(desOuv('OUV-1850'), num(p.toiture.nbChatiere));
+    ajouter(desOuv('OUV-1852'), num(p.toiture.nbDemiTuile));
+    ajouter(desOuv('OUV-1856'), num(p.toiture.nbAbergement));
+    ajouter(desOuv('OUV-1857'), num(p.toiture.nbSelle));
+    ajouter(desOuv('OUV-1854'), num(p.toiture.mlSolin));
+    ajouter(desOuv('OUV-1855'), num(p.toiture.mlCouloir));
+  }
   for (const x of menusCalcul(c)) {
     const o = x.m, q = x.nb, lieu = nomPiece(x.piece);
     const dims = `${fmt(num(o.largeur))} × ${fmt(num(o.hauteur))} m`;
