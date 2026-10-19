@@ -3094,7 +3094,8 @@ const ETANCH_DESIG = {
 const FICHE_GOUT = { pvc: 'PVC', alu: 'Aluminium', zinc: 'Zinc demi-ronde' };
 const FICHE_COUV = {
   'tuile-canal': 'Tuiles canal (surface courante)', 'tuile-plate-tc': 'Tuiles plates (surface courante)',
-  'tuile-meca-tc': 'Tuiles mécaniques (surface courante)', 'tuile-romane-canal': 'Tuiles romanes canal (surface courante)'
+  'tuile-meca-tc': 'Tuiles mécaniques (surface courante)', 'tuile-romane-canal': 'Tuiles romanes canal (surface courante)',
+  'ardoise': 'Ardoises naturelles (surface courante)', 'zinc': 'Zinc en plaques (surface courante)', 'bac-acier': 'Bacs acier (surface courante)'
 };
 // Anciens choix de la fiche (avant la liste élargie) : ramenés au nouveau nom
 function couvDe(toit) {
@@ -3111,7 +3112,13 @@ const MENU_DESIG = {
 };
 const VOLET_DESIG = { 'battant-bois': 'Volet battant bois', 'battant-alu': 'Volet battant aluminium', 'roulant': 'Volet roulant électrique' };
 // Couverture : ouvrage de la bibliothèque pour chaque tuile (surface courante)
-const COUV_OUV = { 'tuile-canal': 'OUV-1842', 'tuile-plate-tc': 'OUV-1843', 'tuile-meca-tc': 'OUV-1844', 'tuile-romane-canal': 'OUV-1845' };
+const COUV_OUV = { 'tuile-canal': 'OUV-1842', 'tuile-plate-tc': 'OUV-1843', 'tuile-meca-tc': 'OUV-1844', 'tuile-romane-canal': 'OUV-1845', 'ardoise': 'OUV-1858', 'zinc': 'OUV-1859', 'bac-acier': 'OUV-1860' };
+// Accessoires propres à chaque couverture (faîtage, rive, égout, ventilation) : ouvrages de la bibliothèque
+const COUV_ACC = {
+  ardoise: { faite: 'OUV-1861', rive: 'OUV-1862', egout: 'OUV-1863', ventil: 'OUV-1864' },
+  zinc: { faite: 'OUV-1865', rive: 'OUV-1866', egout: 'OUV-1867' },
+  'bac-acier': { faite: 'OUV-1868', rive: 'OUV-1869', egout: 'OUV-1870' }
+};
 // Désignation de la bibliothèque à partir de son numéro (les lignes du configurateur sont retrouvées par ce nom)
 function desOuv(id) { const o = BIB && BIB.ouvrages.find(x => x.id === id); return o ? o.designation : undefined; }
 const ALIM_VOLET = 'Alimentation volet roulant électrique';
@@ -4647,17 +4654,30 @@ function ficheVersMetre() {
   ajouter(desOuv('OUV-1875'), num(p.toiture.m2CroupeInd), undefined, null, SRC_QTE.surface_toiture_plan);
   ajouter(desOuv('OUV-1876'), num(p.toiture.m2CroupeTrad), undefined, null, SRC_QTE.surface_toiture);
   // Accessoires de tuiles : faîtage, rives, noues, tuiles à douille (longueurs et nombres saisis dans la fiche)
-  if (p.toiture.type !== 'plat' && COUV_OUV[couvDe(p.toiture)]) {
+  if (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) {
     ajouter(desOuv('OUV-1846'), num(p.toiture.faite));
     ajouter(desOuv('OUV-1847'), num(p.toiture.rive));
-    ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
     ajouter(desOuv('OUV-1851'), ventilationNb(p));
   }
+  // Accessoires d'ardoise, de zinc ou de bacs acier (faîtage, rives, égout, ventilation)
+  if (p.toiture.type !== 'plat' && COUV_ACC[couvDe(p.toiture)]) {
+    const A = COUV_ACC[couvDe(p.toiture)];
+    ajouter(desOuv(A.faite), num(p.toiture.faite));
+    ajouter(desOuv(A.rive), num(p.toiture.rive));
+    if (A.egout) ajouter(desOuv(A.egout), num(p.toiture.egout));
+    if (A.ventil) ajouter(desOuv(A.ventil), ventilationNb(p));
+  }
+  // Noue en zinc : pour toutes les couvertures (saisie dans la fiche Charpente)
+  if (p.toiture.type !== 'plat' && COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
   // Accessoires saisis en nombre ou en ml (fiche Couverture)
-  if (p.toiture.type !== 'plat') {
+  if (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) {
     ajouter(desOuv('OUV-1849'), num(p.toiture.nbFronton));
     ajouter(desOuv('OUV-1850'), num(p.toiture.nbChatiere));
     ajouter(desOuv('OUV-1852'), num(p.toiture.nbDemiTuile));
+  } else if (p.toiture.type !== 'plat' && (num(p.toiture.nbFronton) > 0 || num(p.toiture.nbChatiere) > 0 || num(p.toiture.nbDemiTuile) > 0)) {
+    manquants.push('frontons, chatières et demi-tuiles : réservés aux couvertures en tuiles');
+  }
+  if (p.toiture.type !== 'plat') {
     ajouter(desOuv('OUV-1856'), num(p.toiture.nbAbergement));
     ajouter(desOuv('OUV-1857'), num(p.toiture.nbSelle));
     ajouter(desOuv('OUV-1854'), num(p.toiture.mlSolin));
