@@ -1396,7 +1396,7 @@ const FERM_OUV = { 'vr-manuel': 'OUV-0178', 'vr-motor': 'OUV-0177', 'vr-solaire'
 const MOUST_OUV = { integree: 'OUV-0183', independante: 'OUV-1747' };
 // Menuiseries extérieures (tableau de référence) : listes de choix, une par ligne du tableau
 const ME_CHOIX = {
-  type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre']],
+  type: [['fen', 'Fenêtre'], ['pf', 'Porte-fenêtre'], ['pe', "Porte d'entrée"]],
   mat: [['pvc', 'PVC'], ['alu', 'Aluminium'], ['bois', 'Bois']],
   vantaux: [['1', '1 vantail'], ['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']],
   ouvrant: [['francaise', 'Ouvrant à la française'], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', 'Oscillo-battant'], ['abattant', 'Abattant'], ['coulissante', 'Coulissante'], ['galandage', 'Coulissante à galandage'], ['translation', 'Coulissante à translation'], ['fixe', 'Châssis fixe'], ['guillotine', 'Ouvrant à guillotine'], ['basculant', 'Ouvrant basculant'], ['pivotant', 'Ouvrant pivotant']],
@@ -1415,14 +1415,14 @@ function menusBlocOuvrages() {
 // Menuiseries coulissantes (sous-titre « Menuiseries coulissantes » au métré) ; les autres ouvrants vont sous « Menuiseries ouvrantes »
 const MEN_COUL = ['coulissante', 'galandage', 'translation'];
 // Ouvrage de base choisi automatiquement selon type + matériau + nombre de vantaux (pas de combinaisons en bibliothèque)
-const ME_BASE = { 'fen-pvc-1': 'OUV-1721', 'fen-pvc-2': 'OUV-1722', 'fen-pvc-3': 'OUV-1723', 'fen-pvc-4': 'OUV-1724', 'fen-alu-1': 'OUV-1725', 'fen-alu-2': 'OUV-1726', 'fen-alu-3': 'OUV-1727', 'fen-alu-4': 'OUV-1728', 'fen-bois-1': 'OUV-1729', 'fen-bois-2': 'OUV-1730', 'fen-bois-3': 'OUV-1731', 'fen-bois-4': 'OUV-1732', 'pf-pvc-1': 'OUV-1733', 'pf-pvc-2': 'OUV-1734', 'pf-pvc-3': 'OUV-1735', 'pf-pvc-4': 'OUV-1736', 'pf-alu-1': 'OUV-1737', 'pf-alu-2': 'OUV-1738', 'pf-alu-3': 'OUV-1739', 'pf-alu-4': 'OUV-1740', 'pf-bois-1': 'OUV-1741', 'pf-bois-2': 'OUV-1742', 'pf-bois-3': 'OUV-1743', 'pf-bois-4': 'OUV-1744' };
+const ME_BASE = { 'pe-pvc-1': 'OUV-0173', 'pe-alu-1': 'OUV-0173', 'pe-bois-1': 'OUV-0173', 'fen-pvc-1': 'OUV-1721', 'fen-pvc-2': 'OUV-1722', 'fen-pvc-3': 'OUV-1723', 'fen-pvc-4': 'OUV-1724', 'fen-alu-1': 'OUV-1725', 'fen-alu-2': 'OUV-1726', 'fen-alu-3': 'OUV-1727', 'fen-alu-4': 'OUV-1728', 'fen-bois-1': 'OUV-1729', 'fen-bois-2': 'OUV-1730', 'fen-bois-3': 'OUV-1731', 'fen-bois-4': 'OUV-1732', 'pf-pvc-1': 'OUV-1733', 'pf-pvc-2': 'OUV-1734', 'pf-pvc-3': 'OUV-1735', 'pf-pvc-4': 'OUV-1736', 'pf-alu-1': 'OUV-1737', 'pf-alu-2': 'OUV-1738', 'pf-alu-3': 'OUV-1739', 'pf-alu-4': 'OUV-1740', 'pf-bois-1': 'OUV-1741', 'pf-bois-2': 'OUV-1742', 'pf-bois-3': 'OUV-1743', 'pf-bois-4': 'OUV-1744' };
 function baseMenuiserie(m) {
   const id = ME_BASE[`${m.type}-${m.mat}-${m.vantaux}`];
   return id ? BIB.ouvrages.find(x => x.id === id && !x.supprime) || null : null;
 }
 // Texte des choix pour la désignation du métré (ex. « Fenêtre 2 vantaux, ouvrant à la française, 100 x 200 cm, simple vitrage… »)
 const ME_TXT = {
-  type: { fen: 'Fenêtre', pf: 'Porte-fenêtre' },
+  type: { fen: 'Fenêtre', pf: 'Porte-fenêtre', pe: "Porte d'entrée" },
   vantaux: { '1': '1 vantail', '2': '2 vantaux', '3': '3 vantaux', '4': '4 vantaux' },
   ouvrant: { francaise: 'ouvrant à la française', anglaise: "ouvrant à l'anglaise", oscillo: 'oscillo-battant', abattant: 'abattant', coulissante: 'coulissante', galandage: 'coulissante à galandage', translation: 'coulissante à translation', fixe: 'châssis fixe', guillotine: 'ouvrant à guillotine', basculant: 'ouvrant basculant', pivotant: 'ouvrant pivotant' },
   vitrage: { simple: 'simple vitrage', double: 'double vitrage standard', vir: 'double vitrage VIR', triple: 'triple vitrage' },
