@@ -1658,7 +1658,13 @@ function genererPiecesNv(c) {
       const lin = Math.max(0, num(p.perim) - nbPortesNv(p) * largeurPorte - facadesLargeur(p) - baies - num(p.passage));
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
-      else if (lin > 0) { const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) }; ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id); }
+      else if (lin > 0) {
+        const v = { nombre: '1', cote1: String(Math.round(lin * 100) / 100) };
+        ajoute(o, v, calcul(o, v), `${o.designation} – ${nom}`, p.id);
+        const lPl = L[L.length - 1];
+        const perimR = Math.round(num(p.perim) * 100) / 100, linR = Math.round(lin * 100) / 100, passR = Math.round((num(p.perim) - lin) * 100) / 100;
+        if (lPl) { lPl.modeLigne = 'texte'; lPl.detailTexte = `périphérie de la pièce ${fmt(perimR)} m − passages ${fmt(passR)} m = ${fmt(linR)} ml`; }
+      }
     }
     for (const bl of (p.blocs || [])) {
       if (!(num(bl.nb) > 0)) continue;
