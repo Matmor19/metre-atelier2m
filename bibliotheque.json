@@ -30052,8 +30052,280 @@
       ],
       "version": 1,
       "detail": "Fourniture et pose des chevrons en bois résineux traité Classe 2, fixés mécaniquement sur les pannes intermédiaires et sablières de la charpente traditionnelle ou des fermettes (selon les cas de toitures complexes). L'ouvrage comprend le lignage, les découpes d'ajustement, les pointes ou vis de charpente et les échafaudages de sécurité. (Unité : m² de toiture)"
+    },
+    {
+      "id": "OUV-1842",
+      "lot": "couverture-zinguerie",
+      "designation": "Couverture en tuiles canal (surface courante)",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose exclusive de la surface courante en tuiles canal galbées en terre cuite. L'ouvrage comprend le calage et l'emboîtement des tuiles de courant (creux) et de couvert (chapeaux) posées à joints croisés sur le liteonnage existant, fixées mécaniquement par crochets ou plots de mortier de chaux selon la pente (DTU 40.22)."
+    },
+    {
+      "id": "OUV-1843",
+      "lot": "couverture-zinguerie",
+      "designation": "Couverture en tuiles plates (surface courante)",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Réalisation de la surface courante d'une couverture en tuiles plates en terre cuite. L'ouvrage comprend uniquement l'accrochage ou le clouage des tuiles courantes sur le liteonnage serré existant, posées à joints croisés avec respect du pureau calculé selon la pente (DTU 40.23)."
+    },
+    {
+      "id": "OUV-1844",
+      "lot": "couverture-zinguerie",
+      "designation": "Couverture en tuiles mécaniques (surface courante)",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Mise en œuvre exclusive de la surface courante en tuiles de terre cuite à double emboîtement (grand ou petit moule, type romane ou plate à emboîtement). L'ouvrage comprend la pose alignée des tuiles courantes sur les liteaux en place et leur fixation par pannetonnage ou clouage réglementaire selon la zone de vent (DTU 40.21)."
+    },
+    {
+      "id": "OUV-1845",
+      "lot": "couverture-zinguerie",
+      "designation": "Couverture en tuiles romanes canal (surface courante)",
+      "unite": "m²",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        },
+        {
+          "cle": "cote2",
+          "libelle": "Largeur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Mise en œuvre exclusive de la surface courante en tuiles de terre cuite à grand moule et double emboîtement à fort galbe géométrique. L'ouvrage comprend le calepinage et la pose des tuiles courantes sur les liteaux déjà installés, avec fixation réglementaire par crochets ou vis (DTU 40.21)."
+    },
+    {
+      "id": "OUV-1846",
+      "lot": "couverture-zinguerie",
+      "designation": "Faîtage ventilé ou scellé en terre cuite (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Réalisation de la ligne de couronnement horizontale supérieure du toit. L'ouvrage comprend : la fourniture et la pose des tuiles faîtières assorties à la couverture, la mise en œuvre d'un closoir ventilé en rouleau (avec jupes plomb ou alu plissé) cloué sur une rehausse en bois, la fixation mécanique de chaque faîtière par clip inox ou vis étanche, ou le scellement traditionnel au mortier de chaux grasse NHL (selon choix architectural)."
+    },
+    {
+      "id": "OUV-1847",
+      "lot": "couverture-zinguerie",
+      "designation": "Rive à rabat en terre cuite (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Finition et étanchéité latérale des bordures de toiture (pignons). L'ouvrage comprend : la fourniture et la pose des tuiles de rive à rabat, l'alignement parfait sur la planche de rive ou le mur pignon, et la fixation mécanique systématique de chaque tuile par vis inox à étanchéité néoprène sur le liteonnage."
+    },
+    {
+      "id": "OUV-1848",
+      "lot": "couverture-zinguerie",
+      "designation": "Rive plate ou couloir de rive en zinc (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Alternative métallique pour l'étanchéité des rives. L'ouvrage comprend : le pliage, le façonnage et la pose de bandes de rive en zinc naturel ou pré-patiné, les pattes de fixation (agrafes métalliques) et le raccordement étanche sous les tuiles courantes de bordure."
+    },
+    {
+      "id": "OUV-1849",
+      "lot": "couverture-zinguerie",
+      "designation": "Fronton de faîtage en terre cuite (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Obturation esthétique et étanche à l'extrémité de la ligne de faîtage (jonction faîtage/rive). L'ouvrage comprend : la fourniture du fronton assorti (forme de rencontre ou d'about), le calage, le scellement au mastic polyuréthane extérieur ou au mortier de chaux fine, et la fixation de sécurité."
+    },
+    {
+      "id": "OUV-1850",
+      "lot": "couverture-zinguerie",
+      "designation": "Tuile de ventilation (chatière en terre cuite) (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Création des orifices nécessaires à la ventilation de la sous-face de la couverture (évitement de la pourriture des bois). L'ouvrage comprend : la fourniture de la tuile chatière de la gamme, la découpe locale du support si nécessaire, la pose intercalée dans la surface courante et sa fixation renforcée."
+    },
+    {
+      "id": "OUV-1851",
+      "lot": "couverture-zinguerie",
+      "designation": "Tuile à douille avec lanterneau (sortie de toit) (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Point de sortie technique pour les conduits de VMC ou d'évacuation des colonnes EU/EV. L'ouvrage comprend : la fourniture de la tuile à douille en terre cuite, le chapeau pare-pluie (lanterneau) amovible assorti, le raccordement mécanique étanche au conduit de ventilation intérieur et le calfeutrement."
+    },
+    {
+      "id": "OUV-1852",
+      "lot": "couverture-zinguerie",
+      "designation": "Demi-tuile ou tuile double (accessoire de calepinage) (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Éléments spécifiques pour assurer le croisement parfait des joints sans découpe sur le chantier. L'ouvrage comprend : la fourniture et la pose de la demi-tuile ou de la tuile double en bordure de rive ou de pénétration, incluant sa fixation réglementaire."
+    },
+    {
+      "id": "OUV-1853",
+      "lot": "couverture-zinguerie",
+      "designation": "Bande de noue en zinc (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Réalisation de la rigole d'étanchéité à l'intersection de deux pans de toiture inclinés. L'ouvrage comprend : la fourniture et le façonnage sur mesure d'une bande de noue en zinc n° 12 (avec fond en V, pinces d'étanchéité latérales de 15 mm rabattues sur le dessus et relevés latéraux de 25 mm minimum), la pose sur fonçure bois (voliges), la fixation mécanique par pattes à pinces en zinc (sans clouage direct du métal pour libre dilatation), un recouvrement minimal de 20 cm entre chaque élément, le calfeutrement et l'alignement soigné permettant le débordement des tuiles courantes de 12 cm au-dessus du zinc."
+    },
+    {
+      "id": "OUV-1854",
+      "lot": "couverture-zinguerie",
+      "designation": "Bande de solin en zinc avec porte-solin et joint mastic (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Étanchéité linéaire entre la couverture et une paroi maçonnée verticale (mur pignon, souche de cheminée). L'ouvrage comprend : le tracé, la fourniture et la pose de la bande de solin en zinc à pli ou à biseau, la fixation du profilé porte-solin chevillé dans le mur, l'emboîtement des bavettes en zinc plomb (ou zinc plissé) épousant le galbe des tuiles, et l'injection continue d'un cordon de mastic élastomère polyuréthane de première catégorie dans l'engravure supérieure."
+    },
+    {
+      "id": "OUV-1855",
+      "lot": "couverture-zinguerie",
+      "designation": "Couloir de rive ou bande de rive contre mur en zinc (ml)",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 1,
+      "detail": "Canal de drainage latéral en zinc disposé le long d'un mur pignon qui surplombe la toiture. L'ouvrage comprend : le façonnage en atelier d'un profil en zinc avec un relevé vertical fixé contre le mur et un profil d'évacuation (gouttière plate ou couloir) glissé sous les tuiles de rive, les pattes de fixation en zinc, les soudures étanches à l'étain des raccordements et toutes sujétions de raccord à l'égout."
+    },
+    {
+      "id": "OUV-1856",
+      "lot": "couverture-zinguerie",
+      "designation": "Abergement de cheminée en zinc (souche maçonnerie standard) (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Ensemble de pièces façonnées sur mesure assurant l'étanchéité périphérique complète autour d'un conduit de cheminée. L'ouvrage comprend : la prise de cotes, le découpage, le pliage et le soudage à l'étain d'un complexe en zinc composé d'une bavette d'en-tête (avec relief exposé de 10 cm mini), de couloirs latéraux et d'une table de pied de cheminée avec jupe en plomb plissé d'épaisseur 1,5 mm pour épouser le relief des tuiles, fixations par pattes et jointoiements périphériques au mastic."
+    },
+    {
+      "id": "OUV-1857",
+      "lot": "couverture-zinguerie",
+      "designation": "Selle en plomb de tête de noue (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Pièce d'étanchéité tridimensionnelle façonnée à la main à la jonction supérieure de la noue, sous le faîtage ou l'arêtier. L'ouvrage comprend : la fourniture d'une feuille de plomb coulé d'épaisseur minimale 2,0 mm, le battage et l'emboutissage manuel sur chantier pour épouser parfaitement le point de rencontre des deux versants et de la noue, et la soudure étanche ou le pontage au mastic polyuréthane avec la bande de noue inférieure."
     }
   ],
-  "revision": 131,
-  "prochainNumero": 1842
+  "revision": 132,
+  "prochainNumero": 1858
 }
