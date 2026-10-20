@@ -242,9 +242,9 @@ function sectionsDuLot(lotId) {
   let sections = g.sections;
   if (lotId === 'charpente-structure-bois') {
     const c = chantiers.find(x => x.id === courantId);
-    const t = c ? charpenteDe(projetDe(c).toiture) : '';
-    const typeC = c && projetDe(c).toiture.type === 'plat' ? 'terrasse' : t;
-    if (GEN_CHARP_TYPE[typeC]) sections = [...sections.filter(s => !/fermette|traditionnel|terrasse/i.test(s.titre)), GEN_CHARP_TYPE[typeC]];
+    // Une section par type de charpente présent dans les toitures du projet (ex. traditionnelle et fermettes)
+    const types = c ? [...new Set(toitsDe(projetDe(c)).map(t => (t.type === 'plat' ? 'terrasse' : charpenteDe(t))).filter(x => GEN_CHARP_TYPE[x]))] : [];
+    if (types.length) sections = [...sections.filter(s => !/fermette|traditionnel|terrasse/i.test(s.titre)), ...types.map(x => GEN_CHARP_TYPE[x])];
   }
   const dos = genDossier(lotId);
   return dos.length ? [...sections, { titre: 'Données du dossier (étude de faisabilité)', points: dos }] : sections;
@@ -254,12 +254,10 @@ function recapCharpente(lotId) {
   if (lotId !== 'charpente-structure-bois') return [];
   const c = chantiers.find(x => x.id === courantId); if (!c) return [];
   const p = projetDe(c), t = p.toiture || {}, r = projetCalcul(p);
-  const plat = t.type === 'plat';
   const lib = (map, v) => (v ? (map[v] || v) : '');
-  const pente = num(t.pente);
   const card = _kanbanDossiers[refKanbanDe(c)] || null, f = (card && card.faisa) || {}, e = (card && card.euro) || {};
   const ml = v => (num(v) > 0 ? fmt(num(v)) + ' m' : '');
-  const charpente = [
+  const structure = (t) => { const plat = t.type === 'plat', pente = num(t.pente); return [
     ['Type de charpente', plat ? 'Toit terrasse' : lib(FICHE_CHARP, charpenteDe(t))],
     ['Géométrie', plat ? 'Toit plat' : lib(FICHE_TOIT, t.type)],
     ['Pente', pente > 0 ? `${fmt(pente)} % (soit ${fmt(Math.round(Math.atan(pente / 100) * 180 / Math.PI * 10) / 10)}°)` : ''],
@@ -267,12 +265,15 @@ function recapCharpente(lotId) {
     ['Longueur entre appuis (portée)', ml(t.portee)],
     ['Type de versant', plat ? '' : (t.versant === 'avec' ? `Avec coyau${num(t.coyauLong) > 0 ? ' sur ' + fmt(num(t.coyauLong)) + ' cm' : ''}` : lib(FICHE_VERSANT, t.versant))],
     ['Esthétique de l\'égout', plat ? '' : lib(FICHE_EGOUT, t.egoutStyle)],
-    ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (t.chevronnage ? 'Oui' : 'Non') : '']
-  ];
-  const surfaces = [
+    ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (t.chevronnage ? 'Oui' : 'Non') : ''],
     ['Surface au sol couverte', num(t.surface) > 0 ? fmt(num(t.surface)) + ' m²' : ''],
-    ['Surface de couverture (pente comprise)', r.toiture > 0 ? fmt(r.toiture) + ' m²' : ''],
-    ['Couverture', plat ? '' : lib(FICHE_COUV, couvDe(t))],
+    ['Surface de couverture (pente comprise)', rampantToit(t) > 0 ? fmt(Math.round(rampantToit(t) * 100) / 100) + ' m²' : '']
+  ]; };
+  const toitsL = toitsDe(p), plusieurs = toitsL.length > 1;
+  const charpente = structure(t);
+  const surfaces = [
+    ...(plusieurs ? [['Surface de couverture, toutes toitures', r.toiture > 0 ? fmt(Math.round(r.toiture * 100) / 100) + ' m²' : '']] : []),
+    ['Couverture', toitPente(p) ? lib(FICHE_COUV, couvDe(t)) : ''],
     ['Écran de sous-toiture', lib(FICHE_ECRAN, t.ecran)]
   ];
   const longueurs = [['Faîtage', ml(t.faite)], ['Rives', ml(t.rive)], ['Égout', ml(t.egout)], ['Arêtiers', ml(t.arete)], ['Noues', ml(t.noue)]];
@@ -283,10 +284,10 @@ function recapCharpente(lotId) {
   const vide = v => v === '' || v === undefined || v === null;
   if (![...charpente, ...surfaces, ...longueurs].some(([, v]) => !vide(v))) return [];
   const net = L => L.map(([a, v]) => [a, vide(v) ? 'non renseigné' : String(v)]);
-  // Groupes : la charpente d'un côté, les données du site (étude de faisabilité) dans un encadré à part
+  // Groupes : une structure par toiture, puis couverture et longueurs ; les données du site dans un encadré à part
   return [
-    { titre: 'Structure de la charpente', lignes: net(charpente) },
-    { titre: 'Surfaces et couverture', lignes: net(surfaces) },
+    ...toitsL.map((tt, i) => ({ titre: plusieurs ? `Structure de la charpente — ${nomToit(tt, i)}` : 'Structure de la charpente', lignes: net(structure(tt)) })),
+    { titre: 'Couverture', lignes: net(surfaces) },
     { titre: 'Longueurs', lignes: net(longueurs) },
     { titre: 'Données du site (étude de faisabilité)', lignes: net(site), site: true }
   ];
@@ -3185,6 +3186,19 @@ const FICHE_COUV = {
 // Ce qui manque pour que la charpente et la couverture sortent au métré (affiché dans le configurateur)
 function toitureManquants(p) {
   const t = p.toiture || {}, m = [];
+  // Toitures suivantes : type de charpente, géométrie et surface de chacune
+  const sup = [];
+  (p.toituresSup || []).forEach((ts, i) => {
+    const n = nomToit(ts, i + 1);
+    if (!ts.charpente) sup.push(n + ' : type de charpente');
+    else if (!FICHE_CHARP[charpenteDe(ts)]) sup.push(n + ' : type de charpente « ' + ts.charpente + ' » non relié au métré');
+    if (ts.type !== 'plat' && !ts.type) sup.push(n + ' : géométrie');
+    if (!(num(ts.surface) > 0 || num(ts.surfCouv) > 0)) sup.push(n + ' : surface au sol couverte');
+  });
+  return [...toitureManquants1(p), ...sup];
+}
+function toitureManquants1(p) {
+  const t = p.toiture || {}, m = [];
   if (t.type === 'plat') {
     if (!(num(t.surface) > 0 || num(t.surfCouv) > 0)) m.push('surface au sol couverte (bloc Charpente, Surfaces et compléments)');
     return m;
@@ -3203,9 +3217,19 @@ function toitureManqueHtml(p) {
   const m = toitureManquants(p);
   return m.length ? `<div style="background:#fff4e5;border:1px solid #E07838;border-radius:8px;padding:8px 10px;font-size:14px;margin-bottom:6px"><b>Charpente et couverture absentes du métré tant que manque :</b> ${m.map(esc).join(' ; ')}.</div>` : '';
 }
+// Plusieurs toitures (jusqu'à 4) : la toiture 1 est p.toiture, les suivantes p.toituresSup (charpente distincte chacune)
+const TOITS_MAX = 4;
+function toitsDe(p) { return [p.toiture || {}, ...((p.toituresSup) || [])]; }
+function nomToit(t, i) { return (t && t.nom) || ('Toiture ' + (i + 1)); }
+function rampantToit(t) {
+  const S = num(t.surface), pente = num(t.pente);
+  return num(t.surfCouv) > 0 ? num(t.surfCouv) : (pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S);
+}
+function toitPente(p) { return toitsDe(p).some(t => t.type !== 'plat'); }
+function toitPlat(p) { return toitsDe(p).some(t => t.type === 'plat'); }
+function surfacePlanToit(p) { return planToit(p.toiture || {}); }
 // Surface de toiture en plan : saisie, sinon déduite de la surface de couverture et de la pente
-function surfacePlanToit(p) {
-  const t = p.toiture || {};
+function planToit(t) {
   if (num(t.surface) > 0) return num(t.surface);
   if (num(t.surfCouv) > 0) return Math.round(num(t.surfCouv) * Math.cos(Math.atan(num(t.pente) / 100)) * 100) / 100;
   return 0;
@@ -3419,8 +3443,11 @@ function projetCalcul(p) {
   }
   const pente = num(p.toiture.pente);
   const S = num(p.toiture.surface);
-  // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente
-  r.toiture = num(p.toiture.surfCouv) > 0 ? num(p.toiture.surfCouv) : (pente > 0 ? S / Math.cos(Math.atan(pente / 100)) : S);
+  // Surface de couverture saisie (3D) : utilisée telle quelle ; sinon calcul à partir de la surface au sol et de la pente.
+  // Plusieurs toitures : surfaces additionnées (toits en pente d'un côté, toits terrasses de l'autre)
+  r.toitPente = toitsDe(p).filter(t => t.type !== 'plat').reduce((a, t) => a + rampantToit(t), 0);
+  r.toitPlat = toitsDe(p).filter(t => t.type === 'plat').reduce((a, t) => a + rampantToit(t), 0);
+  r.toiture = r.toitPente + r.toitPlat;
   const f = p.fond || FICHE_FONDS_DEF;
   // Si des rigoles sont saisies (bloc Terrassement), leur linéaire, largeur et HT servent aux semelles et fouilles
   const rig = num(f.rigLin) > 0;
@@ -3469,7 +3496,7 @@ function ctxQuantites(c) {
     surface_emprise: r.plS > 0 ? r.plS : surfPieces,
     surface_soubassement: r.soubS,
     surface_toiture: r.toiture,
-    surface_toiture_plan: num(p.toiture.surface),
+    surface_toiture_plan: toitsDe(p).reduce((a, t) => a + num(t.surface), 0),
     ml_egout: num(p.toiture.egout),
     ml_rive: num(p.toiture.rive),
     // Menuiseries : appuis de fenêtre = largeur des fenêtres (ouvrant, oscillo, coulissant ; pas les portes)
@@ -3492,10 +3519,10 @@ function ctxQuantites(c) {
     ...equipCtx(p),
     ml_arete: num(p.toiture.arete),
     cuve_points: (p.equip || {}).cuve === 'interieur' ? pointsEauPluie(c) : 0,
-    nb_douille: (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) ? ventilationNb(p) : 0,
-    nb_sortie125: (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) ? 0 : ventilationNb(p),
+    nb_douille: (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) ? ventilationNb(p) : 0,
+    nb_sortie125: (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) ? 0 : ventilationNb(p),
     ml_noue: num(p.toiture.noue),
-    couverture: p.toiture.type === 'plat' ? '' : couvDe(p.toiture),
+    couverture: toitPente(p) ? couvDe(p.toiture) : '',
     // Gros œuvre : mêmes grandeurs que celles utilisées par la génération automatique du métré
     // Fouilles et semelles : seulement si des rigoles sont saisies dans le terrassement (sinon rien n'est proposé)
     fond_fouille: rigOk ? r.fouille : '',
@@ -3980,7 +4007,7 @@ function listesNonRelieesHtml(p) {
 }
 function cleFixe(attrs) {
   const k = /data-k="([^"]+)"/.exec(attrs), c = /data-champ="([^"]+)"/.exec(attrs);
-  return k && c ? k[1] + '.' + c[1] : null;
+  return k && c ? (k[1] === 'toitS' ? 'toit' : k[1]) + '.' + c[1] : null;
 }
 function valeursFixes(cle, defauts) {
   const r = listeReglage(cle);
@@ -4252,24 +4279,32 @@ function ficheRendre() {
   const plat = toit.type === 'plat';
   const choix = (attrs, entries, val) => sel2(attrs, [CHOIX_VIDE, ...entries], val || '');
   const lot = (t) => `<h2 style="margin:20px 0 8px;padding:8px 12px;border-radius:10px;background:var(--acc);color:#fff;font-size:17px">${t}</h2>`;
-  const typeCharp = plat ? 'terrasse' : (toit.charpente || '');
-  const contenuCharp = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            ${champ('Type de charpente', choix('data-k="toit" data-champ="charpente"', Object.entries(FICHE_CHARP), typeCharp))}
-            ${plat ? '<div></div>' : champ('Géométrie', choix('data-k="toit" data-champ="type"', Object.entries(FICHE_TOIT), toit.type))}
+  // Champs de structure d'une toiture (toiture 1 : data-k="toit" ; toitures suivantes : data-k="toitS" + data-id)
+  const champsStructure = (t, kA) => {
+    const platT = t.type === 'plat';
+    const typeC = platT ? 'terrasse' : (t.charpente || '');
+    return `${champ('Type de charpente', choix(`${kA} data-champ="charpente"`, Object.entries(FICHE_CHARP), typeC))}
+            ${platT ? '<div></div>' : champ('Géométrie', choix(`${kA} data-champ="type"`, Object.entries(FICHE_TOIT), t.type))}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Portée et pente</div>
-            ${champ('Appuis', choix('data-k="toit" data-champ="appuis"', Object.entries(FICHE_APPUIS), toit.appuis))}
-            ${champ('Longueur entre appuis (m)', inp('data-k="toit" data-champ="portee" inputmode="decimal" placeholder="ex. 8"', toit.portee || ''))}
-            ${champ(plat ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp('data-k="toit" data-champ="pente" inputmode="decimal"' + (plat ? ' placeholder="minimum 3,5"' : ' placeholder="ex. 30"'), toit.pente))}
+            ${champ('Appuis', choix(`${kA} data-champ="appuis"`, Object.entries(FICHE_APPUIS), t.appuis))}
+            ${champ('Longueur entre appuis (m)', inp(`${kA} data-champ="portee" inputmode="decimal" placeholder="ex. 8"`, t.portee || ''))}
+            ${champ(platT ? 'Pente (%), minimum 3,5 %' : 'Pente (%)', inp(`${kA} data-champ="pente" inputmode="decimal"` + (platT ? ' placeholder="minimum 3,5"' : ' placeholder="ex. 30"'), t.pente))}
             <div></div>
-            ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Versant et égout</div>
-            ${champ('Type de versant', choix('data-k="toit" data-champ="versant"', Object.entries(FICHE_VERSANT), toit.versant))}
-            ${toit.versant === 'avec' ? champ('Longueur de la coyalure (cm), ex. 80 pour les 80 derniers centimètres du toit', inp('data-k="toit" data-champ="coyauLong" inputmode="decimal" placeholder="ex. 80"', toit.coyauLong || '')) : '<div></div>'}
-            ${champ('Esthétique de l\'égout', choix('data-k="toit" data-champ="egoutStyle"', Object.entries(FICHE_EGOUT), toit.egoutStyle))}
+            ${platT ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Versant et égout</div>
+            ${champ('Type de versant', choix(`${kA} data-champ="versant"`, Object.entries(FICHE_VERSANT), t.versant))}
+            ${t.versant === 'avec' ? champ('Longueur de la coyalure (cm), ex. 80 pour les 80 derniers centimètres du toit', inp(`${kA} data-champ="coyauLong" inputmode="decimal" placeholder="ex. 80"`, t.coyauLong || '')) : '<div></div>'}
+            ${champ('Esthétique de l\'égout', choix(`${kA} data-champ="egoutStyle"`, Object.entries(FICHE_EGOUT), t.egoutStyle))}
             <div></div>`}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Surfaces et compléments</div>
-            ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
-            ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
-            ${charpenteDe(toit) === 'traditionnelle' && !plat ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" data-k="toit" data-champ="chevronnage" ${toit.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}
+            ${champ('Surface au sol couverte (m²)', inp(`${kA} data-champ="surface" inputmode="decimal"`, t.surface))}
+            ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp(`${kA} data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"`, t.surfCouv || ''))}
+            ${charpenteDe(t) === 'traditionnelle' && !platT ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" ${kA} data-champ="chevronnage" ${t.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}`;
+  };
+  const nbToits = toitsDe(p).length;
+  const nomChamp = (t, kA) => nbToits > 1 ? champ('Nom de la toiture', inp(`${kA} data-champ="nom" placeholder="ex. Corps principal, aile, garage"`, t.nom || '')) + '<div></div>' : '';
+  const contenuCharp = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${nomChamp(toit, 'data-k="toit"')}
+            ${champsStructure(toit, 'data-k="toit"')}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Pénétrations, chevêtres et croupes</div>
             ${champ('Pénétration de toiture en charpente industrielle (m² projeté au sol)', inp('data-k="toit" data-champ="m2PenetInd" inputmode="decimal"', toit.m2PenetInd))}
@@ -4280,6 +4315,17 @@ function ficheRendre() {
             ${champ('Croupe en charpente industrielle (m² projeté au sol)', inp('data-k="toit" data-champ="m2CroupeInd" inputmode="decimal"', toit.m2CroupeInd))}
             ${champ('Croupe en charpente traditionnelle (m² de rampant)', inp('data-k="toit" data-champ="m2CroupeTrad" inputmode="decimal"', toit.m2CroupeTrad))}
     </div>`;
+  // Toitures suivantes : une carte chacune, avec sa propre charpente (portée, pente, type…)
+  const cartesToitsSup = (p.toituresSup || []).map((t, i) => {
+    const kA = `data-k="toitS" data-id="${t.id}"`;
+    return carte(`Toiture ${i + 2}${t.nom ? ' : ' + esc(t.nom) : ''} — charpente distincte`, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${nomChamp(t, kA)}
+            ${champsStructure(t, kA)}
+          </div>
+          <div class="row" style="margin-top:8px"><button type="button" class="btn small sec" data-action="deltoit" data-id="${t.id}">Supprimer cette toiture</button></div>`);
+  }).join('');
+  const boutonToit = nbToits < TOITS_MAX ? `<div class="row" style="margin:4px 0 12px"><button type="button" class="btn sec" data-action="addtoit">+ Ajouter une toiture (charpente distincte)</button>
+    <span class="muted" style="font-size:12px;margin-left:8px">Jusqu'à ${TOITS_MAX} toitures, par exemple deux toits imbriqués de portées différentes.</span></div>` : '';
   const contenuIso = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Les autres isolations se choisissent dans le métré.</p>`;
@@ -4399,7 +4445,8 @@ function ficheRendre() {
     ${carte('Drainage et arase (murs périphériques)', ['drain|Drain en pied de mur', 'cunette|Cunette périphérique', 'regards|Regards de bouclage', 'arase|Arase étanche de pied de mur', 'nappe|Nappe de protection (murs de soubassement)'].map(x => { const [k, lib] = x.split('|'); const fn = { drain: drainBase, cunette: cunetteBase, regards: regardsBase, arase: araseBase, nappe: nappeBase }[k]; return champ(lib, selCrayon('dr-' + k, 'Drainage : ' + lib.toLowerCase(), `<select data-k="choix" data-champ="${k}" style="width:100%;padding:6px">${optListeOuvrages('dr-' + k, 'Drainage : ' + lib.toLowerCase(), fn, p.choix[k] || '', '— aucun —')}</select>`)) + (k === 'regards' ? champ('Nombre de regards', `<input data-k="choix" data-champ="regardsNb" inputmode="numeric" value="${esc(p.choix.regardsNb || '')}" style="width:100%;padding:6px">`) : ''); }).join(''))}
     </div>
     ${tabTitre('3. Charpente')}<div class="bloc">
-    ${carte('Toiture : type, surfaces et charpente', contenuCharp)}
+    ${carte(nbToits > 1 ? `Toiture 1${toit.nom ? ' : ' + esc(toit.nom) : ''} — type, surfaces et charpente` : 'Toiture : type, surfaces et charpente', contenuCharp)}
+    ${cartesToitsSup}${boutonToit}
     </div>
     ${tabTitre('4. Couverture')}<div class="bloc">
     ${carte('Couverture, égouts, faîtage, gouttières, descentes', contenuCouv)}
@@ -4469,6 +4516,13 @@ function ficheChange(e) {
     // Toit terrasse : la géométrie devient « plat » ; une autre charpente la remet à choisir
     if (champ === 'charpente') { if (charpenteDe(p.toiture) === 'terrasse') p.toiture.type = 'plat'; else if (p.toiture.type === 'plat') p.toiture.type = ''; }
   }
+  else if (k === 'toitS') {
+    const ts = (p.toituresSup || []).find(x => x.id === t.dataset.id);
+    if (ts) {
+      ts[champ] = val;
+      if (champ === 'charpente') { if (charpenteDe(ts) === 'terrasse') ts.type = 'plat'; else if (ts.type === 'plat') ts.type = ''; }
+    }
+  }
   else if (k === 'fond') p.fond[champ] = val;
   else if (k === 'pleine') { const e = pleinesDe(p.fond).find(x => x.id === t.dataset.id); if (e) e[champ] = val; }
   else if (k === 'soub') p.soub[champ] = val;
@@ -4480,7 +4534,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || (k === 'toit' && ['type', 'charpente', 'versant'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || ((k === 'toit' || k === 'toitS') && ['type', 'charpente', 'versant'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
@@ -4583,6 +4637,8 @@ function ficheClick(e) {
   else if (a === 'delouv') p.ouvertures = p.ouvertures.filter(o => o.id !== b.dataset.id);
   else if (a === 'addpleine') pleinesDe(p.fond).push({ id: 'p' + uid(), usage: 'massif', nb: '', L: '', l: '', h: '' });
   else if (a === 'delpleine') p.fond.pleines = pleinesDe(p.fond).filter(e => e.id !== b.dataset.id);
+  else if (a === 'addtoit') { p.toituresSup = p.toituresSup || []; if (toitsDe(p).length < TOITS_MAX) p.toituresSup.push({ id: 't' + uid(), nom: '', charpente: '', type: '', surface: '', surfCouv: '', pente: '' }); }
+  else if (a === 'deltoit') { if (!confirm('Supprimer cette toiture et sa charpente ?')) return; p.toituresSup = (p.toituresSup || []).filter(x => x.id !== b.dataset.id); }
   sauverFiche(c);
   ficheRendre();
 }
@@ -4821,16 +4877,25 @@ function ficheVersMetre() {
     const v = qteValeur(o, ctxQuantites(c));
     if (v && num(v.cote1) > 0) ajouter(o.designation, num(v.cote1), undefined, null, SRC_QTE[o.qte] || null);
   }
-  if (p.toiture.type === 'plat') { if (p.toiture.etancheite) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toiture, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture); }
-  else if (COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv(COUV_OUV[couvDe(p.toiture)]), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  // Toits terrasses : étanchéité ; toits en pente : couverture (surfaces de toutes les toitures concernées)
+  if (toitPlat(p) && p.toiture.etancheite && r.toitPlat > 0) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toitPlat, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture);
+  if (toitPente(p) && COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv(COUV_OUV[couvDe(p.toiture)]), r.toitPente, undefined, null, SRC_QTE.surface_toiture);
   // Toiture incomplète : on le signale, sinon la charpente et la couverture restent absentes sans explication
   manquants.push(...toitureManquants(p));
   // Charpente : fermettes (m² projeté au sol), charpente traditionnelle et chevronnage (m² de rampant)
-  if (charpenteDe(p.toiture) === 'fermette') ajouter(desOuv('OUV-1839'), surfacePlanToit(p), undefined, null, SRC_QTE.surface_toiture_plan);
-  if (charpenteDe(p.toiture) === 'traditionnelle') {
-    // Charpente traditionnelle : un forfait unique, dès qu'elle est choisie (la surface sert au récapitulatif, pas à la quantité)
-    ajouter(desOuv('OUV-1840'), 1, undefined, { nombre: '1' });
-    if (p.toiture.chevronnage) ajouter(desOuv('OUV-1841'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+  // Une charpente par toiture (désignation suivie du nom de la toiture quand il y en a plusieurs)
+  {
+    const toitsL = toitsDe(p), plusieurs = toitsL.length > 1;
+    toitsL.forEach((t, i) => {
+      if (t.type === 'plat') return;
+      const suf = plusieurs ? ' – ' + nomToit(t, i) : '';
+      const ch = charpenteDe(t);
+      if (ch === 'fermette') { const d = desOuv('OUV-1839'); ajouter(d, planToit(t), d + suf, null, SRC_QTE.surface_toiture_plan); }
+      if (ch === 'traditionnelle') {
+        const d = desOuv('OUV-1840'); ajouter(d, 1, d + suf, { nombre: '1' });   // forfait unique par charpente
+        if (t.chevronnage) { const d2 = desOuv('OUV-1841'); ajouter(d2, rampantToit(t), d2 + suf, null, SRC_QTE.surface_toiture); }
+      }
+    });
   }
   // Pénétrations (m² ou ml), chevêtres (u) et croupes (m²) saisis dans la fiche Charpente
   ajouter(desOuv('OUV-1871'), num(p.toiture.m2PenetInd));
@@ -4841,13 +4906,13 @@ function ficheVersMetre() {
   ajouter(desOuv('OUV-1875'), num(p.toiture.m2CroupeInd), undefined, null, SRC_QTE.surface_toiture_plan);
   ajouter(desOuv('OUV-1876'), num(p.toiture.m2CroupeTrad), undefined, null, SRC_QTE.surface_toiture);
   // Accessoires de tuiles : faîtage, rives, noues, tuiles à douille (longueurs et nombres saisis dans la fiche)
-  if (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) {
+  if (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) {
     ajouter(desOuv('OUV-1846'), num(p.toiture.faite));
     ajouter(desOuv('OUV-1847'), num(p.toiture.rive));
     ajouter(desOuv('OUV-1851'), ventilationNb(p));
   }
   // Accessoires d'ardoise, de zinc ou de bacs acier (faîtage, rives, égout, ventilation)
-  if (p.toiture.type !== 'plat' && COUV_ACC[couvDe(p.toiture)]) {
+  if (toitPente(p) && COUV_ACC[couvDe(p.toiture)]) {
     const A = COUV_ACC[couvDe(p.toiture)];
     ajouter(desOuv(A.faite), num(p.toiture.faite));
     ajouter(desOuv(A.rive), num(p.toiture.rive));
@@ -4855,16 +4920,16 @@ function ficheVersMetre() {
     if (A.ventil) ajouter(desOuv(A.ventil), ventilationNb(p));
   }
   // Noue en zinc : pour toutes les couvertures (saisie dans la fiche Charpente)
-  if (p.toiture.type !== 'plat' && COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
+  if (toitPente(p) && COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
   // Accessoires saisis en nombre ou en ml (fiche Couverture)
-  if (p.toiture.type !== 'plat' && /^tuile/.test(couvDe(p.toiture))) {
+  if (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) {
     ajouter(desOuv('OUV-1849'), num(p.toiture.nbFronton));
     ajouter(desOuv('OUV-1850'), num(p.toiture.nbChatiere));
     ajouter(desOuv('OUV-1852'), num(p.toiture.nbDemiTuile));
-  } else if (p.toiture.type !== 'plat' && (num(p.toiture.nbFronton) > 0 || num(p.toiture.nbChatiere) > 0 || num(p.toiture.nbDemiTuile) > 0)) {
+  } else if (toitPente(p) && (num(p.toiture.nbFronton) > 0 || num(p.toiture.nbChatiere) > 0 || num(p.toiture.nbDemiTuile) > 0)) {
     manquants.push('frontons, chatières et demi-tuiles : réservés aux couvertures en tuiles');
   }
-  if (p.toiture.type !== 'plat') {
+  if (toitPente(p)) {
     ajouter(desOuv('OUV-1856'), num(p.toiture.nbAbergement));
     ajouter(desOuv('OUV-1857'), num(p.toiture.nbSelle));
     ajouter(desOuv('OUV-1854'), num(p.toiture.mlSolin));
