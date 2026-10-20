@@ -4614,55 +4614,50 @@ function ficheRendre() {
   const contenuIso = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Les autres isolations se choisissent dans le métré.</p>`;
-  const listeAcc = sl => {
+  // Accessoires de couverture et zinguerie : sur chaque ligne, l'ouvrage à choisir et sa quantité en face
+  const ORDRE_COUV = ['accFaite', 'accSousFaitiere', 'accClosoir', 'accArete', 'accRive', 'accAboutRive', 'accEgout', 'accNoue', 'accVentil', 'accChatiere', 'accFronton',
+    'accDemiTuile', 'accAbergement', 'accSelle', 'accSolin', 'accCouloir', 'accRaccordChassis', 'accRessaut', 'accCouvreJoint', 'accPattes', 'accVis'];
+  const ORDRE_ZING = ['accGouttiere', 'accDescente', 'accNaissance', 'accDauphin', 'accCoude', 'accCrosse', 'accCrochet', 'accCheneau', 'accRegard'];
+  // Case de quantité de chaque accessoire : [champ, unité, texte d'aide] ; « = … » : quantité reprise d'une autre ligne
+  const QTE_ACC = {
+    accFaite: ['faite', 'ml'], accSousFaitiere: '= longueur de faîtage', accClosoir: '= longueur de faîtage', accArete: ['arete', 'ml'], accRive: ['rive', 'ml'],
+    accEgout: '= longueur d\'égout (ligne Gouttières)', accNoue: ['noue', 'ml'], accVentil: ['nbDouille', 'u', 'conseillé : ' + ventilationNb(p)], accChatiere: ['nbChatiere', 'u'],
+    accAboutRive: ['nbAboutRive', 'u'], accFronton: ['nbFronton', 'u'], accDemiTuile: ['nbDemiTuile', 'u'], accAbergement: ['nbAbergement', 'u'], accSelle: ['nbSelle', 'u'],
+    accSolin: ['mlSolin', 'ml'], accCouloir: ['mlCouloir', 'ml'], accRaccordChassis: ['nbRaccordChassis', 'u'], accRessaut: ['mlRessaut', 'ml'], accCouvreJoint: ['mlCouvreJoint', 'ml'],
+    accPattes: ['nbPattes', 'u'], accVis: ['nbVis', 'u'], accGouttiere: ['egout', 'ml', 'longueur d\'égout'], accNaissance: '= nombre de descentes', accDauphin: '= nombre de descentes',
+    accCoude: ['nbCoudes', 'u'], accCrosse: ['nbCrosses', 'u'], accCrochet: ['nbCrochets', 'u'], accCheneau: ['mlCheneau', 'ml'],
+    accRegard: ['nbRegards', 'u', num(toit.nbDesc) > 0 ? fmt(num(toit.nbDesc)) + ' (un par descente)' : 'un par descente']
+  };
+  const caseQte = (champQ, unite, aide) => `<span style="display:flex;align-items:center;gap:4px;flex:0 0 150px">${inp(`data-k="toit" data-champ="${champQ}" inputmode="decimal"${aide ? ` placeholder="${esc(aide)}"` : ''}`, toit[champQ] || '', '100%')}<span style="font-size:13px;color:#6b5a7a;min-width:22px">${unite}</span></span>`;
+  const ligneAcc = sl => {
     const val = toit[sl.champ] || accChoisi(p, sl) || '';
     const opts = `<option value="" ${!val ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${val === 'aucun' ? 'selected' : ''}>Aucun (rien au métré)</option>`
       + optListeOuvrages('couv-' + sl.champ, sl.lib + ' (couverture)', () => sl.base.map(id => desOuv(id)).filter(Boolean), val === 'aucun' ? '' : val, null);
-    return champ(sl.lib, selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`));
+    const q = QTE_ACC[sl.champ];
+    let qte;
+    if (sl.champ === 'accDescente') qte = `<span style="display:flex;align-items:center;gap:4px;flex:0 0 230px">${inp('data-k="toit" data-champ="nbDesc" inputmode="decimal" placeholder="nombre"', toit.nbDesc || '', '70px')}<span style="font-size:13px;color:#6b5a7a">u ×</span>${inp('data-k="toit" data-champ="hautDesc" inputmode="decimal" placeholder="hauteur"', toit.hautDesc || '', '80px')}<span style="font-size:13px;color:#6b5a7a">m</span></span>`;
+    else if (typeof q === 'string') qte = `<span style="flex:0 0 150px;font-size:13px;color:#6b5a7a">${esc(q)}</span>`;
+    else qte = caseQte(q[0], q[1], q[2]);
+    return `<div style="grid-column:1/-1;min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${esc(sl.lib)}</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`)}${qte}</div></div>`;
   };
+  const slotDe = ch => COUV_SLOTS.find(sl => sl.champ === ch);
   const contenuCouv = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${plat ? champ('Étanchéité (partie courante)', choix('data-k="toit" data-champ="etancheite"', Object.entries(FICHE_ETANCH), toit.etancheite))
              : champ('Couverture', choix('data-k="toit" data-champ="couverture"', Object.entries(FICHE_COUV), couvDe(toit)))}
             ${plat ? '<div></div>' : champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
-            ${plat ? champ('Relevés d\'acrotère, linéaire (m)', inp('data-k="toit" data-champ="acrotere" inputmode="decimal"', toit.acrotere)) : '<div></div>'}
-            ${plat ? champ('Coiffe et couvertine d\'acrotère', choix('data-k="toit" data-champ="couvertine"', Object.entries(FICHE_COUVERTINE), toit.couvertine)) : '<div></div>'}
-            ${champ('Longueur d\'égout, côtés gouttières (m)', inp('data-k="toit" data-champ="egout" inputmode="decimal"', toit.egout))}
-            ${champ('Longueur de rives, pignons (m)', inp('data-k="toit" data-champ="rive" inputmode="decimal"', toit.rive))}
-            ${champ('Longueur de faîtage (m)', inp('data-k="toit" data-champ="faite" inputmode="decimal"', toit.faite))}
-            ${plat ? '<div></div>' : champ('Longueur d\'arêtiers (m)', inp('data-k="toit" data-champ="arete" inputmode="decimal"', toit.arete))}
-            ${plat ? '<div></div>' : champ('Longueur de noues (m)', inp('data-k="toit" data-champ="noue" inputmode="decimal"', toit.noue))}
-            ${champ(plat ? 'Nombre d\'évacuations d\'eau pluviale (unité)' : 'Nombre de descentes d\'eau (unité)', inp('data-k="toit" data-champ="nbDesc" inputmode="decimal"', toit.nbDesc))}
-            ${champ('Hauteur des descentes (m)', inp('data-k="toit" data-champ="hautDesc" inputmode="decimal"', toit.hautDesc))}
-            ${champ('Coudes de descente (nombre)', inp('data-k="toit" data-champ="nbCoudes" inputmode="numeric"', toit.nbCoudes || ''))}
-            ${champ('Crosses de descente (nombre)', inp('data-k="toit" data-champ="nbCrosses" inputmode="numeric"', toit.nbCrosses || ''))}
-            ${champ('Crochets de gouttière (nombre)', inp('data-k="toit" data-champ="nbCrochets" inputmode="numeric"', toit.nbCrochets || ''))}
-            ${champ('Chéneaux (ml)', inp('data-k="toit" data-champ="mlCheneau" inputmode="decimal"', toit.mlCheneau || ''))}
-            ${champ('Regards de branchement des eaux pluviales (nombre, un par descente si vide)', inp('data-k="toit" data-champ="nbRegards" inputmode="numeric" placeholder="' + (num(toit.nbDesc) > 0 ? fmt(num(toit.nbDesc)) + ' (un par descente)' : 'un par descente') + '"', toit.nbRegards || ''))}
+            ${plat ? champ('Relevés d\'acrotère, linéaire (m)', inp('data-k="toit" data-champ="acrotere" inputmode="decimal"', toit.acrotere)) : ''}
+            ${plat ? champ('Coiffe et couvertine d\'acrotère', choix('data-k="toit" data-champ="couvertine"', Object.entries(FICHE_COUVERTINE), toit.couvertine)) : ''}
             ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Avant-toit</div>
             ${champ('Type d\'avant-toit', selCrayon('avant-toit', 'Type d\'avant-toit', `<select data-k="toit" data-champ="avantToit" style="width:100%;padding:6px"><option value="" ${!toit.avantToit ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${toit.avantToit === 'aucun' ? 'selected' : ''}>Aucun avant-toit (rien au métré)</option>${optListeOuvrages('avant-toit', 'Type d\'avant-toit', () => AVANT_TOIT_BASE.map(id => desOuv(id)).filter(Boolean), toit.avantToit === 'aucun' ? '' : (toit.avantToit || ''), null)}</select>`))}
             ${champ('Longueur d\'avant-toit (ml)', inp(`data-k="toit" data-champ="mlAvantToit" inputmode="decimal" placeholder="${num(p.toiture.egout) > 0 ? 'égout saisi : ' + fmt(num(p.toiture.egout)) + ' m' : 'ex. 36'}"`, toit.mlAvantToit || ''))}
             ${champ('Profondeur du débord (cm)', inp(`data-k="toit" data-champ="debordAvantToit" inputmode="decimal" placeholder="ex. 50"`, toit.debordAvantToit || ''))}
             <div></div>
-            <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
-            ${champ('Fronton de faîtage (nombre)', inp('data-k="toit" data-champ="nbFronton" inputmode="decimal"', toit.nbFronton))}
-            ${champ('Tuiles à douille / sorties de toit (nombre)', inp('data-k="toit" data-champ="nbDouille" inputmode="numeric" placeholder="conseillé : ' + ventilationNb(p) + '"', toit.nbDouille || ''))}
-            ${champ('About de rive en terre cuite (nombre)', inp('data-k="toit" data-champ="nbAboutRive" inputmode="numeric"', toit.nbAboutRive || ''))}
-            ${champ('Chatière de ventilation (nombre)', inp('data-k="toit" data-champ="nbChatiere" inputmode="decimal"', toit.nbChatiere))}
-            ${champ('Demi-tuile ou tuile double (nombre)', inp('data-k="toit" data-champ="nbDemiTuile" inputmode="decimal"', toit.nbDemiTuile))}
-            ${champ('Abergement de cheminée en zinc (nombre)', inp('data-k="toit" data-champ="nbAbergement" inputmode="decimal"', toit.nbAbergement))}
-            ${champ('Selle en plomb de tête de noue (nombre)', inp('data-k="toit" data-champ="nbSelle" inputmode="decimal"', toit.nbSelle))}
-            ${champ('Bande de solin en zinc (ml)', inp('data-k="toit" data-champ="mlSolin" inputmode="decimal"', toit.mlSolin))}
-            ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}
-            ${champ('Raccords de châssis de toit (nombre)', inp('data-k="toit" data-champ="nbRaccordChassis" inputmode="numeric"', toit.nbRaccordChassis || ''))}
-            ${champ('Ressauts ou lignes de bris en zinc (ml)', inp('data-k="toit" data-champ="mlRessaut" inputmode="decimal"', toit.mlRessaut || ''))}
-            ${champ('Couvre-joints de tasseau en zinc (ml)', inp('data-k="toit" data-champ="mlCouvreJoint" inputmode="decimal"', toit.mlCouvreJoint || ''))}
-            ${champ('Pattes de fixation zinc (nombre)', inp('data-k="toit" data-champ="nbPattes" inputmode="numeric"', toit.nbPattes || ''))}
-            ${champ('Vis et cavaliers pour bacs acier (nombre)', inp('data-k="toit" data-champ="nbVis" inputmode="numeric"', toit.nbVis || ''))}
-            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Ouvrages utilisés pour les accessoires</div>
-            <div style="grid-column:1/-1;font-size:12px;color:#6b5a7a;margin-bottom:2px">Rien n'est choisi automatiquement : choisissez l'ouvrage de chaque accessoire, ou « Aucun ». Le crayon ajoute ou retire des ouvrages de la bibliothèque dans chaque liste.</div>
-            ${COUV_SLOTS.filter(sl => !sl.zing).map(sl => listeAcc(sl)).join('')}`}
-            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Zinguerie : ouvrages utilisés</div>
-            ${COUV_SLOTS.filter(sl => sl.zing).map(sl => listeAcc(sl)).join('')}
+            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Accessoires de couverture : ouvrage et quantité</div>
+            <div style="grid-column:1/-1;font-size:12px;color:#6b5a7a;margin-bottom:2px">Choisissez l'ouvrage de chaque accessoire et sa quantité en face. Une ligne laissée vide ne va pas au métré. Le crayon ajoute ou retire des ouvrages de la bibliothèque dans chaque liste.</div>
+            ${ORDRE_COUV.map(slotDe).filter(Boolean).map(ligneAcc).join('')}`}
+            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Zinguerie : ouvrage et quantité</div>
+            ${ORDRE_ZING.map(slotDe).filter(Boolean).map(ligneAcc).join('')}
     </div>`;
   const eq = p.equip || {};
   const EQ_GRP = {
@@ -4846,7 +4841,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || ((k === 'toit' || k === 'toitS') && ['type', 'charpente', 'versant', 'couverture'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || ((k === 'toit' || k === 'toitS') && ['type', 'charpente', 'versant', 'couverture', 'nbDesc'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
