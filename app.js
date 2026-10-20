@@ -900,6 +900,13 @@ function deplacerLigne(uid, tr, apres) {
   }
   src.lot = lotCible;
   reste.splice(idx, 0, src);
+  // Lot maçonnerie : la ligne déposée rejoint la partie (Soubassement, Drain, Murs en élévation) où on l'a posée
+  if (lotCible === 'gros-oeuvre') {
+    const avG = reste.slice(0, idx).filter(l => l.lot === lotCible).pop();
+    const apG = reste.slice(idx + 1).find(l => l.lot === lotCible);
+    const vG = avG || apG;
+    src.groupeGO = vG ? sectionGO(vG) : 'Soubassement';
+  }
   // Lot couverture-zinguerie : la ligne déposée rejoint la partie (Couverture ou Zinguerie) où on l'a posée
   if (lotCible === 'couverture-zinguerie') {
     const avant = reste.slice(0, idx).filter(l => l.lot === lotCible).pop();
@@ -1101,19 +1108,28 @@ function rangModele(l) {
     return 50;
   }
   if (l.lot === 'gros-oeuvre') {
+    // Soubassement (1-6), drain (7-10), murs en élévation (11 et plus) : modèle Kobuszynski
+    const soub = murSoubDe(l) || /soubassement/i.test(d);
     if (/semelles? filantes?/i.test(d)) return 1;
     if (/semelles? isolées?|massif/i.test(d)) return 2;
-    if (/hydrofuge|imperméab|delta|nappe|drain|cunette|arase/i.test(d)) return 4;
-    if (murSoubDe(l) || /soubassement/i.test(d)) return 3;
-    if (/dallage|plancher|dalle|hourdis|terre-plein|vide sanitaire/i.test(d)) return 5;
-    if (/chaînage d.angle|harpe/i.test(d)) return 13;
-    if (/habillage des tableaux|modénature|tableaux de menuiseries/i.test(d)) return 12;
-    if (/linteau/i.test(d)) return 8;
-    if (/^appui/i.test(d)) return 9;
-    if (/^seuil/i.test(d)) return 10;
-    if (/chaînage/i.test(d)) return 7;
-    if (/^murs?\b|élévation|briques?|parpaing|aggloméré/i.test(d)) return 6;
-    if (/enduit|monocouche|crépi/i.test(d)) return 11;
+    if (/cunette/i.test(d)) return 7;
+    if (/nappe|delta|protection.*plots/i.test(d)) return 9;
+    if (/regard/i.test(d)) return 10;
+    if (/drain/i.test(d)) return 8;
+    if (/hydrofuge|imperméab|gobetis/i.test(d)) return 6;
+    if (/arase/i.test(d)) return 12;
+    if (/dallage|plancher|dalle|hourdis|terre-plein|vide sanitaire/i.test(d)) return 11;
+    if (soub) { if (/raidisseur|chaînages? vertic/i.test(d)) return 5; if (/chaînage/i.test(d)) return 4; return 3; }
+    if (/chaînage d.angle|harpe/i.test(d)) return 23;
+    if (/habillage des tableaux|modénature|tableaux de menuiseries/i.test(d)) return 22;
+    if (/linteau/i.test(d)) return /grandes? portées?/i.test(d) ? 18 : 17;
+    if (/^appui/i.test(d)) return 19;
+    if (/^seuil/i.test(d)) return 20;
+    if (/couronnement/i.test(d)) return 16;
+    if (/raidisseur|chaînages? vertic/i.test(d)) return 15;
+    if (/chaînage/i.test(d)) return 14;
+    if (/^murs?\b|élévation|briques?|parpaing|aggloméré/i.test(d)) return 13;
+    if (/enduit|monocouche|crépi/i.test(d)) return 21;
     return 50;
   }
   if (l.lot === 'menuiseries-interieures') {
@@ -1122,6 +1138,23 @@ function rangModele(l) {
     return 50;
   }
   return null;
+}
+// Partie du lot maçonnerie : Soubassement, Drain, Murs en élévation (une ligne déplacée à la main garde sa partie)
+function sectionGO(l) {
+  if (l.groupeGO) return l.groupeGO;
+  const r = rangModele(l);
+  return r <= 6 ? 'Soubassement' : (r <= 10 ? 'Drain' : 'Murs en élévation');
+}
+const SECTIONS_GO = ['Soubassement', 'Drain', 'Murs en élévation'];
+// À l'affichage : lignes du gros œuvre regroupées par partie, ordre gardé dans chaque partie
+function ordonnerSectionsGO(L) {
+  const lot = 'gros-oeuvre', idx = [];
+  L.forEach((l, i) => { if (l.lot === lot) idx.push(i); });
+  if (idx.length < 2) return L;
+  const res = L.slice();
+  const tri = idx.map((i, k) => ({ l: L[i], k, s: SECTIONS_GO.indexOf(sectionGO(L[i])) })).sort((a, b) => (a.s - b.s) || (a.k - b.k));
+  idx.forEach((i, k) => { res[i] = tri[k].l; });
+  return res;
 }
 // Remet les lignes de ces lots dans l'ordre type (ordre d'origine gardé à rang égal)
 function ordonnerSelonModele(L) {
@@ -1262,6 +1295,8 @@ function titresAvantLignes(lotId, ls) {
     if (l.platBloc && l.platBloc !== platPrec) t.push(SOUS_TITRES_PLAT[l.platBloc]);
     platPrec = l.platBloc || null;
     if (SOUS_PIECE_LOTS.has(lotId)) { const cleP = l.pieceNv || null; if (cleP && cleP !== piecePrec) t.push(nomPieceMetre(cleP)); piecePrec = cleP; }
+    // Lot maçonnerie : sous-titres Soubassement, Drain, Murs en élévation
+    if (lotId === 'gros-oeuvre') { const sg = sectionGO(l); if (!vus.has('go:' + sg)) { vus.add('go:' + sg); t.push(sg); } }
     // Lot couverture-zinguerie : sous-titres « Couverture » puis « Zinguerie »
     if (lotId === 'couverture-zinguerie') { const z = estZinguerie(l) ? 'Zinguerie' : 'Couverture'; if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
@@ -1282,7 +1317,7 @@ function renderMetre() {
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   // Électricité et revêtements suivent l'ordre des pièces du configurateur (les lignes désordonnées sont remises en ordre)
   { const cOrdre = chantiers.find(x => x.id === courantId);
-    const avantOrdre = lignesDe(courantId), apresOrdre = ordonnerCouvZing(ordonnerLignesPieces(cOrdre, avantOrdre.slice()));
+    const avantOrdre = lignesDe(courantId), apresOrdre = ordonnerSectionsGO(ordonnerCouvZing(ordonnerLignesPieces(cOrdre, avantOrdre.slice())));
     if (JSON.stringify(apresOrdre) !== JSON.stringify(avantOrdre)) sauverLignes(courantId, apresOrdre); }
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
