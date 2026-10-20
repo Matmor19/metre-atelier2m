@@ -2468,6 +2468,22 @@ function peiMursDetail(c) {
   const surfC = mlC > 0 ? mlC * h : m2C;
   return { h, hD, mlD, mlC, surfD, surfC };
 }
+// Peinture des cloisons : portes = nombre × 0,83 × 2,04 ; façades = largeur × hauteur sous plafond (bloc peinture) × unités
+function portesPeinture(c) {
+  const n = piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p), 0);
+  return { n, m2: n * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, txt: `${fmt(n)} porte${n > 1 ? 's' : ''} × ${fmt(LARGEUR_PORTE_NV)} × ${fmt(HAUTEUR_PORTE_M)}` };
+}
+function facadesPeinture(c, h) {
+  const parts = [];
+  let m2 = 0;
+  for (const p of piecesNvDe(c)) for (const f of (p.facades || [])) {
+    if (!(num(f.l) > 0)) continue;
+    const n = num(f.nb) || 1, l = num(f.l) / 100;
+    m2 += l * h * n;
+    parts.push(`(${fmt(l)} × ${fmt(h)}) × ${fmt(n)}`);
+  }
+  return { m2, txt: parts.join(' + ') };
+}
 // Portes de passage (surface brute, une fois) et façades de placard (surface brute, une fois ici)
 function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, 0); }
 function facadesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0); }
@@ -2484,7 +2500,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : doublage × hauteur, moins les menuiseries extérieures. Cloisons : cloisonnement × hauteur, moins une fois les portes de passage et une fois les façades de placard, le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
+    <p class="muted">Murs : doublage × hauteur, moins les menuiseries extérieures. Cloisons : linéaire de cloisons × hauteur sous plafond, moins une fois les portes de passage (nombre × 0,83 × 2,04) et une fois les façades de placard (largeur × hauteur sous plafond × unités), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
@@ -2526,11 +2542,15 @@ function genererPeinture(c) {
       // Total : murs + cloisons
       const menus = menuiseriesTotalM2(c);
       const murNet = Math.max(0, mur.surfD - menus);
-      const portes = portesBrutM2(c), facades = facadesBrutM2(c);
-      const cloisNet = Math.max(0, mur.surfC - portes - facades);
+      // Portes : nombre × 0,83 × 2,04 ; façades : largeur × hauteur sous plafond du bloc peinture × unités ; déduites une fois, puis × 2
+      const pP = portesPeinture(c), fP = facadesPeinture(c, mur.h);
+      const portes = pP.m2, facades = fP.m2;
+      const r2 = x => Math.round(x * 100) / 100;
+      const cloisNet = Math.max(0, r2(mur.surfC) - r2(portes) - r2(facades));
       const cloisDouble = cloisNet * 2;
       const total = murNet + cloisDouble;
-      ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – murs ${fmt(mur.surfD)} m² − menuiseries ${fmt(menus)} m² = ${fmt(murNet)} m² ; cloisons ${fmt(mur.surfC)} m² − portes ${fmt(portes)} m² − façades ${fmt(facades)} m² = ${fmt(cloisNet)} m² × 2 = ${fmt(cloisDouble)} m²`);
+      const cloisTxt = mur.mlC > 0 ? `cloisons ${fmt(mur.mlC)} ml × ${fmt(mur.h)} m = ${fmt(r2(mur.surfC))} m²` : `cloisons ${fmt(r2(mur.surfC))} m²`;
+      ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – murs ${fmt(mur.surfD)} m² − menuiseries ${fmt(menus)} m² = ${fmt(murNet)} m² ; ${cloisTxt} − portes (${pP.txt} = ${fmt(r2(portes))} m²) − façades (${fP.txt || 'aucune'} = ${fmt(r2(facades))} m²) = ${fmt(cloisNet)} m² × 2 faces = ${fmt(cloisDouble)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
