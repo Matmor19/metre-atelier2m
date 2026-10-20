@@ -55,7 +55,7 @@ const PAGE = document.body.dataset.page || 'saisie';
   document.head.appendChild(s);
 })();
 
-const UNITES = ['m²', 'm³', 'ml', 'u', 'forfait'];
+const UNITES = ['m²', 'm³', 'ml', 'u', 'forfait', 'ens'];
 const ORANGE = 'E07838';   // couleur de la charte Atelier 2M (exports)
 const $ = id => document.getElementById(id);
 function lsGet(k, d) { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -377,7 +377,8 @@ const MESURES = {
   'm³': [{ id: 'lxlxh', nom: 'Longueur × Largeur × Hauteur', cotes: ['Longueur', 'Largeur', 'Hauteur'] }],
   'ml': [{ id: 'l', nom: 'Longueur', cotes: ['Longueur'] }],
   'u': [{ id: 'nombre', nom: 'Nombre', cotes: [] }],
-  'forfait': [{ id: 'forfait', nom: 'Forfait', cotes: [] }]
+  'forfait': [{ id: 'forfait', nom: 'Forfait', cotes: [] }],
+  'ens': [{ id: 'ensemble', nom: 'Ensemble', cotes: [] }]
 };
 function modeDe(unite, id) { return (MESURES[unite] || []).find(m => m.id === id) || null; }
 function optionsMesure(unite, actuel) {
@@ -402,7 +403,7 @@ function calcul(o, v) {
     case 'm²': return o.mesure === 'surface' ? n * c1 : n * c1 * c2;
     case 'm³': return n * c1 * c2 * c3;
     case 'ml': return n * c1;
-    default:   return n;               // u, forfait
+    default:   return n;               // u, forfait, ens (ensemble)
   }
 }
 
@@ -4919,9 +4920,10 @@ function ficheVersMetre() {
       if (t.type === 'plat') return;
       const suf = plusieurs ? ' – ' + nomToit(t, i) : '';
       const ch = charpenteDe(t);
-      if (ch === 'fermette') { const d = desOuv('OUV-1839'); ajouter(d, planToit(t), d + suf, null, SRC_QTE.surface_toiture_plan); }
+      // Charpente industrielle ou traditionnelle : un ensemble par toiture
+      if (ch === 'fermette') { const d = desOuv('OUV-1839'); ajouter(d, 1, d + suf, { nombre: '1' }); }
       if (ch === 'traditionnelle') {
-        const d = desOuv('OUV-1840'); ajouter(d, 1, d + suf, { nombre: '1' });   // forfait unique par charpente
+        const d = desOuv('OUV-1840'); ajouter(d, 1, d + suf, { nombre: '1' });
         if (t.chevronnage) { const d2 = desOuv('OUV-1841'); ajouter(d2, rampantToit(t), d2 + suf, null, SRC_QTE.surface_toiture); }
       }
     });
@@ -5027,7 +5029,7 @@ function ouvrirOuvrage(o, precedent, message) {
   // Cases remplies seulement avec ce que le configurateur fournit : dimensions (fouille), surface (plan) ou quantité
   // Dimensions du configurateur (fouille) ou surface (plan) : reprises. Total calculé : cases vides, la quantité est proposée.
   const dimsConfig = !!auto && (o.qte === 'fond_fouille' || o.qte === 'fond_semelle' || o.qte === 'massif_m3' || o.qte === 'semi_nb' || auto.mode === 'plan');
-  const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
+  const compte = !auto ? {} : dimsConfig ? { ...auto } : auto.src ? (auto.cote1 != null ? { cote1: auto.cote1 ?? '', cote2: auto.cote2 ?? '', cote3: auto.cote3 ?? '' } : auto.nombre != null ? { nombre: auto.nombre } : {}) : (o.unite === 'u' || o.unite === 'forfait' || o.unite === 'ens') ? { nombre: auto.nombre } : { cote1: auto.cote1 };
   // Ouvrage lié : cotes reprises de la dernière ligne de l'ouvrage source (dans ce chantier)
   let compteLie = null;
   if ((o.liePar || o.lieConfig) && !precedent) compteLie = coteSource(o, courantId, null);
