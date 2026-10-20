@@ -5691,11 +5691,16 @@ function htmlParLot(d, type, logo) {
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
     // Totaux : Total HT, puis trois lignes de TVA (un taux par ligne, car un projet peut mélanger plusieurs taux), puis Total TTC
-    const lignesTva = [1, 2, 3].map(n => `<tr class="tva"><td colspan="7">TVA ${n} : taux ……… %  ·  montant de la TVA</td><td class="vierge"></td></tr>`).join('');
+    // Bloc aligné sur les colonnes P.U. HT, Montant HT et TVA % : libellé à gauche, montant dans la colonne Montant HT, taux dans la colonne TVA %
+    const vide5 = '<td colspan="5" class="hors"></td>';
+    const lignesTva = [1, 2, 3].map(n => `<tr class="tva">${vide5}<td class="lib">TVA ${n}</td><td class="case"></td><td class="case taux">…… %</td></tr>`).join('');
     const pied = cdpgf
-      ? '<tfoot><tr class="tot"><td colspan="7">Total HT du lot</td><td class="vierge"></td></tr>'
-        + lignesTva
-        + '<tr class="tot"><td colspan="7">Total TTC du lot</td><td class="vierge"></td></tr></tfoot>'
+      ? `<tfoot><tr class="esp"><td colspan="8"></td></tr>
+        <tr class="tot">${vide5}<td class="lib">Total HT du lot</td><td class="case"></td><td class="hors"></td></tr>
+        <tr class="entete-tva">${vide5}<td class="hors"></td><td class="mini">Montant de la TVA</td><td class="mini">Taux</td></tr>
+        ${lignesTva}
+        <tr class="esp"><td colspan="8"></td></tr>
+        <tr class="ttc">${vide5}<td class="lib">Total TTC du lot</td><td class="case"></td><td class="hors"></td></tr></tfoot>`
       : '';
     const mention = cdpgf
       ? '<p class="mention">Prix unitaires et montants à indiquer HT. La TVA et le total TTC sont à compléter par l\'entreprise, selon le taux qui lui est applicable pour ces travaux.</p>'
@@ -5753,9 +5758,17 @@ function htmlParLot(d, type, logo) {
   table.metre td.det { color: #6b6b6b; font-size: 8.5pt; }
   table.metre td.vierge { height: 8mm; min-width: 22mm; }
   table.metre tr { page-break-inside: avoid; }
-  table.metre tr.tot td { font-weight: 700; border-top: 2px solid #E07838; border-bottom: none; padding-top: 3mm; }
-  table.metre tr.tva td { font-weight: 600; border-bottom: none; }
-  table.metre tr.tot + tr.tva td { border-top: none; }
+  table.metre tfoot td { border: none; background: #fff; }
+  table.metre tfoot tr.esp td { height: 5mm; padding: 0; }
+  table.metre tfoot td.lib { text-align: right; font-weight: 600; padding: 2mm 3mm 2mm 2mm; vertical-align: middle; white-space: nowrap; }
+  table.metre tfoot td.case { border: 1px solid #6b6b6b; height: 8mm; min-width: 22mm; vertical-align: middle; }
+  table.metre tfoot td.taux { text-align: right; color: #8a8a8a; font-size: 8pt; padding-right: 2mm; }
+  table.metre tfoot td.mini { font-size: 7pt; color: #6b6b6b; text-align: center; padding: 2.5mm 0 0.5mm; }
+  table.metre tfoot tr.tva td.case { border-top-width: 0; }
+  table.metre tfoot tr.entete-tva + tr.tva td.case { border-top-width: 1px; }
+  table.metre tfoot tr.tot td.lib, table.metre tfoot tr.ttc td.lib { font-weight: 700; font-size: 10pt; }
+  table.metre tfoot tr.tot td.case, table.metre tfoot tr.ttc td.case { border: 2px solid #E07838; height: 9mm; }
+  table.metre tfoot tr.esp td { height: 3mm; }
   table.metre td.petit { min-width: 14mm; }
   .mention { margin: 4mm 0 0; color: #6b6b6b; font-size: 8pt; font-style: italic; }
   .limite { margin: -6mm 0 8mm; font-size: 11pt; color: #2b2b2b; }
