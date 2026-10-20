@@ -3278,7 +3278,7 @@ const COUV_SLOTS = [
   { champ: 'accRive', lib: 'Rives', qte: p => num(p.toiture.rive), base: ['OUV-1847', 'OUV-1848', 'OUV-1862', 'OUV-1866', 'OUV-1869'], defaut: { tuile: 'OUV-1847', ardoise: 'OUV-1862', zinc: 'OUV-1866', 'bac-acier': 'OUV-1869' } },
   { champ: 'accEgout', lib: 'Égout', sansAvert: true, qte: p => num(p.toiture.egout), base: ['OUV-1863', 'OUV-1867', 'OUV-1870'], defaut: { ardoise: 'OUV-1863', zinc: 'OUV-1867', 'bac-acier': 'OUV-1870' } },
   { champ: 'accNoue', lib: 'Noues', qte: p => num(p.toiture.noue), base: ['OUV-1853'], defaut: { tout: 'OUV-1853' } },
-  { champ: 'accVentil', lib: 'Sorties de toit (ventilation)', suffixe: ' – sorties de toit', qte: p => ventilationNb(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
+  { champ: 'accVentil', lib: 'Sorties de toit (ventilation)', suffixe: ' – sorties de toit', qte: p => nbSortiesToit(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
   { champ: 'accChatiere', lib: 'Chatières', qte: p => num(p.toiture.nbChatiere), base: ['OUV-1850', 'OUV-1864'], defaut: { tuile: 'OUV-1850', ardoise: 'OUV-1864', zinc: 'OUV-1864' } },
   { champ: 'accFronton', lib: 'Frontons de faîtage', qte: p => num(p.toiture.nbFronton), base: ['OUV-1849'], defaut: { tuile: 'OUV-1849' } },
   { champ: 'accDemiTuile', lib: 'Demi-tuiles', qte: p => num(p.toiture.nbDemiTuile), base: ['OUV-1852'], defaut: { tuile: 'OUV-1852' } },
@@ -3287,6 +3287,8 @@ const COUV_SLOTS = [
   { champ: 'accSolin', lib: 'Solins', qte: p => num(p.toiture.mlSolin), base: ['OUV-1854'], defaut: { tout: 'OUV-1854' } },
   { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } }
 ];
+// Tuiles à douille / sorties de toit : nombre saisi, sinon calculé (ventilation primaire, VMC, assainissement)
+function nbSortiesToit(p) { const n = num(p.toiture && p.toiture.nbDouille); return n > 0 ? n : ventilationNb(p); }
 function familleCouv(t) { const k = couvDe(t); return /^tuile/.test(k) ? 'tuile' : k; }
 function accDefaut(p, sl) { const f = familleCouv(p.toiture); return sl.defaut[f] || sl.defaut.tout || ''; }
 function accChoisi(p, sl) { const v = p.toiture[sl.champ]; return v === 'aucun' ? '' : (v || accDefaut(p, sl)); }
@@ -3543,7 +3545,7 @@ function ctxQuantites(c) {
     ...equipCtx(p),
     ml_arete: num(p.toiture.arete),
     cuve_points: (p.equip || {}).cuve === 'interieur' ? pointsEauPluie(c) : 0,
-    nb_douille: (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) ? ventilationNb(p) : 0,
+    nb_douille: (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) ? nbSortiesToit(p) : 0,
     nb_sortie125: (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) ? 0 : ventilationNb(p),
     ml_noue: num(p.toiture.noue),
     couverture: toitPente(p) ? couvDe(p.toiture) : '',
@@ -4368,6 +4370,7 @@ function ficheRendre() {
             ${champ('Matériau des descentes', choix('data-k="toit" data-champ="descente"', Object.entries(FICHE_DESC), toit.descente))}
             ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
             ${champ('Fronton de faîtage (nombre)', inp('data-k="toit" data-champ="nbFronton" inputmode="decimal"', toit.nbFronton))}
+            ${champ('Tuiles à douille / sorties de toit (nombre)', inp('data-k="toit" data-champ="nbDouille" inputmode="numeric" placeholder="calculé : ' + ventilationNb(p) + '"', toit.nbDouille || ''))}
             ${champ('Chatière de ventilation (nombre)', inp('data-k="toit" data-champ="nbChatiere" inputmode="decimal"', toit.nbChatiere))}
             ${champ('Demi-tuile ou tuile double (nombre)', inp('data-k="toit" data-champ="nbDemiTuile" inputmode="decimal"', toit.nbDemiTuile))}
             ${champ('Abergement de cheminée en zinc (nombre)', inp('data-k="toit" data-champ="nbAbergement" inputmode="decimal"', toit.nbAbergement))}
