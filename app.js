@@ -3266,6 +3266,26 @@ const MENU_DESIG = {
 const VOLET_DESIG = { 'battant-bois': 'Volet battant bois', 'battant-alu': 'Volet battant aluminium', 'roulant': 'Volet roulant électrique' };
 // Couverture : ouvrage de la bibliothèque pour chaque tuile (surface courante)
 const COUV_OUV = { 'tuile-canal': 'OUV-1842', 'tuile-plate-tc': 'OUV-1843', 'tuile-meca-tc': 'OUV-1844', 'tuile-romane-canal': 'OUV-1845', 'ardoise': 'OUV-1858', 'zinc': 'OUV-1859', 'bac-acier': 'OUV-1860' };
+// Accessoires de couverture au choix : pour chaque case, la liste des ouvrages préparés (modifiable au crayon)
+// et l'ouvrage pris par défaut selon la couverture (tuile, ardoise, zinc, bacs acier). « aucun » = rien au métré.
+const COUV_SLOTS = [
+  { champ: 'accFaite', lib: 'Faîtage', qte: p => num(p.toiture.faite), base: ['OUV-1846', 'OUV-1861', 'OUV-1865', 'OUV-1868'], defaut: { tuile: 'OUV-1846', ardoise: 'OUV-1861', zinc: 'OUV-1865', 'bac-acier': 'OUV-1868' } },
+  { champ: 'accArete', lib: 'Arêtiers', suffixe: ' – arêtiers', qte: p => num(p.toiture.arete), base: ['OUV-1846', 'OUV-1861', 'OUV-1865', 'OUV-1868'], defaut: { tuile: 'OUV-1846', ardoise: 'OUV-1861', zinc: 'OUV-1865', 'bac-acier': 'OUV-1868' } },
+  { champ: 'accRive', lib: 'Rives', qte: p => num(p.toiture.rive), base: ['OUV-1847', 'OUV-1848', 'OUV-1862', 'OUV-1866', 'OUV-1869'], defaut: { tuile: 'OUV-1847', ardoise: 'OUV-1862', zinc: 'OUV-1866', 'bac-acier': 'OUV-1869' } },
+  { champ: 'accEgout', lib: 'Égout', sansAvert: true, qte: p => num(p.toiture.egout), base: ['OUV-1863', 'OUV-1867', 'OUV-1870'], defaut: { ardoise: 'OUV-1863', zinc: 'OUV-1867', 'bac-acier': 'OUV-1870' } },
+  { champ: 'accNoue', lib: 'Noues', qte: p => num(p.toiture.noue), base: ['OUV-1853'], defaut: { tout: 'OUV-1853' } },
+  { champ: 'accVentil', lib: 'Sorties de toit (ventilation)', suffixe: ' – sorties de toit', qte: p => ventilationNb(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
+  { champ: 'accChatiere', lib: 'Chatières', qte: p => num(p.toiture.nbChatiere), base: ['OUV-1850', 'OUV-1864'], defaut: { tuile: 'OUV-1850', ardoise: 'OUV-1864', zinc: 'OUV-1864' } },
+  { champ: 'accFronton', lib: 'Frontons de faîtage', qte: p => num(p.toiture.nbFronton), base: ['OUV-1849'], defaut: { tuile: 'OUV-1849' } },
+  { champ: 'accDemiTuile', lib: 'Demi-tuiles', qte: p => num(p.toiture.nbDemiTuile), base: ['OUV-1852'], defaut: { tuile: 'OUV-1852' } },
+  { champ: 'accAbergement', lib: 'Abergements de cheminée', qte: p => num(p.toiture.nbAbergement), base: ['OUV-1856'], defaut: { tout: 'OUV-1856' } },
+  { champ: 'accSelle', lib: 'Selles de tête de noue', qte: p => num(p.toiture.nbSelle), base: ['OUV-1857'], defaut: { tout: 'OUV-1857' } },
+  { champ: 'accSolin', lib: 'Solins', qte: p => num(p.toiture.mlSolin), base: ['OUV-1854'], defaut: { tout: 'OUV-1854' } },
+  { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } }
+];
+function familleCouv(t) { const k = couvDe(t); return /^tuile/.test(k) ? 'tuile' : k; }
+function accDefaut(p, sl) { const f = familleCouv(p.toiture); return sl.defaut[f] || sl.defaut.tout || ''; }
+function accChoisi(p, sl) { const v = p.toiture[sl.champ]; return v === 'aucun' ? '' : (v || accDefaut(p, sl)); }
 // Accessoires propres à chaque couverture (faîtage, rive, égout, ventilation) : ouvrages de la bibliothèque
 const COUV_ACC = {
   ardoise: { faite: 'OUV-1861', rive: 'OUV-1862', egout: 'OUV-1863', ventil: 'OUV-1864' },
@@ -4350,7 +4370,16 @@ function ficheRendre() {
             ${champ('Abergement de cheminée en zinc (nombre)', inp('data-k="toit" data-champ="nbAbergement" inputmode="decimal"', toit.nbAbergement))}
             ${champ('Selle en plomb de tête de noue (nombre)', inp('data-k="toit" data-champ="nbSelle" inputmode="decimal"', toit.nbSelle))}
             ${champ('Bande de solin en zinc (ml)', inp('data-k="toit" data-champ="mlSolin" inputmode="decimal"', toit.mlSolin))}
-            ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}`}
+            ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}
+            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Ouvrages utilisés pour les accessoires</div>
+            <div style="grid-column:1/-1;font-size:12px;color:#6b5a7a;margin-bottom:2px">« Automatique » prend l'ouvrage prévu pour la couverture choisie. Le crayon ajoute ou retire des ouvrages de la bibliothèque dans chaque liste.</div>
+            ${COUV_SLOTS.map(sl => {
+              const def = accDefaut(p, sl), oDef = def && BIB.ouvrages.find(x => x.id === def);
+              const val = toit[sl.champ] || '';
+              const opts = `<option value="" ${!val ? 'selected' : ''}>Automatique : ${esc(oDef ? oDef.designation : 'aucun')}</option><option value="aucun" ${val === 'aucun' ? 'selected' : ''}>Aucun (rien au métré)</option>`
+                + optListeOuvrages('couv-' + sl.champ, sl.lib + ' (couverture)', () => sl.base.map(id => desOuv(id)).filter(Boolean), val === 'aucun' ? '' : val, null);
+              return champ(sl.lib, selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`));
+            }).join('')}`}
     </div>`;
   const eq = p.equip || {};
   const EQ_GRP = {
@@ -4534,7 +4563,7 @@ function ficheChange(e) {
   else if (k === 'chant') p.chantier[champ] = val;
   else if (k === 'kref') { c.kanbanRef = String(val).trim(); sauverFiche(c); surfaceAuto(c); }
   sauverFiche(c);
-  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || ((k === 'toit' || k === 'toitS') && ['type', 'charpente', 'versant'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
+  const refaire = (k === 'mur' && ['longueur', 'hauteur', 'type', 'ouvLibre'].includes(champ)) || (k === 'equip' && champ === 'poele') || (k === 'ouv' && ['volet', 'type'].includes(champ)) || ((k === 'toit' || k === 'toitS') && ['type', 'charpente', 'versant', 'couverture'].includes(champ)) || (k === 'plan' && champ === 'type') || (k === 'pleine' && champ === 'usage');
   if (refaire) ficheRendre(); else ficheResume();
 }
 // Lecture seule du Kanban : même adresse que le Kanban utilise pour lire ses dossiers
@@ -4906,35 +4935,17 @@ function ficheVersMetre() {
   ajouter(desOuv('OUV-1877'), num(p.toiture.nbChevTrad));
   ajouter(desOuv('OUV-1875'), num(p.toiture.m2CroupeInd), undefined, null, SRC_QTE.surface_toiture_plan);
   ajouter(desOuv('OUV-1876'), num(p.toiture.m2CroupeTrad), undefined, null, SRC_QTE.surface_toiture);
-  // Accessoires de tuiles : faîtage, rives, noues, tuiles à douille (longueurs et nombres saisis dans la fiche)
-  if (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) {
-    ajouter(desOuv('OUV-1846'), num(p.toiture.faite));
-    ajouter(desOuv('OUV-1847'), num(p.toiture.rive));
-    ajouter(desOuv('OUV-1851'), ventilationNb(p));
-  }
-  // Accessoires d'ardoise, de zinc ou de bacs acier (faîtage, rives, égout, ventilation)
-  if (toitPente(p) && COUV_ACC[couvDe(p.toiture)]) {
-    const A = COUV_ACC[couvDe(p.toiture)];
-    ajouter(desOuv(A.faite), num(p.toiture.faite));
-    ajouter(desOuv(A.rive), num(p.toiture.rive));
-    if (A.egout) ajouter(desOuv(A.egout), num(p.toiture.egout));
-    if (A.ventil) ajouter(desOuv(A.ventil), ventilationNb(p));
-  }
-  // Noue en zinc : pour toutes les couvertures (saisie dans la fiche Charpente)
-  if (toitPente(p) && COUV_OUV[couvDe(p.toiture)]) ajouter(desOuv('OUV-1853'), num(p.toiture.noue));
-  // Accessoires saisis en nombre ou en ml (fiche Couverture)
-  if (toitPente(p) && /^tuile/.test(couvDe(p.toiture))) {
-    ajouter(desOuv('OUV-1849'), num(p.toiture.nbFronton));
-    ajouter(desOuv('OUV-1850'), num(p.toiture.nbChatiere));
-    ajouter(desOuv('OUV-1852'), num(p.toiture.nbDemiTuile));
-  } else if (toitPente(p) && (num(p.toiture.nbFronton) > 0 || num(p.toiture.nbChatiere) > 0 || num(p.toiture.nbDemiTuile) > 0)) {
-    manquants.push('frontons, chatières et demi-tuiles : réservés aux couvertures en tuiles');
-  }
+  // Accessoires de couverture : l'ouvrage choisi dans chaque case (sinon celui de la couverture), quantité saisie dans la fiche
   if (toitPente(p)) {
-    ajouter(desOuv('OUV-1856'), num(p.toiture.nbAbergement));
-    ajouter(desOuv('OUV-1857'), num(p.toiture.nbSelle));
-    ajouter(desOuv('OUV-1854'), num(p.toiture.mlSolin));
-    ajouter(desOuv('OUV-1855'), num(p.toiture.mlCouloir));
+    for (const sl of COUV_SLOTS) {
+      const q = sl.qte(p); if (!(q > 0)) continue;
+      const id = accChoisi(p, sl);
+      // Égout sans ouvrage propre (tuiles) : la longueur sert aux gouttières, pas d'avertissement
+      if (!id) { if (p.toiture[sl.champ] !== 'aucun' && !sl.sansAvert) manquants.push(sl.lib + ' : ouvrage à choisir (bloc Couverture)'); continue; }
+      const o = BIB.ouvrages.find(x => x.id === id && !x.supprime);
+      if (!o) { manquants.push(sl.lib + ' : ouvrage introuvable dans la bibliothèque'); continue; }
+      ajouter(o.designation, q, sl.suffixe ? o.designation + sl.suffixe : undefined);
+    }
   }
   for (const x of menusCalcul(c)) {
     const o = x.m, q = x.nb, lieu = nomPiece(x.piece);
