@@ -2501,7 +2501,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : linéaire de doublage × hauteur sous plafond, moins la surface totale des menuiseries extérieures. Cloisons : linéaire de cloisons × hauteur sous plafond, moins une fois les portes de passage (nombre × 0,83 × 2,04) et une fois les façades de placard (largeur × hauteur sous plafond × unités), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
+    <p class="muted">Murs : linéaire de doublage × hauteur sous plafond, moins la surface totale des menuiseries extérieures. Cloisons : linéaire de cloisons × hauteur sous plafond, moins une fois les portes de passage (nombre × 0,83 × 2,04) et une fois les façades de placard (largeur × hauteur sous plafond × unités), le tout × 2 (deux faces). Total = murs + cloisons. Boiseries : portes de passage (nombre × 0,83 × 2,04) × 2 faces ; façades de placard seulement si elles sont en MDF à peindre (le mélaminé ne se peint pas). Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
@@ -2512,7 +2512,7 @@ function renderPeinture() {
       ${selCrayon('pei-murs-ouv', 'Peinture : murs', `<select data-pei="murs|ouv" style="flex:1;min-width:0">${optPei(/^Peinture (acrylique )?murs/i, q.murs.ouv, 'pei-murs-ouv', 'Peinture : murs')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Portes et placards</strong>
-      <span style="font-size:13px">Surface des portes de passage et façades de placard : ${fmt(portesFacadesBrutM2(c))} m² × 2 = ${fmt(portesFacadesBrutM2(c) * 2)} m² (deux faces)</span>
+      <span style="font-size:13px">Portes de passage : ${portesPeinture(c).txt} = ${fmt(Math.round(portesPeinture(c).m2 * 100) / 100)} m² × 2 = ${fmt(Math.round(portesPeinture(c).m2 * 200) / 100)} m² (deux faces). Façades de placard : peintes seulement en MDF à peindre.</span>
       ${selCrayon('pei-portesFacades-ouv', 'Peinture : portes et placards', `<select data-pei="portesFacades|ouv" style="flex:1;min-width:0">${optPei(/^Peinture/i, q.portesFacades.ouv, 'pei-portesFacades-ouv', 'Peinture : portes et placards')}</select>`)}</div>
     <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center">
       <strong style="font-size:13px;min-width:120px">Plafond</strong>
@@ -2555,12 +2555,24 @@ function genererPeinture(c) {
       ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – ${mursTxt} − menuiseries extérieures ${fmt(r2(menus))} m² = ${fmt(r2(murNet))} m² ; ${cloisTxt} − portes (${pP.txt} = ${fmt(r2(portes))} m²) − façades (${fP.txt || 'aucune'} = ${fmt(r2(facades))} m²) = ${fmt(cloisNet)} m² × 2 faces = ${fmt(cloisDouble)} m²`);
     }
   }
-  // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
-  const pf = portesFacadesBrutM2(c);
-  if (pf > 0) {
-    const o = BIB.ouvrages.find(x => x.id === q.portesFacades.ouv && !x.supprime);
-    if (!o) manque.push('portes et placards');
-    else ajoute(o, { nombre: '1', cote1: String(pf * 2), cote2: '1' }, `${o.designation} – portes et façades de placard ${fmt(pf)} m² × 2`);
+  // Boiseries et menuiseries : portes de passage (nombre × 0,83 × 2,04 × 2 faces).
+  // Façades de placard : seulement celles en panneau MDF à peindre (le mélaminé et les miroirs ne se peignent pas).
+  {
+    const pP = portesPeinture(c);
+    const fac = [];
+    for (const pc of piecesNvDe(c)) for (const f of (pc.facades || [])) if (f.structure === 'mdf' && num(f.l) > 0 && num(f.h) > 0) fac.push(f);
+    const facM2 = fac.reduce((a, f) => a + num(f.l) / 100 * num(f.h) / 100 * (num(f.nb) || 1), 0);
+    const total = pP.m2 * 2 + facM2 * 2;
+    if (total > 0) {
+      const o = BIB.ouvrages.find(x => x.id === q.portesFacades.ouv && !x.supprime);
+      if (!o) manque.push('portes et placards');
+      else {
+        const r2 = x => Math.round(x * 100) / 100;
+        let txt = `portes de passage (${pP.txt} = ${fmt(r2(pP.m2))} m²) × 2 faces = ${fmt(r2(pP.m2 * 2))} m²`;
+        if (fac.length) txt += ` ; façades MDF à peindre (${fac.map(f => `(${fmt(num(f.l) / 100)} × ${fmt(num(f.h) / 100)}) × ${fmt(num(f.nb) || 1)}`).join(' + ')} = ${fmt(r2(facM2))} m²) × 2 faces = ${fmt(r2(facM2 * 2))} m²`;
+        ajoute(o, { nombre: '1', cote1: String(r2(pP.m2 * 2) + r2(facM2 * 2)), cote2: '1' }, `${o.designation} – ${txt}`);
+      }
+    }
   }
   const m2 = num(q.plafond.m2) || surfacePiecesPlafond(c);
   if (m2 > 0) {
