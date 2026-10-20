@@ -2462,13 +2462,12 @@ function peiMursDetail(c) {
   const pl = platNvDe(c);
   const h = peiHauteur(c) || num(pl.hauteur);
   const hD = h;   // même hauteur que celle du bloc peinture (ou de la plâtrerie à défaut)
-  // Murs : linéaire des murs périphériques du configurateur (à défaut, linéaire de doublage de la plâtrerie)
-  const mlPeri = (projetDe(c).murs || []).filter(m => (m.cat || 'peri') === 'peri').reduce((a, m) => a + num(m.longueur), 0);
-  const mlD = mlPeri > 0 ? mlPeri : num(pl.doub.ml), mlC = num(pl.cloi.ml);
+  // Murs : linéaire de doublage de la plâtrerie
+  const mlD = num(pl.doub.ml), mlC = num(pl.cloi.ml);
   const m2D = num(pl.doub.m2), m2C = num(pl.cloi.m2);
   const surfD = mlD > 0 ? mlD * hD : m2D;
   const surfC = mlC > 0 ? mlC * h : m2C;
-  return { h, hD, mlD, mlC, surfD, surfC, srcD: mlPeri > 0 ? 'mur périphérique' : 'doublage' };
+  return { h, hD, mlD, mlC, surfD, surfC, srcD: 'doublage' };
 }
 // Peinture des cloisons : portes = nombre × 0,83 × 2,04 ; façades = largeur × hauteur sous plafond (bloc peinture) × unités
 function portesPeinture(c) {
@@ -2502,7 +2501,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : linéaire des murs périphériques × hauteur sous plafond, moins la surface totale des menuiseries extérieures. Cloisons : linéaire de cloisons × hauteur sous plafond, moins une fois les portes de passage (nombre × 0,83 × 2,04) et une fois les façades de placard (largeur × hauteur sous plafond × unités), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
+    <p class="muted">Murs : linéaire de doublage × hauteur sous plafond, moins la surface totale des menuiseries extérieures. Cloisons : linéaire de cloisons × hauteur sous plafond, moins une fois les portes de passage (nombre × 0,83 × 2,04) et une fois les façades de placard (largeur × hauteur sous plafond × unités), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
