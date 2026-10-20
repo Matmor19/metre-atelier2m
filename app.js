@@ -11,7 +11,8 @@ const PAGE = document.body.dataset.page || 'saisie';
     table.metre th.num,table.metre td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
     table.metre td.detail{font-size:12.5px;color:var(--mut)}
     table.metre td.act{text-align:center;padding-left:0;padding-right:4px}
-    table.metre tr.lot td{background:#E07838;color:#fff;font-weight:700;font-size:13px;padding:8px;text-transform:uppercase;letter-spacing:.02em}
+    table.metre tr.lot td{background:#E07838;color:#fff;font-weight:700;font-size:15px;padding:12px 10px;text-transform:uppercase;letter-spacing:.02em;border-top:4px solid #8a3f12}
+    table.metre tr.lot-sep td{height:34px;padding:0;background:transparent;border:none}
     table.metre tr.lot .muted{font-weight:400;color:#fff;opacity:.9;text-transform:none}
     @media print{button[data-desig]{display:none !important}}
     table.metre tr.lot .poignee{color:#fff}
@@ -1201,6 +1202,7 @@ function renderMetre() {
     const vide = ls.length === 0;
     const aGen = !!genDuLot(lotId);
     const coche = aGen && genActif(courantId, lotId);
+    if (i > 0) h += `<tr class="lot-sep" aria-hidden="true"><td colspan="${nc}"></td></tr>`;   // espace marqué entre deux lots
     h += `<tr class="lot" data-lot="${esc(lotId)}"><td colspan="${nc}"><span class="lotnum">${String(i + 1).padStart(2, '0')}</span> ${esc(lot ? lot.nom : lotId)}
       <span class="muted">(${vide ? 'aucune ligne' : ls.length + ' ligne' + (ls.length > 1 ? 's' : '')})</span>
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
@@ -5556,7 +5558,8 @@ function htmlImpression(d, logo, pg) {
   const surf = cl.surf ? `${cl.surf} m²` : '';
   let corps = '';
   const nc = d.avecPrix ? 7 : 5;
-  for (const lot of d.lots) {
+  for (const [iLot, lot] of d.lots.entries()) {
+    if (iLot > 0) corps += `<tr class="lot-sep"><td colspan="${nc}"></td></tr>`;
     corps += `<tr class="lot"><td colspan="${nc}">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     { const rc = recapCharpenteHtml(lot.id); if (rc) corps += `<tr class="gen"><td colspan="${nc}">${rc}</td></tr>`; }
@@ -5604,7 +5607,10 @@ function htmlImpression(d, logo, pg) {
   table.metre td.n { font-weight: 700; color: #E07838; white-space: nowrap; }
   table.metre td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
   table.metre td.det { color: #6b6b6b; font-size: 8.5pt; }
-  table.metre tr.lot td { background: #f4f4f4; font-weight: 700; border-bottom: 1px solid #E07838; padding-top: 3mm; }
+  table.metre tr.lot td { background: #E07838; color: #fff; font-weight: 700; font-size: 10.5pt; text-transform: uppercase; letter-spacing: .02em; padding: 2.5mm 2mm; border-top: 1.2mm solid #8a3f12; border-bottom: none; }
+  table.metre tr.lot td .vide { color: #fff; opacity: .85; text-transform: none; }
+  table.metre tr.lot-sep td { height: 7mm; padding: 0; border: none; background: #fff; }
+  table.metre tr.lot { page-break-after: avoid; }
   table.metre tr { page-break-inside: avoid; }
   table.metre tr.gen { page-break-inside: auto; }
   table.metre tr.gen td { background: #fbfbfb; border-bottom: none; padding: 2mm 2mm 3mm; font-size: 8.5pt; }
