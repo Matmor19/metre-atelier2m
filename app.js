@@ -4307,8 +4307,8 @@ function ficheRendre() {
             ${champsStructure(toit, 'data-k="toit"')}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Pénétrations, chevêtres et croupes</div>
-            ${champ('Pénétration de toiture en charpente industrielle (m² projeté au sol)', inp('data-k="toit" data-champ="m2PenetInd" inputmode="decimal"', toit.m2PenetInd))}
-            ${champ('Pénétration de toiture en charpente traditionnelle, noue structurelle (ml)', inp('data-k="toit" data-champ="mlPenetTrad" inputmode="decimal"', toit.mlPenetTrad))}
+            ${champ('Pénétration de toiture en charpente industrielle (forfait : nombre de pénétrations)', inp('data-k="toit" data-champ="nbPenetInd" inputmode="numeric" placeholder="ex. 1"', toit.nbPenetInd))}
+            ${champ('Pénétration de toiture en charpente traditionnelle (forfait : nombre de pénétrations)', inp('data-k="toit" data-champ="nbPenetTrad" inputmode="numeric" placeholder="ex. 1"', toit.nbPenetTrad))}
             ${champ('Chevêtre sur charpente industrielle en fermettes (nombre)', inp('data-k="toit" data-champ="nbChevInd" inputmode="decimal"', toit.nbChevInd))}
             ${champ('Grand chevêtre sur charpente industrielle, trémie d\'escalier (nombre)', inp('data-k="toit" data-champ="nbGrandChevInd" inputmode="decimal"', toit.nbGrandChevInd))}
             ${champ('Chevêtre sur charpente traditionnelle (nombre)', inp('data-k="toit" data-champ="nbChevTrad" inputmode="decimal"', toit.nbChevTrad))}
@@ -4898,8 +4898,9 @@ function ficheVersMetre() {
     });
   }
   // Pénétrations (m² ou ml), chevêtres (u) et croupes (m²) saisis dans la fiche Charpente
-  ajouter(desOuv('OUV-1871'), num(p.toiture.m2PenetInd));
-  ajouter(desOuv('OUV-1872'), num(p.toiture.mlPenetTrad));
+  // Pénétrations : au forfait (une par pénétration) ; la noue se compte en couverture
+  ajouter(desOuv('OUV-1871'), num(p.toiture.nbPenetInd), undefined, { nombre: String(num(p.toiture.nbPenetInd)) });
+  ajouter(desOuv('OUV-1872'), num(p.toiture.nbPenetTrad), undefined, { nombre: String(num(p.toiture.nbPenetTrad)) });
   ajouter(desOuv('OUV-1873'), num(p.toiture.nbChevInd));
   ajouter(desOuv('OUV-1874'), num(p.toiture.nbGrandChevInd));
   ajouter(desOuv('OUV-1877'), num(p.toiture.nbChevTrad));

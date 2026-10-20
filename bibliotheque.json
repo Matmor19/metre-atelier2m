@@ -30696,37 +30696,33 @@
       "id": "OUV-1871",
       "lot": "charpente-structure-bois",
       "designation": "Pénétration de toiture en charpente industrielle",
-      "unite": "m²",
+      "unite": "forfait",
       "type": "commun",
       "saisie": "metre",
       "champs": [
         {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        },
-        {
-          "cle": "cote2",
-          "libelle": "Largeur (m)"
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 2,
-      "detail": "Réalisation structurelle de la rencontre entre un toit secondaire et un toit principal incliné à sens inverse ou perpendiculaire. L'ouvrage comprend : la fourniture et la pose d'un kit de fermettes de pénétration (fermettes biaisées ou demi-fermettes dégressives) venant s'implanter directement sur les arbalétriers de la charpente principale sous-jacente. Sont inclus obligatoirement : le renforcement (doublage) des fermettes principales recevant la charge, les sabots métalliques, les lisses de triangulation, le liaisonnement mécanique continu au croisement des deux toits et les échafaudages de sécurité. (Unité : m² projeté au sol de la zone imbriquée)"
+      "version": 3,
+      "detail": "Réalisation structurelle de la rencontre entre un toit secondaire et un toit principal incliné à sens inverse ou perpendiculaire. L'ouvrage comprend : la fourniture et la pose d'un kit de fermettes de pénétration (fermettes biaisées ou demi-fermettes dégressives) venant s'implanter directement sur les arbalétriers de la charpente principale sous-jacente. Sont inclus obligatoirement : le renforcement (doublage) des fermettes principales recevant la charge, les sabots métalliques, les lisses de triangulation, le liaisonnement mécanique continu au croisement des deux toits et les échafaudages de sécurité. (Unité : forfait par pénétration)"
     },
     {
       "id": "OUV-1872",
       "lot": "charpente-structure-bois",
       "designation": "Pénétration de toiture en charpente traditionnelle (Noue structurelle lourde)",
-      "unite": "ml",
+      "unite": "forfait",
       "type": "commun",
       "saisie": "metre",
       "champs": [
         {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 2,
-      "detail": "Façonnage sur site de l'intersection de deux pans de toit à sens inverse ou perpendiculaires, formant un angle rentrant. L'ouvrage comprend : la taille sur mesure, le délardement et le levage de la panne de noue ou du chevron de noue de forte section en bois massif traité Classe 2, servant de pivot structurel. Inclus le taillage complexe en sifflet (coupes d'onglet) de toutes les pannes et de tous les chevrons courants venant mourir sur cette pièce maîtresse, le clouage renforcé, les ferrures structurelles de liaison d'ingénierie et le réglage géométrique de la ligne d'intersection. (Unité : ml de noue de rencontre)"
+      "version": 3,
+      "detail": "Façonnage sur site de l'intersection de deux pans de toit à sens inverse ou perpendiculaires, formant un angle rentrant. L'ouvrage comprend : la taille sur mesure, le délardement et le levage de la panne de noue ou du chevron de noue de forte section en bois massif traité Classe 2, servant de pivot structurel. Inclus le taillage complexe en sifflet (coupes d'onglet) de toutes les pannes et de tous les chevrons courants venant mourir sur cette pièce maîtresse, le clouage renforcé, les ferrures structurelles de liaison d'ingénierie et le réglage géométrique de la ligne d'intersection. (Unité : forfait par pénétration)"
     },
     {
       "id": "OUV-1873",
@@ -30817,6 +30813,6 @@
       "detail": "Façonnage sur mesure d'une enchevêtrure au sein d'un plan de chevrons ou de pannes traditionnels. L'ouvrage comprend : le lignage, la découpe des chevrons ou morceaux de pannes interrompus, la fourniture et la pose des pièces d'encadrement (chevêtres horizontaux et chevronnets de rive de section identique ou renforcée par rapport aux bois courants), l'assemblage par tenon-mortaise traditionnel ou par quincaillerie structurelle lourde (étriers inox/acier galvanisé), et les ajustements d'aplomb. (Unité : u)"
     }
   ],
-  "revision": 137,
+  "revision": 138,
   "prochainNumero": 1878
 }
