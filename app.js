@@ -3460,19 +3460,26 @@ const COUV_OUV = { 'tuile-canal': 'OUV-1842', 'tuile-plate-tc': 'OUV-1843', 'tui
 // Accessoires de couverture au choix : pour chaque case, la liste des ouvrages préparés (modifiable au crayon)
 // et l'ouvrage pris par défaut selon la couverture (tuile, ardoise, zinc, bacs acier). « aucun » = rien au métré.
 const COUV_SLOTS = [
-  { champ: 'accFaite', commun: true, lib: 'Faîtage', qte: p => num(p.toiture.faite), base: ['OUV-1846', 'OUV-1861', 'OUV-1865', 'OUV-1868'], defaut: { tuile: 'OUV-1846', ardoise: 'OUV-1861', zinc: 'OUV-1865', 'bac-acier': 'OUV-1868' } },
+  { champ: 'accFaite', commun: true, lib: 'Faîtage', qte: p => num(p.toiture.faite), base: ['OUV-1846', 'OUV-1895', 'OUV-1861', 'OUV-1865', 'OUV-1868'], defaut: { tuile: 'OUV-1846', ardoise: 'OUV-1861', zinc: 'OUV-1865', 'bac-acier': 'OUV-1868' } },
   { champ: 'accArete', commun: true, lib: 'Arêtiers', suffixe: ' – arêtiers', qte: p => num(p.toiture.arete), base: ['OUV-1846', 'OUV-1861', 'OUV-1865', 'OUV-1868'], defaut: { tuile: 'OUV-1846', ardoise: 'OUV-1861', zinc: 'OUV-1865', 'bac-acier': 'OUV-1868' } },
-  { champ: 'accRive', commun: true, lib: 'Rives', qte: p => num(p.toiture.rive), base: ['OUV-1847', 'OUV-1878', 'OUV-1879', 'OUV-1880', 'OUV-1881', 'OUV-1848', 'OUV-1862', 'OUV-1866', 'OUV-1869'], defaut: { tuile: 'OUV-1847', ardoise: 'OUV-1862', zinc: 'OUV-1866', 'bac-acier': 'OUV-1869' } },
+  { champ: 'accRive', commun: true, lib: 'Rives', qte: p => num(p.toiture.rive), base: ['OUV-1847', 'OUV-1878', 'OUV-1879', 'OUV-1880', 'OUV-1881', 'OUV-1891', 'OUV-1896', 'OUV-1848', 'OUV-1862', 'OUV-1866', 'OUV-1869'], defaut: { tuile: 'OUV-1847', ardoise: 'OUV-1862', zinc: 'OUV-1866', 'bac-acier': 'OUV-1869' } },
   { champ: 'accEgout', commun: true, lib: 'Égout', sansAvert: true, qte: p => num(p.toiture.egout), base: ['OUV-1863', 'OUV-1867', 'OUV-1870'], defaut: { ardoise: 'OUV-1863', zinc: 'OUV-1867', 'bac-acier': 'OUV-1870' } },
   { champ: 'accNoue', commun: true, lib: 'Noues', qte: p => num(p.toiture.noue), base: ['OUV-1853'], defaut: { tout: 'OUV-1853' } },
-  { champ: 'accVentil', lib: 'Tuiles à douille / sorties de toit', suffixe: ' – sorties de toit', qte: p => nbSortiesToit(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
-  { champ: 'accChatiere', lib: 'Chatières', qte: p => num(p.toiture.nbChatiere), base: ['OUV-1850', 'OUV-1864'], defaut: { tuile: 'OUV-1850', ardoise: 'OUV-1864', zinc: 'OUV-1864' } },
-  { champ: 'accAboutRive', lib: 'Abouts de rive', qte: p => num(p.toiture.nbAboutRive), base: ['OUV-1882'], defaut: {} },
+  { champ: 'accVentil', lib: 'Tuiles à douille / sorties de toit', suffixe: ' – sorties de toit', qte: p => nbSortiesToit(p), base: ['OUV-1851', 'OUV-1893', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
+  { champ: 'accChatiere', lib: 'Chatières', qte: p => num(p.toiture.nbChatiere), base: ['OUV-1850', 'OUV-1894', 'OUV-1864'], defaut: { tuile: 'OUV-1850', ardoise: 'OUV-1864', zinc: 'OUV-1864' } },
+  { champ: 'accAboutRive', lib: 'Abouts de rive', qte: p => num(p.toiture.nbAboutRive), base: ['OUV-1882', 'OUV-1892'], defaut: {} },
   { champ: 'accFronton', lib: 'Frontons de faîtage', qte: p => num(p.toiture.nbFronton), base: ['OUV-1849'], defaut: { tuile: 'OUV-1849' } },
   { champ: 'accDemiTuile', lib: 'Demi-tuiles', qte: p => num(p.toiture.nbDemiTuile), base: ['OUV-1852'], defaut: { tuile: 'OUV-1852' } },
   { champ: 'accAbergement', lib: 'Abergements de cheminée', qte: p => num(p.toiture.nbAbergement), base: ['OUV-1856'], defaut: { tout: 'OUV-1856' } },
   { champ: 'accSelle', lib: 'Selles de tête de noue', qte: p => num(p.toiture.nbSelle), base: ['OUV-1857'], defaut: { tout: 'OUV-1857' } },
   { champ: 'accSolin', lib: 'Solins', qte: p => num(p.toiture.mlSolin), base: ['OUV-1854'], defaut: { tout: 'OUV-1854' } },
+  { champ: 'accSousFaitiere', commun: true, lib: 'Sous-faîtières (sur la longueur de faîtage)', qte: p => num(p.toiture.faite), base: ['OUV-1890'] },
+  { champ: 'accClosoir', commun: true, lib: 'Closoirs (sur la longueur de faîtage)', qte: p => num(p.toiture.faite), base: ['OUV-1901'] },
+  { champ: 'accRaccordChassis', lib: 'Raccords de châssis de toit', qte: p => num(p.toiture.nbRaccordChassis), base: ['OUV-1897'] },
+  { champ: 'accRessaut', lib: 'Ressauts ou lignes de bris (zinc)', qte: p => num(p.toiture.mlRessaut), base: ['OUV-1898'] },
+  { champ: 'accCouvreJoint', lib: 'Couvre-joints de tasseau (zinc)', qte: p => num(p.toiture.mlCouvreJoint), base: ['OUV-1899'] },
+  { champ: 'accPattes', lib: 'Pattes de fixation (zinc)', qte: p => num(p.toiture.nbPattes), base: ['OUV-1900'] },
+  { champ: 'accVis', lib: 'Vis et cavaliers (bacs acier)', qte: p => num(p.toiture.nbVis), base: ['OUV-1902'] },
   { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } },
   // Zinguerie : gouttières et descentes (toits en pente comme toits terrasses)
   { champ: 'accGouttiere', commun: true, lib: 'Gouttières', zing: true, qte: p => num(p.toiture.egout), base: ['OUV-0460', 'OUV-0461', 'OUV-0107', 'OUV-0108'], ancien: { cle: 'gouttiere', map: { zinc: 'OUV-0460', alu: 'OUV-0108', pvc: 'OUV-0107' } } },
@@ -3487,7 +3494,7 @@ const COUV_SLOTS = [
 ];
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
-  'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
+  'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1897', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
 // Avant-toits (et génoise) : traités en tête de la partie Zinguerie du lot
 function estAvantToit(l) { return AVANT_TOIT_BASE.includes(l.ouvrage) || /^avant-toit|^génoise/i.test(l.designation || ''); }
 function estZinguerie(l) { if (l.groupeCZ) return l.groupeCZ === 'z'; if (estAvantToit(l)) return true; return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
@@ -4646,6 +4653,11 @@ function ficheRendre() {
             ${champ('Selle en plomb de tête de noue (nombre)', inp('data-k="toit" data-champ="nbSelle" inputmode="decimal"', toit.nbSelle))}
             ${champ('Bande de solin en zinc (ml)', inp('data-k="toit" data-champ="mlSolin" inputmode="decimal"', toit.mlSolin))}
             ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}
+            ${champ('Raccords de châssis de toit (nombre)', inp('data-k="toit" data-champ="nbRaccordChassis" inputmode="numeric"', toit.nbRaccordChassis || ''))}
+            ${champ('Ressauts ou lignes de bris en zinc (ml)', inp('data-k="toit" data-champ="mlRessaut" inputmode="decimal"', toit.mlRessaut || ''))}
+            ${champ('Couvre-joints de tasseau en zinc (ml)', inp('data-k="toit" data-champ="mlCouvreJoint" inputmode="decimal"', toit.mlCouvreJoint || ''))}
+            ${champ('Pattes de fixation zinc (nombre)', inp('data-k="toit" data-champ="nbPattes" inputmode="numeric"', toit.nbPattes || ''))}
+            ${champ('Vis et cavaliers pour bacs acier (nombre)', inp('data-k="toit" data-champ="nbVis" inputmode="numeric"', toit.nbVis || ''))}
             <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Ouvrages utilisés pour les accessoires</div>
             <div style="grid-column:1/-1;font-size:12px;color:#6b5a7a;margin-bottom:2px">Rien n'est choisi automatiquement : choisissez l'ouvrage de chaque accessoire, ou « Aucun ». Le crayon ajoute ou retire des ouvrages de la bibliothèque dans chaque liste.</div>
             ${COUV_SLOTS.filter(sl => !sl.zing).map(sl => listeAcc(sl)).join('')}`}
