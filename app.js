@@ -3613,7 +3613,27 @@ const TENDANCE_APPUIS = [
   ...[70, 105, 110, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240].map(L => [L, 2]),
   ...[250, 280, 300, 360].map(L => [L, 3])
 ].sort((a, b) => a[0] - b[0]);
-const TENDANCE_SEUIL_L = 93;   // seuil en pièces de 93 cm (fiche technique) ; porte plus large = plusieurs pièces
+// Seuils Tendance : longueurs disponibles (cm), de la plus courte à la plus longue
+const TENDANCE_SEUILS = [90, 110, 130, 150, 190, 220, 250];
+// Seuil(s) pour une porte de largeur Lcm : le moins de pièces possible, puis le moins de perte, puis le moins de longueurs différentes
+function decoupeSeuilTendance(Lcm) {
+  const Ls = TENDANCE_SEUILS;
+  for (let n = 1; n <= 8; n++) {
+    let best = null;
+    const essai = (k, depuis, combi, tot) => {
+      if (k === n) {
+        if (tot < Lcm) return;
+        const diff = new Set(combi).size;
+        if (!best || tot < best.tot || (tot === best.tot && diff < best.diff)) best = { pieces: combi.slice(), tot, diff };
+        return;
+      }
+      for (let i = depuis; i < Ls.length; i++) { combi.push(Ls[i]); essai(k + 1, i, combi, tot + Ls[i]); combi.pop(); }
+    };
+    essai(0, 0, [], 0);
+    if (best) return best;
+  }
+  return { pieces: [], tot: 0 };
+}
 function estTendanceAppui(o) { return !!o && (o.gamme === 'tendance-appui' || /^Appui de fenêtre .*gamme Tendance/i.test(o.designation)); }
 function estTendanceSeuil(o) { return !!o && (o.gamme === 'tendance-seuil' || /^Seuil .*gamme Tendance/i.test(o.designation)); }
 // Appui pour une baie de largeur Lcm : plus petite longueur de la gamme qui couvre la baie ; au-delà de 360 cm, 4 pièces (longueur arrondie à 10 cm)
@@ -5344,18 +5364,24 @@ function ficheVersMetre() {
       for (const x of portesExt) if (x.l > 0) parLargeurP[x.l] = (parLargeurP[x.l] || 0) + x.n;
       const baseS = oS.designation.replace(/\s*\([^)]*\)/g, '');
       if (estTendanceSeuil(oS)) {
-        // Gamme Tendance (fiche technique) : seuil en pièces de 93 cm ; une porte plus large reçoit 2, 3… pièces bout à bout
-        const parSeuil = {};
+        // Gamme Tendance : pour chaque largeur de porte, la combinaison de seuils optimisée (moins de pièces, moins de perte)
+        // Une ligne par longueur de seuil, quantité = nombre de pièces de cette longueur
+        const parLong = {};
         for (const [Lcm, n] of Object.entries(parLargeurP)) {
-          const pieces = Math.max(1, Math.ceil(Number(Lcm) / TENDANCE_SEUIL_L));
-          (parSeuil[pieces] = parSeuil[pieces] || { pieces, n: 0, larg: [] }).n += n;
-          parSeuil[pieces].larg.push(fmt(Number(Lcm)) + ' cm');
+          const d = decoupeSeuilTendance(Number(Lcm));
+          const comp = {};
+          d.pieces.forEach(x => { comp[x] = (comp[x] || 0) + 1; });
+          for (const [lg, k] of Object.entries(comp)) {
+            const e = (parLong[lg] = parLong[lg] || { lg: Number(lg), n: 0, portes: [] });
+            e.n += k * n;
+            const assemb = d.pieces.length > 1 ? ' (' + d.pieces.join(' + ') + ' cm)' : '';
+            e.portes.push(`${n} porte${n > 1 ? 's' : ''} de ${fmt(Number(Lcm))} cm${assemb}`);
+          }
         }
-        for (const sx of Object.values(parSeuil).sort((x, y) => x.pieces - y.pieces)) {
-          const lib = sx.pieces > 1 ? `longueur ${sx.pieces * TENDANCE_SEUIL_L} cm, en ${sx.pieces} pièces de ${TENDANCE_SEUIL_L} cm` : `longueur ${TENDANCE_SEUIL_L} cm, en 1 pièce`;
-          ajouter(oS.designation, sx.n, `${baseS} – ${lib}`, { nombre: String(sx.n) }, null);
+        for (const e of Object.values(parLong).sort((x, y) => x.lg - y.lg)) {
+          ajouter(oS.designation, e.n, `${baseS} – longueur ${e.lg} cm`, { nombre: String(e.n) }, null);
           const lS = L[L.length - 1];
-          if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = `${sx.n} porte${sx.n > 1 ? 's' : ''} de ${sx.larg.join(', ')} de large`; }
+          if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = e.portes.join(' ; '); }
         }
       }
       // Autres seuils : une ligne par largeur de porte, comme les appuis
