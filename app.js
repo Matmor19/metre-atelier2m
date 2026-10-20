@@ -746,10 +746,21 @@ function dessinerPanneauLot() {
 }
 /* ============ Glisser-déposer des lots (souris et tactile) ============ */
 // glisse = { type: 'lot', lot } (un lot entier) ou { type: 'ligne', uid } (un ouvrage du métré)
-let glisse = null;
+let glisse = null, gLigneX = null, gLigneY = null, gLigneDefil = null;
+// Ligne visée sous le pointeur. Les lignes de généralités, récapitulatif, sous-titre ou espace entre lots
+// renvoient vers la ligne voisine (sinon le dépôt était refusé) ; une barre fixe au-dessus du tableau ne bloque plus.
 function cibleSous(x, y) {
   const el = document.elementFromPoint(x, y);
-  return el ? el.closest('tr.lot[data-lot], tr.ligne[data-uid]') : null;
+  let tr = el ? el.closest('table.metre tr') : null;
+  if (!tr) tr = [...document.querySelectorAll('table.metre tr')].find(t => { const r = t.getBoundingClientRect(); return r.height > 0 && y >= r.top && y <= r.bottom; }) || null;
+  if (!tr || tr.closest('thead')) return null;
+  const ok = t => t && t.matches && t.matches('tr.lot[data-lot], tr.ligne[data-uid]');
+  if (ok(tr)) return tr;
+  // Espace entre deux lots : fin du lot du dessus
+  if (tr.classList.contains('lot-sep')) { let q = tr.previousElementSibling; while (q && !ok(q)) q = q.previousElementSibling; return q; }
+  let n = tr.nextElementSibling;
+  while (n && !ok(n)) n = n.nextElementSibling;
+  return n;
 }
 function marquerCible(tr, y) {
   document.querySelectorAll('.cible-avant, .cible-apres').forEach(t => t.classList.remove('cible-avant', 'cible-apres'));
@@ -765,19 +776,30 @@ function marquerCible(tr, y) {
 }
 document.addEventListener('pointerdown', e => {
   const p = e.target.closest('[data-glisser], [data-glisser-ligne]');
-  if (!p || PAGE !== 'tableau') return;
+  // Poignée du métré, quelle que soit la page (application ou page du métré seule)
+  if (!p || !p.closest('#tableMetre')) return;
   e.preventDefault();
   glisse = p.dataset.glisserLigne
     ? { type: 'ligne', uid: p.dataset.glisserLigne }
     : { type: 'lot', lot: p.dataset.glisser };
   document.body.classList.add('en-glisse');
+  gLigneX = e.clientX; gLigneY = e.clientY;
+  // Défilement automatique près des bords : on peut déposer une ligne plus haut ou plus bas que l'écran
+  clearInterval(gLigneDefil);
+  gLigneDefil = setInterval(() => {
+    if (!glisse || gLigneY == null) return;
+    const pas = gLigneY < 110 ? -16 : (gLigneY > window.innerHeight - 90 ? 16 : 0);
+    if (pas) { window.scrollBy(0, pas); marquerCible(cibleSous(gLigneX, gLigneY), gLigneY); }
+  }, 30);
 });
 document.addEventListener('pointermove', e => {
   if (!glisse) return;
+  gLigneX = e.clientX; gLigneY = e.clientY;
   marquerCible(cibleSous(e.clientX, e.clientY), e.clientY);
 });
 function finGlisse(e) {
   if (!glisse) return;
+  clearInterval(gLigneDefil); gLigneDefil = null; gLigneX = gLigneY = null;
   const g = glisse;
   const tr = e.type === 'pointerup' ? cibleSous(e.clientX, e.clientY) : null;
   const apres = !!tr && tr.classList.contains('cible-apres');
@@ -872,6 +894,13 @@ function deplacerLigne(uid, tr, apres) {
   }
   src.lot = lotCible;
   reste.splice(idx, 0, src);
+  // Lot couverture-zinguerie : la ligne déposée rejoint la partie (Couverture ou Zinguerie) où on l'a posée
+  if (lotCible === 'couverture-zinguerie') {
+    const avant = reste.slice(0, idx).filter(l => l.lot === lotCible).pop();
+    const apresL = reste.slice(idx + 1).find(l => l.lot === lotCible);
+    const voisin = avant || apresL;
+    src.groupeCZ = voisin ? (estZinguerie(voisin) ? 'z' : 'c') : 'c';
+  }
   sauverLignes(courantId, reste);
   renderMetre();
 }
@@ -3315,7 +3344,7 @@ const COUV_SLOTS = [
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
   'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
-function estZinguerie(l) { return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
+function estZinguerie(l) { if (l.groupeCZ) return l.groupeCZ === 'z'; return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
 // Couverture d'abord, zinguerie ensuite (ordre conservé dans chaque partie)
 function ordonnerCouvZing(L) {
   const autres = [], couv = [], zing = [];
