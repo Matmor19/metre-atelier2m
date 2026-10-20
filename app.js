@@ -103,7 +103,13 @@ function alignerFondations(L) {
       const ligne = Object.assign({}, existant || {}, { uid: existant ? existant.uid : uid(), lot: bet.lot, ouvrage: bet.id, designation: bet.designation, unite: bet.unite,
         valeurs: JSON.parse(JSON.stringify(f.valeurs || {})), quantite: f.quantite, surface: null, prix: 'moyen', cree: (existant && existant.cree) || new Date().toISOString(),
         vrd: f.uid, projet: undefined, qteAuto: undefined });
-      out = existant ? out.map(x => x === existant ? ligne : x) : out.concat([ligne]);
+      if (existant) out = out.map(x => x === existant ? ligne : x);
+      else {
+        // Nouvelle semelle : placée selon l'ordre type du lot (semelles filantes en tête du gros œuvre)
+        const ra = rangModele(ligne);
+        const j = ra !== null ? out.findIndex(x => x.lot === ligne.lot && rangModele(x) > ra) : -1;
+        if (j >= 0) out.splice(j, 0, ligne); else out = out.concat([ligne]);
+      }
     }
   }
   // Semelle dont la fouille a été supprimée : retirée
@@ -1074,6 +1080,61 @@ function remplacementConfig(L, o, precedent) {
   const ok = confirm('Cet ouvrage est déjà produit par le configurateur sur ce chantier. Remplacer cette ligne par votre saisie ? Le configurateur ne la recréera plus.\n\nOK = remplacer · Annuler = ne rien ajouter');
   return ok ? auto : false;
 }
+// Ordre type des lignes (modèle du chantier Kobuszynski, validé par Mathieu) pour le terrassement, la maçonnerie
+// et les menuiseries intérieures. Appliqué à la génération du métré et à l'arrivée de chaque nouvelle ligne ;
+// un déplacement fait à la main (glisser-déposer) est ensuite conservé.
+function murSoubDe(l) {
+  const c = chantiers.find(x => x.id === courantId);
+  const m = c && l.origine && l.origine.mur ? (projetDe(c).murs || []).find(x => x.id === l.origine.mur) : null;
+  return !!m && m.cat === 'soub';
+}
+function rangModele(l) {
+  const d = String(l.designation || '');
+  if (l.lot === 'terrassement-vrd') {
+    if (/décapage|terre végétale/i.test(d)) return 1;
+    if (/puits|massif|pleine masse|plateforme/i.test(d)) return 2;
+    if (/fouilles? en (tranchée|rigole)|tranchée pour semelles/i.test(d)) return 3;
+    if (/électri/i.test(d)) return 4;
+    if (/eau potable/i.test(d)) return 5;
+    if (/\bEU\b|\bEV\b|eaux usées/i.test(d)) return 6;
+    if (/\bEP\b|pluvial/i.test(d)) return 7;
+    return 50;
+  }
+  if (l.lot === 'gros-oeuvre') {
+    if (/semelles? filantes?/i.test(d)) return 1;
+    if (/semelles? isolées?|massif/i.test(d)) return 2;
+    if (/hydrofuge|imperméab|delta|nappe|drain|cunette|arase/i.test(d)) return 4;
+    if (murSoubDe(l) || /soubassement/i.test(d)) return 3;
+    if (/dallage|plancher|dalle|hourdis|terre-plein|vide sanitaire/i.test(d)) return 5;
+    if (/chaînage d.angle|harpe/i.test(d)) return 13;
+    if (/habillage des tableaux|modénature|tableaux de menuiseries/i.test(d)) return 12;
+    if (/linteau/i.test(d)) return 8;
+    if (/^appui/i.test(d)) return 9;
+    if (/^seuil/i.test(d)) return 10;
+    if (/chaînage/i.test(d)) return 7;
+    if (/^murs?\b|élévation|briques?|parpaing|aggloméré/i.test(d)) return 6;
+    if (/enduit|monocouche|crépi/i.test(d)) return 11;
+    return 50;
+  }
+  if (l.lot === 'menuiseries-interieures') {
+    if (/^bloc-porte/i.test(d) || /^bloc/.test(l.menBloc || '')) return 1;
+    if (/^façade de placard/i.test(d)) return 2;
+    return 50;
+  }
+  return null;
+}
+// Remet les lignes de ces lots dans l'ordre type (ordre d'origine gardé à rang égal)
+function ordonnerSelonModele(L) {
+  const res = L.slice();
+  for (const lot of ['terrassement-vrd', 'gros-oeuvre', 'menuiseries-interieures']) {
+    const idx = [];
+    res.forEach((l, i) => { if (l.lot === lot) idx.push(i); });
+    if (idx.length < 2) continue;
+    const tri = idx.map((i, k) => ({ l: res[i], k, r: rangModele(res[i]) })).sort((a, b) => (a.r - b.r) || (a.k - b.k));
+    idx.forEach((i, k) => { res[i] = tri[k].l; });
+  }
+  return res;
+}
 function majLignesDepuisConfigurateur(c) {
   // Jamais pendant une revue (la revue a sa propre collecte)
   if (!c || c.metreGele || _majConfigEnCours || _revueCollecte || !BIB) return;
@@ -1124,7 +1185,16 @@ function majLignesDepuisConfigurateur(c) {
     for (const a of ajouts) {
       const i = a.designation === 'Tableaux de menuiseries (2 côtés)'
         ? nouvelles.reduce((acc, x, k) => (x.ouvrage === a.ouvrage && x.lot === a.lot ? k : acc), -1) : -1;
-      if (i >= 0) nouvelles.splice(i + 1, 0, a); else nouvelles.push(a);
+      if (i >= 0) { nouvelles.splice(i + 1, 0, a); continue; }
+      // Ordre type : la nouvelle ligne se place avant la première ligne du lot de rang supérieur
+      const ra = rangModele(a);
+      if (ra !== null) {
+        const j = nouvelles.findIndex(x => x.lot === a.lot && rangModele(x) > ra);
+        if (j >= 0) { nouvelles.splice(j, 0, a); continue; }
+        const dern = nouvelles.reduce((acc, x, k) => (x.lot === a.lot ? k : acc), -1);
+        if (dern >= 0) { nouvelles.splice(dern + 1, 0, a); continue; }
+      }
+      nouvelles.push(a);
     }
     sauverLignes(c.id, nouvelles);
   } finally { _majConfigEnCours = false; }
@@ -1374,7 +1444,7 @@ function genererElec() {
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', auto: true, cree: new Date().toISOString() });
     nb++;
   }
-  sauverLignes(courantId, L);
+  sauverLignes(courantId, ordonnerSelonModele(L));
   renderMetre();
   let msg = nb + ' ligne(s) générée(s) : ' + r.circuits + ' circuits, ' + r.ddr + ' différentiel(s) 30 mA, tableau ' + r.tableau + '.';
   if (manquants.length) msg += ' Non trouvées dans la bibliothèque : ' + manquants.join(', ');
@@ -5184,7 +5254,7 @@ function ficheVersMetre() {
     }
     else if (nPortes > 0) ajouter(oS.designation, nPortes, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nPortes) }, null);
   }
-  sauverLignes(courantId, L);
+  sauverLignes(courantId, ordonnerSelonModele(L));
   renderMetre();
   let msg = nb + ' ligne(s) ajoutée(s) au métré.';
   if (manquants.length) msg += ' À compléter : ' + manquants.filter((d, i, t) => t.indexOf(d) === i).join(' ; ');
