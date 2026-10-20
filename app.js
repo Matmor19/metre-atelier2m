@@ -1364,7 +1364,7 @@ function renderMetre() {
     if (recapC) h += `<tr class="gen"><td colspan="${nc}">${recapC}</td></tr>`;
     const titres = titresAvantLignes(lotId, ls);
     for (const [ii, l] of ls.entries()) {
-      for (const t of titres[ii]) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
+      for (const t of titres[ii]) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;font-size:17px;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
@@ -6032,7 +6032,7 @@ function htmlImpression(d, logo, pg) {
   table.metre tr { page-break-inside: avoid; }
   table.metre tr.gen { page-break-inside: auto; }
   table.metre tr.gen td { background: #fbfbfb; border-bottom: none; padding: 2mm 2mm 3mm; font-size: 8.5pt; }
-  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
   .gen-s { color: #2b2b2b; margin-bottom: 0.5mm; }
@@ -6040,7 +6040,7 @@ function htmlImpression(d, logo, pg) {
   .gen-sec li { margin: 0 0 0.5mm; }
   .vide { font-weight: 400; color: #8a8a8a; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
-  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
   table.metre tr.tot td { font-weight: 700; border-top: 2px solid #E07838; border-bottom: none; padding-top: 3mm; }
 </style></head><body>
 <section class="garde">
@@ -6159,7 +6159,7 @@ function htmlParLot(d, type, logo) {
   .pied { margin-top: auto; border-top: 1px solid #ddd; padding-top: 4mm; color: #6b6b6b; font-size: 8.5pt; }
   .rappel { color: #8a8a8a; font-size: 8pt; margin-bottom: 3mm; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
-  table.metre tr.st td { background: #f3f6f9; font-weight: 600; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
   .gen-bloc { background: #fbfbfb; border-left: 3px solid #E07838; padding: 3mm 4mm; margin: 0 0 5mm; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
@@ -6436,10 +6436,10 @@ async function pdfCdpgfFormulaire() {
     const noms = [];
     lot.lignes.forEach((l, i) => {
       for (const t of l.titres) {
-        if (y - 18 < BAS) { nouvellePage(); enteteTable(); }
-        page.drawRectangle({ x: M, y: y - 16, width: LARG, height: 16, color: GRIS_CLAIR });
-        ecrire(t, M + 4, y - 11, 8.5, helvB, NOIR);
-        y -= 16;
+        if (y - 21 < BAS) { nouvellePage(); enteteTable(); }
+        page.drawRectangle({ x: M, y: y - 19, width: LARG, height: 19, color: GRIS_CLAIR });
+        ecrire(t, M + 4, y - 13.5, 10.5, helvB, NOIR);
+        y -= 19;
       }
       const des = decoupeTexte(l.designation, helvB, 8.5, C.des - 8);
       const det = [...(l.detail ? decoupeTexte(l.detail, helv, 7.2, C.des - 8) : []), ...(l.desc ? decoupeTexte(l.desc, helv, 7.2, C.des - 8) : [])];
@@ -6622,7 +6622,7 @@ async function exporterExcel() {
     style(ws2, 'A' + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F4F4F4' } } });
     for (const c of lettres.slice(1)) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
   }
-  for (const r of lignesTitre) for (const c of lettres) style(ws2, c + (r + 1), { font: { bold: true }, fill: { fgColor: { rgb: 'F3F6F9' } } });
+  for (const r of lignesTitre) for (const c of lettres) style(ws2, c + (r + 1), { font: { bold: true, sz: 13 }, fill: { fgColor: { rgb: 'F3F6F9' } } });
   for (const r of lignesLigne) {
     style(ws2, 'A' + (r + 1), { font: { bold: true, color: orange } });
     ws2['D' + (r + 1)].z = '#,##0.00';
