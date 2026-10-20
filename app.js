@@ -3112,6 +3112,7 @@ function toitureManquants(p) {
   const entame = t.charpente || t.type || t.couverture || num(t.surface) || num(t.surfCouv) || num(t.faite) || num(t.rive) || num(t.egout) || num(t.noue);
   if (!entame) return m;
   if (!t.charpente) m.push('type de charpente (bloc Charpente)');
+  else if (!FICHE_CHARP[charpenteDe(t)]) m.push('type de charpente « ' + t.charpente + ' » non relié au métré');
   if (!t.type) m.push('géométrie (bloc Charpente)');
   if (!(num(t.surface) > 0 || num(t.surfCouv) > 0)) m.push('surface au sol couverte (bloc Charpente, Surfaces et compléments)');
   if (!t.couverture) m.push('couverture (bloc Couverture)');
@@ -3131,7 +3132,24 @@ function surfacePlanToit(p) {
 }
 function couvDe(toit) {
   const v = toit.couverture || '';
-  return { tuiles: 'tuile-meca-tc', bac: 'bac-non-isole' }[v] || v;
+  const k = { tuiles: 'tuile-meca-tc', bac: 'bac-non-isole' }[v] || v;
+  if (COUV_OUV[k] || !k || !BIB) return k;
+  // Liste reliée à la bibliothèque : la valeur est la désignation de l'ouvrage choisi
+  const o = BIB.ouvrages.find(x => x.designation === k);
+  const cle = o && Object.keys(COUV_OUV).find(c => COUV_OUV[c] === o.id);
+  return cle || k;
+}
+// Type de charpente normalisé : la liste peut donner la clé (« traditionnelle ») ou la désignation d'un ouvrage de la bibliothèque
+function charpenteDe(toit) {
+  const v = (toit && toit.charpente) || '';
+  if (!v || FICHE_CHARP[v] || v === 'aucune') return v;
+  const o = BIB && BIB.ouvrages.find(x => x.designation === v);
+  if (o && o.id === 'OUV-1839') return 'fermette';
+  if (o && o.id === 'OUV-1840') return 'traditionnelle';
+  if (/terrasse/i.test(v)) return 'terrasse';
+  if (/industri|fermette/i.test(v)) return 'fermette';
+  if (/tradition/i.test(v)) return 'traditionnelle';
+  return v;
 }
 // Désignations de la bibliothèque utilisées pour générer les lignes
 const MENU_DESIG = {
@@ -3453,8 +3471,8 @@ function ctxQuantites(c) {
     couvertine: p.toiture.couvertine || '',
     ecran: p.toiture.ecran || '',
     iso_toit: p.toiture.isoToit || '',
-    charpente_variante: p.toiture.charpente === 'fermette' ? (p.toiture.type || '') + '|' + penteBande(p)
-      : (p.toiture.charpente === 'traditionnelle' ? 'traditionnelle' : 'aucune'),
+    charpente_variante: charpenteDe(p.toiture) === 'fermette' ? (p.toiture.type || '') + '|' + penteBande(p)
+      : (charpenteDe(p.toiture) === 'traditionnelle' ? 'traditionnelle' : 'aucune'),
     toit_type: p.toiture.type || '',
     pente_bande: penteBande(p),
     linP: r.linP,
@@ -4137,7 +4155,7 @@ function ficheRendre() {
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Surfaces et compléments</div>
             ${champ('Surface au sol couverte (m²)', inp('data-k="toit" data-champ="surface" inputmode="decimal"', toit.surface))}
             ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp('data-k="toit" data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"', toit.surfCouv || ''))}
-            ${toit.charpente === 'traditionnelle' && !plat ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" data-k="toit" data-champ="chevronnage" ${toit.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}
+            ${charpenteDe(toit) === 'traditionnelle' && !plat ? champ('Chevronnage', `<label style="font-size:14px"><input type="checkbox" data-k="toit" data-champ="chevronnage" ${toit.chevronnage ? 'checked' : ''} style="width:auto;height:auto"> Chevrons sur pannes et sablières</label>`) : '<div></div>'}
             ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Pénétrations, chevêtres et croupes</div>
             ${champ('Pénétration de toiture en charpente industrielle (m² projeté au sol)', inp('data-k="toit" data-champ="m2PenetInd" inputmode="decimal"', toit.m2PenetInd))}
@@ -4334,7 +4352,7 @@ function ficheChange(e) {
   else if (k === 'toit') {
     p.toiture[champ] = val;
     // Toit terrasse : la géométrie devient « plat » ; une autre charpente la remet à choisir
-    if (champ === 'charpente') { if (val === 'terrasse') p.toiture.type = 'plat'; else if (p.toiture.type === 'plat') p.toiture.type = ''; }
+    if (champ === 'charpente') { if (charpenteDe(p.toiture) === 'terrasse') p.toiture.type = 'plat'; else if (p.toiture.type === 'plat') p.toiture.type = ''; }
   }
   else if (k === 'fond') p.fond[champ] = val;
   else if (k === 'pleine') { const e = pleinesDe(p.fond).find(x => x.id === t.dataset.id); if (e) e[champ] = val; }
@@ -4683,8 +4701,8 @@ function ficheVersMetre() {
   // Toiture incomplète : on le signale, sinon la charpente et la couverture restent absentes sans explication
   manquants.push(...toitureManquants(p));
   // Charpente : fermettes (m² projeté au sol), charpente traditionnelle et chevronnage (m² de rampant)
-  if (p.toiture.charpente === 'fermette') ajouter(desOuv('OUV-1839'), surfacePlanToit(p), undefined, null, SRC_QTE.surface_toiture_plan);
-  if (p.toiture.charpente === 'traditionnelle') {
+  if (charpenteDe(p.toiture) === 'fermette') ajouter(desOuv('OUV-1839'), surfacePlanToit(p), undefined, null, SRC_QTE.surface_toiture_plan);
+  if (charpenteDe(p.toiture) === 'traditionnelle') {
     ajouter(desOuv('OUV-1840'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
     if (p.toiture.chevronnage) ajouter(desOuv('OUV-1841'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
   }
