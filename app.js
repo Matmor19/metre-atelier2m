@@ -4828,7 +4828,8 @@ function ficheVersMetre() {
   // Charpente : fermettes (m² projeté au sol), charpente traditionnelle et chevronnage (m² de rampant)
   if (charpenteDe(p.toiture) === 'fermette') ajouter(desOuv('OUV-1839'), surfacePlanToit(p), undefined, null, SRC_QTE.surface_toiture_plan);
   if (charpenteDe(p.toiture) === 'traditionnelle') {
-    ajouter(desOuv('OUV-1840'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
+    // Charpente traditionnelle : un forfait unique, dès qu'elle est choisie (la surface sert au récapitulatif, pas à la quantité)
+    ajouter(desOuv('OUV-1840'), 1, undefined, { nombre: '1' });
     if (p.toiture.chevronnage) ajouter(desOuv('OUV-1841'), r.toiture, undefined, null, SRC_QTE.surface_toiture);
   }
   // Pénétrations (m² ou ml), chevêtres (u) et croupes (m²) saisis dans la fiche Charpente
