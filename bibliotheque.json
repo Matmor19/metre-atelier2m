@@ -30945,8 +30945,42 @@
       ],
       "version": 2,
       "detail": "Réalisation d'une génoise traditionnelle en débord d'égout : rangs superposés de tuiles canal scellés au mortier de chaux en encorbellement sur le haut du mur, nombre de rangs selon le projet (2 ou 3), rejointoiement, finition de l'égout de la couverture sur la génoise. (Unité : ml)"
+    },
+    {
+      "id": "OUV-1888",
+      "lot": "gros-oeuvre",
+      "designation": "Appui de fenêtre en pierre reconstituée avec rejingot, gamme Tendance (prof. 35 cm, tableau 28 cm)",
+      "detail": "Fourniture et pose d'un appui de fenêtre préfabriqué en pierre reconstituée (béton coulé contenant des fibres de polypropylène, agrégats, adjuvants et hydrofuge de masse), conforme aux DTU, avec rejingot. Profondeur totale 35 cm, profondeur en tableau 28 cm, épaisseur 9 cm en façade et 5 cm sous rejingot. Couleur blanche (autres teintes en plus-value), finition lisse ou aspect pierre. Longueur choisie dans la gamme selon la largeur de la baie : en une pièce de 40 à 120 cm, en deux pièces de 70 à 240 cm, en trois pièces de 250 à 360 cm, au-delà en quatre pièces. Pose sur lit de mortier, joints et calfeutrement. (Unité : u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "gamme": "tendance-appui"
+    },
+    {
+      "id": "OUV-1889",
+      "lot": "gros-oeuvre",
+      "designation": "Seuil de porte en pierre reconstituée avec rejingot, gamme Tendance (prof. 39 cm, tableau 32 cm, largeur 93 cm)",
+      "detail": "Fourniture et pose d'un seuil de porte préfabriqué en pierre reconstituée (béton coulé contenant des fibres de polypropylène, agrégats, adjuvants et hydrofuge de masse), conforme aux DTU, en une seule pièce avec rejingot. Profondeur totale 39 cm, profondeur en tableau 32 cm, épaisseur 7 cm en façade et 5 cm sous rejingot, largeur 93 cm. Couleur blanche (autres teintes en plus-value), finition lisse ou aspect pierre. Pose sur lit de mortier, joints et calfeutrement. (Unité : u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "gamme": "tendance-seuil"
     }
   ],
-  "revision": 145,
-  "prochainNumero": 1888
+  "revision": 146,
+  "prochainNumero": 1890
 }

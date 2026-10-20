@@ -3435,6 +3435,20 @@ function projetDe(c) {
 // Calculs : murs moins ouvertures de 1 m² ou plus, tableaux (2 côtés × hauteur × épaisseur),
 // toiture développée, fondations (murs porteurs × dimensions de la semelle et de la fouille)
 const APPUI_LIB = { '': 'Pas d\'appui', 'beton': 'Béton', 'beton-pierre': 'Béton ton pierre', 'alu': 'Aluminium', 'acier': 'Acier laqué 75/100e' };
+// Gamme Tendance (fiche technique du fabricant) : longueurs d'appui disponibles et nombre de pièces
+const TENDANCE_APPUIS = [
+  ...[40, 50, 60, 80, 90, 100, 120].map(L => [L, 1]),
+  ...[70, 105, 110, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240].map(L => [L, 2]),
+  ...[250, 280, 300, 360].map(L => [L, 3])
+].sort((a, b) => a[0] - b[0]);
+const TENDANCE_SEUIL_L = 93;   // seuil en une seule pièce, largeur 93 cm
+function estTendanceAppui(o) { return !!o && (o.gamme === 'tendance-appui' || /^Appui de fenêtre .*gamme Tendance/i.test(o.designation)); }
+function estTendanceSeuil(o) { return !!o && (o.gamme === 'tendance-seuil' || /^Seuil .*gamme Tendance/i.test(o.designation)); }
+// Appui pour une baie de largeur Lcm : plus petite longueur de la gamme qui couvre la baie ; au-delà de 360 cm, 4 pièces (longueur arrondie à 10 cm)
+function decoupeAppuiTendance(Lcm) {
+  const t = TENDANCE_APPUIS.find(([L]) => L >= Lcm);
+  return t ? { L: t[0], pieces: t[1] } : { L: Math.ceil(Lcm / 10) * 10, pieces: 4 };
+}
 // Appui de fenêtre : la menuiserie garde l'identifiant de l'ouvrage « Appui de fenêtre … » de la bibliothèque
 function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
 // Seuils de porte de la bibliothèque (ouvrages « Seuil … »), proposés dans la liste « Seuil de porte compris » des murs
@@ -5084,7 +5098,22 @@ function ficheVersMetre() {
         if (m.type !== 'fen' || !(num(m.l) > 0)) continue;
         parLargeur[num(m.l)] = (parLargeur[num(m.l)] || 0) + (num(m.nb) || 1);
       }
-      for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
+      if (estTendanceAppui(oA)) {
+        // Gamme Tendance : longueur d'appui et découpe (1, 2, 3 ou 4 pièces) déterminées par la largeur de chaque fenêtre
+        const parAppui = {};
+        for (const [Lcm, n] of Object.entries(parLargeur)) {
+          const d = decoupeAppuiTendance(Number(Lcm)), k = d.L + '|' + d.pieces;
+          (parAppui[k] = parAppui[k] || { ...d, n: 0, larg: [] }).n += n;
+          parAppui[k].larg.push(fmt(Number(Lcm)) + ' cm');
+        }
+        const base = oA.designation.replace(/\s*\([^)]*\)/g, '');
+        for (const a of Object.values(parAppui).sort((x, y) => x.L - y.L)) {
+          ajouter(oA.designation, a.n, `${base} – longueur ${a.L} cm, en ${a.pieces} pièce${a.pieces > 1 ? 's' : ''}`, { nombre: String(a.n) }, null);
+          const lA = L[L.length - 1];
+          if (lA && lA.ouvrage === oA.id) { lA.modeLigne = 'texte'; lA.detailTexte = `${a.n} fenêtre${a.n > 1 ? 's' : ''} de ${a.larg.join(', ')} de large`; }
+        }
+      }
+      else for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
     }
   }
   // Drainage et arase : longueur des murs périphériques (regards : nombre saisi). Rien choisi = rien.
@@ -5107,8 +5136,18 @@ function ficheVersMetre() {
   if (seuilsChoisis.length > 1) manquants.push('seuils de porte : un seul seuil par projet, plusieurs choisis dans les murs');
   if (seuilsChoisis.length === 1) {
     const oS = BIB.ouvrages.find(x => x.id === seuilsChoisis[0]);
-    const nPortes = piecesNvDe(c).reduce((a, pc) => a + nbPortesNv(pc), 0);
+    // Portes extérieures du projet : portes d'entrée et portes-fenêtres saisies dans les pièces
+    const portesExt = [];
+    for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) if (m.type === 'pe' || m.type === 'pf') portesExt.push({ l: num(m.l), n: num(m.nb) || 1 });
+    const nPortes = portesExt.reduce((a, x) => a + x.n, 0);
     if (!oS) manquants.push('seuil de porte');
+    else if (estTendanceSeuil(oS)) {
+      // Gamme Tendance : seuil en une pièce de 93 cm ; une porte plus large est signalée
+      const ok = portesExt.filter(x => !(x.l > TENDANCE_SEUIL_L)), trop = portesExt.filter(x => x.l > TENDANCE_SEUIL_L);
+      const nOk = ok.reduce((a, x) => a + x.n, 0);
+      if (nOk > 0) ajouter(oS.designation, nOk, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nOk) }, null);
+      if (trop.length) manquants.push('seuil gamme Tendance limité à 93 cm : ' + trop.map(x => fmt(x.l) + ' cm').join(', ') + ' à traiter à part (autre seuil)');
+    }
     else if (nPortes > 0) ajouter(oS.designation, nPortes, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nPortes) }, null);
   }
   sauverLignes(courantId, L);
