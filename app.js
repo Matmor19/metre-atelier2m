@@ -1108,7 +1108,7 @@ function rangModele(l) {
     return 50;
   }
   if (l.lot === 'gros-oeuvre') {
-    // Soubassement (1-6), drain (7-10), murs en élévation (11 et plus) : modèle Kobuszynski
+    // Soubassement (1-6), drain (7-10), murs en élévation (11-20), ravalement (21-23) : modèle Kobuszynski
     const soub = murSoubDe(l) || /soubassement/i.test(d);
     if (/semelles? filantes?/i.test(d)) return 1;
     if (/semelles? isolées?|massif/i.test(d)) return 2;
@@ -1120,7 +1120,7 @@ function rangModele(l) {
     if (/arase/i.test(d)) return 12;
     if (/dallage|plancher|dalle|hourdis|terre-plein|vide sanitaire/i.test(d)) return 11;
     if (soub) { if (/raidisseur|chaînages? vertic/i.test(d)) return 5; if (/chaînage/i.test(d)) return 4; return 3; }
-    if (/chaînage d.angle|harpe/i.test(d)) return 23;
+    if (/chaînages? d.angles?|harpe|pierres? d.angles?/i.test(d)) return 23;
     if (/habillage des tableaux|modénature|tableaux de menuiseries/i.test(d)) return 22;
     if (/linteau/i.test(d)) return /grandes? portées?/i.test(d) ? 18 : 17;
     if (/^appui/i.test(d)) return 19;
@@ -1143,9 +1143,12 @@ function rangModele(l) {
 function sectionGO(l) {
   if (l.groupeGO) return l.groupeGO;
   const r = rangModele(l);
-  return r <= 6 ? 'Soubassement' : (r <= 10 ? 'Drain' : 'Murs en élévation');
+  if (r <= 6) return 'Soubassement';
+  if (r <= 10) return 'Drain';
+  if (r >= 21 && r < 50) return 'Ravalement';   // enduits de façade, habillage des tableaux, pierres d'angle
+  return 'Murs en élévation';
 }
-const SECTIONS_GO = ['Soubassement', 'Drain', 'Murs en élévation'];
+const SECTIONS_GO = ['Soubassement', 'Drain', 'Murs en élévation', 'Ravalement'];
 // À l'affichage : lignes du gros œuvre regroupées par partie, ordre gardé dans chaque partie
 function ordonnerSectionsGO(L) {
   const lot = 'gros-oeuvre', idx = [];
