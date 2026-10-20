@@ -3613,6 +3613,20 @@ const TENDANCE_APPUIS = [
   ...[70, 105, 110, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240].map(L => [L, 2]),
   ...[250, 280, 300, 360].map(L => [L, 3])
 ].sort((a, b) => a[0] - b[0]);
+// Détail d'un appui ou d'un seuil : à quelle menuiserie et dans quelle pièce il va
+// items : { piece, type ('fen' | 'pe' | 'pf'), l (cm), n, extra }
+function libMenuiserie(type, n) {
+  const p = n > 1;
+  if (type === 'pe') return p ? 'portes d\'entrée' : 'porte d\'entrée';
+  if (type === 'pf') return p ? 'portes-fenêtres' : 'porte-fenêtre';
+  return p ? 'fenêtres' : 'fenêtre';
+}
+function detailLieux(items) {
+  const g = new Map();
+  for (const it of items) { const k = [it.piece, it.type, it.l, it.extra || ''].join('|'); const e = g.get(k); if (e) e.n += it.n; else g.set(k, Object.assign({}, it)); }
+  return [...g.values()].map(e => `${e.piece} : ${e.n} ${libMenuiserie(e.type, e.n)} de ${fmt(e.l)} cm${e.extra || ''}`).join(' ; ');
+}
+const nomPieceDe = pc => (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '');
 // Seuils Tendance : longueurs disponibles (cm), de la plus courte à la plus longue
 const TENDANCE_SEUILS = [90, 110, 130, 150, 190, 220, 250];
 // Seuil(s) pour une porte de largeur Lcm : le moins de pièces possible, puis le moins de perte, puis le moins de longueurs différentes
@@ -5313,24 +5327,29 @@ function ficheVersMetre() {
       const parLargeur = {};
       for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) {
         if (m.type !== 'fen' || !(num(m.l) > 0)) continue;
-        parLargeur[num(m.l)] = (parLargeur[num(m.l)] || 0) + (num(m.nb) || 1);
+        const nM = num(m.nb) || 1, e = (parLargeur[num(m.l)] = parLargeur[num(m.l)] || { n: 0, items: [] });
+        e.n += nM; e.items.push({ piece: nomPieceDe(pc), type: 'fen', l: num(m.l), n: nM });
       }
       if (estTendanceAppui(oA)) {
         // Gamme Tendance : longueur d'appui et découpe (1, 2, 3 ou 4 pièces) déterminées par la largeur de chaque fenêtre
         const parAppui = {};
-        for (const [Lcm, n] of Object.entries(parLargeur)) {
+        for (const [Lcm, g] of Object.entries(parLargeur)) {
           const d = decoupeAppuiTendance(Number(Lcm)), k = d.L + '|' + d.pieces;
-          (parAppui[k] = parAppui[k] || { ...d, n: 0, larg: [] }).n += n;
-          parAppui[k].larg.push(fmt(Number(Lcm)) + ' cm');
+          (parAppui[k] = parAppui[k] || { ...d, n: 0, items: [] }).n += g.n;
+          parAppui[k].items.push(...g.items);
         }
         const base = oA.designation.replace(/\s*\([^)]*\)/g, '');
         for (const a of Object.values(parAppui).sort((x, y) => x.L - y.L)) {
           ajouter(oA.designation, a.n, `${base} – longueur ${a.L} cm, en ${a.pieces} pièce${a.pieces > 1 ? 's' : ''}`, { nombre: String(a.n) }, null);
           const lA = L[L.length - 1];
-          if (lA && lA.ouvrage === oA.id) { lA.modeLigne = 'texte'; lA.detailTexte = `${a.n} fenêtre${a.n > 1 ? 's' : ''} de ${a.larg.join(', ')} de large`; }
+          if (lA && lA.ouvrage === oA.id) { lA.modeLigne = 'texte'; lA.detailTexte = detailLieux(a.items); }
         }
       }
-      else for (const [Lcm, n] of Object.entries(parLargeur)) ajouter(oA.designation, n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
+      else for (const [Lcm, g] of Object.entries(parLargeur)) {
+        ajouter(oA.designation, g.n, `${oA.designation.replace(/\s*\([^)]*\)/g, '')} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(g.n) }, null);
+        const lA = L[L.length - 1];
+        if (lA && lA.ouvrage === oA.id) { lA.modeLigne = 'texte'; lA.detailTexte = detailLieux(g.items); }
+      }
     }
   }
   // Drainage et arase : longueur des murs périphériques (regards : nombre saisi). Rien choisi = rien.
@@ -5355,40 +5374,41 @@ function ficheVersMetre() {
     const oS = BIB.ouvrages.find(x => x.id === seuilsChoisis[0]);
     // Portes extérieures du projet : portes d'entrée et portes-fenêtres saisies dans les pièces
     const portesExt = [];
-    for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) if (m.type === 'pe' || m.type === 'pf') portesExt.push({ l: num(m.l), n: num(m.nb) || 1 });
+    for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) if (m.type === 'pe' || m.type === 'pf') portesExt.push({ l: num(m.l), n: num(m.nb) || 1, piece: nomPieceDe(pc), type: m.type });
     const nPortes = portesExt.reduce((a, x) => a + x.n, 0);
     if (!oS) manquants.push('seuil de porte');
     else {
       // Portes regroupées par largeur (en cm)
       const parLargeurP = {};
-      for (const x of portesExt) if (x.l > 0) parLargeurP[x.l] = (parLargeurP[x.l] || 0) + x.n;
+      for (const x of portesExt) if (x.l > 0) { const e = (parLargeurP[x.l] = parLargeurP[x.l] || { n: 0, items: [] }); e.n += x.n; e.items.push(x); }
       const baseS = oS.designation.replace(/\s*\([^)]*\)/g, '');
       if (estTendanceSeuil(oS)) {
         // Gamme Tendance : pour chaque largeur de porte, la combinaison de seuils optimisée (moins de pièces, moins de perte)
         // Une ligne par longueur de seuil, quantité = nombre de pièces de cette longueur
         const parLong = {};
-        for (const [Lcm, n] of Object.entries(parLargeurP)) {
-          const d = decoupeSeuilTendance(Number(Lcm));
+        for (const [Lcm, g] of Object.entries(parLargeurP)) {
+          const n = g.n, d = decoupeSeuilTendance(Number(Lcm));
           const comp = {};
           d.pieces.forEach(x => { comp[x] = (comp[x] || 0) + 1; });
           for (const [lg, k] of Object.entries(comp)) {
-            const e = (parLong[lg] = parLong[lg] || { lg: Number(lg), n: 0, portes: [] });
+            const e = (parLong[lg] = parLong[lg] || { lg: Number(lg), n: 0, items: [] });
             e.n += k * n;
-            const assemb = d.pieces.length > 1 ? ' (' + d.pieces.join(' + ') + ' cm)' : '';
-            e.portes.push(`${n} porte${n > 1 ? 's' : ''} de ${fmt(Number(Lcm))} cm${assemb}`);
+            const extra = d.pieces.length > 1 ? ' (seuil ' + d.pieces.join(' + ') + ' cm)' : '';
+            e.items.push(...g.items.map(it => Object.assign({}, it, { extra })));
           }
         }
         for (const e of Object.values(parLong).sort((x, y) => x.lg - y.lg)) {
           ajouter(oS.designation, e.n, `${baseS} – longueur ${e.lg} cm`, { nombre: String(e.n) }, null);
           const lS = L[L.length - 1];
-          if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = e.portes.join(' ; '); }
+          if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = detailLieux(e.items); }
         }
       }
       // Autres seuils : une ligne par largeur de porte, comme les appuis
-      else for (const [Lcm, n] of Object.entries(parLargeurP)) {
+      else for (const [Lcm, g] of Object.entries(parLargeurP)) {
+        const n = g.n;
         ajouter(oS.designation, n, `${baseS} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
         const lS = L[L.length - 1];
-        if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = `${n} porte${n > 1 ? 's' : ''} de ${fmt(Number(Lcm))} cm de large`; }
+        if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = detailLieux(g.items); }
       }
       // Porte sans largeur saisie : comptée sans longueur
       const nSansL = portesExt.filter(x => !(x.l > 0)).reduce((a2, x) => a2 + x.n, 0);
