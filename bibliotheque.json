@@ -30373,6 +30373,22 @@
       "detail": "Destinée exclusivement aux couvertures en tuiles canal traditionnelles. Il s'agit d'une tuile de couvert (chapeau) légèrement plus évasée et renforcée qui bascule sur le côté du pignon pour fermer hermétiquement la bordure du toit, généralement fixée par crochetage à sec ou scellée traditionnellement au mortier de chaux. (Unité : ml)"
     },
     {
+      "id": "OUV-1882",
+      "lot": "couverture-zinguerie",
+      "designation": "About de rive en terre cuite, finition basse droite ou gauche (u)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose de la tuile spécifique de base fermant proprement le départ inférieur de la ligne de rive à l'égout du toit, bloquant l'intrusion de nuisibles. (Unité : u)"
+    },
+    {
       "id": "OUV-1848",
       "lot": "couverture-zinguerie",
       "designation": "Rive plate ou couloir de rive en zinc (ml)",
@@ -30865,6 +30881,6 @@
       "detail": "Façonnage sur mesure d'une enchevêtrure au sein d'un plan de chevrons ou de pannes traditionnels. L'ouvrage comprend : le lignage, la découpe des chevrons ou morceaux de pannes interrompus, la fourniture et la pose des pièces d'encadrement (chevêtres horizontaux et chevronnets de rive de section identique ou renforcée par rapport aux bois courants), l'assemblage par tenon-mortaise traditionnel ou par quincaillerie structurelle lourde (étriers inox/acier galvanisé), et les ajustements d'aplomb. (Unité : u)"
     }
   ],
-  "revision": 141,
-  "prochainNumero": 1882
+  "revision": 142,
+  "prochainNumero": 1883
 }
