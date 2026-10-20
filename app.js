@@ -258,7 +258,7 @@ function recapCharpente(lotId) {
   const pente = num(t.pente);
   const card = _kanbanDossiers[refKanbanDe(c)] || null, f = (card && card.faisa) || {}, e = (card && card.euro) || {};
   const ml = v => (num(v) > 0 ? fmt(num(v)) + ' m' : '');
-  const lignes = [
+  const charpente = [
     ['Type de charpente', plat ? 'Toit terrasse' : lib(FICHE_CHARP, charpenteDe(t))],
     ['Géométrie', plat ? 'Toit plat' : lib(FICHE_TOIT, t.type)],
     ['Pente', pente > 0 ? `${fmt(pente)} % (soit ${fmt(Math.round(Math.atan(pente / 100) * 180 / Math.PI * 10) / 10)}°)` : ''],
@@ -266,22 +266,39 @@ function recapCharpente(lotId) {
     ['Longueur entre appuis (portée)', ml(t.portee)],
     ['Type de versant', plat ? '' : (t.versant === 'avec' ? `Avec coyau${num(t.coyauLong) > 0 ? ' sur ' + fmt(num(t.coyauLong)) + ' cm' : ''}` : lib(FICHE_VERSANT, t.versant))],
     ['Esthétique de l\'égout', plat ? '' : lib(FICHE_EGOUT, t.egoutStyle)],
-    ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (t.chevronnage ? 'Oui' : 'Non') : ''],
+    ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (t.chevronnage ? 'Oui' : 'Non') : '']
+  ];
+  const surfaces = [
     ['Surface au sol couverte', num(t.surface) > 0 ? fmt(num(t.surface)) + ' m²' : ''],
     ['Surface de couverture (pente comprise)', r.toiture > 0 ? fmt(r.toiture) + ' m²' : ''],
     ['Couverture', plat ? '' : lib(FICHE_COUV, couvDe(t))],
-    ['Écran de sous-toiture', lib(FICHE_ECRAN, t.ecran)],
-    ['Faîtage', ml(t.faite)], ['Rives', ml(t.rive)], ['Égout', ml(t.egout)], ['Arêtiers', ml(t.arete)], ['Noues', ml(t.noue)],
+    ['Écran de sous-toiture', lib(FICHE_ECRAN, t.ecran)]
+  ];
+  const longueurs = [['Faîtage', ml(t.faite)], ['Rives', ml(t.rive)], ['Égout', ml(t.egout)], ['Arêtiers', ml(t.arete)], ['Noues', ml(t.noue)]];
+  const site = [
     ['Zone de vent', e.vent || ''], ['Zone de neige', e.neige || ''], ['Altitude', (e.alt !== undefined && e.alt !== null && e.alt !== '') ? e.alt + ' m' : ''],
     ['Zone sismique', f.sismicite || '']
   ];
-  const remplies = lignes.filter(([, v]) => v !== '' && v !== undefined && v !== null);
-  return remplies.length ? lignes.map(([a, v]) => [a, (v === '' || v === undefined || v === null) ? 'non renseigné' : String(v)]) : [];
+  const vide = v => v === '' || v === undefined || v === null;
+  if (![...charpente, ...surfaces, ...longueurs].some(([, v]) => !vide(v))) return [];
+  const net = L => L.map(([a, v]) => [a, vide(v) ? 'non renseigné' : String(v)]);
+  // Groupes : la charpente d'un côté, les données du site (étude de faisabilité) dans un encadré à part
+  return [
+    { titre: 'Structure de la charpente', lignes: net(charpente) },
+    { titre: 'Surfaces et couverture', lignes: net(surfaces) },
+    { titre: 'Longueurs', lignes: net(longueurs) },
+    { titre: 'Données du site (étude de faisabilité)', lignes: net(site), site: true }
+  ];
 }
 function recapCharpenteHtml(lotId) {
-  const R = recapCharpente(lotId); if (!R.length) return '';
+  const G = recapCharpente(lotId); if (!G.length) return '';
+  const liste = g => `<div style="font-weight:700;font-size:12px;color:#2b2b2b;margin:6px 0 2px">${esc(g.titre)}</div>${g.lignes.map(([a, v]) => `<div style="font-size:12px;margin:1px 0"><strong>${esc(a)}</strong> : ${esc(v)}</div>`).join('')}`;
+  const charp = G.filter(g => !g.site), site = G.find(g => g.site);
   return `<div class="gen-bloc"><div class="gen-titre">Récapitulatif pour le calcul de charpente</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:12px">${R.map(([a, v]) => `<div><strong>${esc(a)}</strong> : ${esc(v)}</div>`).join('')}</div></div>`;
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+      <div style="flex:2 1 320px;min-width:0">${charp.map(liste).join('')}</div>
+      ${site ? `<div style="flex:1 1 220px;min-width:0;border:1.5px solid #E07838;border-radius:8px;padding:6px 10px;background:#fffaf4">${liste(site)}</div>` : ''}
+    </div></div>`;
 }
 function genHtml(lotId, numLot) {
   const g = genDuLot(lotId);
@@ -5972,7 +5989,10 @@ async function pdfCdpgfFormulaire() {
     const recapP = recapCharpente(lot.id);
     if (recapP.length) {
       ligne('Récapitulatif pour le calcul de charpente', M, LARG, 9, helvB, ORANGE);
-      for (const [a, v] of recapP) ligne('• ' + a + ' : ' + v, M + 8, LARG - 8, 7.6, helv, GRIS);
+      for (const g of recapP) {
+        ligne(g.titre, M, LARG, 8, helvB, g.site ? ORANGE : NOIR);
+        for (const [a, v] of g.lignes) ligne('• ' + a + ' : ' + v, M + 8, LARG - 8, 7.6, helv, GRIS);
+      }
       y -= 6;
     }
     enteteTable();
