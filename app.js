@@ -3489,19 +3489,20 @@ const COUV_SLOTS = [
   { champ: 'accVis', lib: 'Vis et cavaliers (bacs acier)', qte: p => num(p.toiture.nbVis), base: ['OUV-1902'] },
   { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } },
   // Zinguerie : gouttières et descentes (toits en pente comme toits terrasses)
-  { champ: 'accGouttiere', commun: true, lib: 'Gouttières', zing: true, qte: p => num(p.toiture.egout), base: ['OUV-0460', 'OUV-0461', 'OUV-0107', 'OUV-0108'], ancien: { cle: 'gouttiere', map: { zinc: 'OUV-0460', alu: 'OUV-0108', pvc: 'OUV-0107' } } },
+  { champ: 'accGouttiere', commun: true, lib: 'Gouttières', zing: true, qte: p => num(p.toiture.egout), base: ['OUV-0460', 'OUV-1903', 'OUV-0107', 'OUV-0461', 'OUV-0108'], ancien: { cle: 'gouttiere', map: { zinc: 'OUV-0460', alu: 'OUV-0108', pvc: 'OUV-0107' } } },
   { champ: 'accDescente', commun: true, lib: 'Descentes', zing: true, qte: p => num(p.toiture.nbDesc) * num(p.toiture.hautDesc), base: ['OUV-0462', 'OUV-0109', 'OUV-0110'], ancien: { cle: 'descente', map: { zinc: 'OUV-0462', alu: 'OUV-0110', pvc: 'OUV-0109' } } },
   { champ: 'accNaissance', commun: true, lib: 'Naissances de descente', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-0465'] },
-  { champ: 'accDauphin', commun: true, lib: 'Dauphins', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-0466'] },
+  { champ: 'accDauphin', commun: true, lib: 'Dauphins', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-0466', 'OUV-1904'] },
+  { champ: 'accCrapaudine', commun: true, lib: 'Crapaudines ou grilles pare-feuilles', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-1905'] },
   { champ: 'accCoude', lib: 'Coudes de descente', zing: true, qte: p => num(p.toiture.nbCoudes), base: ['OUV-0464'] },
   { champ: 'accCrosse', lib: 'Crosses de descente', zing: true, qte: p => num(p.toiture.nbCrosses), base: ['OUV-0463'] },
   { champ: 'accCrochet', lib: 'Crochets de gouttière', zing: true, qte: p => num(p.toiture.nbCrochets), base: ['OUV-0122'] },
   { champ: 'accCheneau', lib: 'Chéneaux', zing: true, qte: p => num(p.toiture.mlCheneau), base: ['OUV-0467', 'OUV-0118'] },
-  { champ: 'accRegard', commun: true, lib: 'Regards de branchement des eaux pluviales', zing: true, qte: p => (num(p.toiture.nbRegards) > 0 ? num(p.toiture.nbRegards) : num(p.toiture.nbDesc)), base: ['OUV-0774', 'OUV-0019', 'OUV-0525', 'OUV-0526'] }
+  { champ: 'accRegard', commun: true, lib: 'Regards de branchement des eaux pluviales', zing: true, qte: p => (num(p.toiture.nbRegards) > 0 ? num(p.toiture.nbRegards) : num(p.toiture.nbDesc)), base: ['OUV-1906', 'OUV-0774', 'OUV-0019', 'OUV-0525', 'OUV-0526'] }
 ];
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
-  'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1897', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
+  'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1897', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857', 'OUV-1903', 'OUV-1904', 'OUV-1905', 'OUV-1906']);
 // Lot couverture-zinguerie en trois parties : Couverture, puis Avant-toit, puis Zinguerie
 function estAvantToit(l) { return !!l.avantToit || AVANT_TOIT_BASE.includes(l.ouvrage) || /^avant-toit|^génoise/i.test(l.designation || ''); }
 function partieCZ(l) {
@@ -4646,14 +4647,14 @@ function ficheRendre() {
   // Accessoires de couverture et zinguerie : sur chaque ligne, l'ouvrage à choisir et sa quantité en face
   const ORDRE_COUV = ['accFaite', 'accSousFaitiere', 'accClosoir', 'accArete', 'accRive', 'accAboutRive', 'accEgout', 'accNoue', 'accVentil', 'accChatiere', 'accFronton',
     'accDemiTuile', 'accAbergement', 'accSelle', 'accSolin', 'accCouloir', 'accRaccordChassis', 'accRessaut', 'accCouvreJoint', 'accPattes', 'accVis'];
-  const ORDRE_ZING = ['accGouttiere', 'accDescente', 'accNaissance', 'accDauphin', 'accCoude', 'accCrosse', 'accCrochet', 'accCheneau', 'accRegard'];
+  const ORDRE_ZING = ['accGouttiere', 'accDescente', 'accNaissance', 'accCrapaudine', 'accDauphin', 'accCoude', 'accCrosse', 'accCrochet', 'accCheneau', 'accRegard'];
   // Case de quantité de chaque accessoire : [champ, unité, texte d'aide] ; « = … » : quantité reprise d'une autre ligne
   const QTE_ACC = {
     accFaite: ['faite', 'ml'], accSousFaitiere: '= longueur de faîtage', accClosoir: '= longueur de faîtage', accArete: ['arete', 'ml'], accRive: ['rive', 'ml'],
     accEgout: '= longueur d\'égout (ligne Gouttières)', accNoue: ['noue', 'ml'], accVentil: ['nbDouille', 'u', 'conseillé : ' + ventilationNb(p)], accChatiere: ['nbChatiere', 'u'],
     accAboutRive: ['nbAboutRive', 'u'], accFronton: ['nbFronton', 'u'], accDemiTuile: ['nbDemiTuile', 'u'], accAbergement: ['nbAbergement', 'u'], accSelle: ['nbSelle', 'u'],
     accSolin: ['mlSolin', 'ml'], accCouloir: ['mlCouloir', 'ml'], accRaccordChassis: ['nbRaccordChassis', 'u'], accRessaut: ['mlRessaut', 'ml'], accCouvreJoint: ['mlCouvreJoint', 'ml'],
-    accPattes: ['nbPattes', 'u'], accVis: ['nbVis', 'u'], accGouttiere: ['egout', 'ml', 'longueur d\'égout'], accNaissance: '= nombre de descentes', accDauphin: '= nombre de descentes',
+    accPattes: ['nbPattes', 'u'], accVis: ['nbVis', 'u'], accGouttiere: ['egout', 'ml', 'longueur d\'égout'], accNaissance: '= nombre de descentes', accCrapaudine: '= nombre de descentes', accDauphin: '= nombre de descentes',
     accCoude: ['nbCoudes', 'u'], accCrosse: ['nbCrosses', 'u'], accCrochet: ['nbCrochets', 'u'], accCheneau: ['mlCheneau', 'ml'],
     accRegard: ['nbRegards', 'u', num(toit.nbDesc) > 0 ? fmt(num(toit.nbDesc)) + ' (un par descente)' : 'un par descente']
   };
