@@ -3864,6 +3864,40 @@ function rendreGestionListe(seulLaListe) {
 // ===== Listes à choix fixes (toiture, équipements, plancher…) : valeurs modifiables =====
 // Clé de la liste = data-k + '.' + data-champ (ex. « toit.type »). Réglages : retires = valeurs décochées, ajoutes = { v, t }
 const FIXES_DEFAUTS = {};   // valeurs d'origine de chaque liste, enregistrées au moment du dessin
+// Listes modifiées au crayon : ce que chaque choix donne au métré.
+// Un ouvrage de la bibliothèque choisi dans une liste reliée à la bibliothèque va au métré avec la quantité de cette case.
+const RUBRIQUE_FICHE = { toit: 'toiture', equip: 'equip', plan: 'plancher', cuis: 'cuisine', choix: 'choix' };
+const LISTE_SOURCE = { 'toit.couverture': 'surface_toiture', 'toit.charpente': 'surface_toiture', 'toit.ecran': 'surface_toiture',
+  'toit.isoToit': 'surface_toiture', 'toit.etancheite': 'surface_toiture', 'toit.gouttiere': 'ml_egout', 'toit.descente': 'ml_descentes',
+  'toit.couvertine': 'ml_acrotere', 'cuis.plan': 'ml_plan' };
+const LISTE_PARAMETRES = new Set(['toit.type', 'toit.appuis', 'toit.versant', 'toit.egoutStyle']);   // réglages sans ouvrage propre
+const LISTE_NOMS = { 'toit.charpente': 'Type de charpente', 'toit.ecran': 'Écran de sous-toiture', 'toit.isoToit': 'Isolation de la toiture',
+  'toit.etancheite': 'Étanchéité', 'toit.couverture': 'Couverture', 'toit.couvertine': 'Couvertine', 'toit.gouttiere': 'Gouttières',
+  'toit.descente': 'Descentes', 'cuis.plan': 'Plan de travail', 'plan.dallage': 'Dallage', 'plan.type': 'Plancher' };
+// null : choix reconnu par le calcul ; sinon { val, o, src } (o et src présents : l'ouvrage choisi va au métré ; sinon rien ne sort)
+const n1b = x => (x === undefined || x === null || x === '' ? 1 : num(x));
+function etatListe(p, cle) {
+  const [k, champ] = cle.split('.');
+  const val = ((p[RUBRIQUE_FICHE[k]] || {})[champ]);
+  if (!val || typeof val !== 'string' || LISTE_PARAMETRES.has(cle)) return null;
+  if (cle === 'toit.charpente' && (FICHE_CHARP[charpenteDe(p.toiture)] || val === 'aucune')) return null;
+  if (cle === 'toit.couverture' && COUV_OUV[couvDe(p.toiture)]) return null;
+  if ((FIXES_DEFAUTS[cle] || []).some(([v]) => v === val)) return null;
+  const rg = listeReglage(cle);
+  const a = rg.ajoutes.find(x => x.v === val);
+  if (a && a.des) return null;   // valeur ajoutée et reliée à un ouvrage : déjà traitée
+  const o = BIB && BIB.ouvrages.find(x => ouvActif(x) && x.designation === val);
+  return { val, o: o || null, src: o ? (o.qte || LISTE_SOURCE[cle] || null) : null };
+}
+// Choix des listes qui n'iront pas au métré (affiché en haut du configurateur)
+function listesNonRelieesHtml(p) {
+  const pb = [];
+  for (const cle of Object.keys(FIXES_DEFAUTS)) {
+    const e = etatListe(p, cle);
+    if (e && !(e.o && e.src)) pb.push(`${LISTE_NOMS[cle] || cle} : « ${e.val} »`);
+  }
+  return pb.length ? `<div style="background:#fff4e5;border:1px solid #E07838;border-radius:8px;padding:8px 10px;font-size:14px;margin:6px 0"><b>Choix non reliés au métré</b> (valeur ajoutée au crayon sans ouvrage, ou ouvrage sans quantité connue) : ${pb.map(esc).join(' ; ')}. Reliez la valeur à un ouvrage dans le crayon, ou choisissez une valeur de la liste.</div>` : '';
+}
 function cleFixe(attrs) {
   const k = /data-k="([^"]+)"/.exec(attrs), c = /data-champ="([^"]+)"/.exec(attrs);
   return k && c ? k[1] + '.' + c[1] : null;
@@ -4249,7 +4283,7 @@ function ficheRendre() {
       ${champ('Étage (R+1) : surface du plancher (m²)', inp('data-k="plan" data-champ="surface" inputmode="decimal"', pl.surface))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Le dallage concerne le rez-de-chaussée (RDC). Le plancher concerne l'étage (R+1) : ne le renseignez que si la maison a un étage. Les quantités sont calculées sur les surfaces saisies.</p>`;
   })();
-  $('cfgFiche').innerHTML = `${tabTitre('A. Terrain')}<div class="bloc bloc-lettre">
+  $('cfgFiche').innerHTML = `<div id="cfgListesManque"></div>${tabTitre('A. Terrain')}<div class="bloc bloc-lettre">
     ${carte('Terrain et accès', `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:220px">${champ('Référence du dossier Kanban', inp('data-k="kref" placeholder="ex. 003-02-2026"', refKanbanDe(c), '100%'))}</div></div>
       <div id="cfgEtudeKanban" style="grid-column:1/-1"></div>
@@ -4324,6 +4358,7 @@ function ficheRendre() {
 function ficheResume() {
   const c = chantiers.find(x => x.id === courantId); if (!c) return;
   document.querySelectorAll('.toitManque').forEach(el => { el.innerHTML = toitureManqueHtml(projetDe(c)); });
+  if ($('cfgListesManque')) $('cfgListesManque').innerHTML = listesNonRelieesHtml(projetDe(c));
   if (!$('ficheResume')) return;
   const p = projetDe(c), r = projetCalcul(p);
   const ligne = (a, b, gras) => `<tr><td style="padding:4px 0;${gras ? 'font-weight:700' : ''}">${a}</td><td style="text-align:right;padding:4px 0;${gras ? 'font-weight:700;color:#6a1b9a' : ''}">${b}</td></tr>`;
@@ -4571,6 +4606,16 @@ function ficheVersMetre() {
   // Membrane Delta-MS : pose sur la hauteur du soubassement + 30 cm, seulement si ce mur a cette protection
   ajouter(DELTA_SOUB, r.deltaSoub, DELTA_SOUB, null, 'murs de soubassement (hauteur + 30 cm)');
   // Plancher bas
+  // Ouvrage de la bibliothèque choisi dans une liste reliée à la bibliothèque (crayon) : quantité de la case
+  {
+    const ctxB = ctxQuantites(c);
+    for (const cle of Object.keys(FIXES_DEFAUTS)) {
+      const e = etatListe(p, cle);
+      if (!e || !e.o || !e.src) continue;
+      const v = qteValeur({ qte: e.src, unite: e.o.unite }, ctxB);
+      if (v) ajouter(e.o.designation, n1b(v.nombre) * n1b(v.cote1) * n1b(v.cote2) * n1b(v.cote3), undefined, v);
+    }
+  }
   // Valeurs ajoutées à une liste à choix fixe, liées à un ouvrage de la bibliothèque (crayon)
   {
     const RUBRIQUE = { toit: 'toiture', equip: 'equip', plan: 'plancher', cuis: 'cuisine', choix: 'choix' };
