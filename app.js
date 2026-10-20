@@ -3448,7 +3448,9 @@ const COUV_SLOTS = [
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
   'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
-function estZinguerie(l) { if (l.groupeCZ) return l.groupeCZ === 'z'; return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
+// Avant-toits (et génoise) : traités en tête de la partie Zinguerie du lot
+function estAvantToit(l) { return AVANT_TOIT_BASE.includes(l.ouvrage) || /^avant-toit|^génoise/i.test(l.designation || ''); }
+function estZinguerie(l) { if (l.groupeCZ) return l.groupeCZ === 'z'; if (estAvantToit(l)) return true; return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
 // Couverture d'abord, zinguerie ensuite (ordre conservé dans chaque partie)
 function ordonnerCouvZing(L) {
   const autres = [], couv = [], zing = [];
@@ -3457,7 +3459,7 @@ function ordonnerCouvZing(L) {
   if (pos < 0) return L;
   const res = L.filter(l => l.lot !== 'couverture-zinguerie');
   const premier = L.slice(0, pos).filter(l => l.lot !== 'couverture-zinguerie').length;
-  res.splice(premier, 0, ...couv, ...zing);
+  res.splice(premier, 0, ...couv, ...zing.filter(estAvantToit), ...zing.filter(l => !estAvantToit(l)));
   return res;
 }
 // Tuiles à douille / sorties de toit : nombre saisi, sinon calculé (ventilation primaire, VMC, assainissement)
