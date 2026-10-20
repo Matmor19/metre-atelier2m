@@ -1210,9 +1210,10 @@ function majLignesDepuisConfigurateur(c) {
       // Nouvelle ligne du configurateur : ajoutée tout de suite au métré
       if (!ex) { ajouts.push(l); continue; }
       // Le texte du détail (src) compte aussi : un libellé corrigé dans l'application met à jour la ligne existante
-      if (sig(ex.valeurs) !== sig(l.valeurs) || (ex.valeurs || {}).src !== (l.valeurs || {}).src || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation) {
-        // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur
-        remplacer.set(ex.uid, Object.assign({}, ex, { designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
+      if (sig(ex.valeurs) !== sig(l.valeurs) || (ex.valeurs || {}).src !== (l.valeurs || {}).src || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation || ex.lot !== l.lot) {
+        // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur,
+        // y compris le lot quand l'ouvrage a changé de lot dans la bibliothèque (ex. avant-toit passé en couverture)
+        remplacer.set(ex.uid, Object.assign({}, ex, { lot: l.lot, designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
       }
     }
     if (!remplacer.size && !ajouts.length) return;
