@@ -3465,7 +3465,7 @@ const COUV_SLOTS = [
   { champ: 'accRive', commun: true, lib: 'Rives', qte: p => num(p.toiture.rive), base: ['OUV-1847', 'OUV-1878', 'OUV-1879', 'OUV-1880', 'OUV-1881', 'OUV-1848', 'OUV-1862', 'OUV-1866', 'OUV-1869'], defaut: { tuile: 'OUV-1847', ardoise: 'OUV-1862', zinc: 'OUV-1866', 'bac-acier': 'OUV-1869' } },
   { champ: 'accEgout', commun: true, lib: 'Égout', sansAvert: true, qte: p => num(p.toiture.egout), base: ['OUV-1863', 'OUV-1867', 'OUV-1870'], defaut: { ardoise: 'OUV-1863', zinc: 'OUV-1867', 'bac-acier': 'OUV-1870' } },
   { champ: 'accNoue', commun: true, lib: 'Noues', qte: p => num(p.toiture.noue), base: ['OUV-1853'], defaut: { tout: 'OUV-1853' } },
-  { champ: 'accVentil', lib: 'Sorties de toit (ventilation)', suffixe: ' – sorties de toit', qte: p => nbSortiesToit(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
+  { champ: 'accVentil', lib: 'Tuiles à douille / sorties de toit', suffixe: ' – sorties de toit', qte: p => nbSortiesToit(p), base: ['OUV-1851', 'OUV-1864'], defaut: { tuile: 'OUV-1851', ardoise: 'OUV-1864' } },
   { champ: 'accChatiere', lib: 'Chatières', qte: p => num(p.toiture.nbChatiere), base: ['OUV-1850', 'OUV-1864'], defaut: { tuile: 'OUV-1850', ardoise: 'OUV-1864', zinc: 'OUV-1864' } },
   { champ: 'accAboutRive', lib: 'Abouts de rive', qte: p => num(p.toiture.nbAboutRive), base: ['OUV-1882'], defaut: {} },
   { champ: 'accFronton', lib: 'Frontons de faîtage', qte: p => num(p.toiture.nbFronton), base: ['OUV-1849'], defaut: { tuile: 'OUV-1849' } },
@@ -4584,7 +4584,6 @@ function ficheRendre() {
   const contenuCharp = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
             ${nomChamp(toit, 'data-k="toit"')}
             ${champsStructure(toit, 'data-k="toit"')}
-            ${champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Pénétrations, chevêtres et croupes</div>
             ${champ('Pénétration de toiture en charpente industrielle (forfait : nombre de pénétrations)', inp('data-k="toit" data-champ="nbPenetInd" inputmode="numeric" placeholder="ex. 1"', toit.nbPenetInd))}
             ${champ('Pénétration de toiture en charpente traditionnelle (forfait : nombre de pénétrations)', inp('data-k="toit" data-champ="nbPenetTrad" inputmode="numeric" placeholder="ex. 1"', toit.nbPenetTrad))}
@@ -4617,6 +4616,7 @@ function ficheRendre() {
   const contenuCouv = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${plat ? champ('Étanchéité (partie courante)', choix('data-k="toit" data-champ="etancheite"', Object.entries(FICHE_ETANCH), toit.etancheite))
              : champ('Couverture', choix('data-k="toit" data-champ="couverture"', Object.entries(FICHE_COUV), couvDe(toit)))}
+            ${plat ? '<div></div>' : champ('Écran de sous-toiture', choix('data-k="toit" data-champ="ecran"', Object.entries(FICHE_ECRAN), toit.ecran))}
             ${plat ? champ('Relevés d\'acrotère, linéaire (m)', inp('data-k="toit" data-champ="acrotere" inputmode="decimal"', toit.acrotere)) : '<div></div>'}
             ${plat ? champ('Coiffe et couvertine d\'acrotère', choix('data-k="toit" data-champ="couvertine"', Object.entries(FICHE_COUVERTINE), toit.couvertine)) : '<div></div>'}
             ${champ('Longueur d\'égout, côtés gouttières (m)', inp('data-k="toit" data-champ="egout" inputmode="decimal"', toit.egout))}
