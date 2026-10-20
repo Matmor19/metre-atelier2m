@@ -907,12 +907,12 @@ function deplacerLigne(uid, tr, apres) {
     const vG = avG || apG;
     src.groupeGO = vG ? sectionGO(vG) : 'Soubassement';
   }
-  // Lot couverture-zinguerie : la ligne déposée rejoint la partie (Couverture ou Zinguerie) où on l'a posée
+  // Lot couverture-zinguerie : la ligne déposée rejoint la partie (Couverture, Avant-toit ou Zinguerie) où on l'a posée
   if (lotCible === 'couverture-zinguerie') {
     const avant = reste.slice(0, idx).filter(l => l.lot === lotCible).pop();
     const apresL = reste.slice(idx + 1).find(l => l.lot === lotCible);
     const voisin = avant || apresL;
-    src.groupeCZ = voisin ? (estZinguerie(voisin) ? 'z' : 'c') : 'c';
+    src.groupeCZ = voisin ? ({ 'Zinguerie': 'z', 'Avant-toit': 'a' }[partieCZ(voisin)] || 'c') : 'c';
   }
   sauverLignes(courantId, reste);
   renderMetre();
@@ -1250,7 +1250,8 @@ function rafraichirDesignations(id) {
     // Lot : celui de la bibliothèque (une ligne créée avant un changement de lot est mise à jour),
     // sauf les lignes du bloc plâtrerie : leur lot est décidé par le configurateur (isolant avec son doublage ou cloison)
     let nl = l;
-    if (!l.platNv && o.lot && o.lot !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: o.lot }); change = true; }
+    const lotCible = estAvantToit(l) ? 'couverture-zinguerie' : o.lot;   // avant-toit : toujours au lot couverture-zinguerie
+    if (!l.platNv && lotCible && lotCible !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: lotCible }); change = true; }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
     if (l.pieceNv && (SOUS_PIECE_LOTS.has(l.lot) || l.lot === 'menuiseries-interieures' || l.menBloc)) return nl;   // lignes du configurateur (menuiseries, blocs, façades) : désignation gardée   // ligne de pièce : son descriptif (blocs portes, façades : dimensions et choix) est gardé tel quel
     if (!o.designation || o.designation === l.designation) return nl;
@@ -1301,8 +1302,8 @@ function titresAvantLignes(lotId, ls) {
     if (SOUS_PIECE_LOTS.has(lotId)) { const cleP = l.pieceNv || null; if (cleP && cleP !== piecePrec) t.push(nomPieceMetre(cleP)); piecePrec = cleP; }
     // Lot maçonnerie : sous-titres Soubassement, Drain, Murs en élévation
     if (lotId === 'gros-oeuvre') { const sg = sectionGO(l); if (!vus.has('go:' + sg)) { vus.add('go:' + sg); t.push(sg); } }
-    // Lot couverture-zinguerie : sous-titres « Couverture » puis « Zinguerie »
-    if (lotId === 'couverture-zinguerie') { const z = estZinguerie(l) ? 'Zinguerie' : 'Couverture'; if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
+    // Lot couverture-zinguerie : sous-titres « Couverture », « Avant-toit » puis « Zinguerie »
+    if (lotId === 'couverture-zinguerie') { const z = partieCZ(l); if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
   });
 }
@@ -3495,18 +3496,23 @@ const COUV_SLOTS = [
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
   'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1897', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
-// Avant-toits (et génoise) : traités en tête de la partie Zinguerie du lot
-function estAvantToit(l) { return AVANT_TOIT_BASE.includes(l.ouvrage) || /^avant-toit|^génoise/i.test(l.designation || ''); }
-function estZinguerie(l) { if (l.groupeCZ) return l.groupeCZ === 'z'; if (estAvantToit(l)) return true; return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
+// Lot couverture-zinguerie en trois parties : Couverture, puis Avant-toit, puis Zinguerie
+function estAvantToit(l) { return !!l.avantToit || AVANT_TOIT_BASE.includes(l.ouvrage) || /^avant-toit|^génoise/i.test(l.designation || ''); }
+function partieCZ(l) {
+  if (l.groupeCZ) return l.groupeCZ === 'z' ? 'Zinguerie' : l.groupeCZ === 'a' ? 'Avant-toit' : 'Couverture';
+  if (estAvantToit(l)) return 'Avant-toit';
+  return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || '') ? 'Zinguerie' : 'Couverture';
+}
+function estZinguerie(l) { return partieCZ(l) === 'Zinguerie'; }
 // Couverture d'abord, zinguerie ensuite (ordre conservé dans chaque partie)
 function ordonnerCouvZing(L) {
-  const autres = [], couv = [], zing = [];
+  const parts = { 'Couverture': [], 'Avant-toit': [], 'Zinguerie': [] };
   let pos = -1;
-  L.forEach((l, i) => { if (l.lot !== 'couverture-zinguerie') autres.push([i, l]); else { if (pos < 0) pos = i; (estZinguerie(l) ? zing : couv).push(l); } });
+  L.forEach((l, i) => { if (l.lot === 'couverture-zinguerie') { if (pos < 0) pos = i; parts[partieCZ(l)].push(l); } });
   if (pos < 0) return L;
   const res = L.filter(l => l.lot !== 'couverture-zinguerie');
   const premier = L.slice(0, pos).filter(l => l.lot !== 'couverture-zinguerie').length;
-  res.splice(premier, 0, ...couv, ...zing.filter(estAvantToit), ...zing.filter(l => !estAvantToit(l)));
+  res.splice(premier, 0, ...parts['Couverture'], ...parts['Avant-toit'], ...parts['Zinguerie']);
   return res;
 }
 // Tuiles à douille / sorties de toit : nombre saisi, sinon calculé (ventilation primaire, VMC, assainissement)
@@ -4962,18 +4968,19 @@ function ficheVersMetre() {
     if (unite === 'ml') return { nombre: '1', cote1: q.toFixed(2) };
     return { nombre: String(q) };
   };
-  const ajouter = (des, q, designation, valeursFixes, src, origine) => {
+  const ajouter = (des, q, designation, valeursFixes, src, origine, extra) => {
     if (!des) { if (q > 0) manquants.push('(choix non fait)'); return; }
     const o = BIB.ouvrages.find(x => !x.supprime && x.designation === des);
     if (!o) { manquants.push(des); return; }
     if (!(q > 0)) return;
     const valeurs = valeursFixes || valeursPour(o.unite, q);
     if (src && (o.unite === 'm²' || o.unite === 'm³')) valeurs.src = 'Calcul du configurateur : ' + src;
-    const lot = o.lot;
+    // Avant-toit : toujours au lot couverture-zinguerie, quel que soit le lot de l'ouvrage dans la bibliothèque
+    const lot = extra && extra.avantToit ? 'couverture-zinguerie' : o.lot;
     ajouterLotSiAbsent(courantId, lot);
-    L.push({ uid: uid(), lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
+    L.push(Object.assign({ uid: uid(), lot, ouvrage: o.id, designation: designation || o.designation, unite: o.unite,
              valeurs, quantite: calcul(o, valeurs), surface: null, prix: 'moyen', projet: true, origine: origine || null, cree: new Date().toISOString(),
-             qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined });
+             qteAuto: o.qte === 'fond_semelle' ? 'fond_semelle' : undefined }, extra || {}));
     nb++;
   };
   const murDuType = (t, soub) => { const m = (p.murs || []).find(x => (x.type || '') === t && ((x.cat || 'peri') === 'soub') === !!soub); return m ? { mur: m.id } : null; };
@@ -5218,7 +5225,7 @@ function ficheVersMetre() {
   // Avant-toit (bloc Couverture) : l'ouvrage choisi, sur la longueur saisie
   if (toitPente(p)) {
     const oAT = p.toiture.avantToit && p.toiture.avantToit !== 'aucun' ? BIB.ouvrages.find(x => x.id === p.toiture.avantToit && !x.supprime) : null;
-    if (oAT && num(p.toiture.mlAvantToit) > 0) ajouter(oAT.designation, num(p.toiture.mlAvantToit));
+    if (oAT && num(p.toiture.mlAvantToit) > 0) ajouter(oAT.designation, num(p.toiture.mlAvantToit), undefined, undefined, undefined, undefined, { avantToit: true });
   }
   // Accessoires de couverture : l'ouvrage choisi dans chaque case (sinon celui de la couverture), quantité saisie dans la fiche
   {

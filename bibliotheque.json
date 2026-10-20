@@ -30916,7 +30916,7 @@
     },
     {
       "id": "OUV-1886",
-      "lot": "charpente-structure-bois",
+      "lot": "couverture-zinguerie",
       "designation": "Avant-toit à débord réduit, planche d'égout seule (ml)",
       "unite": "ml",
       "type": "commun",
@@ -31189,6 +31189,6 @@
       "detail": "Fixations en sommet d'onde avec joint d'étanchéité vulcanisé, pour couverture en bacs acier. (Unité : u)"
     }
   ],
-  "revision": 147,
+  "revision": 148,
   "prochainNumero": 1903
 }
