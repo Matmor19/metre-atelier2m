@@ -1160,6 +1160,8 @@ function titresAvantLignes(lotId, ls) {
     if (l.platBloc && l.platBloc !== platPrec) t.push(SOUS_TITRES_PLAT[l.platBloc]);
     platPrec = l.platBloc || null;
     if (SOUS_PIECE_LOTS.has(lotId)) { const cleP = l.pieceNv || null; if (cleP && cleP !== piecePrec) t.push(nomPieceMetre(cleP)); piecePrec = cleP; }
+    // Lot couverture-zinguerie : sous-titres « Couverture » puis « Zinguerie »
+    if (lotId === 'couverture-zinguerie') { const z = estZinguerie(l) ? 'Zinguerie' : 'Couverture'; if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
   });
 }
@@ -1178,7 +1180,7 @@ function renderMetre() {
   majQuantitesAuto(chantiers.find(x => x.id === courantId));
   // Électricité et revêtements suivent l'ordre des pièces du configurateur (les lignes désordonnées sont remises en ordre)
   { const cOrdre = chantiers.find(x => x.id === courantId);
-    const avantOrdre = lignesDe(courantId), apresOrdre = ordonnerLignesPieces(cOrdre, avantOrdre.slice());
+    const avantOrdre = lignesDe(courantId), apresOrdre = ordonnerCouvZing(ordonnerLignesPieces(cOrdre, avantOrdre.slice()));
     if (JSON.stringify(apresOrdre) !== JSON.stringify(avantOrdre)) sauverLignes(courantId, apresOrdre); }
   const L = lignesDe(courantId);
   const lots = lotsDuChantier(courantId);
@@ -3289,20 +3291,50 @@ const COUV_SLOTS = [
   { champ: 'accAbergement', lib: 'Abergements de cheminée', qte: p => num(p.toiture.nbAbergement), base: ['OUV-1856'], defaut: { tout: 'OUV-1856' } },
   { champ: 'accSelle', lib: 'Selles de tête de noue', qte: p => num(p.toiture.nbSelle), base: ['OUV-1857'], defaut: { tout: 'OUV-1857' } },
   { champ: 'accSolin', lib: 'Solins', qte: p => num(p.toiture.mlSolin), base: ['OUV-1854'], defaut: { tout: 'OUV-1854' } },
-  { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } }
+  { champ: 'accCouloir', lib: 'Couloirs de rive contre mur', qte: p => num(p.toiture.mlCouloir), base: ['OUV-1855'], defaut: { tout: 'OUV-1855' } },
+  // Zinguerie : gouttières et descentes (toits en pente comme toits terrasses)
+  { champ: 'accGouttiere', lib: 'Gouttières', zing: true, qte: p => num(p.toiture.egout), base: ['OUV-0460', 'OUV-0461', 'OUV-0107', 'OUV-0108'], ancien: { cle: 'gouttiere', map: { zinc: 'OUV-0460', alu: 'OUV-0108', pvc: 'OUV-0107' } } },
+  { champ: 'accDescente', lib: 'Descentes', zing: true, qte: p => num(p.toiture.nbDesc) * num(p.toiture.hautDesc), base: ['OUV-0462', 'OUV-0109', 'OUV-0110'], ancien: { cle: 'descente', map: { zinc: 'OUV-0462', alu: 'OUV-0110', pvc: 'OUV-0109' } } },
+  { champ: 'accNaissance', lib: 'Naissances de descente', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-0465'] },
+  { champ: 'accDauphin', lib: 'Dauphins', zing: true, qte: p => num(p.toiture.nbDesc), base: ['OUV-0466'] },
+  { champ: 'accCoude', lib: 'Coudes de descente', zing: true, qte: p => num(p.toiture.nbCoudes), base: ['OUV-0464'] },
+  { champ: 'accCrosse', lib: 'Crosses de descente', zing: true, qte: p => num(p.toiture.nbCrosses), base: ['OUV-0463'] },
+  { champ: 'accCrochet', lib: 'Crochets de gouttière', zing: true, qte: p => num(p.toiture.nbCrochets), base: ['OUV-0122'] },
+  { champ: 'accCheneau', lib: 'Chéneaux', zing: true, qte: p => num(p.toiture.mlCheneau), base: ['OUV-0467', 'OUV-0118'] }
 ];
+// Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
+const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
+  'OUV-0464', 'OUV-0465', 'OUV-0466', 'OUV-0467', 'OUV-0861', 'OUV-1848', 'OUV-1853', 'OUV-1854', 'OUV-1855', 'OUV-1856', 'OUV-1857']);
+function estZinguerie(l) { return ZING_IDS.has(l.ouvrage) || /goutti|descente|dauphin|naissance|chéneau|cheneau|solin|abergement|bande de noue/i.test(l.designation || ''); }
+// Couverture d'abord, zinguerie ensuite (ordre conservé dans chaque partie)
+function ordonnerCouvZing(L) {
+  const autres = [], couv = [], zing = [];
+  let pos = -1;
+  L.forEach((l, i) => { if (l.lot !== 'couverture-zinguerie') autres.push([i, l]); else { if (pos < 0) pos = i; (estZinguerie(l) ? zing : couv).push(l); } });
+  if (pos < 0) return L;
+  const res = L.filter(l => l.lot !== 'couverture-zinguerie');
+  const premier = L.slice(0, pos).filter(l => l.lot !== 'couverture-zinguerie').length;
+  res.splice(premier, 0, ...couv, ...zing);
+  return res;
+}
 // Tuiles à douille / sorties de toit : nombre saisi, sinon calculé (ventilation primaire, VMC, assainissement)
 function nbSortiesToit(p) { return num(p.toiture && p.toiture.nbDouille); }
 function familleCouv(t) { const k = couvDe(t); return /^tuile/.test(k) ? 'tuile' : k; }
 function accDefaut(p, sl) { const f = familleCouv(p.toiture); return sl.defaut[f] || sl.defaut.tout || ''; }
 // Rien d'automatique : seul l'ouvrage choisi dans la liste va au métré
-function accChoisi(p, sl) { const v = p.toiture[sl.champ]; return v === 'aucun' ? '' : (v || ''); }
+function accChoisi(p, sl) {
+  const v = p.toiture[sl.champ];
+  if (v === 'aucun') return '';
+  if (v) return v;
+  // Choix fait dans l'ancienne liste « matériau » (zinc, alu, PVC) : repris tel quel
+  return (sl.ancien && sl.ancien.map[p.toiture[sl.ancien.cle]]) || '';
+}
 // Accessoires incomplets : quantité saisie sans ouvrage choisi, ou ouvrage choisi sans quantité
 function accManquants(p) {
   const m = [];
-  if (!toitPente(p)) return m;
   for (const sl of COUV_SLOTS) {
-    const v = p.toiture[sl.champ] || '', q = sl.qte(p);
+    if (!sl.zing && !toitPente(p)) continue;
+    const v = p.toiture[sl.champ] || accChoisi(p, sl), q = sl.qte(p);
     if (q > 0 && !v && !sl.sansAvert) m.push(sl.lib + ' : ouvrage à choisir (bloc Couverture)');
     if (v && v !== 'aucun' && !(q > 0)) m.push(sl.lib + ' : ' + (/ml\)$|\(ml/.test(desOuv(v) || '') ? 'longueur' : 'quantité') + ' à saisir (bloc Couverture)');
   }
@@ -4370,6 +4402,12 @@ function ficheRendre() {
   const contenuIso = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${champ('Isolation de toiture', choix('data-k="toit" data-champ="isoToit"', Object.entries(FICHE_ISO_TOIT), toit.isoToit))}
     </div><p style="font-size:12px;color:#6b5a7a;margin:6px 0 0">Les autres isolations se choisissent dans le métré.</p>`;
+  const listeAcc = sl => {
+    const val = toit[sl.champ] || accChoisi(p, sl) || '';
+    const opts = `<option value="" ${!val ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${val === 'aucun' ? 'selected' : ''}>Aucun (rien au métré)</option>`
+      + optListeOuvrages('couv-' + sl.champ, sl.lib + ' (couverture)', () => sl.base.map(id => desOuv(id)).filter(Boolean), val === 'aucun' ? '' : val, null);
+    return champ(sl.lib, selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`));
+  };
   const contenuCouv = `<div class="toitManque">${toitureManqueHtml(p)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       ${plat ? champ('Étanchéité (partie courante)', choix('data-k="toit" data-champ="etancheite"', Object.entries(FICHE_ETANCH), toit.etancheite))
              : champ('Couverture', choix('data-k="toit" data-champ="couverture"', Object.entries(FICHE_COUV), couvDe(toit)))}
@@ -4380,10 +4418,12 @@ function ficheRendre() {
             ${champ('Longueur de faîtage (m)', inp('data-k="toit" data-champ="faite" inputmode="decimal"', toit.faite))}
             ${plat ? '<div></div>' : champ('Longueur d\'arêtiers (m)', inp('data-k="toit" data-champ="arete" inputmode="decimal"', toit.arete))}
             ${plat ? '<div></div>' : champ('Longueur de noues (m)', inp('data-k="toit" data-champ="noue" inputmode="decimal"', toit.noue))}
-            ${champ('Matériau des gouttières', choix('data-k="toit" data-champ="gouttiere"', Object.entries(FICHE_GOUT), toit.gouttiere))}
             ${champ(plat ? 'Nombre d\'évacuations d\'eau pluviale (unité)' : 'Nombre de descentes d\'eau (unité)', inp('data-k="toit" data-champ="nbDesc" inputmode="decimal"', toit.nbDesc))}
             ${champ('Hauteur des descentes (m)', inp('data-k="toit" data-champ="hautDesc" inputmode="decimal"', toit.hautDesc))}
-            ${champ('Matériau des descentes', choix('data-k="toit" data-champ="descente"', Object.entries(FICHE_DESC), toit.descente))}
+            ${champ('Coudes de descente (nombre)', inp('data-k="toit" data-champ="nbCoudes" inputmode="numeric"', toit.nbCoudes || ''))}
+            ${champ('Crosses de descente (nombre)', inp('data-k="toit" data-champ="nbCrosses" inputmode="numeric"', toit.nbCrosses || ''))}
+            ${champ('Crochets de gouttière (nombre)', inp('data-k="toit" data-champ="nbCrochets" inputmode="numeric"', toit.nbCrochets || ''))}
+            ${champ('Chéneaux (ml)', inp('data-k="toit" data-champ="mlCheneau" inputmode="decimal"', toit.mlCheneau || ''))}
             ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
             ${champ('Fronton de faîtage (nombre)', inp('data-k="toit" data-champ="nbFronton" inputmode="decimal"', toit.nbFronton))}
             ${champ('Tuiles à douille / sorties de toit (nombre)', inp('data-k="toit" data-champ="nbDouille" inputmode="numeric" placeholder="conseillé : ' + ventilationNb(p) + '"', toit.nbDouille || ''))}
@@ -4396,12 +4436,9 @@ function ficheRendre() {
             ${champ('Couloir de rive contre mur en zinc (ml)', inp('data-k="toit" data-champ="mlCouloir" inputmode="decimal"', toit.mlCouloir))}
             <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Ouvrages utilisés pour les accessoires</div>
             <div style="grid-column:1/-1;font-size:12px;color:#6b5a7a;margin-bottom:2px">Rien n'est choisi automatiquement : choisissez l'ouvrage de chaque accessoire, ou « Aucun ». Le crayon ajoute ou retire des ouvrages de la bibliothèque dans chaque liste.</div>
-            ${COUV_SLOTS.map(sl => {
-              const val = toit[sl.champ] || '';
-              const opts = `<option value="" ${!val ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${val === 'aucun' ? 'selected' : ''}>Aucun (rien au métré)</option>`
-                + optListeOuvrages('couv-' + sl.champ, sl.lib + ' (couverture)', () => sl.base.map(id => desOuv(id)).filter(Boolean), val === 'aucun' ? '' : val, null);
-              return champ(sl.lib, selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`));
-            }).join('')}`}
+            ${COUV_SLOTS.filter(sl => !sl.zing).map(sl => listeAcc(sl)).join('')}`}
+            <div style="grid-column:1/-1;margin-top:10px;font-weight:600;font-size:13px">Zinguerie : ouvrages utilisés</div>
+            ${COUV_SLOTS.filter(sl => sl.zing).map(sl => listeAcc(sl)).join('')}
     </div>`;
   const eq = p.equip || {};
   const EQ_GRP = {
@@ -4960,8 +4997,9 @@ function ficheVersMetre() {
   ajouter(desOuv('OUV-1875'), num(p.toiture.nbCroupeInd), undefined, { nombre: String(num(p.toiture.nbCroupeInd)) });
   ajouter(desOuv('OUV-1876'), num(p.toiture.nbCroupeTrad), undefined, { nombre: String(num(p.toiture.nbCroupeTrad)) });
   // Accessoires de couverture : l'ouvrage choisi dans chaque case (sinon celui de la couverture), quantité saisie dans la fiche
-  if (toitPente(p)) {
+  {
     for (const sl of COUV_SLOTS) {
+      if (!sl.zing && !toitPente(p)) continue;
       const q = sl.qte(p); if (!(q > 0)) continue;
       const id = accChoisi(p, sl);
       if (!id) continue;   // rien de choisi : signalé par le bandeau (accManquants)

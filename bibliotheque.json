@@ -2151,13 +2151,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_egout",
       "si": {
         "cle": "gouttiere",
         "val": "pvc"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0108",
@@ -2172,13 +2171,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_egout",
       "si": {
         "cle": "gouttiere",
         "val": "alu"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0109",
@@ -2193,13 +2191,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_descentes",
       "si": {
         "cle": "descente",
         "val": "pvc"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0110",
@@ -2214,13 +2211,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_descentes",
       "si": {
         "cle": "descente",
         "val": "alu"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0111",
@@ -2362,8 +2358,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0119",
@@ -2431,8 +2426,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0123",
@@ -8185,13 +8179,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_egout",
       "si": {
         "cle": "gouttiere",
         "val": "zinc"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0461",
@@ -8206,8 +8199,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0462",
@@ -8222,13 +8214,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_descentes",
       "si": {
         "cle": "descente",
         "val": "zinc"
-      },
-      "archive": true
+      }
     },
     {
       "id": "OUV-0463",
@@ -8243,8 +8234,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0464",
@@ -8259,8 +8249,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0465",
@@ -8275,8 +8264,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0466",
@@ -8291,8 +8279,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0467",
@@ -8307,8 +8294,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
-      "archive": true
+      "version": 2
     },
     {
       "id": "OUV-0468",
@@ -30881,6 +30867,6 @@
       "detail": "Façonnage sur mesure d'une enchevêtrure au sein d'un plan de chevrons ou de pannes traditionnels. L'ouvrage comprend : le lignage, la découpe des chevrons ou morceaux de pannes interrompus, la fourniture et la pose des pièces d'encadrement (chevêtres horizontaux et chevronnets de rive de section identique ou renforcée par rapport aux bois courants), l'assemblage par tenon-mortaise traditionnel ou par quincaillerie structurelle lourde (étriers inox/acier galvanisé), et les ajustements d'aplomb. (Unité : u)"
     }
   ],
-  "revision": 142,
+  "revision": 143,
   "prochainNumero": 1883
 }
