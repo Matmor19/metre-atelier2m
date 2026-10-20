@@ -3483,7 +3483,7 @@ const COUV_SLOTS = [
   { champ: 'accCrosse', lib: 'Crosses de descente', zing: true, qte: p => num(p.toiture.nbCrosses), base: ['OUV-0463'] },
   { champ: 'accCrochet', lib: 'Crochets de gouttière', zing: true, qte: p => num(p.toiture.nbCrochets), base: ['OUV-0122'] },
   { champ: 'accCheneau', lib: 'Chéneaux', zing: true, qte: p => num(p.toiture.mlCheneau), base: ['OUV-0467', 'OUV-0118'] },
-  { champ: 'accRegard', lib: 'Regards de branchement des eaux pluviales', zing: true, qte: p => num(p.toiture.nbRegards), base: ['OUV-0774', 'OUV-0019', 'OUV-0525', 'OUV-0526'] }
+  { champ: 'accRegard', lib: 'Regards de branchement des eaux pluviales', zing: true, qte: p => (num(p.toiture.nbRegards) > 0 ? num(p.toiture.nbRegards) : num(p.toiture.nbDesc)), base: ['OUV-0774', 'OUV-0019', 'OUV-0525', 'OUV-0526'] }
 ];
 // Lignes de zinguerie du lot couverture-zinguerie (sous-titre « Zinguerie » au métré)
 const ZING_IDS = new Set(['OUV-0107', 'OUV-0108', 'OUV-0109', 'OUV-0110', 'OUV-0118', 'OUV-0122', 'OUV-0460', 'OUV-0461', 'OUV-0462', 'OUV-0463',
@@ -4623,7 +4623,7 @@ function ficheRendre() {
             ${champ('Crosses de descente (nombre)', inp('data-k="toit" data-champ="nbCrosses" inputmode="numeric"', toit.nbCrosses || ''))}
             ${champ('Crochets de gouttière (nombre)', inp('data-k="toit" data-champ="nbCrochets" inputmode="numeric"', toit.nbCrochets || ''))}
             ${champ('Chéneaux (ml)', inp('data-k="toit" data-champ="mlCheneau" inputmode="decimal"', toit.mlCheneau || ''))}
-            ${champ('Regards de branchement des eaux pluviales (nombre)', inp('data-k="toit" data-champ="nbRegards" inputmode="numeric" placeholder="' + (num(toit.nbDesc) > 0 ? 'descentes saisies : ' + fmt(num(toit.nbDesc)) : 'ex. 4') + '"', toit.nbRegards || ''))}
+            ${champ('Regards de branchement des eaux pluviales (nombre, un par descente si vide)', inp('data-k="toit" data-champ="nbRegards" inputmode="numeric" placeholder="' + (num(toit.nbDesc) > 0 ? fmt(num(toit.nbDesc)) + ' (un par descente)' : 'un par descente') + '"', toit.nbRegards || ''))}
             ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Avant-toit</div>
             ${champ('Type d\'avant-toit', selCrayon('avant-toit', 'Type d\'avant-toit', `<select data-k="toit" data-champ="avantToit" style="width:100%;padding:6px"><option value="" ${!toit.avantToit ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${toit.avantToit === 'aucun' ? 'selected' : ''}>Aucun avant-toit (rien au métré)</option>${optListeOuvrages('avant-toit', 'Type d\'avant-toit', () => AVANT_TOIT_BASE.map(id => desOuv(id)).filter(Boolean), toit.avantToit === 'aucun' ? '' : (toit.avantToit || ''), null)}</select>`))}
             ${champ('Longueur d\'avant-toit (ml)', inp(`data-k="toit" data-champ="mlAvantToit" inputmode="decimal" placeholder="${num(p.toiture.egout) > 0 ? 'égout saisi : ' + fmt(num(p.toiture.egout)) + ' m' : 'ex. 36'}"`, toit.mlAvantToit || ''))}
