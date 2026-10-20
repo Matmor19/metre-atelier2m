@@ -7176,7 +7176,15 @@ if ($('btnConfig')) $('btnConfig').onclick = () => ouvrirConfig();
 (function () {
   const f = document.getElementById('vConfig');
   if (!f) return;
-  const marque = el => { if (el.matches && el.matches('input:not([type=checkbox]):not([type=button]),select,textarea')) el.classList.toggle('rempli', el.value !== ''); };
+  // Choix « aucun / rien au métré » : bleu pâle (classe neant) pour le distinguer d'un choix rempli (jaune)
+  const NEANT = /rien au m[ée]tr[ée]|je saisis moi-m[êe]me|^\s*aucun|^\s*pas de /i;
+  const marque = el => {
+    if (!(el.matches && el.matches('input:not([type=checkbox]):not([type=button]),select,textarea'))) return;
+    const opt = el.tagName === 'SELECT' && el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null;
+    const neant = !!opt && el.value !== '' && (el.value === 'aucun' || NEANT.test(opt.textContent || ''));
+    el.classList.toggle('neant', neant);
+    el.classList.toggle('rempli', el.value !== '' && !neant);
+  };
   const toutes = () => f.querySelectorAll('input,select,textarea').forEach(marque);
   new MutationObserver(toutes).observe(f, { childList: true, subtree: true });
   f.addEventListener('input', e => marque(e.target));
