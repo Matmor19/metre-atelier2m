@@ -218,11 +218,70 @@ function genDossier(lotId) {
   }
   return [];
 }
+// Généralités propres au type de charpente choisi (les sections « Fermettes » ne valent que pour la charpente industrielle)
+const GEN_CHARP_TYPE = {
+  traditionnelle: { titre: 'Charpente traditionnelle : structure, assemblages et pénétrations', points: [
+    'Charpente traditionnelle en bois massif ou lamellé-collé traité classe 2 : fermes, pannes (sablières, intermédiaires, faîtière) et chevrons taillés et assemblés selon le DTU 31.1.',
+    'Sections et entraxes justifiés par la note de calcul de l\'entreprise, d\'après la portée, les appuis, la pente et les charges de neige et de vent du récapitulatif ci-dessous.',
+    'Coyaux, débords d\'égout et bois apparents réalisés selon les choix du récapitulatif ; bois apparents rabotés et traités.',
+    'Noues, arêtiers, chevêtres et pénétrations taillés sur mesure, assemblages traditionnels ou quincaillerie structurelle (étriers, sabots, tiges filetées).'
+  ] },
+  fermette: { titre: 'Fermettes industrielles : pentes et pénétrations', points: [
+    'Fermettes industrielles : pente de toiture, géométrie (monopente, 2, 3 ou 4 pans) et appuis selon le récapitulatif ci-dessous ; plan de pose et note de calcul du fabricant.',
+    'Pénétrations (jonction de deux sens de toiture) : contrôle de la compatibilité des fermettes avant fabrication.',
+    'Chevêtres de cheminée et de trémie, arêtiers et noues en fermettes : à préciser sur le plan de charpente du fabricant.'
+  ] },
+  terrasse: { titre: 'Toit terrasse : structure porteuse', points: [
+    'Structure porteuse du toit terrasse dimensionnée pour la pente minimale de 3,5 %, le poids du complexe d\'étanchéité et les charges de neige du récapitulatif ci-dessous.'
+  ] }
+};
 // Sections des généralités d'un lot, complétées par les données du dossier s'il y en a
 function sectionsDuLot(lotId) {
   const g = genDuLot(lotId); if (!g) return [];
+  let sections = g.sections;
+  if (lotId === 'charpente-structure-bois') {
+    const c = chantiers.find(x => x.id === courantId);
+    const t = c ? charpenteDe(projetDe(c).toiture) : '';
+    const typeC = c && projetDe(c).toiture.type === 'plat' ? 'terrasse' : t;
+    if (GEN_CHARP_TYPE[typeC]) sections = [...sections.filter(s => !/fermette|traditionnel|terrasse/i.test(s.titre)), GEN_CHARP_TYPE[typeC]];
+  }
   const dos = genDossier(lotId);
-  return dos.length ? [...g.sections, { titre: 'Données du dossier (étude de faisabilité)', points: dos }] : g.sections;
+  return dos.length ? [...sections, { titre: 'Données du dossier (étude de faisabilité)', points: dos }] : sections;
+}
+// Récapitulatif pour le calcul de charpente de l'entreprise (en tête du lot charpente, sous les généralités)
+function recapCharpente(lotId) {
+  if (lotId !== 'charpente-structure-bois') return [];
+  const c = chantiers.find(x => x.id === courantId); if (!c) return [];
+  const p = projetDe(c), t = p.toiture || {}, r = projetCalcul(p);
+  const plat = t.type === 'plat';
+  const lib = (map, v) => (v ? (map[v] || v) : '');
+  const pente = num(t.pente);
+  const card = _kanbanDossiers[refKanbanDe(c)] || null, f = (card && card.faisa) || {}, e = (card && card.euro) || {};
+  const ml = v => (num(v) > 0 ? fmt(num(v)) + ' m' : '');
+  const lignes = [
+    ['Type de charpente', plat ? 'Toit terrasse' : lib(FICHE_CHARP, charpenteDe(t))],
+    ['Géométrie', plat ? 'Toit plat' : lib(FICHE_TOIT, t.type)],
+    ['Pente', pente > 0 ? `${fmt(pente)} % (soit ${fmt(Math.round(Math.atan(pente / 100) * 180 / Math.PI * 10) / 10)}°)` : ''],
+    ['Appuis', lib(FICHE_APPUIS, t.appuis)],
+    ['Longueur entre appuis (portée)', ml(t.portee)],
+    ['Type de versant', plat ? '' : (t.versant === 'avec' ? `Avec coyau${num(t.coyauLong) > 0 ? ' sur ' + fmt(num(t.coyauLong)) + ' cm' : ''}` : lib(FICHE_VERSANT, t.versant))],
+    ['Esthétique de l\'égout', plat ? '' : lib(FICHE_EGOUT, t.egoutStyle)],
+    ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (t.chevronnage ? 'Oui' : 'Non') : ''],
+    ['Surface au sol couverte', num(t.surface) > 0 ? fmt(num(t.surface)) + ' m²' : ''],
+    ['Surface de couverture (pente comprise)', r.toiture > 0 ? fmt(r.toiture) + ' m²' : ''],
+    ['Couverture', plat ? '' : lib(FICHE_COUV, couvDe(t))],
+    ['Écran de sous-toiture', lib(FICHE_ECRAN, t.ecran)],
+    ['Faîtage', ml(t.faite)], ['Rives', ml(t.rive)], ['Égout', ml(t.egout)], ['Arêtiers', ml(t.arete)], ['Noues', ml(t.noue)],
+    ['Zone de vent', e.vent || ''], ['Zone de neige', e.neige || ''], ['Altitude', (e.alt !== undefined && e.alt !== null && e.alt !== '') ? e.alt + ' m' : ''],
+    ['Zone sismique', f.sismicite || '']
+  ];
+  const remplies = lignes.filter(([, v]) => v !== '' && v !== undefined && v !== null);
+  return remplies.length ? lignes.map(([a, v]) => [a, (v === '' || v === undefined || v === null) ? 'non renseigné' : String(v)]) : [];
+}
+function recapCharpenteHtml(lotId) {
+  const R = recapCharpente(lotId); if (!R.length) return '';
+  return `<div class="gen-bloc"><div class="gen-titre">Récapitulatif pour le calcul de charpente</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:12px">${R.map(([a, v]) => `<div><strong>${esc(a)}</strong> : ${esc(v)}</div>`).join('')}</div></div>`;
 }
 function genHtml(lotId, numLot) {
   const g = genDuLot(lotId);
@@ -1130,6 +1189,8 @@ function renderMetre() {
       ${vide ? `<button class="btn small sec" data-retirer-lot="${esc(lotId)}">Retirer</button>` : ''}
       ${aGen ? `<label class="gen-choix"><input type="checkbox" data-gen="${esc(lotId)}" ${coche ? 'checked' : ''}> Généralités dans le métré</label>` : ''}</td></tr>`;
     if (coche) h += `<tr class="gen"><td colspan="${nc}">${genHtml(lotId, i + 1)}</td></tr>`;
+    const recapC = recapCharpenteHtml(lotId);
+    if (recapC) h += `<tr class="gen"><td colspan="${nc}">${recapC}</td></tr>`;
     const titres = titresAvantLignes(lotId, ls);
     for (const [ii, l] of ls.entries()) {
       for (const t of titres[ii]) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
@@ -5481,6 +5542,7 @@ function htmlImpression(d, logo, pg) {
   for (const lot of d.lots) {
     corps += `<tr class="lot"><td colspan="${nc}">${esc(lot.num)} · ${esc(lot.nom)}${lot.lignes.length ? '' : ' <span class="vide">(aucune ligne)</span>'}</td></tr>`;
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
+    { const rc = recapCharpenteHtml(lot.id); if (rc) corps += `<tr class="gen"><td colspan="${nc}">${rc}</td></tr>`; }
     for (const l of lot.lignes) {
       for (const t of l.titres) corps += `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
       corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
@@ -5599,7 +5661,7 @@ function htmlParLot(d, type, logo) {
       <div class="pied">${esc(titreDoc)} établi le ${esc(d.date)} · ${esc(ATELIER.nom)} · ${esc(ATELIER.mail)}</div>
     </section>`;
     // Détail du lot (généralités en tête pour le CDPGF)
-    const gen = cdpgf ? genHtml(lot.id, lot.ordre) : '';
+    const gen = (cdpgf ? genHtml(lot.id, lot.ordre) : '') + recapCharpenteHtml(lot.id);
     const lignes = lot.lignes.map(l => `${l.titres.map(t => `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
         <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
@@ -5906,6 +5968,12 @@ async function pdfCdpgfFormulaire() {
         }
         y -= 6;
       }
+    }
+    const recapP = recapCharpente(lot.id);
+    if (recapP.length) {
+      ligne('Récapitulatif pour le calcul de charpente', M, LARG, 9, helvB, ORANGE);
+      for (const [a, v] of recapP) ligne('• ' + a + ' : ' + v, M + 8, LARG - 8, 7.6, helv, GRIS);
+      y -= 6;
     }
     enteteTable();
     const noms = [];
