@@ -540,6 +540,8 @@ function route(nom) {
   if (nom === 'metre' || nom === 'tableau') compterLignes();
   if (nom === 'config') {
     piecesDepliees.clear();   // à chaque arrivée dans le configurateur, les pièces sont repliées
+    lotsCfgDeplies.clear();   // et les lots 0 à 13 aussi
+    document.querySelectorAll('#vConfig .tab-row.pliable').forEach(row => { row.classList.add('replie'); const f = row.querySelector('.tab-fleche'); if (f) f.textContent = '▸'; row.title = 'Cliquer pour déplier le lot'; });
     renderPiecesNv();         // et redessinées repliées, même si la vue était déjà affichée
     requestAnimationFrame(dessinerOnglets);
   }
@@ -556,8 +558,12 @@ function allerAuConfigurateur(lot, mur) {
   const onglet = ONGLET_DU_LOT[lot];
   requestAnimationFrame(() => {
     // Le mur d'origine est repéré par sa carte ; sinon l'onglet de la famille de travaux
+    // Le lot visé est déplié (les lots 0 à 13 arrivent repliés)
+    const ouvrirLot = id => { const row = id && document.querySelector(`#vConfig .tab-row.pliable[data-lotcfg="${id}"]`); if (row && row.classList.contains('replie')) row.click(); };
     const carteMur = mur ? document.querySelector(`#vConfig [data-k="mur"][data-id="${mur}"]`) : null;
-    const cible = carteMur ? carteMur.closest('div[style*="border-bottom"]') || carteMur : [...document.querySelectorAll('#vConfig h2.lot-titre')].find(x => onglet && x.textContent.trim().startsWith(onglet + '.'));
+    if (carteMur) { const bl = carteMur.closest('.bloc'), row = bl && bl.previousElementSibling; if (row && row.dataset && row.dataset.lotcfg) ouvrirLot(row.dataset.lotcfg); }
+    else ouvrirLot(onglet);
+    const cible = carteMur ? carteMur.closest('div[style*="border-bottom"]') || carteMur : [...document.querySelectorAll('#vConfig h2.lot-titre')].find(x => onglet && x.textContent.replace(/^[▸▾]\s*/, '').trim().startsWith(onglet + '.'));
     if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
@@ -4446,13 +4452,30 @@ function surfaceMur(m) {
   }
   return num(m.longueur) * num(m.hauteur);
 }
+// Lots du configurateur dépliés (les autres sont repliés) ; vidé à chaque arrivée dans le configurateur
+const lotsCfgDeplies = new Set();
+document.addEventListener('click', e => {
+  const row = e.target.closest && e.target.closest('.tab-row.pliable[data-lotcfg]');
+  if (!row) return;
+  const id = row.dataset.lotcfg, ouvrir = row.classList.contains('replie');
+  ouvrir ? lotsCfgDeplies.add(id) : lotsCfgDeplies.delete(id);
+  row.classList.toggle('replie', !ouvrir);
+  row.title = ouvrir ? 'Cliquer pour replier le lot' : 'Cliquer pour déplier le lot';
+  const f = row.querySelector('.tab-fleche'); if (f) f.textContent = ouvrir ? '▾' : '▸';
+  requestAnimationFrame(dessinerOnglets);
+});
 function tabTitre(t) {
   // Titre en onglet : identifiant (lettre ou chiffre) et première lettre en grand, le reste en majuscules plus petites
   const lettre = /^[A-Z]\./.test(t);
   const m = /^([A-Z0-9]+)\.\s*(.*)$/.exec(t);
   const id = m ? m[1] : '', titre = m ? m[2] : t;
   const premiere = titre.charAt(0).toUpperCase(), reste = titre.slice(1).toUpperCase();
-  return `<div class="tab-row ${lettre ? 'lettre' : 'numero'}"><svg class="tab-svg" aria-hidden="true"></svg><h2 class="lot-titre"><span class="tab-gros">${esc(id)}.</span> <span class="tab-gros">${esc(premiere)}</span><span class="tab-petit">${esc(reste)}</span></h2></div>`;
+  // Lots numérotés (0 à 13) : repliables comme les pièces, repliés à chaque arrivée dans le configurateur
+  const pliable = !lettre && id !== '';
+  const rep = pliable && !lotsCfgDeplies.has(id);
+  const attr = pliable ? ` data-lotcfg="${esc(id)}" title="${rep ? 'Cliquer pour déplier le lot' : 'Cliquer pour replier le lot'}"` : '';
+  const fleche = pliable ? `<span class="tab-fleche">${rep ? '▸' : '▾'}</span> ` : '';
+  return `<div class="tab-row ${lettre ? 'lettre' : 'numero'}${pliable ? ' pliable' : ''}${rep ? ' replie' : ''}"${attr}><svg class="tab-svg" aria-hidden="true"></svg><h2 class="lot-titre">${fleche}<span class="tab-gros">${esc(id)}.</span> <span class="tab-gros">${esc(premiere)}</span><span class="tab-petit">${esc(reste)}</span></h2></div>`;
 }
 // Dessin des onglets : un seul tracé par titre (4 px, arrondis de 14 px), sans superposition de bordures
 function dessinerOnglets() {
