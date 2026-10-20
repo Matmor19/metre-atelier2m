@@ -1258,6 +1258,10 @@ function rafraichirDesignations(id) {
     let nl = l;
     const lotCible = estAvantToit(l) ? 'couverture-zinguerie' : o.lot;   // avant-toit : toujours au lot couverture-zinguerie
     if (!l.platNv && lotCible && lotCible !== l.lot) { lotsAvant.add(l.lot); nl = Object.assign({}, nl, { lot: lotCible }); change = true; }
+    // Ancien nom terminé par l'unité « (ml) », « (u) »… (retirée de la bibliothèque) : on enlève cette parenthèse
+    { const d = String(nl.designation || ''), reste = d.startsWith(o.designation) ? d.slice(o.designation.length) : '';
+      const m = /^\s*\((ml|u|m²|forfait|unité)\)/.exec(reste);
+      if (m) { nl = Object.assign({}, nl, { designation: o.designation + reste.slice(m[0].length) }); change = true; } }
     if (l.projet || l.plat || l.auto || l.libre || String(l.designation || '').includes(' – ')) return nl;
     if (l.pieceNv && (SOUS_PIECE_LOTS.has(l.lot) || l.lot === 'menuiseries-interieures' || l.menBloc)) return nl;   // lignes du configurateur (menuiseries, blocs, façades) : désignation gardée   // ligne de pièce : son descriptif (blocs portes, façades : dimensions et choix) est gardé tel quel
     if (!o.designation || o.designation === l.designation) return nl;

@@ -7463,7 +7463,7 @@
     {
       "id": "OUV-0419",
       "lot": "charpente-structure-bois",
-      "designation": "Fermette de débord de toit (ml)",
+      "designation": "Fermette de débord de toit",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7473,7 +7473,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -7511,7 +7511,7 @@
     {
       "id": "OUV-0422",
       "lot": "charpente-structure-bois",
-      "designation": "Fermette d'arêtier (ml)",
+      "designation": "Fermette d'arêtier",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7521,13 +7521,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0423",
       "lot": "charpente-structure-bois",
-      "designation": "Fermette de noue (ml)",
+      "designation": "Fermette de noue",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7537,7 +7537,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -7735,7 +7735,7 @@
     {
       "id": "OUV-0436",
       "lot": "charpente-structure-bois",
-      "designation": "Panne faîtière (ml)",
+      "designation": "Panne faîtière",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7745,13 +7745,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0437",
       "lot": "charpente-structure-bois",
-      "designation": "Panne sablière (ml)",
+      "designation": "Panne sablière",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7761,13 +7761,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0438",
       "lot": "charpente-structure-bois",
-      "designation": "Panne intermédiaire (ml)",
+      "designation": "Panne intermédiaire",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7777,7 +7777,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -7803,7 +7803,7 @@
     {
       "id": "OUV-0440",
       "lot": "charpente-structure-bois",
-      "designation": "Arbalétrier (ml)",
+      "designation": "Arbalétrier",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7813,13 +7813,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0441",
       "lot": "charpente-structure-bois",
-      "designation": "Poinçon et jambe de force (ml)",
+      "designation": "Poinçon et jambe de force",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7829,13 +7829,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0442",
       "lot": "charpente-structure-bois",
-      "designation": "Entrait (ml)",
+      "designation": "Entrait",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7845,13 +7845,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0443",
       "lot": "charpente-structure-bois",
-      "designation": "Arêtier bois (ml)",
+      "designation": "Arêtier bois",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7861,13 +7861,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
       "id": "OUV-0444",
       "lot": "charpente-structure-bois",
-      "designation": "Noue bois (ml)",
+      "designation": "Noue bois",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -7877,7 +7877,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -7951,7 +7951,7 @@
     {
       "id": "OUV-0449",
       "lot": "charpente-structure-bois",
-      "designation": "Diagnostic de charpente existante (forfait)",
+      "designation": "Diagnostic de charpente existante",
       "unite": "forfait",
       "type": "commun",
       "saisie": "metre",
@@ -7961,7 +7961,7 @@
           "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -8432,7 +8432,7 @@
     {
       "id": "OUV-0476",
       "lot": "couverture-zinguerie",
-      "designation": "Habillage zinc de lucarne (forfait)",
+      "designation": "Habillage zinc de lucarne",
       "unite": "forfait",
       "type": "commun",
       "saisie": "metre",
@@ -8442,7 +8442,7 @@
           "libelle": "Nombre (1 pour un forfait)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "archive": true
     },
     {
@@ -13892,7 +13892,7 @@
     {
       "id": "OUV-0779",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage tuiles mécaniques terre cuite (ml)",
+      "designation": "Faîtage tuiles mécaniques terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -13902,7 +13902,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -13913,7 +13913,7 @@
     {
       "id": "OUV-0780",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier tuiles mécaniques terre cuite (ml)",
+      "designation": "Arêtier tuiles mécaniques terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -13923,7 +13923,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -13934,7 +13934,7 @@
     {
       "id": "OUV-0781",
       "lot": "couverture-zinguerie",
-      "designation": "Noue tuiles mécaniques terre cuite (ml)",
+      "designation": "Noue tuiles mécaniques terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -13944,7 +13944,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -13955,7 +13955,7 @@
     {
       "id": "OUV-0782",
       "lot": "couverture-zinguerie",
-      "designation": "Rive tuiles mécaniques terre cuite (ml)",
+      "designation": "Rive tuiles mécaniques terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -13965,7 +13965,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -13976,7 +13976,7 @@
     {
       "id": "OUV-0783",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage tuiles mécaniques béton (ml)",
+      "designation": "Faîtage tuiles mécaniques béton",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -13986,7 +13986,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -13997,7 +13997,7 @@
     {
       "id": "OUV-0784",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier tuiles mécaniques béton (ml)",
+      "designation": "Arêtier tuiles mécaniques béton",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14007,7 +14007,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14018,7 +14018,7 @@
     {
       "id": "OUV-0785",
       "lot": "couverture-zinguerie",
-      "designation": "Noue tuiles mécaniques béton (ml)",
+      "designation": "Noue tuiles mécaniques béton",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14028,7 +14028,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14039,7 +14039,7 @@
     {
       "id": "OUV-0786",
       "lot": "couverture-zinguerie",
-      "designation": "Rive tuiles mécaniques béton (ml)",
+      "designation": "Rive tuiles mécaniques béton",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14049,7 +14049,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14060,7 +14060,7 @@
     {
       "id": "OUV-0787",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage tuiles plates terre cuite (ml)",
+      "designation": "Faîtage tuiles plates terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14070,7 +14070,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14081,7 +14081,7 @@
     {
       "id": "OUV-0788",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier tuiles plates terre cuite (ml)",
+      "designation": "Arêtier tuiles plates terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14091,7 +14091,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14102,7 +14102,7 @@
     {
       "id": "OUV-0789",
       "lot": "couverture-zinguerie",
-      "designation": "Noue tuiles plates terre cuite (ml)",
+      "designation": "Noue tuiles plates terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14112,7 +14112,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14123,7 +14123,7 @@
     {
       "id": "OUV-0790",
       "lot": "couverture-zinguerie",
-      "designation": "Rive tuiles plates terre cuite (ml)",
+      "designation": "Rive tuiles plates terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14133,7 +14133,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14144,7 +14144,7 @@
     {
       "id": "OUV-0791",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage ardoise (ml)",
+      "designation": "Faîtage ardoise",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14154,7 +14154,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14165,7 +14165,7 @@
     {
       "id": "OUV-0792",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier ardoise (ml)",
+      "designation": "Arêtier ardoise",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14175,7 +14175,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14186,7 +14186,7 @@
     {
       "id": "OUV-0793",
       "lot": "couverture-zinguerie",
-      "designation": "Noue ardoise (ml)",
+      "designation": "Noue ardoise",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14196,7 +14196,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14207,7 +14207,7 @@
     {
       "id": "OUV-0794",
       "lot": "couverture-zinguerie",
-      "designation": "Rive ardoise (ml)",
+      "designation": "Rive ardoise",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14217,7 +14217,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14228,7 +14228,7 @@
     {
       "id": "OUV-0795",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage zinc à joint debout (ml)",
+      "designation": "Faîtage zinc à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14238,7 +14238,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14249,7 +14249,7 @@
     {
       "id": "OUV-0796",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier zinc à joint debout (ml)",
+      "designation": "Arêtier zinc à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14259,7 +14259,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14291,7 +14291,7 @@
     {
       "id": "OUV-0798",
       "lot": "couverture-zinguerie",
-      "designation": "Rive zinc à joint debout (ml)",
+      "designation": "Rive zinc à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14301,7 +14301,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14312,7 +14312,7 @@
     {
       "id": "OUV-0799",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage aluminium à joint debout (ml)",
+      "designation": "Faîtage aluminium à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14322,7 +14322,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14333,7 +14333,7 @@
     {
       "id": "OUV-0800",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier aluminium à joint debout (ml)",
+      "designation": "Arêtier aluminium à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14343,7 +14343,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14354,7 +14354,7 @@
     {
       "id": "OUV-0801",
       "lot": "couverture-zinguerie",
-      "designation": "Noue aluminium à joint debout (ml)",
+      "designation": "Noue aluminium à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14364,7 +14364,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14375,7 +14375,7 @@
     {
       "id": "OUV-0802",
       "lot": "couverture-zinguerie",
-      "designation": "Rive aluminium à joint debout (ml)",
+      "designation": "Rive aluminium à joint debout",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14385,7 +14385,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14396,7 +14396,7 @@
     {
       "id": "OUV-0803",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage bac acier isolé (ml)",
+      "designation": "Faîtage bac acier isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14406,7 +14406,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14417,7 +14417,7 @@
     {
       "id": "OUV-0804",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier bac acier isolé (ml)",
+      "designation": "Arêtier bac acier isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14427,7 +14427,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14438,7 +14438,7 @@
     {
       "id": "OUV-0805",
       "lot": "couverture-zinguerie",
-      "designation": "Noue bac acier isolé (ml)",
+      "designation": "Noue bac acier isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14448,7 +14448,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14459,7 +14459,7 @@
     {
       "id": "OUV-0806",
       "lot": "couverture-zinguerie",
-      "designation": "Rive bac acier isolé (ml)",
+      "designation": "Rive bac acier isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14469,7 +14469,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14480,7 +14480,7 @@
     {
       "id": "OUV-0807",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage bac acier non isolé (ml)",
+      "designation": "Faîtage bac acier non isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14490,7 +14490,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_faite",
       "si": {
         "cle": "couverture",
@@ -14501,7 +14501,7 @@
     {
       "id": "OUV-0808",
       "lot": "couverture-zinguerie",
-      "designation": "Arêtier bac acier non isolé (ml)",
+      "designation": "Arêtier bac acier non isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14511,7 +14511,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_arete",
       "si": {
         "cle": "couverture",
@@ -14522,7 +14522,7 @@
     {
       "id": "OUV-0809",
       "lot": "couverture-zinguerie",
-      "designation": "Noue bac acier non isolé (ml)",
+      "designation": "Noue bac acier non isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14532,7 +14532,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_noue",
       "si": {
         "cle": "couverture",
@@ -14543,7 +14543,7 @@
     {
       "id": "OUV-0810",
       "lot": "couverture-zinguerie",
-      "designation": "Rive bac acier non isolé (ml)",
+      "designation": "Rive bac acier non isolé",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14553,7 +14553,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "ml_rive",
       "si": {
         "cle": "couverture",
@@ -14598,7 +14598,7 @@
     {
       "id": "OUV-0813",
       "lot": "couverture-zinguerie",
-      "designation": "Conduit de poêle isolé Poujoulat (ml)",
+      "designation": "Conduit de poêle isolé Poujoulat",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -14608,7 +14608,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "conduit_bois_ml",
       "archive": true
     },
@@ -15289,7 +15289,7 @@
     {
       "id": "OUV-0848",
       "lot": "couverture-zinguerie",
-      "designation": "Conduit simple pour poêle à granulés Ø 80 ou 100 avec tubage flexible (ml)",
+      "designation": "Conduit simple pour poêle à granulés Ø 80 ou 100 avec tubage flexible",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -15299,7 +15299,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "conduit_gran_ml",
       "si": {
         "cle": "poele_conduit",
@@ -15310,7 +15310,7 @@
     {
       "id": "OUV-0849",
       "lot": "couverture-zinguerie",
-      "designation": "Conduit concentrique pour poêle à granulés 80/125 (ml)",
+      "designation": "Conduit concentrique pour poêle à granulés 80/125",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -15320,7 +15320,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "conduit_gran_ml",
       "si": {
         "cle": "poele_conduit",
@@ -15331,7 +15331,7 @@
     {
       "id": "OUV-0850",
       "lot": "couverture-zinguerie",
-      "designation": "Conduit concentrique pour poêle à granulés 100/150 (ml)",
+      "designation": "Conduit concentrique pour poêle à granulés 100/150",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -15341,7 +15341,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "conduit_gran_ml",
       "si": {
         "cle": "poele_conduit",
@@ -30270,7 +30270,7 @@
     {
       "id": "OUV-1846",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage ventilé ou scellé en terre cuite (ml)",
+      "designation": "Faîtage ventilé ou scellé en terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30280,13 +30280,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation de la ligne de couronnement horizontale supérieure du toit. L'ouvrage comprend : la fourniture et la pose des tuiles faîtières assorties à la couverture, la mise en œuvre d'un closoir ventilé en rouleau (avec jupes plomb ou alu plissé) cloué sur une rehausse en bois, la fixation mécanique de chaque faîtière par clip inox ou vis étanche, ou le scellement traditionnel au mortier de chaux grasse NHL (selon choix architectural)."
     },
     {
       "id": "OUV-1847",
       "lot": "couverture-zinguerie",
-      "designation": "Rive à rabat en terre cuite (ml)",
+      "designation": "Rive à rabat en terre cuite",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30296,13 +30296,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition et étanchéité latérale des bordures de toiture (pignons). L'ouvrage comprend : la fourniture et la pose des tuiles de rive à rabat, l'alignement parfait sur la planche de rive ou le mur pignon, et la fixation mécanique systématique de chaque tuile par vis inox à étanchéité néoprène sur le liteonnage."
     },
     {
       "id": "OUV-1878",
       "lot": "couverture-zinguerie",
-      "designation": "Rive en équerre, rive d'angle ou universelle (ml)",
+      "designation": "Rive en équerre, rive d'angle ou universelle",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30312,13 +30312,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuile de finition latérale en forme de « L » inversé, dotée d'une aile verticale droite et lisse (sans emboîtement sur la partie tombante). Elle s'adapte à de nombreux modèles de tuiles et se pose directement par vissage sur la planche de rive ou le pignon. Elle offre une finition très rectiligne et moderne."
     },
     {
       "id": "OUV-1879",
       "lot": "couverture-zinguerie",
-      "designation": "Rive individuelle, gauche à recouvrement et droite à emboîtement (ml)",
+      "designation": "Rive individuelle, gauche à recouvrement et droite à emboîtement",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30328,13 +30328,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Système spécifique aux toitures en tuiles mécaniques. Au lieu d'avoir un rabat lisse, chaque tuile de rive reprend exactement le dessin, le profil et le système de clavage (les emboîtements) de la tuile courante. La rive gauche vient recouvrir la dernière tuile, tandis que la rive droite s'y emboîte."
     },
     {
       "id": "OUV-1880",
       "lot": "couverture-zinguerie",
-      "designation": "Double de rive, rive sans rabat (ml)",
+      "designation": "Double de rive, rive sans rabat",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30344,13 +30344,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuile courante de bordure modifiée (souvent doublement galbée ou plus large, type double canal) qui s'arrête pile au nu du mur pignon sans descendre verticalement sur le côté. Elle est conçue pour être associée à un couloir de rive en zinc (poste 11.1.C) ou à un « bardelis » (finition scellée sous tuile), courante dans le Sud et l'Ouest."
     },
     {
       "id": "OUV-1881",
       "lot": "couverture-zinguerie",
-      "designation": "Rive ronde pour tuiles canal (ml)",
+      "designation": "Rive ronde pour tuiles canal",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30360,13 +30360,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Destinée exclusivement aux couvertures en tuiles canal traditionnelles. Il s'agit d'une tuile de couvert (chapeau) légèrement plus évasée et renforcée qui bascule sur le côté du pignon pour fermer hermétiquement la bordure du toit, généralement fixée par crochetage à sec ou scellée traditionnellement au mortier de chaux."
     },
     {
       "id": "OUV-1882",
       "lot": "couverture-zinguerie",
-      "designation": "About de rive en terre cuite, finition basse droite ou gauche (u)",
+      "designation": "About de rive en terre cuite, finition basse droite ou gauche",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30376,13 +30376,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Fourniture et pose de la tuile spécifique de base fermant proprement le départ inférieur de la ligne de rive à l'égout du toit, bloquant l'intrusion de nuisibles."
     },
     {
       "id": "OUV-1848",
       "lot": "couverture-zinguerie",
-      "designation": "Rive plate ou couloir de rive en zinc (ml)",
+      "designation": "Rive plate ou couloir de rive en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30392,13 +30392,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Alternative métallique pour l'étanchéité des rives. L'ouvrage comprend : le pliage, le façonnage et la pose de bandes de rive en zinc naturel ou pré-patiné, les pattes de fixation (agrafes métalliques) et le raccordement étanche sous les tuiles courantes de bordure."
     },
     {
       "id": "OUV-1849",
       "lot": "couverture-zinguerie",
-      "designation": "Fronton de faîtage en terre cuite (u)",
+      "designation": "Fronton de faîtage en terre cuite",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30408,13 +30408,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Obturation esthétique et étanche à l'extrémité de la ligne de faîtage (jonction faîtage/rive). L'ouvrage comprend : la fourniture du fronton assorti (forme de rencontre ou d'about), le calage, le scellement au mastic polyuréthane extérieur ou au mortier de chaux fine, et la fixation de sécurité."
     },
     {
       "id": "OUV-1850",
       "lot": "couverture-zinguerie",
-      "designation": "Tuile de ventilation (chatière en terre cuite) (u)",
+      "designation": "Tuile de ventilation (chatière en terre cuite)",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30424,13 +30424,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Création des orifices nécessaires à la ventilation de la sous-face de la couverture (évitement de la pourriture des bois). L'ouvrage comprend : la fourniture de la tuile chatière de la gamme, la découpe locale du support si nécessaire, la pose intercalée dans la surface courante et sa fixation renforcée."
     },
     {
       "id": "OUV-1851",
       "lot": "couverture-zinguerie",
-      "designation": "Tuile à douille avec lanterneau (sortie de toit) (u)",
+      "designation": "Tuile à douille avec lanterneau (sortie de toit)",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30440,13 +30440,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Point de sortie technique pour les conduits de VMC ou d'évacuation des colonnes EU/EV. L'ouvrage comprend : la fourniture de la tuile à douille en terre cuite, le chapeau pare-pluie (lanterneau) amovible assorti, le raccordement mécanique étanche au conduit de ventilation intérieur et le calfeutrement."
     },
     {
       "id": "OUV-1852",
       "lot": "couverture-zinguerie",
-      "designation": "Demi-tuile ou tuile double (accessoire de calepinage) (u)",
+      "designation": "Demi-tuile ou tuile double (accessoire de calepinage)",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30456,13 +30456,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Éléments spécifiques pour assurer le croisement parfait des joints sans découpe sur le chantier. L'ouvrage comprend : la fourniture et la pose de la demi-tuile ou de la tuile double en bordure de rive ou de pénétration, incluant sa fixation réglementaire."
     },
     {
       "id": "OUV-1853",
       "lot": "couverture-zinguerie",
-      "designation": "Bande de noue en zinc (ml)",
+      "designation": "Bande de noue en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30472,13 +30472,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation de la rigole d'étanchéité à l'intersection de deux pans de toiture inclinés. L'ouvrage comprend : la fourniture et le façonnage sur mesure d'une bande de noue en zinc n° 12 (avec fond en V, pinces d'étanchéité latérales de 15 mm rabattues sur le dessus et relevés latéraux de 25 mm minimum), la pose sur fonçure bois (voliges), la fixation mécanique par pattes à pinces en zinc (sans clouage direct du métal pour libre dilatation), un recouvrement minimal de 20 cm entre chaque élément, le calfeutrement et l'alignement soigné permettant le débordement des tuiles courantes de 12 cm au-dessus du zinc."
     },
     {
       "id": "OUV-1854",
       "lot": "couverture-zinguerie",
-      "designation": "Bande de solin en zinc avec porte-solin et joint mastic (ml)",
+      "designation": "Bande de solin en zinc avec porte-solin et joint mastic",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30488,13 +30488,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Étanchéité linéaire entre la couverture et une paroi maçonnée verticale (mur pignon, souche de cheminée). L'ouvrage comprend : le tracé, la fourniture et la pose de la bande de solin en zinc à pli ou à biseau, la fixation du profilé porte-solin chevillé dans le mur, l'emboîtement des bavettes en zinc plomb (ou zinc plissé) épousant le galbe des tuiles, et l'injection continue d'un cordon de mastic élastomère polyuréthane de première catégorie dans l'engravure supérieure."
     },
     {
       "id": "OUV-1855",
       "lot": "couverture-zinguerie",
-      "designation": "Couloir de rive ou bande de rive contre mur en zinc (ml)",
+      "designation": "Couloir de rive ou bande de rive contre mur en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30504,13 +30504,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Canal de drainage latéral en zinc disposé le long d'un mur pignon qui surplombe la toiture. L'ouvrage comprend : le façonnage en atelier d'un profil en zinc avec un relevé vertical fixé contre le mur et un profil d'évacuation (gouttière plate ou couloir) glissé sous les tuiles de rive, les pattes de fixation en zinc, les soudures étanches à l'étain des raccordements et toutes sujétions de raccord à l'égout."
     },
     {
       "id": "OUV-1856",
       "lot": "couverture-zinguerie",
-      "designation": "Abergement de cheminée en zinc (souche maçonnerie standard) (u)",
+      "designation": "Abergement de cheminée en zinc (souche maçonnerie standard)",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30520,13 +30520,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Ensemble de pièces façonnées sur mesure assurant l'étanchéité périphérique complète autour d'un conduit de cheminée. L'ouvrage comprend : la prise de cotes, le découpage, le pliage et le soudage à l'étain d'un complexe en zinc composé d'une bavette d'en-tête (avec relief exposé de 10 cm mini), de couloirs latéraux et d'une table de pied de cheminée avec jupe en plomb plissé d'épaisseur 1,5 mm pour épouser le relief des tuiles, fixations par pattes et jointoiements périphériques au mastic."
     },
     {
       "id": "OUV-1857",
       "lot": "couverture-zinguerie",
-      "designation": "Selle en plomb de tête de noue (u)",
+      "designation": "Selle en plomb de tête de noue",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30536,7 +30536,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Pièce d'étanchéité tridimensionnelle façonnée à la main à la jonction supérieure de la noue, sous le faîtage ou l'arêtier. L'ouvrage comprend : la fourniture d'une feuille de plomb coulé d'épaisseur minimale 2,0 mm, le battage et l'emboutissage manuel sur chantier pour épouser parfaitement le point de rencontre des deux versants et de la noue, et la soudure étanche ou le pontage au mastic polyuréthane avec la bande de noue inférieure."
     },
     {
@@ -30602,7 +30602,7 @@
     {
       "id": "OUV-1861",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage ou arêtier en ardoises lignées ou cornières zinc (ml)",
+      "designation": "Faîtage ou arêtier en ardoises lignées ou cornières zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30612,13 +30612,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition de la ligne haute ou des lignes d'angles sortants. Comprend la pose d'ardoises spécifiques d'épaisseur renforcée clouées avec chevauchement étanche (brisis) ou la pose d'une cornière en zinc n° 12 façonnée à pinces, fixée par pattes inox sur la ligne de faîte."
     },
     {
       "id": "OUV-1862",
       "lot": "couverture-zinguerie",
-      "designation": "Rive latérale en ardoises, droite ou gauche (ml)",
+      "designation": "Rive latérale en ardoises, droite ou gauche",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30628,13 +30628,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition de bordure de pignon. Comprend la fourniture et la pose de demi-ardoises ou ardoises entières de rives posées avec un alignement saillant parfait, fixées au crochet renforcé ou double clouage cuivre."
     },
     {
       "id": "OUV-1863",
       "lot": "couverture-zinguerie",
-      "designation": "Doublage d'égout en ardoises, ligne de départ (ml)",
+      "designation": "Doublage d'égout en ardoises, ligne de départ",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30644,13 +30644,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Premier rang double en bas de pente assurant la protection du support et le larmier. Comprend les ardoises coupées sur mesure (étêtées) et leur fixation mécanique."
     },
     {
       "id": "OUV-1864",
       "lot": "couverture-zinguerie",
-      "designation": "Chatière de ventilation en zinc ou ardoise, pour toiture ardoise (u)",
+      "designation": "Chatière de ventilation en zinc ou ardoise, pour toiture ardoise",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30660,13 +30660,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Orifice de ventilation de la lame d'air de sous-face. Comprend la fourniture et l'intégration dans le plan de couverture d'une chatière technique à grille anti-nuisible."
     },
     {
       "id": "OUV-1865",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtage ou arêtier ventilé en zinc (ml)",
+      "designation": "Faîtage ou arêtier ventilé en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30676,13 +30676,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition haute de la couverture. Comprend le façonnage des bandes de faîtage à plis, la fourniture des pattes de faîtage robustes, la mise en œuvre de bandes perforées d'aération en zinc, les pinces d'emboîtement et les soudures étanches à l'étain aux extrémités."
     },
     {
       "id": "OUV-1866",
       "lot": "couverture-zinguerie",
-      "designation": "Bande de rive latérale pliée en zinc (ml)",
+      "designation": "Bande de rive latérale pliée en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30692,13 +30692,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition de pignon. Comprend le profilage sur mesure d'une rive en zinc intégrant un relevé vertical à pli de pinces et une retombée d'habillage extérieure fixée par vis inox calfeutrées."
     },
     {
       "id": "OUV-1867",
       "lot": "couverture-zinguerie",
-      "designation": "Main courante et bande d'égout en zinc (ml)",
+      "designation": "Main courante et bande d'égout en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30708,13 +30708,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition basse de raccordement à la gouttière. Comprend le pliage de la bande d'égout, son agrafage sur une bande de tôle pliée continue en acier galvanisé servant de guide, et les raccords étanches."
     },
     {
       "id": "OUV-1868",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtière crantée ou plate laquée, assortie aux bacs (ml)",
+      "designation": "Faîtière crantée ou plate laquée, assortie aux bacs",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30724,13 +30724,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Couronnement supérieur de toiture. Comprend la fourniture de la faîtière en acier laqué d'épaisseur 0,75 mm, les découpes d'ajustement aux ondes/nervures des tôles, les vis autoforeuses laquées de fixation et l'insertion des closoirs en mousse préformés (anti-intrusion d'oiseaux et neige poudreuse)."
     },
     {
       "id": "OUV-1869",
       "lot": "couverture-zinguerie",
-      "designation": "Rive crantée ou d'about laquée, pour bacs acier (ml)",
+      "designation": "Rive crantée ou d'about laquée, pour bacs acier",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30740,13 +30740,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition latérale de rive. Comprend la fixation de la bande d'angle en acier laqué recouvrant la dernière nervure du bac acier courant et retombant verticalement sur le pignon ou la planche de rive."
     },
     {
       "id": "OUV-1870",
       "lot": "couverture-zinguerie",
-      "designation": "Larmier ou bande d'égout en acier laqué, pour bacs acier (ml)",
+      "designation": "Larmier ou bande d'égout en acier laqué, pour bacs acier",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30756,7 +30756,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Évacuation basse. Comprend la fourniture et la pose de la bavette laquée fixée sous les bacs acier et plongeant dans la gouttière."
     },
     {
@@ -30826,7 +30826,7 @@
     {
       "id": "OUV-1875",
       "lot": "charpente-structure-bois",
-      "designation": "Croupe en charpente industrielle (u)",
+      "designation": "Croupe en charpente industrielle",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30836,13 +30836,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 2,
+      "version": 3,
       "detail": "Réalisation de l'extrémité d'une toiture inclinée en croupe (forme en triangle ou trapèze) à l'aide d'un kit de fermettes industrialisées. L'ouvrage comprend : la fourniture et la pose de la panoplie complète de fermettes spécifiques (fermettes d'arêtier, fermettes de croupe de hauteurs dégressives, sablières d'angle et potelets), les connecteurs métalliques à dents, l'ensemble des lisses de triangulation, le contreventement anti-flambement et les ancrages sur les chaînages périphériques."
     },
     {
       "id": "OUV-1876",
       "lot": "charpente-structure-bois",
-      "designation": "Croupe en charpente traditionnelle (u)",
+      "designation": "Croupe en charpente traditionnelle",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -30852,7 +30852,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 2,
+      "version": 3,
       "detail": "Taille et assemblage sur site d'une structure de croupe en bois massif ou lamellé-collé. L'ouvrage comprend : le tracé des lignes de niveau, le calcul des angles de dévers, la fourniture et le levage des chevrons d'arêtier de forte section (liaisons faîtage/angles de murs), la pose des empannons (chevrons de longueurs dégressives coupés de biais et fixés sur l'arêtier), le raccordement des pannes sablières d'angle et les fixations mécaniques par tiges filetées ou goujons structurels."
     },
     {
@@ -30874,7 +30874,7 @@
     {
       "id": "OUV-1883",
       "lot": "couverture-zinguerie",
-      "designation": "Avant-toit à chevrons apparents, sous-face en voliges rabotées (ml)",
+      "designation": "Avant-toit à chevrons apparents, sous-face en voliges rabotées",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30884,13 +30884,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 2,
+      "version": 3,
       "detail": "Réalisation du débord de toiture à chevrons apparents : prolongation des chevrons au-delà du nu du mur, abouts coupés et rabotés, sous-face en voliges rabotées posées sur les chevrons et laissées apparentes, planche d'égout. Bois résineux traité classe 2 au minimum, prêt à recevoir une lasure ou une peinture."
     },
     {
       "id": "OUV-1884",
       "lot": "couverture-zinguerie",
-      "designation": "Avant-toit en caisson fermé, sous-face en lambris bois (ml)",
+      "designation": "Avant-toit en caisson fermé, sous-face en lambris bois",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30900,13 +30900,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 2,
+      "version": 3,
       "detail": "Réalisation d'un caisson d'avant-toit fermé : ossature de coffrage fixée sous les chevrons ou les fermettes, sous-face horizontale ou rampante en lambris bois traité, planche de rive (bandeau) en façade, fente ou grille de ventilation de la sous-toiture."
     },
     {
       "id": "OUV-1885",
       "lot": "couverture-zinguerie",
-      "designation": "Avant-toit en caisson fermé, sous-face en lambris PVC (ml)",
+      "designation": "Avant-toit en caisson fermé, sous-face en lambris PVC",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30916,29 +30916,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 2,
+      "version": 3,
       "detail": "Réalisation d'un caisson d'avant-toit fermé : ossature de coffrage fixée sous les chevrons ou les fermettes, sous-face en lambris PVC alvéolaire teinté dans la masse avec profils de finition, bandeau en PVC ou en bois habillé, ventilation de la sous-toiture assurée. Finition sans entretien."
     },
     {
       "id": "OUV-1886",
       "lot": "couverture-zinguerie",
-      "designation": "Avant-toit à débord réduit, planche d'égout seule (ml)",
-      "unite": "ml",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "cote1",
-          "libelle": "Longueur (m)"
-        }
-      ],
-      "version": 1,
-      "detail": "Débord réduit sans caisson : planche d'égout ou bandeau en bois traité fixé en about de chevrons ou de fermettes, habillage de la sous-face sur la faible profondeur du débord."
-    },
-    {
-      "id": "OUV-1887",
-      "lot": "couverture-zinguerie",
-      "designation": "Génoise en tuiles canal, 2 ou 3 rangs (ml)",
+      "designation": "Avant-toit à débord réduit, planche d'égout seule",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30949,6 +30933,22 @@
         }
       ],
       "version": 2,
+      "detail": "Débord réduit sans caisson : planche d'égout ou bandeau en bois traité fixé en about de chevrons ou de fermettes, habillage de la sous-face sur la faible profondeur du débord."
+    },
+    {
+      "id": "OUV-1887",
+      "lot": "couverture-zinguerie",
+      "designation": "Génoise en tuiles canal, 2 ou 3 rangs",
+      "unite": "ml",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "cote1",
+          "libelle": "Longueur (m)"
+        }
+      ],
+      "version": 3,
       "detail": "Réalisation d'une génoise traditionnelle en débord d'égout : rangs superposés de tuiles canal scellés au mortier de chaux en encorbellement sur le haut du mur, nombre de rangs selon le projet (2 ou 3), rejointoiement, finition de l'égout de la couverture sur la génoise."
     },
     {
@@ -30988,7 +30988,7 @@
     {
       "id": "OUV-1890",
       "lot": "couverture-zinguerie",
-      "designation": "Sous-faîtière ou tuile ventilée de sous-faîtage, tuiles romanes canal (ml)",
+      "designation": "Sous-faîtière ou tuile ventilée de sous-faîtage, tuiles romanes canal",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -30998,13 +30998,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Élément placé sous le faîtage pour assurer l'étanchéité et la ventilation haute des ondes de galbe des tuiles romanes canal (fort galbe)."
     },
     {
       "id": "OUV-1891",
       "lot": "couverture-zinguerie",
-      "designation": "Rive individuelle ou rive à rabat spécifique, tuiles romanes canal (ml)",
+      "designation": "Rive individuelle ou rive à rabat spécifique, tuiles romanes canal",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31014,13 +31014,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuile latérale épousant parfaitement le profil du grand galbe et le système d'emboîtement de la gamme romane canal."
     },
     {
       "id": "OUV-1892",
       "lot": "couverture-zinguerie",
-      "designation": "About de rive spécifique, tuiles romanes canal (u)",
+      "designation": "About de rive spécifique, tuiles romanes canal",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31030,13 +31030,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuile d'extrémité basse fermant proprement le premier rang du pignon, spécifique à la gamme romane canal."
     },
     {
       "id": "OUV-1893",
       "lot": "couverture-zinguerie",
-      "designation": "Tuile à douille avec lanterneau, tuiles romanes canal (u)",
+      "designation": "Tuile à douille avec lanterneau, tuiles romanes canal",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31046,13 +31046,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Sortie de toit thermo-moulée au galbe de la tuile romane canal pour l'évacuation de la VMC."
     },
     {
       "id": "OUV-1894",
       "lot": "couverture-zinguerie",
-      "designation": "Chatière de ventilation, tuiles romanes canal (u)",
+      "designation": "Chatière de ventilation, tuiles romanes canal",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31062,13 +31062,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuile de ventilation de la gamme romane canal avec grille intégrée pour la ventilation de la lame d'air."
     },
     {
       "id": "OUV-1895",
       "lot": "couverture-zinguerie",
-      "designation": "Faîtière à emboîtement technique, tuiles mécaniques (ml)",
+      "designation": "Faîtière à emboîtement technique, tuiles mécaniques",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31078,13 +31078,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Tuiles faîtières s'imbriquant les unes dans les autres par un système de clavage mécanique, pour couvertures en tuiles mécaniques à emboîtement (type Marseille ou losangée)."
     },
     {
       "id": "OUV-1896",
       "lot": "couverture-zinguerie",
-      "designation": "Rive universelle ou rive d'angle à emboîtement, tuiles mécaniques (ml)",
+      "designation": "Rive universelle ou rive d'angle à emboîtement, tuiles mécaniques",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31094,13 +31094,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Finition de pignon se clipsant directement dans les cannelures de la tuile courante mécanique à emboîtement."
     },
     {
       "id": "OUV-1897",
       "lot": "couverture-zinguerie",
-      "designation": "Embrasure ou raccord de châssis de toit, abergement pour ardoise (u)",
+      "designation": "Embrasure ou raccord de châssis de toit, abergement pour ardoise",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31110,13 +31110,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Kit d'étanchéité souple (zinc ou plomb) autour des fenêtres de toit, pour couverture en ardoise naturelle."
     },
     {
       "id": "OUV-1898",
       "lot": "couverture-zinguerie",
-      "designation": "Ressaut technique ou ligne de bris en zinc (ml)",
+      "designation": "Ressaut technique ou ligne de bris en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31126,13 +31126,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Ouvrage de raccordement étanche lors d'un changement de pente d'une couverture en zinc à joint debout."
     },
     {
       "id": "OUV-1899",
       "lot": "couverture-zinguerie",
-      "designation": "Couvre-joint de tasseau ou main courante en zinc (ml)",
+      "designation": "Couvre-joint de tasseau ou main courante en zinc",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31142,13 +31142,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Profilé métallique d'étanchéité clipsé sur les tasseaux de bois longitudinaux d'une couverture en zinc."
     },
     {
       "id": "OUV-1900",
       "lot": "couverture-zinguerie",
-      "designation": "Pattes à coulisse et pattes fixes en inox, couverture zinc (u)",
+      "designation": "Pattes à coulisse et pattes fixes en inox, couverture zinc",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31158,13 +31158,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Fixations invisibles serties dans le joint debout pour permettre la libre dilatation des plaques de zinc."
     },
     {
       "id": "OUV-1901",
       "lot": "couverture-zinguerie",
-      "designation": "Closoir en mousse préformé, paire haut et bas, pour bacs acier (ml)",
+      "designation": "Closoir en mousse préformé, paire haut et bas, pour bacs acier",
       "unite": "ml",
       "type": "commun",
       "saisie": "metre",
@@ -31174,13 +31174,13 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Profils en mousse imputrescible épousant exactement les ondes du bac pour bloquer les nuisibles, le vent et la neige sous les faîtières."
     },
     {
       "id": "OUV-1902",
       "lot": "couverture-zinguerie",
-      "designation": "Vis autoforeuses et cavaliers avec rondelle néoprène, pour bacs acier (u)",
+      "designation": "Vis autoforeuses et cavaliers avec rondelle néoprène, pour bacs acier",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31190,7 +31190,7 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Fixations en sommet d'onde avec joint d'étanchéité vulcanisé, pour couverture en bacs acier."
     },
     {
@@ -31258,6 +31258,6 @@
       "detail": "Raccordement du pied de descente (ou du dauphin) au réseau d'évacuation enterré. L'ouvrage comprend : la fourniture et la pose d'une boîte de raccordement préfabriquée en béton ou PVC (section mini 25x25 cm), le percement de l'opercule, la pose d'un joint d'étanchéité, et le scellement au mortier hydrofuge. Rappel réglementaire : Raccordement exclusif au réseau pluvial séparatif ou système d'infiltration sur parcelle, interdiction de rejet aux eaux usées (sanitaires)."
     }
   ],
-  "revision": 149,
+  "revision": 150,
   "prochainNumero": 1907
 }
