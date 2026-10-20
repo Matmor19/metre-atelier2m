@@ -266,9 +266,6 @@ function recapCharpente(lotId) {
     ['Type de versant', plat ? '' : (t.versant === 'avec' ? `Avec coyau${num(t.coyauLong) > 0 ? ' sur ' + fmt(num(t.coyauLong)) + ' cm' : ''}` : lib(FICHE_VERSANT, t.versant))],
     ['Esthétique de l\'égout', plat ? '' : lib(FICHE_EGOUT, t.egoutStyle)],
     ['Chevronnage', charpenteDe(t) === 'traditionnelle' && !plat ? (chevOui(t) ? 'Oui' : ((t.chevronnage === 'non' || t.chevronnage === false) ? 'Non' : '')) : ''],
-    ['Avant-toit', plat ? '' : (t.avantToit === 'aucun' ? 'Aucun' : (desOuv(t.avantToit) || ''))],
-    ['Débord de l\'avant-toit', !plat && num(t.debordAvantToit) > 0 ? fmt(num(t.debordAvantToit)) + ' cm' : ''],
-    ['Longueur d\'avant-toit', !plat && num(t.mlAvantToit) > 0 ? fmt(num(t.mlAvantToit)) + ' m' : ''],
     ['Surface au sol couverte', num(t.surface) > 0 ? fmt(num(t.surface)) + ' m²' : ''],
     ['Surface de couverture (pente comprise)', rampantToit(t) > 0 ? fmt(Math.round(rampantToit(t) * 100) / 100) + ' m²' : '']
   ]; };
@@ -277,6 +274,9 @@ function recapCharpente(lotId) {
   const surfaces = [
     ...(plusieurs ? [['Surface de couverture, toutes toitures', r.toiture > 0 ? fmt(Math.round(r.toiture * 100) / 100) + ' m²' : '']] : []),
     ['Couverture', toitPente(p) ? lib(FICHE_COUV, couvDe(t)) : ''],
+    ['Avant-toit', toitPente(p) ? (t.avantToit === 'aucun' ? 'Aucun' : (desOuv(t.avantToit) || '')) : ''],
+    ['Débord de l\'avant-toit', toitPente(p) && num(t.debordAvantToit) > 0 ? fmt(num(t.debordAvantToit)) + ' cm' : ''],
+    ['Longueur d\'avant-toit', toitPente(p) && num(t.mlAvantToit) > 0 ? fmt(num(t.mlAvantToit)) + ' m' : ''],
     ['Écran de sous-toiture', lib(FICHE_ECRAN, t.ecran)]
   ];
   const longueurs = [['Faîtage', ml(t.faite)], ['Rives', ml(t.rive)], ['Égout', ml(t.egout)], ['Arêtiers', ml(t.arete)], ['Noues', ml(t.noue)]];
@@ -3204,13 +3204,11 @@ function toitureManquants(p) {
   // Chevronnage à choisir (oui ou non) pour chaque charpente traditionnelle
   const chev = toitsDe(p).map((tt, i) => (tt.type !== 'plat' && charpenteDe(tt) === 'traditionnelle' && !(tt.chevronnage === true || tt.chevronnage === 'oui' || tt.chevronnage === 'non' || tt.chevronnage === false))
     ? (toitsDe(p).length > 1 ? nomToit(tt, i) + ' : ' : '') + 'chevronnage à choisir, oui ou non (bloc Charpente)' : null).filter(Boolean);
-  const at = [];
-  toitsDe(p).forEach((tt, i) => {
-    if (tt.type === 'plat') return;
-    const n = toitsDe(p).length > 1 ? nomToit(tt, i) + ' : ' : '';
-    if (num(tt.mlAvantToit) > 0 && !tt.avantToit) at.push(n + 'type d\'avant-toit à choisir (bloc Charpente)');
-    if (tt.avantToit && tt.avantToit !== 'aucun' && !(num(tt.mlAvantToit) > 0)) at.push(n + 'longueur d\'avant-toit à saisir (bloc Charpente)');
-  });
+  const at = [], tt = p.toiture || {};
+  if (toitPente(p)) {
+    if (num(tt.mlAvantToit) > 0 && !tt.avantToit) at.push('type d\'avant-toit à choisir (bloc Couverture)');
+    if (tt.avantToit && tt.avantToit !== 'aucun' && !(num(tt.mlAvantToit) > 0)) at.push('longueur d\'avant-toit à saisir (bloc Couverture)');
+  }
   return [...toitureManquants1(p), ...sup, ...chev, ...at, ...accManquants(p)];
 }
 function toitureManquants1(p) {
@@ -4380,9 +4378,7 @@ function ficheRendre() {
             ${champ('Type de versant', choix(`${kA} data-champ="versant"`, Object.entries(FICHE_VERSANT), t.versant))}
             ${t.versant === 'avec' ? champ('Longueur de la coyalure (cm), ex. 80 pour les 80 derniers centimètres du toit', inp(`${kA} data-champ="coyauLong" inputmode="decimal" placeholder="ex. 80"`, t.coyauLong || '')) : '<div></div>'}
             ${champ('Esthétique de l\'égout', choix(`${kA} data-champ="egoutStyle"`, Object.entries(FICHE_EGOUT), t.egoutStyle))}
-            ${champ('Type d\'avant-toit', selCrayon('avant-toit', 'Type d\'avant-toit', `<select ${kA} data-champ="avantToit" style="width:100%;padding:6px"><option value="" ${!t.avantToit ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${t.avantToit === 'aucun' ? 'selected' : ''}>Aucun avant-toit (rien au métré)</option>${optListeOuvrages('avant-toit', 'Type d\'avant-toit', () => AVANT_TOIT_BASE.map(id => desOuv(id)).filter(Boolean), t.avantToit === 'aucun' ? '' : (t.avantToit || ''), null)}</select>`))}
-            ${champ('Longueur d\'avant-toit (ml)', inp(`${kA} data-champ="mlAvantToit" inputmode="decimal" placeholder="${num(p.toiture.egout) > 0 ? 'égout saisi : ' + fmt(num(p.toiture.egout)) + ' m' : 'ex. 36'}"`, t.mlAvantToit || ''))}
-            ${champ('Profondeur du débord (cm)', inp(`${kA} data-champ="debordAvantToit" inputmode="decimal" placeholder="ex. 50"`, t.debordAvantToit || ''))}`}
+            <div></div>`}
             <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Surfaces et compléments</div>
             ${champ('Surface au sol couverte (m²)', inp(`${kA} data-champ="surface" inputmode="decimal"`, t.surface))}
             ${champ('Surface de couverture (m², pente comprise, prise dans la 3D) — facultatif', inp(`${kA} data-champ="surfCouv" inputmode="decimal" placeholder="calculée si vide"`, t.surfCouv || ''))}`;
@@ -4438,7 +4434,12 @@ function ficheRendre() {
             ${champ('Crosses de descente (nombre)', inp('data-k="toit" data-champ="nbCrosses" inputmode="numeric"', toit.nbCrosses || ''))}
             ${champ('Crochets de gouttière (nombre)', inp('data-k="toit" data-champ="nbCrochets" inputmode="numeric"', toit.nbCrochets || ''))}
             ${champ('Chéneaux (ml)', inp('data-k="toit" data-champ="mlCheneau" inputmode="decimal"', toit.mlCheneau || ''))}
-            ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
+            ${plat ? '' : `<div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Avant-toit</div>
+            ${champ('Type d\'avant-toit', selCrayon('avant-toit', 'Type d\'avant-toit', `<select data-k="toit" data-champ="avantToit" style="width:100%;padding:6px"><option value="" ${!toit.avantToit ? 'selected' : ''}>— à choisir —</option><option value="aucun" ${toit.avantToit === 'aucun' ? 'selected' : ''}>Aucun avant-toit (rien au métré)</option>${optListeOuvrages('avant-toit', 'Type d\'avant-toit', () => AVANT_TOIT_BASE.map(id => desOuv(id)).filter(Boolean), toit.avantToit === 'aucun' ? '' : (toit.avantToit || ''), null)}</select>`))}
+            ${champ('Longueur d\'avant-toit (ml)', inp(`data-k="toit" data-champ="mlAvantToit" inputmode="decimal" placeholder="${num(p.toiture.egout) > 0 ? 'égout saisi : ' + fmt(num(p.toiture.egout)) + ' m' : 'ex. 36'}"`, toit.mlAvantToit || ''))}
+            ${champ('Profondeur du débord (cm)', inp(`data-k="toit" data-champ="debordAvantToit" inputmode="decimal" placeholder="ex. 50"`, toit.debordAvantToit || ''))}
+            <div></div>
+            <div style="grid-column:1/-1;margin-top:6px;font-weight:600;font-size:13px">Accessoires de couverture</div>
             ${champ('Fronton de faîtage (nombre)', inp('data-k="toit" data-champ="nbFronton" inputmode="decimal"', toit.nbFronton))}
             ${champ('Tuiles à douille / sorties de toit (nombre)', inp('data-k="toit" data-champ="nbDouille" inputmode="numeric" placeholder="conseillé : ' + ventilationNb(p) + '"', toit.nbDouille || ''))}
             ${champ('About de rive en terre cuite (nombre)', inp('data-k="toit" data-champ="nbAboutRive" inputmode="numeric"', toit.nbAboutRive || ''))}
@@ -4991,9 +4992,6 @@ function ficheVersMetre() {
     toitsL.forEach((t, i) => {
       if (t.type === 'plat') return;
       const suf = plusieurs ? ' – ' + nomToit(t, i) : '';
-      // Avant-toit choisi pour cette toiture, sur la longueur saisie
-      const oAT = t.avantToit && t.avantToit !== 'aucun' ? BIB.ouvrages.find(x => x.id === t.avantToit && !x.supprime) : null;
-      if (oAT && num(t.mlAvantToit) > 0) ajouter(oAT.designation, num(t.mlAvantToit), oAT.designation + suf);
       const ch = charpenteDe(t);
       // Charpente industrielle ou traditionnelle : un ensemble par toiture
       if (ch === 'fermette') { const d = desOuv('OUV-1839'); ajouter(d, 1, d + suf, { nombre: '1' }); }
@@ -5013,6 +5011,11 @@ function ficheVersMetre() {
   // Croupes : à l'unité
   ajouter(desOuv('OUV-1875'), num(p.toiture.nbCroupeInd), undefined, { nombre: String(num(p.toiture.nbCroupeInd)) });
   ajouter(desOuv('OUV-1876'), num(p.toiture.nbCroupeTrad), undefined, { nombre: String(num(p.toiture.nbCroupeTrad)) });
+  // Avant-toit (bloc Couverture) : l'ouvrage choisi, sur la longueur saisie
+  if (toitPente(p)) {
+    const oAT = p.toiture.avantToit && p.toiture.avantToit !== 'aucun' ? BIB.ouvrages.find(x => x.id === p.toiture.avantToit && !x.supprime) : null;
+    if (oAT && num(p.toiture.mlAvantToit) > 0) ajouter(oAT.designation, num(p.toiture.mlAvantToit));
+  }
   // Accessoires de couverture : l'ouvrage choisi dans chaque case (sinon celui de la couverture), quantité saisie dans la fiche
   {
     for (const sl of COUV_SLOTS) {

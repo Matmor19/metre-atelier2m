@@ -30868,7 +30868,7 @@
     },
     {
       "id": "OUV-1883",
-      "lot": "charpente-structure-bois",
+      "lot": "couverture-zinguerie",
       "designation": "Avant-toit à chevrons apparents, sous-face en voliges rabotées (ml)",
       "unite": "ml",
       "type": "commun",
@@ -30879,12 +30879,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation du débord de toiture à chevrons apparents : prolongation des chevrons au-delà du nu du mur, abouts coupés et rabotés, sous-face en voliges rabotées posées sur les chevrons et laissées apparentes, planche d'égout. Bois résineux traité classe 2 au minimum, prêt à recevoir une lasure ou une peinture. (Unité : ml)"
     },
     {
       "id": "OUV-1884",
-      "lot": "charpente-structure-bois",
+      "lot": "couverture-zinguerie",
       "designation": "Avant-toit en caisson fermé, sous-face en lambris bois (ml)",
       "unite": "ml",
       "type": "commun",
@@ -30895,12 +30895,12 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation d'un caisson d'avant-toit fermé : ossature de coffrage fixée sous les chevrons ou les fermettes, sous-face horizontale ou rampante en lambris bois traité, planche de rive (bandeau) en façade, fente ou grille de ventilation de la sous-toiture. (Unité : ml)"
     },
     {
       "id": "OUV-1885",
-      "lot": "charpente-structure-bois",
+      "lot": "couverture-zinguerie",
       "designation": "Avant-toit en caisson fermé, sous-face en lambris PVC (ml)",
       "unite": "ml",
       "type": "commun",
@@ -30911,7 +30911,7 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation d'un caisson d'avant-toit fermé : ossature de coffrage fixée sous les chevrons ou les fermettes, sous-face en lambris PVC alvéolaire teinté dans la masse avec profils de finition, bandeau en PVC ou en bois habillé, ventilation de la sous-toiture assurée. Finition sans entretien. (Unité : ml)"
     },
     {
@@ -30943,10 +30943,10 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1,
+      "version": 2,
       "detail": "Réalisation d'une génoise traditionnelle en débord d'égout : rangs superposés de tuiles canal scellés au mortier de chaux en encorbellement sur le haut du mur, nombre de rangs selon le projet (2 ou 3), rejointoiement, finition de l'égout de la couverture sur la génoise. (Unité : ml)"
     }
   ],
-  "revision": 144,
+  "revision": 145,
   "prochainNumero": 1888
 }
