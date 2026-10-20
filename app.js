@@ -2484,7 +2484,7 @@ function renderPeinture() {
   if (!c || !BIB) { host.innerHTML = ''; return; }
   const q = peiDe(c);
   host.innerHTML = `${tabTitre('D. Peinture (bloc séparé)')}<div class="bloc bloc-lettre">
-    <p class="muted">Murs : doublage × hauteur, moins les menuiseries extérieures. Cloisons : cloisonnement × hauteur, moins les portes de passage et les façades de placard (façades × 2), le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
+    <p class="muted">Murs : doublage × hauteur, moins les menuiseries extérieures. Cloisons : cloisonnement × hauteur, moins une fois les portes de passage et une fois les façades de placard, le tout × 2 (deux faces). Total = murs + cloisons. Portes et placards peints : surface × 2. Plafond : surface en m².</p>
     <p class="muted" style="font-size:13px;margin:0 0 6px">Surface totale des menuiseries extérieures : ${fmt(menuiseriesTotalM2(c))} m² (déduite des murs).</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
       <label style="font-size:12px">Hauteur sous plafond m <input data-pei="hauteur" inputmode="decimal" value="${esc(q.hauteur || '')}" placeholder="${esc(platNvDe(c).hauteur || '')}" style="width:90px"></label>
@@ -2522,15 +2522,15 @@ function genererPeinture(c) {
     if (!o) manque.push('murs');
     else {
       // Murs : doublage × hauteur, moins les menuiseries extérieures
-      // Cloisons : cloisonnement × hauteur, moins les portes de passage et les façades de placard (façades × 2), puis × 2 (deux faces)
+      // Cloisons : cloisonnement × hauteur, moins une fois les portes de passage et une fois les façades de placard, puis × 2 (deux faces)
       // Total : murs + cloisons
       const menus = menuiseriesTotalM2(c);
       const murNet = Math.max(0, mur.surfD - menus);
       const portes = portesBrutM2(c), facades = facadesBrutM2(c);
-      const cloisNet = Math.max(0, mur.surfC - portes - 2 * facades);
+      const cloisNet = Math.max(0, mur.surfC - portes - facades);
       const cloisDouble = cloisNet * 2;
       const total = murNet + cloisDouble;
-      ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – murs ${fmt(mur.surfD)} m² − menuiseries ${fmt(menus)} m² = ${fmt(murNet)} m² ; cloisons ${fmt(mur.surfC)} m² − portes ${fmt(portes)} m² − façades ${fmt(2 * facades)} m² = ${fmt(cloisNet)} m² × 2 = ${fmt(cloisDouble)} m²`);
+      ajoute(o, { nombre: '1', cote1: String(total), cote2: '1' }, `${o.designation} – murs ${fmt(mur.surfD)} m² − menuiseries ${fmt(menus)} m² = ${fmt(murNet)} m² ; cloisons ${fmt(mur.surfC)} m² − portes ${fmt(portes)} m² − façades ${fmt(facades)} m² = ${fmt(cloisNet)} m² × 2 = ${fmt(cloisDouble)} m²`);
     }
   }
   // Portes de passage et façades de placard : surface totale brute × 2 (deux faces), sans déduction
