@@ -1145,16 +1145,17 @@ function rangModele(l) {
   }
   return null;
 }
-// Partie du lot maçonnerie : Soubassement, Drain, Murs en élévation (une ligne déplacée à la main garde sa partie)
+// Partie du lot maçonnerie : Soubassement, Drain, Murs en élévation, Appuis et seuils, Ravalement (une ligne déplacée à la main garde sa partie)
 function sectionGO(l) {
   if (l.groupeGO) return l.groupeGO;
   const r = rangModele(l);
   if (r <= 6) return 'Soubassement';
   if (r <= 10) return 'Drain';
+  if (r === 19 || r === 20) return 'Appuis et seuils';   // appuis de fenêtre et seuils de porte
   if (r >= 21 && r < 50) return 'Ravalement';   // enduits de façade, habillage des tableaux, pierres d'angle
   return 'Murs en élévation';
 }
-const SECTIONS_GO = ['Soubassement', 'Drain', 'Murs en élévation', 'Ravalement'];
+const SECTIONS_GO = ['Soubassement', 'Drain', 'Murs en élévation', 'Appuis et seuils', 'Ravalement'];
 // À l'affichage : lignes du gros œuvre regroupées par partie, ordre gardé dans chaque partie
 function ordonnerSectionsGO(L) {
   const lot = 'gros-oeuvre', idx = [];
