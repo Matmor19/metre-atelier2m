@@ -3613,7 +3613,7 @@ const TENDANCE_APPUIS = [
   ...[70, 105, 110, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240].map(L => [L, 2]),
   ...[250, 280, 300, 360].map(L => [L, 3])
 ].sort((a, b) => a[0] - b[0]);
-const TENDANCE_SEUIL_L = 93;   // seuil en une seule pièce, largeur 93 cm
+const TENDANCE_SEUIL_L = 93;   // seuil en pièces de 93 cm (fiche technique) ; porte plus large = plusieurs pièces
 function estTendanceAppui(o) { return !!o && (o.gamme === 'tendance-appui' || /^Appui de fenêtre .*gamme Tendance/i.test(o.designation)); }
 function estTendanceSeuil(o) { return !!o && (o.gamme === 'tendance-seuil' || /^Seuil .*gamme Tendance/i.test(o.designation)); }
 // Appui pour une baie de largeur Lcm : plus petite longueur de la gamme qui couvre la baie ; au-delà de 360 cm, 4 pièces (longueur arrondie à 10 cm)
@@ -5338,14 +5338,36 @@ function ficheVersMetre() {
     for (const pc of piecesNvDe(c)) for (const m of (pc.menus || [])) if (m.type === 'pe' || m.type === 'pf') portesExt.push({ l: num(m.l), n: num(m.nb) || 1 });
     const nPortes = portesExt.reduce((a, x) => a + x.n, 0);
     if (!oS) manquants.push('seuil de porte');
-    else if (estTendanceSeuil(oS)) {
-      // Gamme Tendance : seuil en une pièce de 93 cm ; une porte plus large est signalée
-      const ok = portesExt.filter(x => !(x.l > TENDANCE_SEUIL_L)), trop = portesExt.filter(x => x.l > TENDANCE_SEUIL_L);
-      const nOk = ok.reduce((a, x) => a + x.n, 0);
-      if (nOk > 0) ajouter(oS.designation, nOk, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nOk) }, null);
-      if (trop.length) manquants.push('seuil gamme Tendance limité à 93 cm : ' + trop.map(x => fmt(x.l) + ' cm').join(', ') + ' à traiter à part (autre seuil)');
+    else {
+      // Portes regroupées par largeur (en cm)
+      const parLargeurP = {};
+      for (const x of portesExt) if (x.l > 0) parLargeurP[x.l] = (parLargeurP[x.l] || 0) + x.n;
+      const baseS = oS.designation.replace(/\s*\([^)]*\)/g, '');
+      if (estTendanceSeuil(oS)) {
+        // Gamme Tendance (fiche technique) : seuil en pièces de 93 cm ; une porte plus large reçoit 2, 3… pièces bout à bout
+        const parSeuil = {};
+        for (const [Lcm, n] of Object.entries(parLargeurP)) {
+          const pieces = Math.max(1, Math.ceil(Number(Lcm) / TENDANCE_SEUIL_L));
+          (parSeuil[pieces] = parSeuil[pieces] || { pieces, n: 0, larg: [] }).n += n;
+          parSeuil[pieces].larg.push(fmt(Number(Lcm)) + ' cm');
+        }
+        for (const sx of Object.values(parSeuil).sort((x, y) => x.pieces - y.pieces)) {
+          const lib = sx.pieces > 1 ? `longueur ${sx.pieces * TENDANCE_SEUIL_L} cm, en ${sx.pieces} pièces de ${TENDANCE_SEUIL_L} cm` : `longueur ${TENDANCE_SEUIL_L} cm, en 1 pièce`;
+          ajouter(oS.designation, sx.n, `${baseS} – ${lib}`, { nombre: String(sx.n) }, null);
+          const lS = L[L.length - 1];
+          if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = `${sx.n} porte${sx.n > 1 ? 's' : ''} de ${sx.larg.join(', ')} de large`; }
+        }
+      }
+      // Autres seuils : une ligne par largeur de porte, comme les appuis
+      else for (const [Lcm, n] of Object.entries(parLargeurP)) {
+        ajouter(oS.designation, n, `${baseS} – largeur ${fmt(Number(Lcm) / 100)} m`, { nombre: String(n) }, null);
+        const lS = L[L.length - 1];
+        if (lS && lS.ouvrage === oS.id) { lS.modeLigne = 'texte'; lS.detailTexte = `${n} porte${n > 1 ? 's' : ''} de ${fmt(Number(Lcm))} cm de large`; }
+      }
+      // Porte sans largeur saisie : comptée sans longueur
+      const nSansL = portesExt.filter(x => !(x.l > 0)).reduce((a2, x) => a2 + x.n, 0);
+      if (nSansL > 0) ajouter(oS.designation, nSansL, `${baseS} – largeur de porte non saisie`, { nombre: String(nSansL) }, null);
     }
-    else if (nPortes > 0) ajouter(oS.designation, nPortes, oS.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: String(nPortes) }, null);
   }
   sauverLignes(courantId, ordonnerSelonModele(L));
   renderMetre();
