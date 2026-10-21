@@ -3571,7 +3571,7 @@ function detailCalcToit(t, champ) {
   const f = t && t[champ + 'Calc'];
   if (!f || !/[+\-*/xX×÷]/.test(String(f).replace(/^\s*-/, ''))) return '';
   const r = evalCalcLongueur(f);
-  return r == null ? '' : `${calcLisible(f)} = ${fmt(r)} ml`;
+  return r == null ? '' : calcLisible(f);   // le calcul seul : le résultat est dans la quantité
 }
 // Accessoires propres à chaque couverture (faîtage, rive, égout, ventilation) : ouvrages de la bibliothèque
 const COUV_ACC = {
