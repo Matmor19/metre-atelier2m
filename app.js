@@ -1530,7 +1530,7 @@ const PNV_SENS_PORTE = { droite: 'poussant à droite', gauche: 'poussant à gauc
 // Choix du bloc porte (un ouvrage de la bibliothèque par combinaison, voir le lot menuiseries-interieures)
 const BP_CHOIX = {
   dim: ['63×204', '73×204', '83×204', '93×204', '103×204'],
-  dest: ['de communication', 'acoustique', 'de service isothermique', 'technique coupe-feu EI30', 'palière thermique', 'palière acoustique', 'palière blindage de sécurité', 'fin de chantier', 'palière coupe-feu'],
+  dest: ['à galandage', 'de communication', 'acoustique', 'de service isothermique', 'technique coupe-feu EI30', 'palière thermique', 'palière acoustique', 'palière blindage de sécurité', 'fin de chantier', 'palière coupe-feu'],
   pousse: ['poussant droit', 'poussant gauche'],
   ame: ['âme alvéolaire', 'âme pleine', 'âme tubulaire'],
   type: ['isoplane', 'postformé', 'vitré'],
@@ -1538,6 +1538,13 @@ const BP_CHOIX = {
   pose: ['pose traditionnelle', 'pose fin de chantier', 'pose rénovation']
 };
 for (const k of Object.keys(BP_CHOIX)) BP_CHOIX[k] = BP_CHOIX[k].map(t => [t, t]);
+// Portes à galandage : modèle choisi dans la bibliothèque, dimension selon le modèle (double vantail : grandes largeurs)
+const GAL_SIMPLE = ['OUV-1907', 'OUV-1908', 'OUV-1909'], GAL_DOUBLE = ['OUV-1910'];
+const GAL_DIMS = [['73×204', '73×204'], ['83×204', '83×204'], ['93×204', '93×204']];
+const GAL_DIMS_DOUBLE = [['140×204', '140×204'], ['160×204', '160×204'], ['180×204', '180×204']];
+const estGalandage = bl => bl && bl.dest === 'à galandage';
+// Double vantail : l'ouvrage choisi est un double vantail (de la liste de base ou nommé ainsi)
+function galDouble(bl) { const o = bl && bl.gal && BIB.ouvrages.find(x => x.id === bl.gal); return !!o && (GAL_DOUBLE.includes(o.id) || /double vantail/i.test(o.designation)); }
 // Nombre de portes de passage d'une pièce (somme des blocs portes) ; largeur : 83 cm
 const LARGEUR_PORTE_NV = 0.83;
 // Intitulé du métré : « Bloc-porte » + dimension choisie + reste de la désignation
@@ -1548,6 +1555,12 @@ function intituleBloc(designation, dim) { return designation.replace('Bloc-porte
 function ouvrageBloc(bl) {
   const dim = bl.dim || '83×204';
   let designation, intitule;
+  if (estGalandage(bl)) {
+    const o = bl.gal && BIB.ouvrages.find(x => x.id === bl.gal && !x.supprime);
+    if (!o) return { manque: 'Bloc porte à galandage : modèle à choisir' };
+    if (!bl.dim) return { manque: 'Bloc porte à galandage : dimension à choisir' };
+    return { o, intitule: intituleBloc(o.designation, bl.dim) };
+  }
   if (bl.dest === 'fin de chantier') { designation = `Bloc-porte fin de chantier ${dim}`; intitule = designation; }
   else if (bl.dest === 'palière coupe-feu') { designation = 'Bloc-porte palière coupe-feu'; intitule = intituleBloc(designation, dim); }
   else {
@@ -1787,7 +1800,12 @@ function renderPiecesNv() {
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addmenu:${esc(p.id)}">+ Menuiserie extérieure</button>
     <div style="margin-top:8px"><strong style="font-size:13px">Portes de passage fin de chantier (bloc porte)</strong></div>
     ${(p.blocs || []).map((bl, k) => `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center;border:1px solid #e0c9a6;border-radius:8px;padding:6px;background:#fff">
-      ${[['dest', 'Destination'], ['dim', 'Dimensions'], ['pousse', 'Poussant'], ['ame', 'Âme'], ['type', 'Type'], ['fin', 'Finition'], ['pose', 'Pose']].map(([champ, lib]) => `<label style="font-size:12px;flex:1;min-width:150px">${lib}${selCrayon('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), `<select data-nv="${esc(p.id)}|bloc|${k}|${champ}" style="width:100%;min-width:0">${optCodes('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), BP_CHOIX[champ], bl[champ] || (champ === 'dim' ? '83×204' : ''), '— choisir —')}</select>`)}</label>`).join('')}
+      ${estGalandage(bl) ? `<label style="font-size:12px;flex:1;min-width:150px">Destination${selCrayon('bp-dest', 'Bloc porte : destination', `<select data-nv="${esc(p.id)}|bloc|${k}|dest" style="width:100%;min-width:0">${optCodes('bp-dest', 'Bloc porte : destination', BP_CHOIX.dest, bl.dest || '', '— choisir —')}</select>`)}</label>
+      <label style="font-size:12px;flex:2;min-width:220px">Modèle de porte à galandage${selCrayon('bp-gal', 'Bloc porte à galandage : modèle', `<select data-nv="${esc(p.id)}|bloc|${k}|gal" style="width:100%;min-width:0">${optListeOuvrages('bp-gal', 'Bloc porte à galandage : modèle', () => [...GAL_SIMPLE, ...GAL_DOUBLE].map(id => desOuv(id)).filter(Boolean), bl.gal || '', '— choisir —')}</select>`)}</label>
+      <label style="font-size:12px;flex:1;min-width:150px">Dimensions${galDouble(bl)
+        ? selCrayon('bp-dim-gal2', 'Porte à galandage double vantail : dimensions', `<select data-nv="${esc(p.id)}|bloc|${k}|dim" style="width:100%;min-width:0">${optCodes('bp-dim-gal2', 'Porte à galandage double vantail : dimensions', GAL_DIMS_DOUBLE, bl.dim || '', '— choisir —')}</select>`)
+        : selCrayon('bp-dim-gal', 'Porte à galandage : dimensions', `<select data-nv="${esc(p.id)}|bloc|${k}|dim" style="width:100%;min-width:0">${optCodes('bp-dim-gal', 'Porte à galandage : dimensions', GAL_DIMS, bl.dim || '', '— choisir —')}</select>`)}</label>`
+      : [['dest', 'Destination'], ['dim', 'Dimensions'], ['pousse', 'Poussant'], ['ame', 'Âme'], ['type', 'Type'], ['fin', 'Finition'], ['pose', 'Pose']].map(([champ, lib]) => `<label style="font-size:12px;flex:1;min-width:150px">${lib}${selCrayon('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), `<select data-nv="${esc(p.id)}|bloc|${k}|${champ}" style="width:100%;min-width:0">${optCodes('bp-' + champ, 'Bloc porte : ' + lib.toLowerCase(), BP_CHOIX[champ], bl[champ] || (champ === 'dim' ? '83×204' : ''), '— choisir —')}</select>`)}</label>`).join('')}
       <label style="font-size:12px">Nombre <input data-nv="${esc(p.id)}|bloc|${k}|nb" inputmode="numeric" value="${esc(bl.nb || '')}" style="width:70px"></label>
       <button type="button" class="btn small danger" data-nv-act="delbloc:${esc(p.id)}:${k}">✕</button></div>`).join('')}
     <button type="button" class="btn sec small" style="margin-top:6px" data-nv-act="addbloc:${esc(p.id)}">+ Porte de passage</button>
@@ -2779,6 +2797,17 @@ $('vConfig') && $('vConfig').addEventListener('change', e => {
   if (!t) return;
   const c = chantiers.find(x => x.id === courantId);
   if (c) majPieceNv(c, t.dataset.nv, t.value);
+  if (c && /\|bloc\|\d+\|(dest|gal)$/.test(t.dataset.nv)) {
+    // Bloc porte : la destination « à galandage » change les choix affichés ; dimension remise à choisir si elle ne va plus au modèle
+    const [id, , k] = t.dataset.nv.split('|');
+    const pc = piecesNvDe(c).find(x => x.id === id), bl = pc && pc.blocs && pc.blocs[k];
+    if (bl) {
+      const okDims = estGalandage(bl) ? (galDouble(bl) ? GAL_DIMS_DOUBLE : GAL_DIMS).map(x => x[0]) : BP_CHOIX.dim.map(x => x[0]);
+      if (bl.dim && !okDims.includes(bl.dim)) bl.dim = '';
+      lsSet('chantiers', chantiers); marquerChantier(c.id);
+    }
+    renderPiecesNv();
+  }
   if (c && /\|menu\|\d+\|volet$|\|facade\|\d+\|ouvrant$/.test(t.dataset.nv)) renderPiecesNv();   // « Compris volet roulant » fait apparaître Fermeture
 });
 

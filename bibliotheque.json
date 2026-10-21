@@ -31270,8 +31270,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "detail": "Fourniture et pose d'un ensemble complet de porte coulissante escamotable à un vantail intégré dans l'épaisseur de la cloison. L'ouvrage comprend : le châssis métallique rigide pré-industrialisé en acier galvanisé à peindre ou à plaquer (type Scrigno, Eclisse ou équivalent) pour ossature de plaque de plâtre (épaisseur finie de cloison 100 mm minimum), le chariot de roulement à roulements à billes haute fluidité, la béquille ou cuvette encastrée en inox, le tire-doigt en bout de chant, l'amortisseur d'ouverture et de fermeture, le vantail de porte à rive droite de hauteur standard (204 cm) et de largeur standard (73, 83 ou 93 cm) à âme alvéolaire pré-peinte, les kits d'habillage en MDF ou bois ainsi que les balais d'étanchéité anti-poussière."
+      "version": 2,
+      "detail": "Fourniture et pose d'un ensemble complet de porte coulissante escamotable à un vantail intégré dans l'épaisseur de la cloison. L'ouvrage comprend : le châssis métallique rigide pré-industrialisé en acier galvanisé à peindre ou à plaquer (type Scrigno, Eclisse ou équivalent) pour ossature de plaque de plâtre (épaisseur finie de cloison 100 mm minimum), le chariot de roulement à roulements à billes haute fluidité, la béquille ou cuvette encastrée en inox, le tire-doigt en bout de chant, l'amortisseur d'ouverture et de fermeture, le vantail de porte à rive droite à âme alvéolaire pré-peinte, les kits d'habillage en MDF ou bois ainsi que les balais d'étanchéité anti-poussière."
     },
     {
       "id": "OUV-1908",
@@ -31318,10 +31318,10 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "detail": "Fourniture et pose d'un système à double caisson escamotable opposé pour la séparation de grands volumes (largeurs de passage de 140, 160 ou 180 cm). L'ouvrage comprend : les deux caissons métalliques latéraux reliés par un rail supérieur commun parfaitement aligné de niveau, le kit de synchronisation mécanique (permettant l'ouverture simultanée des deux vantaux en manipulant un seul ouvrant), les deux vantaux (à âme pleine ou alvéolaire selon choix), les quincailleries de tirage encastrées, les amortisseurs et l'intégralité du kit d'habillage de finition périphérique."
+      "version": 2,
+      "detail": "Fourniture et pose d'un système à double caisson escamotable opposé pour la séparation de grands volumes. L'ouvrage comprend : les deux caissons métalliques latéraux reliés par un rail supérieur commun parfaitement aligné de niveau, le kit de synchronisation mécanique (permettant l'ouverture simultanée des deux vantaux en manipulant un seul ouvrant), les deux vantaux (à âme pleine ou alvéolaire selon choix), les quincailleries de tirage encastrées, les amortisseurs et l'intégralité du kit d'habillage de finition périphérique."
     }
   ],
-  "revision": 151,
+  "revision": 152,
   "prochainNumero": 1911
 }
