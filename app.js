@@ -3651,31 +3651,24 @@ function detailLieux(items) {
 const nomPieceDe = pc => (pc.nom || 'Pièce') + (pc.qualif ? ' ' + pc.qualif : '');
 // Seuils Tendance : longueurs disponibles (cm), de la plus courte à la plus longue
 const TENDANCE_SEUILS = [90, 110, 130, 150, 190, 220, 250];
-// Seuil(s) pour une porte de largeur Lcm : le moins de pièces possible, puis le moins de perte, puis le moins de longueurs différentes
-function decoupeSeuilTendance(Lcm) {
-  const Ls = TENDANCE_SEUILS;
-  for (let n = 1; n <= 8; n++) {
-    let best = null;
-    const essai = (k, depuis, combi, tot) => {
-      if (k === n) {
-        if (tot < Lcm) return;
-        const diff = new Set(combi).size;
-        if (!best || tot < best.tot || (tot === best.tot && diff < best.diff)) best = { pieces: combi.slice(), tot, diff };
-        return;
-      }
-      for (let i = depuis; i < Ls.length; i++) { combi.push(Ls[i]); essai(k + 1, i, combi, tot + Ls[i]); combi.pop(); }
-    };
-    essai(0, 0, [], 0);
-    if (best) return best;
-  }
-  return { pieces: [], tot: 0 };
+// Découpe d'une menuiserie plus large que la plus grande longueur de la liste : largeur divisée en 2, puis 3… parts égales,
+// et pour chaque part la longueur de la liste qui s'en rapproche le plus (la plus petite qui la couvre)
+function decoupeEgale(Lcm, longueurs) {
+  const Ls = longueurs.slice().sort((a, b) => a - b), max = Ls[Ls.length - 1];
+  let k = 1;
+  while (Lcm / k > max && k < 20) k++;
+  const L = Ls.find(x => x >= Lcm / k - 1e-9) || max;
+  return { k, L };
 }
+function decoupeSeuilTendance(Lcm) { const d = decoupeEgale(Lcm, TENDANCE_SEUILS); return { k: d.k, L: d.L, pieces: Array(d.k).fill(d.L) }; }
 function estTendanceAppui(o) { return !!o && (o.gamme === 'tendance-appui' || /^Appui de fenêtre .*gamme Tendance/i.test(o.designation)); }
 function estTendanceSeuil(o) { return !!o && (o.gamme === 'tendance-seuil' || /^Seuil .*gamme Tendance/i.test(o.designation)); }
-// Appui pour une baie de largeur Lcm : plus petite longueur de la gamme qui couvre la baie ; au-delà de 360 cm, 4 pièces (longueur arrondie à 10 cm)
+// Appui pour une fenêtre de largeur Lcm : la plus petite longueur de la gamme qui la couvre ;
+// au-delà de la plus grande, largeur divisée en 2, 3… parts égales (k appuis de longueur L)
 function decoupeAppuiTendance(Lcm) {
-  const t = TENDANCE_APPUIS.find(([L]) => L >= Lcm);
-  return t ? { L: t[0], pieces: t[1] } : { L: Math.ceil(Lcm / 10) * 10, pieces: 4 };
+  const d = decoupeEgale(Lcm, TENDANCE_APPUIS.map(t => t[0]));
+  const t = TENDANCE_APPUIS.find(([x]) => x === d.L);
+  return { k: d.k, L: d.L, pieces: t ? t[1] : 1 };
 }
 // Appui de fenêtre : la menuiserie garde l'identifiant de l'ouvrage « Appui de fenêtre … » de la bibliothèque
 function appuisFenetreBase() { return BIB.ouvrages.filter(o => ouvActif(o) && /^Appui de fenêtre /.test(o.designation)).map(o => o.designation); }
@@ -5383,8 +5376,10 @@ function ficheVersMetre() {
         const parAppui = {};
         for (const [Lcm, g] of Object.entries(parLargeur)) {
           const d = decoupeAppuiTendance(Number(Lcm)), k = d.L + '|' + d.pieces;
-          (parAppui[k] = parAppui[k] || { ...d, n: 0, items: [] }).n += g.n;
-          parAppui[k].items.push(...g.items);
+          // Fenêtre trop large : d.k appuis de d.L cm (largeur divisée en parts égales)
+          (parAppui[k] = parAppui[k] || { L: d.L, pieces: d.pieces, n: 0, items: [] }).n += g.n * d.k;
+          const extra = d.k > 1 ? ` (${d.k} appuis de ${d.L} cm)` : '';
+          parAppui[k].items.push(...g.items.map(it => Object.assign({}, it, { extra })));
         }
         const base = oA.designation.replace(/\s*\([^)]*\)/g, '');
         for (const a of Object.values(parAppui).sort((x, y) => x.L - y.L)) {
@@ -5445,7 +5440,7 @@ function ficheVersMetre() {
       for (const x of portesExt) if (x.l > 0) { const e = (parLargeurP[x.l] = parLargeurP[x.l] || { n: 0, items: [] }); e.n += x.n; e.items.push(x); }
       const baseS = oS.designation.replace(/\s*\([^)]*\)/g, '');
       if (estTendanceSeuil(oS)) {
-        // Gamme Tendance : pour chaque largeur de porte, la combinaison de seuils optimisée (moins de pièces, moins de perte)
+        // Gamme Tendance : pour chaque largeur de porte, le seuil qui la couvre ; trop large : largeur divisée en 2, 3… parts égales
         // Une ligne par longueur de seuil, quantité = nombre de pièces de cette longueur
         const parLong = {};
         for (const [Lcm, g] of Object.entries(parLargeurP)) {
@@ -5455,7 +5450,7 @@ function ficheVersMetre() {
           for (const [lg, k] of Object.entries(comp)) {
             const e = (parLong[lg] = parLong[lg] || { lg: Number(lg), n: 0, items: [] });
             e.n += k * n;
-            const extra = d.pieces.length > 1 ? ' (seuil ' + d.pieces.join(' + ') + ' cm)' : '';
+            const extra = d.k > 1 ? ` (${d.k} seuils de ${d.L} cm)` : '';
             e.items.push(...g.items.map(it => Object.assign({}, it, { extra })));
           }
         }
