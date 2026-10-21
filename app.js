@@ -3552,6 +3552,27 @@ function accManquants(p) {
   }
   return m;
 }
+// Faîtage, rives, noues : longueur saisie sous forme de calcul (ex. « 2 x 4 » ou « 1 + 2 + 3 + 4 »)
+// Le calcul est gardé dans <champ>Calc, le résultat dans <champ> (utilisé par tous les calculs)
+const CALC_TOIT = ['faite', 'rive', 'noue'];
+// Accessoires dont la quantité vient d'une de ces longueurs : leur détail montre le calcul
+const CALC_ACC = { accFaite: 'faite', accSousFaitiere: 'faite', accClosoir: 'faite', accRive: 'rive', accNoue: 'noue' };
+function evalCalcLongueur(texte) {
+  const t = String(texte || '').trim().replace(/,/g, '.').replace(/[×xX]/g, '*').replace(/÷/g, '/');
+  if (!t || !/^[0-9+\-*/(). ]+$/.test(t)) return null;
+  try { const r = Function('"use strict"; return (' + t + ');')(); return Number.isFinite(r) && r >= 0 ? Math.round(r * 100) / 100 : null; } catch (e) { return null; }
+}
+// Calcul écrit proprement : « 2 x 4 » → « 2 × 4 », virgule décimale
+function calcLisible(texte) {
+  return String(texte || '').trim().replace(/\s+/g, '').replace(/[xX*]/g, ' × ').replace(/\+/g, ' + ').replace(/(?<=[0-9)])-/g, ' − ').replace(/\//g, ' ÷ ').replace(/\./g, ',');
+}
+// Texte du détail quand la longueur a été saisie en calcul (sinon rien : une simple valeur n'a pas besoin de détail)
+function detailCalcToit(t, champ) {
+  const f = t && t[champ + 'Calc'];
+  if (!f || !/[+\-*/xX×÷]/.test(String(f).replace(/^\s*-/, ''))) return '';
+  const r = evalCalcLongueur(f);
+  return r == null ? '' : `${calcLisible(f)} = ${fmt(r)} ml`;
+}
 // Accessoires propres à chaque couverture (faîtage, rive, égout, ventilation) : ouvrages de la bibliothèque
 const COUV_ACC = {
   ardoise: { faite: 'OUV-1861', rive: 'OUV-1862', egout: 'OUV-1863', ventil: 'OUV-1864' },
@@ -4707,6 +4728,14 @@ function ficheRendre() {
     let qte;
     if (sl.champ === 'accDescente') qte = `<span style="display:flex;align-items:center;gap:4px;flex:0 0 230px">${inp('data-k="toit" data-champ="nbDesc" inputmode="decimal" placeholder="nombre"', toit.nbDesc || '', '70px')}<span style="font-size:13px;color:#6b5a7a">u ×</span>${inp('data-k="toit" data-champ="hautDesc" inputmode="decimal" placeholder="hauteur"', toit.hautDesc || '', '80px')}<span style="font-size:13px;color:#6b5a7a">m</span></span>`;
     else if (typeof q === 'string') qte = `<span style="flex:0 0 150px;font-size:13px;color:#6b5a7a">${esc(q)}</span>`;
+    else if (CALC_TOIT.includes(q[0])) {
+      // Case du calcul (ex. 2 x 4, 1 + 2 + 3 + 4) et, à côté, son résultat
+      const f = toit[q[0] + 'Calc'] != null && toit[q[0] + 'Calc'] !== '' ? toit[q[0] + 'Calc'] : (toit[q[0]] || '');
+      const r = evalCalcLongueur(f);
+      qte = `<span style="display:flex;align-items:center;gap:4px;flex:0 1 300px;min-width:240px">${inp(`data-k="toit" data-champ="${q[0]}Calc" inputmode="text" placeholder="calcul, ex. 2 x 4 ou 1 + 2 + 3"`, f, '100%')}`
+        + `<span style="font-size:13px;color:#6b5a7a">=</span><span data-res-calc="${q[0]}" style="flex:0 0 78px;padding:7px 8px;border:1px solid #c9b8a6;border-radius:8px;background:#fff8ef;text-align:right;font-weight:600">${f === '' ? '' : (r == null ? '?' : fmt(r))}</span>`
+        + `<span style="font-size:13px;color:#6b5a7a;min-width:22px">${q[1]}</span></span>`;
+    }
     else qte = caseQte(q[0], q[1], q[2]);
     return `<div style="grid-column:1/-1;min-width:0"><label style="display:block;margin:6px 0 4px;font-size:15px;color:var(--fg);font-weight:600">${esc(sl.lib)}</label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${selCrayon('couv-' + sl.champ, sl.lib + ' (couverture)', `<select data-k="toit" data-champ="${sl.champ}" style="width:100%;padding:6px">${opts}</select>`)}${qte}</div></div>`;
@@ -4890,6 +4919,14 @@ function ficheChange(e) {
   else if (k === 'ouv') { const o = p.ouvertures.find(x => x.id === t.dataset.id); if (o) o[champ] = val; }
   else if (k === 'toit') {
     p.toiture[champ] = val;
+    // Calcul de faîtage, rives ou noues : le résultat devient la longueur utilisée partout, et s'affiche à côté
+    const base = /Calc$/.test(champ) ? champ.slice(0, -4) : '';
+    if (CALC_TOIT.includes(base)) {
+      const r = evalCalcLongueur(val);
+      p.toiture[base] = r == null ? '' : String(r);
+      const res = document.querySelector(`[data-res-calc="${base}"]`);
+      if (res) res.textContent = String(val).trim() === '' ? '' : (r == null ? '?' : fmt(r));
+    }
     // Toit terrasse : la géométrie devient « plat » ; une autre charpente la remet à choisir
     if (champ === 'charpente') { if (charpenteDe(p.toiture) === 'terrasse') p.toiture.type = 'plat'; else if (p.toiture.type === 'plat') p.toiture.type = ''; }
   }
@@ -5307,6 +5344,10 @@ function ficheVersMetre() {
       const o = BIB.ouvrages.find(x => x.id === id && !x.supprime);
       if (!o) { manquants.push(sl.lib + ' : ouvrage introuvable dans la bibliothèque'); continue; }
       ajouter(o.designation, q, sl.suffixe ? o.designation + sl.suffixe : undefined);
+      // Faîtage, rives, noues saisis en calcul : le calcul va dans le détail de la ligne
+      const dc = CALC_ACC[sl.champ] && detailCalcToit(p.toiture, CALC_ACC[sl.champ]);
+      const lC = L[L.length - 1];
+      if (dc && lC && lC.ouvrage === o.id) { lC.modeLigne = 'texte'; lC.detailTexte = dc; }
     }
   }
   for (const x of menusCalcul(c)) {
