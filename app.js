@@ -1572,6 +1572,16 @@ function ouvrageBloc(bl) {
   return o ? { o, intitule } : { manque: 'Bloc porte : ouvrage absent de la bibliothèque (' + designation + ')' };
 }
 function nbPortesNv(p) { return (p.blocs || []).reduce((a, bl) => a + num(bl.nb), 0); }
+// Dimensions (m) d'un bloc porte pour les calculs (plinthes, plâtrerie, peinture) :
+// porte à galandage = dimension choisie (ex. 160×204) ; autres blocs = 0,83 × 2,04 (règle validée)
+function dimBlocM(bl) {
+  if (estGalandage(bl)) { const m = /^(\d+(?:[.,]\d+)?)\s*[×x]\s*(\d+(?:[.,]\d+)?)/.exec(bl.dim || ''); if (m) return { l: num(m[1]) / 100, h: num(m[2]) / 100 }; }
+  return { l: LARGEUR_PORTE_NV, h: HAUTEUR_PORTE_M };
+}
+// Porte vitrée (verre trempé) : ne se peint pas
+function blocVitre(bl) { const o = estGalandage(bl) && bl.gal && BIB.ouvrages.find(x => x.id === bl.gal); return !!o && /verre/i.test(o.designation); }
+function largeurPortesNv(p) { return (p.blocs || []).reduce((a, bl) => a + num(bl.nb) * dimBlocM(bl).l, 0); }
+function surfacePortesNv(p, filtre) { return (p.blocs || []).filter(bl => !filtre || filtre(bl)).reduce((a, bl) => { const d = dimBlocM(bl); return a + num(bl.nb) * d.l * d.h; }, 0); }
 // Spots encastrés, formule de la fiche : Surface (m²) × Lux recommandés = Lumens totaux ; Lumens totaux ÷ Lumens par spot = nombre de spots (arrondi au supérieur)
 // Lux recommandés : valeurs retenues par Mathieu (entrée/couloir 150, chambre/séjour 200, cuisine 300, bureau 350, salle de bains et salle d'eau 400, WC et buanderie/cellier 150)
 const SPOT_LUX = { 'Entrée / dégagement': 150, 'Chambre': 200, 'Séjour': 200, 'Cuisine': 300, 'Bureau': 350, 'Salle de bains': 400, 'Salle d\'eau': 400, 'WC': 150, 'Buanderie / cellier': 150 };
@@ -1937,9 +1947,8 @@ function genererPiecesNv(c) {
     // Plinthes : linéaire de la pièce, juste sous son revêtement de sol (aucun matériau)
     if (num(p.perim) > 0) {
       // Linéaire de plinthes = périmètre − portes de passage − façades de placard − portes et baies extérieures − passages libres sans porte
-      const largeurPorte = LARGEUR_PORTE_NV;
       const baies = (p.menus || []).filter(m => estPorteBaie(m) && num(m.l) > 0).reduce((a, m) => a + (num(m.nb) || 1) * num(m.l) / 100, 0);
-      const lin = Math.max(0, num(p.perim) - nbPortesNv(p) * largeurPorte - facadesLargeur(p) - baies - num(p.passage));
+      const lin = Math.max(0, num(p.perim) - largeurPortesNv(p) - facadesLargeur(p) - baies - num(p.passage));
       const o = BIB.ouvrages.find(x => x.id === 'OUV-0881' && !x.supprime);
       if (!o) manque.push('Plinthes (OUV-0881)');
       else if (lin > 0) {
@@ -2289,8 +2298,8 @@ const HAUTEUR_PORTE_M = 2.04;
 // seulement si chaque élément fait au moins 1,50 m² (égal ou supérieur)
 function portesEtPlacardsM2(c) {
   return piecesNvDe(c).reduce((a, p) => {
-    const aireporte = LARGEUR_PORTE_NV * HAUTEUR_PORTE_M;
-    const portes = aireporteOk(aireporte) ? nbPortesNv(p) * aireporte : 0;
+    // Chaque porte d'au moins 1,50 m² est déduite (porte à galandage : selon sa dimension)
+    const portes = surfacePortesNv(p, bl => { const d = dimBlocM(bl); return aireporteOk(d.l * d.h); });
     const facades = (p.facades || []).reduce((b, f) => {
       if (!(num(f.l) > 0 && num(f.h) > 0)) return b;
       const aire = num(f.l) * num(f.h) / 10000;
@@ -2302,8 +2311,7 @@ function portesEtPlacardsM2(c) {
 // Surface (m²) de toutes les portes de passage et façades de placard, sans seuil (pour la case de formule du cloisonnement)
 function portesEtPlacardsToutesM2(c) {
   return piecesNvDe(c).reduce((a, p) => {
-    const aireporte = LARGEUR_PORTE_NV * HAUTEUR_PORTE_M;
-    const portes = nbPortesNv(p) * aireporte;
+    const portes = surfacePortesNv(p);
     const facades = (p.facades || []).reduce((b, f) => (num(f.l) > 0 && num(f.h) > 0) ? b + num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : b, 0);
     return a + portes + facades;
   }, 0);
@@ -2586,7 +2594,7 @@ function peiDe(c) {
 function peiHauteur(c) { return num(peiDe(c).hauteur); }
 // Surface brute de toutes les portes de passage et façades de placard du configurateur (sans seuil)
 function portesFacadesBrutM2(c) {
-  return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M
+  return piecesNvDe(c).reduce((a, p) => a + surfacePortesNv(p)
     + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0);
 }
 // Surface totale de toutes les menuiseries extérieures du configurateur, sans seuil
@@ -2610,9 +2618,18 @@ function peiMursDetail(c) {
   return { h, hD, mlD, mlC, surfD, surfC, srcD: 'doublage' };
 }
 // Peinture des cloisons : portes = nombre × 0,83 × 2,04 ; façades = largeur × hauteur sous plafond (bloc peinture) × unités
-function portesPeinture(c) {
-  const n = piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p), 0);
-  return { n, m2: n * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, txt: `${fmt(n)} porte${n > 1 ? 's' : ''} × ${fmt(LARGEUR_PORTE_NV)} × ${fmt(HAUTEUR_PORTE_M)}` };
+// Portes regroupées par dimension (porte à galandage : sa dimension) ; sansVitre : les portes en verre ne se peignent pas
+function portesPeinture(c, sansVitre) {
+  const g = new Map();
+  for (const p of piecesNvDe(c)) for (const bl of (p.blocs || [])) {
+    const nb = num(bl.nb); if (!(nb > 0) || (sansVitre && blocVitre(bl))) continue;
+    const d = dimBlocM(bl), k = d.l + '|' + d.h;
+    const e = g.get(k); if (e) e.n += nb; else g.set(k, { n: nb, l: d.l, h: d.h });
+  }
+  const parts = [...g.values()];
+  const n = parts.reduce((a, e) => a + e.n, 0), m2 = parts.reduce((a, e) => a + e.n * e.l * e.h, 0);
+  const txt = parts.length ? parts.map(e => `${fmt(e.n)} porte${e.n > 1 ? 's' : ''} × ${fmt(e.l)} × ${fmt(e.h)}`).join(' + ') : `0 porte × ${fmt(LARGEUR_PORTE_NV)} × ${fmt(HAUTEUR_PORTE_M)}`;
+  return { n, m2, txt };
 }
 function facadesPeinture(c, h) {
   const parts = [];
@@ -2626,7 +2643,7 @@ function facadesPeinture(c, h) {
   return { m2, txt: parts.join(' + ') };
 }
 // Portes de passage (surface brute, une fois) et façades de placard (surface brute, une fois ici)
-function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + nbPortesNv(p) * LARGEUR_PORTE_NV * HAUTEUR_PORTE_M, 0); }
+function portesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + surfacePortesNv(p), 0); }
 function facadesBrutM2(c) { return piecesNvDe(c).reduce((a, p) => a + (p.facades || []).reduce((b, f) => b + (num(f.l) > 0 && num(f.h) > 0 ? num(f.l) * num(f.h) / 10000 * (num(f.nb) || 1) : 0), 0), 0); }
 function peiLineaire(c) { return piecesNvDe(c).reduce((a, p) => a + num(p.perim), 0); }
 function optPei(re, val, key, titre) {
@@ -2697,8 +2714,9 @@ function genererPeinture(c) {
   }
   // Boiseries et menuiseries : portes de passage (nombre × 0,83 × 2,04 × 2 faces).
   // Façades de placard : seulement celles en panneau MDF à peindre (le mélaminé et les miroirs ne se peignent pas).
+  // Portes à galandage : selon leur dimension ; celles en verre trempé ne se peignent pas.
   {
-    const pP = portesPeinture(c);
+    const pP = portesPeinture(c, true);
     const fac = [];
     for (const pc of piecesNvDe(c)) for (const f of (pc.facades || [])) if (f.structure === 'mdf' && num(f.l) > 0 && num(f.h) > 0) fac.push(f);
     const facM2 = fac.reduce((a, f) => a + num(f.l) / 100 * num(f.h) / 100 * (num(f.nb) || 1), 0);
