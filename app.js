@@ -3552,11 +3552,11 @@ function accManquants(p) {
   }
   return m;
 }
-// Faîtage, rives, noues : longueur saisie sous forme de calcul (ex. « 2 x 4 » ou « 1 + 2 + 3 + 4 »)
+// Faîtage, rives, noues, gouttières (égout) : longueur saisie sous forme de calcul (ex. « 2 x 4 » ou « 1 + 2 + 3 + 4 »)
 // Le calcul est gardé dans <champ>Calc, le résultat dans <champ> (utilisé par tous les calculs)
-const CALC_TOIT = ['faite', 'rive', 'noue'];
+const CALC_TOIT = ['faite', 'rive', 'noue', 'egout'];
 // Accessoires dont la quantité vient d'une de ces longueurs : leur détail montre le calcul
-const CALC_ACC = { accFaite: 'faite', accSousFaitiere: 'faite', accClosoir: 'faite', accRive: 'rive', accNoue: 'noue' };
+const CALC_ACC = { accFaite: 'faite', accSousFaitiere: 'faite', accClosoir: 'faite', accRive: 'rive', accNoue: 'noue', accGouttiere: 'egout', accEgout: 'egout' };
 function evalCalcLongueur(texte) {
   const t = String(texte || '').trim().replace(/,/g, '.').replace(/[×xX]/g, '*').replace(/÷/g, '/');
   if (!t || !/^[0-9+\-*/(). ]+$/.test(t)) return null;
