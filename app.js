@@ -5366,13 +5366,27 @@ function ficheVersMetre() {
   ajouterDrainage(p.choix.cunette, longPeriDr);
   ajouterDrainage(p.choix.arase, longPeriDr);
   ajouterDrainage(p.choix.regards, num(p.choix.regardsNb));
-  // Nappe : surface des murs de soubassement + 0,60 m de hauteur (relevé de 15 à 20 cm au-dessus du mur, 40 à 45 cm sous le drain)
+  // Nappe : surface des murs de soubassement + 0,60 m de hauteur (0,45 m en pied sous le drain, 0,15 m en tête au-dessus du mur)
   const soubLongNappe = (p.murs || []).filter(m => m.cat === 'soub').reduce((a, m) => a + num(m.longueur), 0);
   // Les plaques de protection ne prennent pas le relevé : seule la nappe le prend
   const oNappe = p.choix.nappe && BIB.ouvrages.find(x => x.id === p.choix.nappe);
   const avecReleve = oNappe && /^Nappe /.test(oNappe.designation);
   const surfNappe = r.soubS + (avecReleve ? 0.6 * soubLongNappe : 0);
-  if (oNappe && surfNappe > 0) ajouter(oNappe.designation, surfNappe, oNappe.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surfNappe.toFixed(2), cote2: '1', src: avecReleve ? 'Murs de soubassement + 0,60 m de relevé' : 'Murs de soubassement' }, null);
+  // Détail : longueur × (hauteur du mur + 0,45 m en pied + 0,15 m en tête), mur par mur
+  const v2 = x => x.toFixed(2).replace('.', ',');
+  const mursSoubN = (p.murs || []).filter(m => m.cat === 'soub' && num(m.longueur) > 0);
+  const brutSoubN = mursSoubN.reduce((a, m) => a + num(m.longueur) * num(m.hauteur), 0);
+  let srcNappe = 'Murs de soubassement';
+  if (avecReleve) {
+    srcNappe = Math.abs(brutSoubN - r.soubS) < 0.01 && mursSoubN.length
+      ? mursSoubN.map(m => `${m.nom || 'mur'} : ${v2(num(m.longueur))} m × (${v2(num(m.hauteur))} m + 0,45 m en pied + 0,15 m en tête)`).join(' ; ') + ` = ${v2(surfNappe)} m²`
+      : `Murs de soubassement ${v2(r.soubS)} m² + ${v2(soubLongNappe)} m × (0,45 m en pied + 0,15 m en tête) = ${v2(surfNappe)} m²`;
+  }
+  if (oNappe && surfNappe > 0) {
+    ajouter(oNappe.designation, surfNappe, oNappe.designation.replace(/\s*\([^)]*\)/g, ''), { nombre: '1', cote1: surfNappe.toFixed(2), cote2: '1' }, null);
+    const lN = L[L.length - 1];
+    if (lN && lN.ouvrage === oNappe.id) { lN.modeLigne = 'texte'; lN.detailTexte = srcNappe; }
+  }
   // Seuils de porte : même procédure que les appuis. Les murs cochés « Seuil de porte compris » donnent leur seuil à toutes les portes du projet.
   // Une ligne par type de seuil, unité = nombre de portes.
   const seuilsChoisis = [...new Set((p.murs || []).filter(m => !['soub', 'pignon'].includes(m.cat || 'peri') && m.seuil === true && m.liste_seuil).map(m => m.liste_seuil))];
