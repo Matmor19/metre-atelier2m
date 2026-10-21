@@ -1217,10 +1217,11 @@ function majLignesDepuisConfigurateur(c) {
       // Nouvelle ligne du configurateur : ajoutée tout de suite au métré
       if (!ex) { ajouts.push(l); continue; }
       // Le texte du détail (src) compte aussi : un libellé corrigé dans l'application met à jour la ligne existante
-      if (sig(ex.valeurs) !== sig(l.valeurs) || (ex.valeurs || {}).src !== (l.valeurs || {}).src || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation || ex.lot !== l.lot) {
+      if (sig(ex.valeurs) !== sig(l.valeurs) || (ex.valeurs || {}).src !== (l.valeurs || {}).src || Math.abs(num(ex.quantite) - num(l.quantite)) > 1e-9 || !ex.projet || ex.designation !== l.designation || ex.lot !== l.lot || (l.detailTexte && (ex.detailTexte !== l.detailTexte || ex.modeLigne !== l.modeLigne))) {
         // On garde prix, surface, uid, date de création ; on met à jour ce que calcule le configurateur,
         // y compris le lot quand l'ouvrage a changé de lot dans la bibliothèque (ex. avant-toit passé en couverture)
-        remplacer.set(ex.uid, Object.assign({}, ex, { lot: l.lot, designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto }));
+        remplacer.set(ex.uid, Object.assign({}, ex, { lot: l.lot, designation: l.designation, unite: l.unite, valeurs: l.valeurs, quantite: l.quantite, projet: true, qteAuto: l.qteAuto || ex.qteAuto },
+          l.detailTexte ? { detailTexte: l.detailTexte, modeLigne: l.modeLigne } : {}));
       }
     }
     if (!remplacer.size && !ajouts.length) return;
@@ -5223,7 +5224,13 @@ function ficheVersMetre() {
     }
     if (m.raid === true && m.liste_raid && num(m.nbPoteaux) > 0 && num(m.hauteur) > 0) {
       const o = BIB.ouvrages.find(x => x.id === m.liste_raid);
-      if (o) ajouter(o.designation, num(m.nbPoteaux) * num(m.hauteur), `${o.designation} – ${m.nom || 'mur'} : ${fmt(num(m.nbPoteaux))} poteaux × hauteur ${fmt(num(m.hauteur))} m`, null, null, { mur: m.id });
+      // Nombre × hauteur dans le détail, pas dans la désignation (ex. 8 poteaux × 2,80 m de hauteur)
+      if (o) {
+        const nP = num(m.nbPoteaux), hP = num(m.hauteur);
+        ajouter(o.designation, nP * hP, `${o.designation} – ${m.nom || 'mur'}`, { nombre: String(nP), cote1: String(hP) }, null, { mur: m.id });
+        const lR = L[L.length - 1];
+        if (lR && lR.ouvrage === o.id) { lR.modeLigne = 'texte'; lR.detailTexte = `${fmt(nP)} poteau${nP > 1 ? 'x' : ''} × ${hP.toFixed(2).replace('.', ',')} m de hauteur = ${(nP * hP).toFixed(2).replace('.', ',')} ml`; }
+      }
     }
   }
   // Chaînage sur le mur périphérique (ml) : linéaire du mur périphérique
