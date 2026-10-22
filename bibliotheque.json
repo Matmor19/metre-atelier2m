@@ -31551,8 +31551,136 @@
       ],
       "version": 1,
       "detail": "Raccordement du bac de récupération des condensats de la CTA au réseau des eaux usées. Compris siphon à garde d'eau (ou siphon à membrane spécial VMC) et tuyauterie PVC rigide avec pente minimale de 2 %."
+    },
+    {
+      "id": "OUV-1925",
+      "lot": "plomberie-sanitaire",
+      "designation": "Chauffe-eau thermodynamique 200 L, cuve acier émaillé et pompe à chaleur intégrée",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'un chauffe-eau thermodynamique de capacité 200 L. Cuve en acier émaillé avec isolation renforcée en mousse de polyuréthane et protection anticorrosion dynamique (anode hybride ou ACI). Pompe à chaleur intégrée fonctionnant au fluide vert (ex : R290 ou R134a), COP pivot ≥ 2,5 à 7 °C. Appoint électrique d'urgence par résistance stéatite (fourreau) d'environ 1500 W à 2200 W. Compris socle ou plots résilients anti-vibratiles au sol."
+    },
+    {
+      "id": "OUV-1926",
+      "lot": "plomberie-sanitaire",
+      "designation": "Chauffe-eau thermodynamique 250 L, cuve acier émaillé et pompe à chaleur intégrée",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'un chauffe-eau thermodynamique de capacité 250 L. Cuve en acier émaillé avec isolation renforcée en mousse de polyuréthane et protection anticorrosion dynamique (anode hybride ou ACI). Pompe à chaleur intégrée fonctionnant au fluide vert (ex : R290 ou R134a), COP pivot ≥ 2,5 à 7 °C. Appoint électrique d'urgence par résistance stéatite (fourreau) d'environ 1500 W à 2200 W. Compris socle ou plots résilients anti-vibratiles au sol."
+    },
+    {
+      "id": "OUV-1927",
+      "lot": "plomberie-sanitaire",
+      "designation": "Option air extérieur / ambiant : réseau de gainage aéraulique d'air neuf et de rejet du chauffe-eau thermodynamique",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Mise en œuvre de conduits rigides ou semi-rigides isolés thermiquement (épaisseur mini 25 mm) pour éviter la condensation extérieure sur les gaines. Compris deux traversées de mur ou de toiture étanches avec grilles à ventelles pare-pluie en alu et grillage anti-volatile."
+    },
+    {
+      "id": "OUV-1928",
+      "lot": "plomberie-sanitaire",
+      "designation": "Option split : unité extérieure déportée et liaisons frigorifiques pré-isolées du chauffe-eau thermodynamique",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'un groupe extérieur PAC posé sur support mural ou dalles au sol avec amortisseurs de vibrations. Raccordement au ballon intérieur par liaisons en cuivre de qualité frigorifique pré-isolées. Compris tirage au vide, test d'étanchéité sous azote et charge de fluide frigorigène."
+    },
+    {
+      "id": "OUV-1929",
+      "lot": "plomberie-sanitaire",
+      "designation": "Panoplie de raccordement hydraulique de sécurité du chauffe-eau",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'un groupe de sécurité conforme à la norme NF (taré à 7 bars) avec raccord diélectrique sur l'eau chaude (anti-corrosion galvanique). Compris vanne d'arrêt, clapet anti-retour et mitigeur thermostatique de sécurité en sortie de ballon (bridage de l'eau chaude à 50 °C maximum aux points de puisage selon l'arrêté du 30/11/2005)."
+    },
+    {
+      "id": "OUV-1930",
+      "lot": "plomberie-sanitaire",
+      "designation": "Vase d'expansion sanitaire",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Fourniture et pose d'un vase d'expansion sanitaire blanc ou bleu (capacité adaptée, généralement 8 à 11 litres), raccordé entre le groupe de sécurité et l'entrée d'eau froide du ballon, pour absorber la dilatation de l'eau et éviter les pertes répétées au groupe de sécurité."
+    },
+    {
+      "id": "OUV-1931",
+      "lot": "plomberie-sanitaire",
+      "designation": "Raccordement de l'évacuation des condensats du chauffe-eau thermodynamique",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Raccordement gravitaire du bac à condensats de la PAC et du groupe de sécurité au réseau des eaux usées en attente. Réalisé en tube PVC rigide Ø 32 mm avec une pente minimale de 2 %. Compris entonnoir à garde d'eau amovible (siphon)."
+    },
+    {
+      "id": "OUV-1932",
+      "lot": "plomberie-sanitaire",
+      "designation": "Alimentation et asservissement électrique du chauffe-eau thermodynamique",
+      "unite": "forfait",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un forfait)"
+        }
+      ],
+      "version": 1,
+      "detail": "Raccordement électrique du ballon depuis le tableau divisionnaire en attente. Compris protection par disjoncteur divisionnaire calibré (généralement 16 A) et interrupteur différentiel 30 mA dédié (type A ou F). Configuration de la régulation pour l'asservissement aux heures creuses (si applicable) ou programmation horaire."
     }
   ],
-  "revision": 154,
-  "prochainNumero": 1925
+  "revision": 155,
+  "prochainNumero": 1933
 }
