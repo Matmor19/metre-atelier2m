@@ -4569,7 +4569,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0259",
@@ -4599,7 +4600,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0261",
@@ -11336,7 +11338,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0655",
@@ -11366,7 +11369,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0657",
@@ -11401,7 +11405,8 @@
           "libelle": "Longueur (m)"
         }
       ],
-      "version": 1
+      "version": 2,
+      "archive": true
     },
     {
       "id": "OUV-0659",
@@ -31320,8 +31325,104 @@
       ],
       "version": 2,
       "detail": "Fourniture et pose d'un système à double caisson escamotable opposé pour la séparation de grands volumes. L'ouvrage comprend : les deux caissons métalliques latéraux reliés par un rail supérieur commun parfaitement aligné de niveau, le kit de synchronisation mécanique (permettant l'ouverture simultanée des deux vantaux en manipulant un seul ouvrant), les deux vantaux (à âme pleine ou alvéolaire selon choix), les quincailleries de tirage encastrées, les amortisseurs et l'intégralité du kit d'habillage de finition périphérique."
+    },
+    {
+      "id": "OUV-1911",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Centrale d'extraction mécanique (caisson VMC)",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Motorisation basse consommation (type EC), certifiée NF VMC. Configuration minimale requise : agréée pour ERP ou logement collectif (classement feu C4, 400 °C - 30 min si applicable). Compris suspensions anti-vibratiles, manchettes souples M0 en piquage et raccordement électrique."
+    },
+    {
+      "id": "OUV-1912",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Entrées d'air hygroréglables acoustiques",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Pose en traverse haute des menuiseries extérieures des pièces de vie (chambres, séjour). Débit variable en fonction de l'humidité relative, performance d'affaiblissement acoustique minimale de Dn,e,w = 39 dB. Compris auvents extérieurs pare-pluie et grilles anti-insectes."
+    },
+    {
+      "id": "OUV-1913",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Bouches d'extraction hygroréglables",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Pose murale ou en plafond dans les pièces humides (cuisine, SdB, WC). Débit de base hygrorégulé + débit de pointe temporisé par détection de présence (WC) ou commande manuelle/cordon (cuisine). Compris manchette placo à joint d'étanchéité."
+    },
+    {
+      "id": "OUV-1914",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Réseau aéraulique d'extraction",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Conduits en acier galvanisé rigide ou gaines semi-rigides en polyéthylène haute densité (PEHD) de qualité alimentaire. Diamètres nominaux adaptés aux calculs (Ø 125 ou Ø 80 mm). Compris accessoires de raccordement étanches à joints à lèvres, colliers de fixation et toutes sujétions de pose."
+    },
+    {
+      "id": "OUV-1915",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Calorifugeage des gaines en volume non chauffé",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Isolation thermique périphérique par laine de verre ou manchon mousse élastomère (épaisseur minimale 25 mm) sur toutes les gaines circulant en combles ou locaux non chauffés pour éviter les condensations."
+    },
+    {
+      "id": "OUV-1916",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Tourelle ou chapeau de rejet en toiture",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Terminal d'évacuation de l'air vicié en acier galvanisé ou aluminium avec visière grillagée anti-volatile. Compris costière d'étanchéité et platine de raccordement adaptée à la couverture du toit."
     }
   ],
-  "revision": 152,
-  "prochainNumero": 1911
+  "revision": 153,
+  "prochainNumero": 1917
 }
