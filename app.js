@@ -1303,6 +1303,12 @@ function nomPieceMetre(id) {
 // Sous-titres du métré (menuiseries, plâtrerie, pièces), calculés une seule fois pour l'écran, l'impression, les documents par lot et l'Excel
 const SOUS_TITRES_MEN = { ouv: 'Menuiseries ouvrantes', coul: 'Menuiseries coulissantes', ferm: 'Fermeture - occultation' };
 const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafond' };
+// Ventilation (VMC simple flux et double flux) : avertissement placé en préambule de ces ouvrages, en plus des généralités
+const NOTE_VENTILATION = 'L\'entreprise titulaire du lot Ventilation doit obligatoirement réaliser les calculs de pertes de charge et adapter la puissance des moteurs afin de valider l\'atteinte des débits minimaux imposés aux bouches intérieures, en stricte conformité avec le NF DTU 68.3 et la réglementation acoustique en vigueur.';
+const VMC_IDS = new Set(['OUV-1911', 'OUV-1912', 'OUV-1913', 'OUV-1914', 'OUV-1915', 'OUV-1916', 'OUV-1917', 'OUV-1918', 'OUV-1919', 'OUV-1920', 'OUV-1921', 'OUV-1922', 'OUV-1923', 'OUV-1924']);
+function estLigneVentilation(l) { return VMC_IDS.has(l.ouvrage) || /\bVMC\b|simple flux|double flux|\bCTA\b|aéraulique|insufflation|entrées? d.air/i.test(l.designation || ''); }
+// Un « titre » est un texte (sous-titre) ou { note } (paragraphe d'avertissement)
+const estNoteTitre = t => !!t && typeof t === 'object' && 'note' in t;
 function titresAvantLignes(lotId, ls) {
   const vus = new Set();
   let platPrec = null, piecePrec = null;
@@ -1315,6 +1321,7 @@ function titresAvantLignes(lotId, ls) {
     // Lot maçonnerie : sous-titres Soubassement, Drain, Murs en élévation
     if (lotId === 'gros-oeuvre') { const sg = sectionGO(l); if (!vus.has('go:' + sg)) { vus.add('go:' + sg); t.push(sg); } }
     // Lot couverture-zinguerie : sous-titres « Couverture », « Avant-toit » puis « Zinguerie »
+    if (!vus.has('note-vmc') && estLigneVentilation(l)) { vus.add('note-vmc'); t.push({ note: NOTE_VENTILATION }); }
     if (lotId === 'couverture-zinguerie') { const z = partieCZ(l); if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
   });
@@ -1370,7 +1377,9 @@ function renderMetre() {
     if (recapC) h += `<tr class="gen"><td colspan="${nc}">${recapC}</td></tr>`;
     const titres = titresAvantLignes(lotId, ls);
     for (const [ii, l] of ls.entries()) {
-      for (const t of titres[ii]) h += `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;font-size:17px;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
+      for (const t of titres[ii]) h += estNoteTitre(t)
+        ? `<tr class="note-lot"><td colspan="${nc}" style="font-size:14px;font-style:italic;background:#fff8ef;border-left:4px solid #e07b1a;padding:8px 12px">${esc(t.note)}</td></tr>`
+        : `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;font-size:17px;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
       if (mt != null) total += mt; else sansPrix++;
@@ -6160,7 +6169,7 @@ function htmlImpression(d, logo, pg) {
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     { const rc = recapCharpenteHtml(lot.id); if (rc) corps += `<tr class="gen"><td colspan="${nc}">${rc}</td></tr>`; }
     for (const l of lot.lignes) {
-      for (const t of l.titres) corps += `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
+      for (const t of l.titres) corps += estNoteTitre(t) ? `<tr class="nt"><td colspan="${nc}">${esc(t.note)}</td></tr>` : `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
       corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
@@ -6211,6 +6220,7 @@ function htmlImpression(d, logo, pg) {
   table.metre tr.gen { page-break-inside: auto; }
   table.metre tr.gen td { background: #fbfbfb; border-bottom: none; padding: 2mm 2mm 3mm; font-size: 8.5pt; }
   table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.nt td { background: #fff8ef; font-style: italic; font-size: 9pt; border-left: 1.2mm solid #E07838; padding: 2mm 3mm; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
   .gen-s { color: #2b2b2b; margin-bottom: 0.5mm; }
@@ -6219,6 +6229,7 @@ function htmlImpression(d, logo, pg) {
   .vide { font-weight: 400; color: #8a8a8a; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
   table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.nt td { background: #fff8ef; font-style: italic; font-size: 9pt; border-left: 1.2mm solid #E07838; padding: 2mm 3mm; }
   table.metre tr.tot td { font-weight: 700; border-top: 2px solid #E07838; border-bottom: none; padding-top: 3mm; }
 </style></head><body>
 <section class="garde">
@@ -6281,7 +6292,7 @@ function htmlParLot(d, type, logo) {
     </section>`;
     // Détail du lot (généralités en tête pour le CDPGF)
     const gen = (cdpgf ? genHtml(lot.id, lot.ordre) : '') + recapCharpenteHtml(lot.id);
-    const lignes = lot.lignes.map(l => `${l.titres.map(t => `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
+    const lignes = lot.lignes.map(l => `${l.titres.map(t => estNoteTitre(t) ? `<tr class="nt"><td colspan="${cdpgf ? 8 : 5}">${esc(t.note)}</td></tr>` : `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
         <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
@@ -6338,6 +6349,7 @@ function htmlParLot(d, type, logo) {
   .rappel { color: #8a8a8a; font-size: 8pt; margin-bottom: 3mm; }
   h2.entete-metre { font-size: 13pt; color: #2b2b2b; margin: 0 0 4mm; }
   table.metre tr.st td { background: #f3f6f9; font-weight: 600; font-size: 11.5pt; padding-top: 3mm; border-bottom: none; }
+  table.metre tr.nt td { background: #fff8ef; font-style: italic; font-size: 9pt; border-left: 1.2mm solid #E07838; padding: 2mm 3mm; }
   .gen-bloc { background: #fbfbfb; border-left: 3px solid #E07838; padding: 3mm 4mm; margin: 0 0 5mm; }
   .gen-titre { color: #E07838; font-weight: 700; font-size: 9pt; margin-bottom: 1.5mm; }
   .gen-sec { margin: 0 0 2mm; }
@@ -6614,6 +6626,17 @@ async function pdfCdpgfFormulaire() {
     const noms = [];
     lot.lignes.forEach((l, i) => {
       for (const t of l.titres) {
+        if (estNoteTitre(t)) {
+          // Avertissement : paragraphe encadré en italique
+          const lg = decoupeTexte(t.note, helv, 8.5, LARG - 14);
+          const hN = 8 + lg.length * 11;
+          if (y - hN - 2 < BAS) { nouvellePage(); enteteTable(); }
+          page.drawRectangle({ x: M, y: y - hN, width: LARG, height: hN, color: CREME });
+          page.drawRectangle({ x: M, y: y - hN, width: 3, height: hN, color: ORANGE });
+          lg.forEach((txt, j) => ecrire(txt, M + 9, y - 12 - j * 11, 8.5, helv, NOIR));
+          y -= hN + 2;
+          continue;
+        }
         if (y - 21 < BAS) { nouvellePage(); enteteTable(); }
         page.drawRectangle({ x: M, y: y - 19, width: LARG, height: 19, color: GRIS_CLAIR });
         ecrire(t, M + 4, y - 13.5, 10.5, helvB, NOIR);
@@ -6777,12 +6800,15 @@ async function exporterExcel() {
   const nc = avecPrix ? 7 : 5;
   const lettres = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, nc);
   const m = [['N°', 'Désignation', 'Quantité', 'Unité', 'Détail', ...(avecPrix ? ['P.U. HT ind.', 'Montant HT ind.'] : [])]];
-  const lignesLot = [], lignesLigne = [], lignesTitre = [];
+  const lignesLot = [], lignesLigne = [], lignesTitre = [], lignesNote = [];
   for (const lot of d.lots) {
     lignesLot.push(m.length);
     m.push([lot.num + ' · ' + lot.nom, '', '', '', lot.lignes.length ? '' : '(aucune ligne)', ...(avecPrix ? [''] : []), ...(avecPrix ? [''] : [])].slice(0, nc));
     for (const l of lot.lignes) {
-      for (const t of l.titres) { lignesTitre.push(m.length); m.push(['', t, '', '', '', ...(avecPrix ? ['', ''] : [])]); }
+      for (const t of l.titres) {
+        if (estNoteTitre(t)) { lignesNote.push(m.length); m.push(['', t.note, '', '', '', ...(avecPrix ? ['', ''] : [])]); continue; }
+        lignesTitre.push(m.length); m.push(['', t, '', '', '', ...(avecPrix ? ['', ''] : [])]);
+      }
       lignesLigne.push(m.length);
       m.push([l.num, l.designation, l.quantite, l.unite, [l.desc, l.detail].filter(Boolean).join(' — '), ...(avecPrix ? [l.pu ?? '', l.montant ?? ''] : [])]);
     }
@@ -6801,6 +6827,11 @@ async function exporterExcel() {
     for (const c of lettres.slice(1)) style(ws2, c + (r + 1), { fill: { fgColor: { rgb: 'F4F4F4' } }, font: { bold: true } });
   }
   for (const r of lignesTitre) for (const c of lettres) style(ws2, c + (r + 1), { font: { bold: true, sz: 13 }, fill: { fgColor: { rgb: 'F3F6F9' } } });
+  for (const r of lignesNote) {
+    ws2['!merges'].push({ s: { r, c: 1 }, e: { r, c: nc - 1 } });
+    ws2['!rows'] = ws2['!rows'] || []; ws2['!rows'][r] = { hpt: 48 };
+    for (const c of lettres) style(ws2, c + (r + 1), { font: { italic: true }, fill: { fgColor: { rgb: 'FFF8EF' } }, alignment: { wrapText: true, vertical: 'top' } });
+  }
   for (const r of lignesLigne) {
     style(ws2, 'A' + (r + 1), { font: { bold: true, color: orange } });
     ws2['D' + (r + 1)].z = '#,##0.00';
