@@ -1859,6 +1859,8 @@ function renderPiecesNv() {
 // Circuits : éclairage (8 points max par circuit), prises (8 max), 1 circuit par appareil spécialisé,
 // 1 circuit VMC seulement si une VMC (simple ou double flux) est choisie au lot 11 du configurateur
 function vmcChoisie(c) { const v = ((c && c.projet && c.projet.equip) || {}).vmc; return v === 'simple' || v === 'double'; }
+// Pompe à chaleur (air/eau ou air/air) choisie au lot 11 : un circuit spécialisé prévu par le lot Électricité
+function pacChoisie(c) { const v = ((c && c.projet && c.projet.equip) || {}).chauffage; return v === 'pac-eau' || v === 'pac-air'; }
 function equipementsMaison(c) {
   const pcs = piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)');
   let ecl = 0, pri = 0, spec = 0, surf = 0;
@@ -1869,8 +1871,8 @@ function equipementsMaison(c) {
     pri += ['prises', 'tv', 'hotte', 'rasoir'].reduce((a, k) => a + num(appDefaut(p, k)), 0);
     spec += ['plaque', 'four', 'lvaisselle', 'llinge', 'sechelinge', 'chauffeau'].filter(k => num(appDefaut(p, k)) > 0).length;
   }
-  const vmc = vmcChoisie(c);
-  const circuits = (ecl ? Math.ceil(ecl / 8) : 0) + (pri ? Math.ceil(pri / 8) : 0) + spec + (vmc ? 1 : 0);
+  const vmc = vmcChoisie(c), pac = pacChoisie(c);
+  const circuits = (ecl ? Math.ceil(ecl / 8) : 0) + (pri ? Math.ceil(pri / 8) : 0) + spec + (vmc ? 1 : 0) + (pac ? 1 : 0);
   const ddr = Math.max(2, Math.ceil(circuits / 8));
   const modules = Math.ceil((circuits + 2 * ddr + 2) * 1.2);
   const tableau = modules <= 12 ? 'Tableau électrique 12 modules avec protections'
@@ -1892,6 +1894,7 @@ function equipementsMaison(c) {
   ];
   if (nbEau) items.push({ des: "Liaison équipotentielle de salle d'eau", n: nbEau, info: 'une par pièce d\'eau' });
   if (vmc) items.push({ des: 'Alimentation de VMC', n: 1, info: 'circuit dédié' });
+  if (pac) items.push({ des: 'Circuit spécialisé pompe à chaleur', n: 1, info: 'circuit dédié' });
   if (rj > 0) items.push({ des: 'Tableau télécommunication', n: 1 });
   if (detecteurs > 0) items.push({ des: 'Détecteur autonome de fumée', n: detecteurs, info: '1 pour 100 m²' });
   return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf, items };
@@ -3368,6 +3371,7 @@ const EQ_SEL = [
   ['visio', 'Visiophone ou interphone', [['non', 'Non'], ['oui', 'Oui']]]
 ];
 const EQ_NUM = [
+  ['nb_pac_int', 'Pompe à chaleur air/air : nombre d\'unités intérieures'],
   ['nb_rad', 'Nombre de radiateurs'],
   ['nb_seche', 'Nombre de sèche-serviettes'],
   ['thermo_gaine', 'Chauffe-eau gainé : longueur de gaine d\'air (m)'],
@@ -4043,7 +4047,7 @@ function srcTxt(qte) {
   return 'Calcul du configurateur : ' + (SRC_QTE[qte] || 'quantité calculée');
 }
 // Ouvrages reliés au bloc Chauffage, VMC, climatisation du configurateur (entrent et sortent du métré selon les choix)
-const CLES_CHAUF = new Set(['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine',
+const CLES_CHAUF = new Set(['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'nb_pac_int', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine',
   'poele_bois_n', 'poele_gran_n', 'poele_n', 'conduit_bois_ml', 'conduit_gran_ml', 'clim_ext', 'clim_gainable_ext', 'vmc_df_ext']);
 function estOuvChauf(o) { return !!o && !!o.qte && (o.si ? CLES_CHAUF.has(o.si.cle) : CLES_CHAUF.has(o.qte)); }
 function qteValeur(o, ctx) {
@@ -4824,7 +4828,7 @@ function ficheRendre() {
   const EQ_GRP = {
     elec: ['portail_moto', 'nb_portail', 'borne', 'alarme', 'visio', 'nb_eclairage'],
     plomb: ['eau_chaude', 'thermo_type', 'thermo_litres', 'thermo_gaine', 'thermo_liaison', 'adouc', 'cuve', 'cuve_pose', 'cuve_litres', 'cuve_reseau', 'cuve_tranchee', 'piscine', 'anc', 'anc_epand'],
-    chauf: ['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine']
+    chauf: ['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'nb_pac_int', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine']
   };
   const rendreEq = g => EQ_SEL.filter(x => EQ_GRP[g].includes(x[0])).map(([k, lib, opts]) => champ(lib, choix(`data-k="equip" data-champ="${k}"`, opts, eq[k]))).join('')
     + EQ_NUM.filter(x => EQ_GRP[g].includes(x[0])).map(([k, lib]) => champ(lib, inp(`data-k="equip" data-champ="${k}" inputmode="decimal"`, eq[k]))).join('')
@@ -5364,8 +5368,14 @@ function ficheVersMetre() {
   // (condition « si » sur un choix du bloc, ou quantité tirée d'un nombre du bloc). Rien choisi = rien au métré.
   {
     const ctxC = ctxQuantites(c);
+    // Ouvrages d'un même choix regroupés (ex. pompe à chaleur puis son module, ses liaisons, sa régulation…)
+    const grp = new Map();
     for (const o of BIB.ouvrages) {
       if (!ouvActif(o) || !estOuvChauf(o)) continue;
+      const k = o.si ? o.si.cle + '=' + o.si.val : 'qte:' + o.qte;
+      (grp.get(k) || grp.set(k, []).get(k)).push(o);
+    }
+    for (const o of [...grp.values()].flat()) {
       const v = qteValeur(o, ctxC);
       if (!v) continue;
       const q = calcul(o, v);

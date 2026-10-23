@@ -11167,7 +11167,7 @@
     {
       "id": "OUV-0645",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Pompe à chaleur air-eau",
+      "designation": "Pompe à chaleur air/eau, unité extérieure",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -11177,17 +11177,18 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "un",
       "si": {
         "cle": "chauffage",
         "val": "pac-eau"
-      }
+      },
+      "detail": "Unité extérieure monobloc ou split à compresseur Inverter, fluide R32 ou R290, COP ≥ 4 à +7 °C / +35 °C, dimensionnée selon l'étude thermique RE 2020. Pose sur supports muraux ou plots antivibratiles au sol."
     },
     {
       "id": "OUV-0646",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Pompe à chaleur air-air (réversible)",
+      "designation": "Pompe à chaleur air/air réversible, unité extérieure Inverter",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -11197,12 +11198,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
+      "version": 2,
       "qte": "un",
       "si": {
         "cle": "chauffage",
         "val": "pac-air"
-      }
+      },
+      "detail": "Unité extérieure Inverter réversible, fluide R32, SCOP et SEER selon l'étude thermique. Pose sur supports antivibratiles."
     },
     {
       "id": "OUV-0647",
@@ -31795,8 +31797,213 @@
         "val": "double"
       },
       "qte": "un"
+    },
+    {
+      "id": "OUV-1935",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Module hydraulique intérieur de la pompe à chaleur air/eau",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Circulateur haute efficacité, vase d'expansion, soupape de sécurité et appoint électrique intégré.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-eau"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1936",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Liaisons et raccordements de la pompe à chaleur air/eau",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Liaisons frigorifiques ou hydrauliques calorifugées entre l'unité extérieure et le module hydraulique, vannes d'isolement et filtre à boues magnétique.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-eau"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1937",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Évacuation des condensats de la pompe à chaleur air/eau",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Évacuation des condensats de l'unité extérieure vers le réseau d'eaux pluviales ou un puisard, avec protection hors gel.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-eau"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1938",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Régulation de la pompe à chaleur air/eau",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Sonde extérieure, thermostat d'ambiance programmable, mise en service et réglage des lois d'eau.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-eau"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1939",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Raccordement de la pompe à chaleur air/eau au circuit électrique prévu par le lot Électricité",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Raccordement électrique de l'unité extérieure et du module hydraulique sur le circuit spécialisé prévu et fourni par le lot Électricité.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-eau"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1940",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Unités intérieures murales ou consoles de la pompe à chaleur air/air",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Unités intérieures murales ou consoles, avec télécommande et filtration. Une unité par pièce traitée.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-air"
+      },
+      "qte": "nb_pac_int"
+    },
+    {
+      "id": "OUV-1941",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Liaisons frigorifiques pré-isolées de la pompe à chaleur air/air",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Liaisons en cuivre de qualité frigorifique pré-isolées entre l'unité extérieure et les unités intérieures. Compris tirage au vide, test d'étanchéité à l'azote et complément de charge.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-air"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1942",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Évacuation des condensats de la pompe à chaleur air/air",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Évacuation des condensats des unités intérieures, gravitaire ou par pompe de relevage.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-air"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1943",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Raccordement de la pompe à chaleur air/air au circuit électrique prévu par le lot Électricité",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Raccordement électrique de l'unité extérieure sur le circuit spécialisé prévu et fourni par le lot Électricité.",
+      "si": {
+        "cle": "chauffage",
+        "val": "pac-air"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1944",
+      "lot": "electricite",
+      "designation": "Circuit spécialisé pompe à chaleur",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Circuit électrique dédié à la pompe à chaleur depuis le tableau : disjoncteur divisionnaire calibré selon la puissance de l'appareil, sous protection différentielle 30 mA, câble de section adaptée jusqu'à l'unité extérieure, en attente pour le raccordement par le lot Chauffage."
     }
   ],
-  "revision": 160,
-  "prochainNumero": 1935
+  "revision": 161,
+  "prochainNumero": 1945
 }
