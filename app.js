@@ -1464,7 +1464,8 @@ function elecCalcul(pieces) {
   const nbSpec = totaux['Ligne spécialisée (cuisson, four, lave-linge, lave-vaisselle)'] || 0;
   const cEcl = nbPoints ? Math.ceil(nbPoints / 8) : 0;
   const cPri = nbPrises ? Math.ceil(nbPrises / 8) : 0;
-  const circuits = cEcl + cPri + nbSpec + 1;
+  const vmcC = vmcChoisie(chantiers.find(x => x.id === courantId));
+  const circuits = cEcl + cPri + nbSpec + (vmcC ? 1 : 0);
   const ddr = Math.max(2, Math.ceil(circuits / 8));
   // Tableau : disjoncteurs + différentiels (2 modules chacun) + branchement (2 modules), réserve de 20 %
   const modules = Math.ceil((circuits + 2 * ddr + 2) * 1.2);
@@ -1482,7 +1483,7 @@ function elecCalcul(pieces) {
   if (cEcl) ajouter('Câble circuit éclairage 1,5 mm² (ml)', cEcl * 15);
   if (cPri) ajouter('Câble circuit prises 2,5 mm² (ml)', cPri * 30);
   if (nbSpec) ajouter('Câble circuit spécialisé 2,5 ou 6 mm² (ml)', nbSpec * 20);
-  ajouter('Câble circuit VMC 1,5 mm² (ml)', 15);
+  if (vmcC) ajouter('Câble circuit VMC 1,5 mm² (ml)', 15);
   if (points) ajouter('Câblage en gaine ICTA', points * 3);   // estimation : 3 ml par point ou prise
   totaux.__resume = { circuits, ddr, modules, tableau: tableau.match(/\d+ modules|4 rangées/)[0] };
   return totaux;
@@ -1855,7 +1856,9 @@ function renderPiecesNv() {
     <p id="nvStatut" class="muted" style="font-size:13px"></p></div>`;
 }
 // Équipements de la maison (hors pièces) : tableau adapté aux pièces saisies, et détecteurs de fumée (1 pour 100 m²)
-// Circuits : éclairage (8 points max par circuit), prises (8 max), 1 circuit par appareil spécialisé, 1 circuit VMC
+// Circuits : éclairage (8 points max par circuit), prises (8 max), 1 circuit par appareil spécialisé,
+// 1 circuit VMC seulement si une VMC (simple ou double flux) est choisie au lot 11 du configurateur
+function vmcChoisie(c) { const v = ((c && c.projet && c.projet.equip) || {}).vmc; return v === 'simple' || v === 'double'; }
 function equipementsMaison(c) {
   const pcs = piecesNvDe(c).filter(p => (typePieceNv(p.nom) || '') !== 'Extérieur (terrasse)');
   let ecl = 0, pri = 0, spec = 0, surf = 0;
@@ -1866,7 +1869,8 @@ function equipementsMaison(c) {
     pri += ['prises', 'tv', 'hotte', 'rasoir'].reduce((a, k) => a + num(appDefaut(p, k)), 0);
     spec += ['plaque', 'four', 'lvaisselle', 'llinge', 'sechelinge', 'chauffeau'].filter(k => num(appDefaut(p, k)) > 0).length;
   }
-  const circuits = (ecl ? Math.ceil(ecl / 8) : 0) + (pri ? Math.ceil(pri / 8) : 0) + spec + 1;
+  const vmc = vmcChoisie(c);
+  const circuits = (ecl ? Math.ceil(ecl / 8) : 0) + (pri ? Math.ceil(pri / 8) : 0) + spec + (vmc ? 1 : 0);
   const ddr = Math.max(2, Math.ceil(circuits / 8));
   const modules = Math.ceil((circuits + 2 * ddr + 2) * 1.2);
   const tableau = modules <= 12 ? 'Tableau électrique 12 modules avec protections'
@@ -1887,6 +1891,7 @@ function equipementsMaison(c) {
     { des: 'Liaison équipotentielle', n: 1 },
   ];
   if (nbEau) items.push({ des: "Liaison équipotentielle de salle d'eau", n: nbEau, info: 'une par pièce d\'eau' });
+  if (vmc) items.push({ des: 'Alimentation de VMC', n: 1, info: 'circuit dédié' });
   if (rj > 0) items.push({ des: 'Tableau télécommunication', n: 1 });
   if (detecteurs > 0) items.push({ des: 'Détecteur autonome de fumée', n: detecteurs, info: '1 pour 100 m²' });
   return { pieces: pcs.length, circuits, ddr, modules, tableau, detecteurs, surf, items };

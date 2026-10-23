@@ -10742,7 +10742,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "detail": "Circuit électrique dédié à la VMC depuis le tableau : disjoncteur divisionnaire 2 A sous protection différentielle 30 mA, câble 1,5 mm² sous gaine jusqu'à l'emplacement du groupe, en attente pour le raccordement par le lot Ventilation."
     },
     {
       "id": "OUV-0618",
@@ -31756,7 +31757,7 @@
     {
       "id": "OUV-1933",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Alimentation électrique de la VMC simple flux",
+      "designation": "Raccordement de la VMC simple flux au circuit électrique prévu par le lot Électricité",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31766,8 +31767,8 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1,
-      "detail": "Câblage et raccordement au tableau général sur disjoncteur divisionnaire 2 A dédié (sous protection différentielle 30 mA).",
+      "version": 2,
+      "detail": "Raccordement électrique du groupe d'extraction sur le circuit dédié (disjoncteur divisionnaire 2 A sous protection différentielle 30 mA) prévu et fourni par le lot Électricité.",
       "si": {
         "cle": "vmc",
         "val": "simple"
@@ -31777,7 +31778,7 @@
     {
       "id": "OUV-1934",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Alimentation et régulation de la VMC double flux",
+      "designation": "Raccordement de la VMC double flux au circuit électrique prévu par le lot Électricité, et régulation",
       "unite": "ens",
       "type": "commun",
       "saisie": "metre",
@@ -31787,8 +31788,8 @@
           "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 1,
-      "detail": "Raccordement électrique sur disjoncteur dédié au tableau. Fourniture et pose de la commande murale (ou interface connectée) pour la gestion des débits, l'alerte encrassement filtres et les programmations horaires.",
+      "version": 2,
+      "detail": "Raccordement électrique de la centrale sur le circuit dédié prévu et fourni par le lot Électricité. Fourniture et pose de la commande murale (ou interface connectée) pour la gestion des débits, l'alerte encrassement filtres et les programmations horaires.",
       "si": {
         "cle": "vmc",
         "val": "double"
@@ -31796,6 +31797,6 @@
       "qte": "un"
     }
   ],
-  "revision": 159,
+  "revision": 160,
   "prochainNumero": 1935
 }
