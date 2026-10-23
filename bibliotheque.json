@@ -11346,12 +11346,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 4,
+      "version": 5,
       "si": {
         "cle": "vmc",
         "val": "simple"
       },
-      "qte": "un"
+      "qte": "un",
+      "detail": "Fourniture, pose, raccordements et mise en service d'une installation complète de ventilation mécanique contrôlée de type Hygro B, conforme au NF DTU 68.3 et aux exigences de la RE 2020. Groupe d'extraction : caisson monobloc à motorisation très basse consommation (moteur EC), certifié NF VMC. Pose suspendue en combles ou volume technique par cordelettes anti-vibratiles. Bouches d'extraction (selon plans) : bouches hygroréglables murales ou plafonds à joint d'étanchéité dans les pièces humides. Cuisine : débit variable automatique + commande de pointe temporisée (cordon ou bouton-poussoir). Salle de bains : débit variable automatique indexé sur le taux d'humidité locale. WC : débit fixe réduit + commande de pointe temporisée par détecteur de présence intégré."
     },
     {
       "id": "OUV-0655",
@@ -31395,7 +31396,7 @@
     {
       "id": "OUV-1914",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Réseau aéraulique d'extraction",
+      "designation": "Réseau aéraulique de la VMC simple flux",
       "unite": "ens",
       "type": "commun",
       "saisie": "metre",
@@ -31405,14 +31406,18 @@
           "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 2,
-      "detail": "Conduits en acier galvanisé rigide ou gaines semi-rigides en polyéthylène haute densité (PEHD) de qualité alimentaire. Diamètres nominaux adaptés aux calculs (Ø 125 ou Ø 80 mm). Compris accessoires de raccordement étanches à joints à lèvres, colliers de fixation et toutes sujétions de pose.",
-      "archive": true
+      "version": 3,
+      "detail": "Conduits semi-rigides en PEHD de qualité alimentaire (gaines souples PVC interdites). Diamètres Ø 125 mm (cuisine/rejet) et Ø 80 mm (SdB/WC). Raccordements étanches à joints à lèvres.",
+      "si": {
+        "cle": "vmc",
+        "val": "simple"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1915",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Calorifugeage des gaines en volume non chauffé",
+      "designation": "Calorifugeage des gaines de la VMC simple flux en volume non chauffé",
       "unite": "ens",
       "type": "commun",
       "saisie": "metre",
@@ -31422,14 +31427,18 @@
           "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 2,
-      "detail": "Isolation thermique périphérique par laine de verre ou manchon mousse élastomère (épaisseur minimale 25 mm) sur toutes les gaines circulant en combles ou locaux non chauffés pour éviter les condensations.",
-      "archive": true
+      "version": 3,
+      "detail": "Isolation thermique obligatoire par laine de verre ou manchon mousse (épaisseur mini 25 mm) sur l'ensemble des gaines circulant en volume non chauffé.",
+      "si": {
+        "cle": "vmc",
+        "val": "simple"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1916",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Tourelle ou chapeau de rejet en toiture",
+      "designation": "Terminal de rejet en toiture de la VMC simple flux",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31439,9 +31448,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 2,
-      "detail": "Terminal d'évacuation de l'air vicié en acier galvanisé ou aluminium avec visière grillagée anti-volatile. Compris costière d'étanchéité et platine de raccordement adaptée à la couverture du toit.",
-      "archive": true
+      "version": 3,
+      "detail": "Chapeau de toiture métallique ou polypropylène avec grille anti-nuisibles et platine d'étanchéité adaptée à la couverture.",
+      "si": {
+        "cle": "vmc",
+        "val": "simple"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1917",
@@ -31714,8 +31727,29 @@
       "version": 2,
       "detail": "Raccordement électrique du ballon depuis le tableau divisionnaire en attente. Compris protection par disjoncteur divisionnaire calibré (généralement 16 A) et interrupteur différentiel 30 mA dédié (type A ou F). Configuration de la régulation pour l'asservissement aux heures creuses (si applicable) ou programmation horaire.",
       "archive": true
+    },
+    {
+      "id": "OUV-1933",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Alimentation électrique de la VMC simple flux",
+      "unite": "u",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre"
+        }
+      ],
+      "version": 1,
+      "detail": "Câblage et raccordement au tableau général sur disjoncteur divisionnaire 2 A dédié (sous protection différentielle 30 mA).",
+      "si": {
+        "cle": "vmc",
+        "val": "simple"
+      },
+      "qte": "un"
     }
   ],
-  "revision": 157,
-  "prochainNumero": 1933
+  "revision": 158,
+  "prochainNumero": 1934
 }
