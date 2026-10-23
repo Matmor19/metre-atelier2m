@@ -3416,6 +3416,8 @@ function equipCtx(p) {
   const sansPac = eq.chauffage !== 'pac-air';
   o.clim_ext = eq.clim === 'split' && capacite && sansPac ? Math.ceil(num(eq.nb_clim) / capacite) : 0;
   o.clim_gainable_ext = eq.clim === 'gainable' && sansPac ? 1 : 0;
+  // VMC double flux : une prise d'air neuf et un rejet extérieur
+  o.vmc_df_ext = eq.vmc === 'double' ? 2 : 0;
   return o;
 }
 const FICHE_COUVERTINE = { alu: 'Aluminium', acier: 'Acier laqué 75/100e' };
@@ -4037,7 +4039,7 @@ function srcTxt(qte) {
 }
 // Ouvrages reliés au bloc Chauffage, VMC, climatisation du configurateur (entrent et sortent du métré selon les choix)
 const CLES_CHAUF = new Set(['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine',
-  'poele_bois_n', 'poele_gran_n', 'poele_n', 'conduit_bois_ml', 'conduit_gran_ml', 'clim_ext', 'clim_gainable_ext']);
+  'poele_bois_n', 'poele_gran_n', 'poele_n', 'conduit_bois_ml', 'conduit_gran_ml', 'clim_ext', 'clim_gainable_ext', 'vmc_df_ext']);
 function estOuvChauf(o) { return !!o && !!o.qte && (o.si ? CLES_CHAUF.has(o.si.cle) : CLES_CHAUF.has(o.qte)); }
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;

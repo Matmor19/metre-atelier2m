@@ -11357,7 +11357,7 @@
     {
       "id": "OUV-0655",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "VMC double flux",
+      "designation": "Centrale de VMC double flux",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -11367,12 +11367,13 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 4,
+      "version": 5,
       "si": {
         "cle": "vmc",
         "val": "double"
       },
-      "qte": "un"
+      "qte": "un",
+      "detail": "Caisson monobloc avec échangeur thermique à plaques à contre-courant (rendement thermique certifié > 90 %). Moteurs basse consommation (technologie EC), bypass thermique automatique 100 % (free-cooling), et filtres intégrés (F7/ePM1 sur l'air neuf, G4/Coarse sur l'air extrait). Pose au sol sur plots résilients ou fixation murale anti-vibratiles."
     },
     {
       "id": "OUV-0656",
@@ -31476,7 +31477,7 @@
     {
       "id": "OUV-1918",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Réseau de distribution d'air double flux (double réseau étanche)",
+      "designation": "Réseaux de distribution de la VMC double flux",
       "unite": "ens",
       "type": "commun",
       "saisie": "metre",
@@ -31486,9 +31487,13 @@
           "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 2,
-      "detail": "Mise en œuvre de deux réseaux distincts (extraction et insufflation). Matériau : gaines semi-rigides PEHD lisses intérieures, traitées antistatiques et antibactériennes. Connexions mécaniques à joints d'étanchéité (zéro adhésif en encastré).",
-      "archive": true
+      "version": 3,
+      "detail": "Double réseau étanche (insufflation et extraction) en conduits semi-rigides PEHD lisses, traités antistatiques et antibactériens. Raccordements mécaniques par plénums de répartition et accessoires munis de joints à lèvres (zéro adhésif en encastré).",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1919",
@@ -31510,41 +31515,7 @@
     {
       "id": "OUV-1920",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Bouches d'extraction et d'insufflation (réseau intérieur)",
-      "unite": "u",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre"
-        }
-      ],
-      "version": 2,
-      "detail": "Extraction : bouches réglables à effet Coanda dans les locaux humides. Insufflation : diffuseurs à jet d'air réglable ou grilles de soufflage dans les pièces de vie. Compris plénums de raccordement acoustiques d'interface dalle/plafond.",
-      "archive": true
-    },
-    {
-      "id": "OUV-1921",
-      "lot": "chauffage-vmc-climatisation",
-      "designation": "Pièges à son (silencieux)",
-      "unite": "u",
-      "type": "commun",
-      "saisie": "metre",
-      "champs": [
-        {
-          "cle": "nombre",
-          "libelle": "Nombre"
-        }
-      ],
-      "version": 2,
-      "detail": "Modules acoustiques à absorption installés en sortie de caisson double flux sur les réseaux principaux d'insufflation et de reprise pour garantir un niveau sonore intérieur maximal inférieur à 30 dBA dans les pièces de vie.",
-      "archive": true
-    },
-    {
-      "id": "OUV-1922",
-      "lot": "chauffage-vmc-climatisation",
-      "designation": "Isolation thermique renforcée des réseaux double flux (extérieurs et non chauffés)",
+      "designation": "Terminaux intérieurs de la VMC double flux (bouches d'insufflation et d'extraction)",
       "unite": "ens",
       "type": "commun",
       "saisie": "metre",
@@ -31554,14 +31525,60 @@
           "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 2,
-      "detail": "Calorifugeage par manchon de laine de roche avec pare-vapeur alu (épaisseur minimale 50 mm) sur les conduits d'air neuf et de rejet d'air vicié pour prévenir tout pont thermique ou condensation.",
-      "archive": true
+      "version": 3,
+      "detail": "Insufflation : bouches de soufflage à effet Coanda dans les pièces de vie (salon, chambres). Extraction : bouches réglables dans les pièces humides (cuisine, SdB, WC). Quantités et implantation selon plans.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1921",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Pièges à son de la VMC double flux",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 3,
+      "detail": "Silencieux acoustiques sur les conduits principaux d'insufflation et de reprise pour garantir un niveau sonore intérieur Lw < 30 dBA dans les pièces de vie.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
+    },
+    {
+      "id": "OUV-1922",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Calorifugeage des conduits de la VMC double flux",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 3,
+      "detail": "Isolation renforcée par laine de roche pare-vapeur alu (épaisseur mini 50 mm) sur tous les conduits extérieurs (air neuf / rejet) et toutes les gaines traversant les espaces non chauffés.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1923",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Prise d'air neuf et rejet extérieur",
+      "designation": "Prise d'air neuf et rejet extérieur de la VMC double flux",
       "unite": "u",
       "type": "commun",
       "saisie": "metre",
@@ -31571,26 +31588,34 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 2,
-      "detail": "Grilles de façade à ventelles pare-pluie en aluminium avec grillage anti-volatile, ou terminaux de toiture double flux. Entrées et rejets disposés à une distance réglementaire minimale de 8 mètres pour éviter le recyclage de l'air.",
-      "archive": true
+      "version": 3,
+      "detail": "Grilles de façade à ventelles pare-pluie en alu ou terminaux de toiture avec grilles anti-volatiles, positionnés pour éviter le recyclage de l'air.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "vmc_df_ext"
     },
     {
       "id": "OUV-1924",
       "lot": "chauffage-vmc-climatisation",
-      "designation": "Réseau d'évacuation des condensats de la CTA",
-      "unite": "forfait",
+      "designation": "Évacuation des condensats de la VMC double flux",
+      "unite": "ens",
       "type": "commun",
       "saisie": "metre",
       "champs": [
         {
           "cle": "nombre",
-          "libelle": "Nombre (1 pour un forfait)"
+          "libelle": "Nombre (1 pour un ensemble)"
         }
       ],
-      "version": 2,
-      "detail": "Raccordement du bac de récupération des condensats de la CTA au réseau des eaux usées. Compris siphon à garde d'eau (ou siphon à membrane spécial VMC) et tuyauterie PVC rigide avec pente minimale de 2 %.",
-      "archive": true
+      "version": 3,
+      "detail": "Raccordement gravitaire du bac de la centrale au réseau des eaux usées via un siphon spécial VMC à membrane / garde d'eau, en tube PVC Ø 32 mm avec pente mini de 2 %.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-1925",
@@ -31748,8 +31773,29 @@
         "val": "simple"
       },
       "qte": "un"
+    },
+    {
+      "id": "OUV-1934",
+      "lot": "chauffage-vmc-climatisation",
+      "designation": "Alimentation et régulation de la VMC double flux",
+      "unite": "ens",
+      "type": "commun",
+      "saisie": "metre",
+      "champs": [
+        {
+          "cle": "nombre",
+          "libelle": "Nombre (1 pour un ensemble)"
+        }
+      ],
+      "version": 1,
+      "detail": "Raccordement électrique sur disjoncteur dédié au tableau. Fourniture et pose de la commande murale (ou interface connectée) pour la gestion des débits, l'alerte encrassement filtres et les programmations horaires.",
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
     }
   ],
-  "revision": 158,
-  "prochainNumero": 1934
+  "revision": 159,
+  "prochainNumero": 1935
 }
