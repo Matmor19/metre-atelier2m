@@ -1195,7 +1195,9 @@ function majLignesDepuisConfigurateur(c) {
     // Lignes du configurateur (sans quantité automatique) que le configurateur ne produit plus : retirées de CE chantier
     const produitesC = new Set();
     for (const arr of Object.values(col)) for (const l of arr) if (l.ouvrage && !uids.has(l.uid)) produitesC.add(cleL(l));
-    const sansSource = PIECES_ANCIEN_VEILLE ? new Set() : new Set(L.filter(x => (x.projet || x.auto || x.plat) && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x))).map(x => x.uid));
+    // Lignes du bloc Chauffage, VMC, climatisation : retirées dès que le choix qui les faisait entrer est enlevé
+    const chaufRetire = x => x.projet && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x)) && estOuvChauf(BIB.ouvrages.find(o => o.id === x.ouvrage));
+    const sansSource = PIECES_ANCIEN_VEILLE ? new Set(L.filter(chaufRetire).map(x => x.uid)) : new Set(L.filter(x => (x.projet || x.auto || x.plat) && !x.qteAuto && x.ouvrage && !produitesC.has(cleL(x))).map(x => x.uid));
     const Lk = sansSource.size ? L.filter(x => !sansSource.has(x.uid)) : L;
     if (sansSource.size) sauverLignes(c.id, Lk);
     // Propositions du configurateur qui ne sont pas des copies des lignes déjà présentes
@@ -4033,6 +4035,10 @@ function srcTxt(qte) {
   if (qte === 'decap_m2' || SRC_SURF.has(qte) || SRC_PLAN.has(qte)) return TXT_SURFACE;
   return 'Calcul du configurateur : ' + (SRC_QTE[qte] || 'quantité calculée');
 }
+// Ouvrages reliés au bloc Chauffage, VMC, climatisation du configurateur (entrent et sortent du métré selon les choix)
+const CLES_CHAUF = new Set(['vmc', 'poele', 'poele_conduit', 'poele_air', 'chauffage', 'plancher', 'radiateurs', 'nb_rad', 'nb_seche', 'clim', 'clim_grp', 'nb_clim', 'clim_gaine',
+  'poele_bois_n', 'poele_gran_n', 'poele_n', 'conduit_bois_ml', 'conduit_gran_ml', 'clim_ext', 'clim_gainable_ext']);
+function estOuvChauf(o) { return !!o && !!o.qte && (o.si ? CLES_CHAUF.has(o.si.cle) : CLES_CHAUF.has(o.qte)); }
 function qteValeur(o, ctx) {
   if (!o || !o.qte || ctx[o.qte] === undefined) return null;
   // Variante : l'ouvrage ne vaut que si la condition de la fiche est remplie (si : égal, sin : différent)
@@ -5346,6 +5352,18 @@ function ficheVersMetre() {
     if (!ouvActif(o) || !o.si || !['charpente_variante', 'ecran'].includes(o.si.cle) || !o.qte) continue;
     const v = qteValeur(o, ctxQuantites(c));
     if (v && num(v.cote1) > 0) ajouter(o.designation, num(v.cote1), undefined, null, SRC_QTE[o.qte] || null);
+  }
+  // Chauffage, VMC, climatisation (lot 11 du configurateur) : chaque choix fait entrer l'ouvrage de la bibliothèque qui lui est relié
+  // (condition « si » sur un choix du bloc, ou quantité tirée d'un nombre du bloc). Rien choisi = rien au métré.
+  {
+    const ctxC = ctxQuantites(c);
+    for (const o of BIB.ouvrages) {
+      if (!ouvActif(o) || !estOuvChauf(o)) continue;
+      const v = qteValeur(o, ctxC);
+      if (!v) continue;
+      const q = calcul(o, v);
+      if (q > 0) ajouter(o.designation, q, undefined, v, null);
+    }
   }
   // Toits terrasses : étanchéité ; toits en pente : couverture (surfaces de toutes les toitures concernées)
   if (toitPlat(p) && p.toiture.etancheite && r.toitPlat > 0) ajouter(ETANCH_DESIG[p.toiture.etancheite], r.toitPlat, 'Étanchéité de la partie courante du toit plat', null, SRC_QTE.surface_toiture);

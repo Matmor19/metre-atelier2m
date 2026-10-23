@@ -4692,7 +4692,12 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "si": {
+        "cle": "poele",
+        "val": "granules"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-0266",
@@ -11211,7 +11216,12 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 1
+      "version": 2,
+      "si": {
+        "cle": "poele",
+        "val": "bois"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-0648",
@@ -11336,7 +11346,12 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 3
+      "version": 4,
+      "si": {
+        "cle": "vmc",
+        "val": "simple"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-0655",
@@ -11351,7 +11366,12 @@
           "libelle": "Nombre"
         }
       ],
-      "version": 3
+      "version": 4,
+      "si": {
+        "cle": "vmc",
+        "val": "double"
+      },
+      "qte": "un"
     },
     {
       "id": "OUV-0656",
@@ -31696,6 +31716,6 @@
       "archive": true
     }
   ],
-  "revision": 156,
+  "revision": 157,
   "prochainNumero": 1933
 }
