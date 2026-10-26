@@ -1309,6 +1309,15 @@ const SOUS_TITRES_PLAT = { cloi: 'Cloisonnement', doub: 'Doublage', pla: 'Plafon
 const NOTE_VENTILATION = 'L\'entreprise titulaire du lot Ventilation doit obligatoirement réaliser les calculs de pertes de charge et adapter la puissance des moteurs afin de valider l\'atteinte des débits minimaux imposés aux bouches intérieures, en stricte conformité avec le NF DTU 68.3 et la réglementation acoustique en vigueur.';
 const VMC_IDS = new Set(['OUV-1911', 'OUV-1912', 'OUV-1913', 'OUV-1914', 'OUV-1915', 'OUV-1916', 'OUV-1917', 'OUV-1918', 'OUV-1919', 'OUV-1920', 'OUV-1921', 'OUV-1922', 'OUV-1923', 'OUV-1924']);
 function estLigneVentilation(l) { return VMC_IDS.has(l.ouvrage) || /\bVMC\b|simple flux|double flux|\bCTA\b|aéraulique|insufflation|entrées? d.air/i.test(l.designation || ''); }
+// Volets roulants : descriptif commun placé en en-tête de ces ouvrages (lignes séparées par un retour à la ligne)
+const NOTE_VOLETS = 'Fourniture, pose et mise en service d\'un volet roulant motorisé comprenant :\n'
+  + '• Coffre : intégré (tunnel/bloc-baie) ou extérieur laqué, avec isolation renforcée et calfeutrement étanche à l\'air (RE 2020 / DTU 34.2).\n'
+  + '• Tablier et coulisses : lames alu double paroi avec mousse polyuréthane (ΔR ≥ 0,15 m²·K/W), verrous anti-relevage, coulisses alu laquées avec joints brosses.\n'
+  + '• Motorisation et commande : moteur tubulaire 230 V avec arrêt sur obstacle et fin de course réglée. Commande par inverseur mural filaire ou télécommande radio (type Somfy, Bubendorff ou équivalent).\n'
+  + '• Compris : raccordement électrique depuis la boîte d\'attente, réglages et essais.';
+function estLigneVoletRoulant(l) { return l.lot !== 'electricite' && /volet roulant/i.test(l.designation || ''); }
+// Paragraphe de note en HTML (retours à la ligne conservés)
+const noteHtml = t => esc(t).replace(/\n/g, '<br>');
 // Un « titre » est un texte (sous-titre) ou { note } (paragraphe d'avertissement)
 const estNoteTitre = t => !!t && typeof t === 'object' && 'note' in t;
 function titresAvantLignes(lotId, ls) {
@@ -1324,6 +1333,7 @@ function titresAvantLignes(lotId, ls) {
     if (lotId === 'gros-oeuvre') { const sg = sectionGO(l); if (!vus.has('go:' + sg)) { vus.add('go:' + sg); t.push(sg); } }
     // Lot couverture-zinguerie : sous-titres « Couverture », « Avant-toit » puis « Zinguerie »
     if (!vus.has('note-vmc') && estLigneVentilation(l)) { vus.add('note-vmc'); t.push({ note: NOTE_VENTILATION }); }
+    if (!vus.has('note-volets') && estLigneVoletRoulant(l)) { vus.add('note-volets'); t.push({ note: NOTE_VOLETS }); }
     if (lotId === 'couverture-zinguerie') { const z = partieCZ(l); if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
   });
@@ -1380,7 +1390,7 @@ function renderMetre() {
     const titres = titresAvantLignes(lotId, ls);
     for (const [ii, l] of ls.entries()) {
       for (const t of titres[ii]) h += estNoteTitre(t)
-        ? `<tr class="note-lot"><td colspan="${nc}" style="font-size:14px;font-style:italic;background:#fff8ef;border-left:4px solid #e07b1a;padding:8px 12px">${esc(t.note)}</td></tr>`
+        ? `<tr class="note-lot"><td colspan="${nc}" style="font-size:14px;font-style:italic;background:#fff8ef;border-left:4px solid #e07b1a;padding:8px 12px">${noteHtml(t.note)}</td></tr>`
         : `<tr class="sous-titre-plat"><td colspan="${nc}" style="font-weight:600;font-size:17px;background:#f3f6f9;padding-top:10px">${esc(t)}</td></tr>`;
       const pu = prixUnitaire(l);
       const mt = pu != null ? l.quantite * pu : null;
@@ -6204,7 +6214,7 @@ function htmlImpression(d, logo, pg) {
     if (lot.gen) corps += `<tr class="gen"><td colspan="${nc}">${genHtml(lot.gen.id, lot.gen.num)}</td></tr>`;
     { const rc = recapCharpenteHtml(lot.id); if (rc) corps += `<tr class="gen"><td colspan="${nc}">${rc}</td></tr>`; }
     for (const l of lot.lignes) {
-      for (const t of l.titres) corps += estNoteTitre(t) ? `<tr class="nt"><td colspan="${nc}">${esc(t.note)}</td></tr>` : `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
+      for (const t of l.titres) corps += estNoteTitre(t) ? `<tr class="nt"><td colspan="${nc}">${noteHtml(t.note)}</td></tr>` : `<tr class="st"><td colspan="${nc}">${esc(t)}</td></tr>`;
       corps += `<tr><td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${d.avecPrix ? `<td class="num">${l.pu != null ? fmt(l.pu) : '—'}</td><td class="num">${l.montant != null ? fmt(l.montant) + ' €' : '—'}</td>` : ''}</tr>`;
@@ -6327,7 +6337,7 @@ function htmlParLot(d, type, logo) {
     </section>`;
     // Détail du lot (généralités en tête pour le CDPGF)
     const gen = (cdpgf ? genHtml(lot.id, lot.ordre) : '') + recapCharpenteHtml(lot.id);
-    const lignes = lot.lignes.map(l => `${l.titres.map(t => estNoteTitre(t) ? `<tr class="nt"><td colspan="${cdpgf ? 8 : 5}">${esc(t.note)}</td></tr>` : `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
+    const lignes = lot.lignes.map(l => `${l.titres.map(t => estNoteTitre(t) ? `<tr class="nt"><td colspan="${cdpgf ? 8 : 5}">${noteHtml(t.note)}</td></tr>` : `<tr class="st"><td colspan="${cdpgf ? 8 : 5}">${esc(t)}</td></tr>`).join('')}<tr>
         <td class="n">${esc(l.num)}</td><td>${esc(l.designation)}${l.desc ? `<div class="desc" style="font-style:italic;font-size:11px;color:#6b7280;margin-top:3px">${esc(l.desc)}</div>` : ''}</td>
         <td class="num">${fmt(l.quantite)}</td><td>${esc(l.unite)}</td><td class="det">${l.detailHtml}</td>
         ${cdpgf ? '<td class="vierge"></td><td class="vierge"></td><td class="vierge petit"></td>' : ''}</tr>`).join('');
@@ -6462,6 +6472,7 @@ function chargerPdfLib() {
 // Les polices PDF standard n'acceptent que certains caractères : les autres deviennent « ? »
 function texteFormulaire(s) {
   return String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/\s+/g, ' ')
+    .replace(/Δ/g, 'Delta ').replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/Ø/g, 'Ø').replace(/·/g, '·')
     .replace(/[^ -~ -ÿ–—‘’“”•…€]/g, '?');
 }
 function decoupeTexte(s, police, taille, largeur) {
@@ -6663,7 +6674,7 @@ async function pdfCdpgfFormulaire() {
       for (const t of l.titres) {
         if (estNoteTitre(t)) {
           // Avertissement : paragraphe encadré en italique
-          const lg = decoupeTexte(t.note, helv, 8.5, LARG - 14);
+          const lg = String(t.note).split('\n').flatMap(par => decoupeTexte(par, helv, 8.5, LARG - 14));
           const hN = 8 + lg.length * 11;
           if (y - hN - 2 < BAS) { nouvellePage(); enteteTable(); }
           page.drawRectangle({ x: M, y: y - hN, width: LARG, height: hN, color: CREME });
@@ -6864,7 +6875,7 @@ async function exporterExcel() {
   for (const r of lignesTitre) for (const c of lettres) style(ws2, c + (r + 1), { font: { bold: true, sz: 13 }, fill: { fgColor: { rgb: 'F3F6F9' } } });
   for (const r of lignesNote) {
     ws2['!merges'].push({ s: { r, c: 1 }, e: { r, c: nc - 1 } });
-    ws2['!rows'] = ws2['!rows'] || []; ws2['!rows'][r] = { hpt: 48 };
+    ws2['!rows'] = ws2['!rows'] || []; ws2['!rows'][r] = { hpt: Math.max(48, 30 * String(m[r][1]).split('\n').length) };
     for (const c of lettres) style(ws2, c + (r + 1), { font: { italic: true }, fill: { fgColor: { rgb: 'FFF8EF' } }, alignment: { wrapText: true, vertical: 'top' } });
   }
   for (const r of lignesLigne) {
