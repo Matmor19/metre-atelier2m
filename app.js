@@ -1315,7 +1315,17 @@ const NOTE_VOLETS = 'Fourniture, pose et mise en service d\'un volet roulant mot
   + '• Tablier et coulisses : lames alu double paroi avec mousse polyuréthane (ΔR ≥ 0,15 m²·K/W), verrous anti-relevage, coulisses alu laquées avec joints brosses.\n'
   + '• Motorisation et commande : moteur tubulaire 230 V avec arrêt sur obstacle et fin de course réglée. Commande par inverseur mural filaire ou télécommande radio (type Somfy, Bubendorff ou équivalent).\n'
   + '• Compris : raccordement électrique depuis la boîte d\'attente, réglages et essais.';
-function estLigneVoletRoulant(l) { return l.lot !== 'electricite' && /volet roulant/i.test(l.designation || ''); }
+const NOTE_VOLETS_MANUELS = 'Fourniture, pose et mise en service d\'un volet roulant à manœuvre mécanique comprenant :\n'
+  + '• Coffre : intégré ou extérieur, avec étanchéité renforcée et isolation acoustique/thermique au point de passage de la tringle.\n'
+  + '• Tablier et coulisses : lames alu double paroi isolées, lame finale avec joint d\'étanchéité, coulisses laquées avec joints brosses anti-vent.\n'
+  + '• Mécanisme : entraînement par treuil à vis sans fin et tringle oscillante (manivelle) sur rotule, avec clip de blocage mural.\n'
+  + '• Compris : fixations, réglages des butées et essais de bon fonctionnement.';
+// Volet roulant motorisé (électrique) ou manuel : chacun a son descriptif d'en-tête (le volet solaire n'en a pas)
+function estLigneVoletRoulant(l) {
+  if (l.lot === 'electricite' || !/volet roulant/i.test(l.designation || '')) return false;
+  return l.ouvrage === 'OUV-0177' || l.ouvrage === 'OUV-0590' || (l.ouvrage !== 'OUV-1745' && /électrique|motoris/i.test(l.designation || ''));
+}
+function estLigneVoletManuel(l) { return l.lot !== 'electricite' && (l.ouvrage === 'OUV-0178' || /volet roulant[^–]*manuel/i.test(l.designation || '')); }
 // Paragraphe de note en HTML (retours à la ligne conservés)
 const noteHtml = t => esc(t).replace(/\n/g, '<br>');
 // Un « titre » est un texte (sous-titre) ou { note } (paragraphe d'avertissement)
@@ -1334,6 +1344,7 @@ function titresAvantLignes(lotId, ls) {
     // Lot couverture-zinguerie : sous-titres « Couverture », « Avant-toit » puis « Zinguerie »
     if (!vus.has('note-vmc') && estLigneVentilation(l)) { vus.add('note-vmc'); t.push({ note: NOTE_VENTILATION }); }
     if (!vus.has('note-volets') && estLigneVoletRoulant(l)) { vus.add('note-volets'); t.push({ note: NOTE_VOLETS }); }
+    if (!vus.has('note-volets-man') && estLigneVoletManuel(l)) { vus.add('note-volets-man'); t.push({ note: NOTE_VOLETS_MANUELS }); }
     if (lotId === 'couverture-zinguerie') { const z = partieCZ(l); if (!vus.has('cz:' + z)) { vus.add('cz:' + z); t.push(z); } }
     return t;
   });
