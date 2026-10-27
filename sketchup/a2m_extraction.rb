@@ -28,7 +28,8 @@ module A2M
     CLOISON = 'A2M_CLOISON'
     # Faces : surface (et périmètre pour le terrain et les pièces)
     FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
-    # Arêtes (lignes) : linéaire
+    # Arêtes (lignes) : linéaire. Faîtage, rive, noue, arêtier et égout sont reconnus tout seuls sur les pans A2M_TOITURE ;
+    # ne baliser une ligne à la main que pour forcer un type (elle remplace alors le calcul automatique de ce type).
     LIGNES = %w[A2M_FAITAGE A2M_RIVE A2M_NOUE A2M_ARETIER A2M_EGOUT A2M_RIGOLE A2M_DOUBLAGE A2M_CLOISON]
     OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON]
 
@@ -119,6 +120,65 @@ module A2M
       end.min
     end
 
+    # Classement des bords des pans de toiture (balise A2M_TOITURE…, faces du dessus) :
+    #  - bord commun à deux pans : horizontal = faîtage ; incliné = arêtier (saillant) ou noue (rentrant)
+    #  - bord d'un seul pan : horizontal en bas = égout ; horizontal en haut = faîtage (monopente) ; incliné = rive
+    # Les pans peuvent être dans un même groupe ou dans des groupes séparés : les bords sont rapprochés au centimètre près.
+    def self.lignes_toiture(pans)
+      res = Hash.new(0.0)
+      return res if pans.empty?
+      cle = lambda { |a, b| [a, b].map { |q| q.map { |v| (v * 100).round } }.sort }
+      # Tous les sommets des pans : un bord est découpé là où un sommet d'un autre pan tombe dessus
+      # (ex. faîtage d'une toiture en L, entier d'un côté, en deux morceaux de l'autre)
+      sommets = pans.flat_map { |pn| pn[:pts] }.uniq { |q| q.map { |v| (v * 100).round } }
+      bords = {}
+      pans.each_with_index do |pn, i|
+        pts = pn[:pts]
+        pts.each_with_index do |a, k|
+          b = pts[(k + 1) % pts.size]
+          ab = (0..2).map { |j| b[j] - a[j] }
+          l2 = ab.sum { |x| x * x }.to_f
+          next if l2 < 1e-6
+          ts = sommets.map do |q|
+            t = (0..2).sum { |j| (q[j] - a[j]) * ab[j] } / l2
+            next nil if t <= 1e-4 || t >= 1 - 1e-4
+            proj = (0..2).map { |j| a[j] + t * ab[j] }
+            Math.sqrt((0..2).sum { |j| (proj[j] - q[j])**2 }) < 0.01 ? t : nil
+          end.compact.sort
+          coupe = [a] + ts.map { |t| (0..2).map { |j| a[j] + t * ab[j] } } + [b]
+          coupe.each_cons(2) do |u, v|
+            (bords[cle.call(u, v)] ||= { a: u, b: v, pans: [] })[:pans] << i
+          end
+        end
+      end
+      bords.each_value do |bd|
+        a, b = bd[:a], bd[:b]
+        long = Math.sqrt((0..2).sum { |k| (a[k] - b[k])**2 })
+        next if long < 0.01
+        horiz = (a[2] - b[2]).abs < 0.02
+        ids = bd[:pans].uniq
+        if ids.size >= 2
+          p1, p2 = pans[ids[0]], pans[ids[1]]
+          # Saillant si le centre du pan 1 est sous le plan du pan 2 (normale vers le haut)
+          d = (0..2).sum { |k| p2[:n][k] * (p1[:c][k] - p2[:pts][0][k]) }
+          if horiz then res[d < 0 ? 'faite' : 'noue'] += long
+          else res[d < 0 ? 'arete' : 'noue'] += long end
+        else
+          pn = pans[ids[0]]
+          zs = pn[:pts].map { |q| q[2] }
+          if horiz
+            z = a[2]
+            if (z - zs.min).abs < 0.05 then res['egout'] += long
+            elsif (z - zs.max).abs < 0.05 then res['faite'] += long
+            else res['rive'] += long end
+          else
+            res['rive'] += long
+          end
+        end
+      end
+      res
+    end
+
     def self.extraire
       m = Sketchup.active_model
       res = { 'format' => 'metre2m-sketchup', 'version' => VERSION, 'modele' => (m.title.to_s.empty? ? 'Sans nom' : m.title),
@@ -126,7 +186,7 @@ module A2M
               'toiture' => {}, 'toituresSup' => [], 'plat' => {}, 'pieces' => [], 'alertes' => [] }
       surf = Hash.new(0.0); perim = Hash.new(0.0); lin = Hash.new(0.0)
       toits = Hash.new { |h, k| h[k] = { vraie: 0.0, sol: 0.0, pente: 0.0 } }
-      pieces = {}; menus = []; portes = []; cloisons = 0.0
+      pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []
 
       parcourir(m.entities, Geom::Transformation.new, nil, '') do |genre, e, tr, tag, nom|
         next unless tag.to_s.start_with?('A2M_')
@@ -153,6 +213,10 @@ module A2M
             t = toits[tag]
             t[:vraie] += aire; t[:sol] += aire * nz.abs
             t[:pente] += aire * Math.tan(Math.acos([nz.abs, 1.0].min)) * 100
+            # Contour du pan (coordonnées du modèle, m) pour reconnaître faîtages, rives, noues, arêtiers et égouts
+            pts = e.outer_loop.vertices.map { |v| p = tr * v.position; [p.x.to_m, p.y.to_m, p.z.to_m] }
+            nv = (tr * e.normal).normalize
+            pans << { pts: pts, n: [nv.x, nv.y, nv.z], c: [0, 1, 2].map { |k| pts.sum { |q| q[k] } / pts.size } }
           elsif tag == 'A2M_PIECE'
             next if nz.abs < 0.99            # seule la face horizontale (le sol) compte
             n = nom.to_s.strip; n = 'Pièce sans nom' if n.empty?
@@ -189,9 +253,13 @@ module A2M
         d = { 'surface' => r2(t[:sol]), 'surfCouv' => r2(t[:vraie]), 'pente' => (t[:pente] / t[:vraie]).round }
         if num then res['toituresSup'] << d.merge('nom' => "Toiture #{num}") else res['toiture'].merge!(d) end
       end
+      # Linéaires de toiture : reconnus tout seuls à partir des pans ; une ligne balisée à la main (A2M_FAITAGE…) a priorité pour son type
+      auto = lignes_toiture(pans)
       { 'faite' => 'A2M_FAITAGE', 'rive' => 'A2M_RIVE', 'noue' => 'A2M_NOUE', 'arete' => 'A2M_ARETIER', 'egout' => 'A2M_EGOUT' }.each do |k, tag|
-        res['toiture'][k] = r2(lin[tag]) if lin[tag] > 0
+        v = lin[tag] > 0 ? lin[tag] : auto[k]
+        res['toiture'][k] = r2(v) if v > 0
       end
+      res['toitureLignes'] = 'reconnues automatiquement à partir des pans' unless pans.empty?
 
       # Plâtrerie
       cl = cloisons + lin['A2M_CLOISON']
