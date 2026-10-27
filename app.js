@@ -7689,3 +7689,110 @@ function envoyerPlan(mode) {
 $('btnPlRaz').onclick = () => envoyerPlan('raz');
 $('btnPlCompleter').onclick = () => envoyerPlan('completer');
 $('btnPlChoixAnnuler').onclick = () => { PLAN_VALIDE = null; $('plChoix').classList.add('hidden'); route('config'); };
+
+
+/* ============ Import SketchUp : fichier .json produit par sketchup/a2m_extraction.rb ============ */
+// Règle (comme l'import du plan PDF) : une case déjà remplie n'est jamais écrasée ; un mur, une pièce
+// ou une menuiserie déjà présents ne sont pas dupliqués. Rien n'est choisi à votre place (types, ouvrages).
+function skpEtat(c, d) {
+  const P = JSON.parse(JSON.stringify(projetDe(c)));
+  const pieces = JSON.parse(JSON.stringify(piecesNvDe(c)));
+  const pl = JSON.parse(JSON.stringify(platNvDe(c)));
+  const rap = { ecrit: [], conserve: [], verifier: (d.alertes || []).slice() };
+  const val = x => (x === undefined || x === null || x === '') ? '' : String(x);
+  const remplir = (obj, cle, v, lib, unite) => {
+    v = val(v); if (!v) return;
+    if (val(obj[cle]) === '') { obj[cle] = v; rap.ecrit.push(`${lib} : ${fmt(num(v))}${unite ? ' ' + unite : ''}`); }
+    else if (num(obj[cle]) !== num(v)) rap.conserve.push(`${lib} : déjà ${fmt(num(obj[cle]))}${unite ? ' ' + unite : ''} (SketchUp : ${fmt(num(v))}), non modifié`);
+  };
+  const t = d.terrain || {}, f = d.fond || {}, pd = d.plancher || {}, to = d.toiture || {}, ps = d.plat || {};
+  remplir(P.terrain, 'surface', t.surface, 'Terrain, surface', 'm²');
+  remplir(P.terrain, 'perimetre', t.perimetre, 'Terrain, périmètre', 'ml');
+  remplir(P.terrain, 'decap', t.decap, 'Surface à décaper', 'm²');
+  remplir(P.fond, 'rigLin', f.rigLin, 'Fouilles en rigoles, linéaire', 'ml');
+  remplir(P.fond, 'rigLarg', f.rigLarg, 'Fouilles en rigoles, largeur', 'm');
+  remplir(P.fond, 'rigHt', f.rigHt, 'Fouilles en rigoles, hauteur', 'm');
+  remplir(P.plancher, 'brut', pd.brut, 'RDC, surface du dallage', 'm²');
+  remplir(P.plancher, 'surface', pd.surface, 'Étage, surface du plancher', 'm²');
+  P.toiture = P.toiture || {};
+  remplir(P.toiture, 'surface', to.surface, 'Toiture, surface au sol couverte', 'm²');
+  remplir(P.toiture, 'surfCouv', to.surfCouv, 'Toiture, surface de couverture', 'm²');
+  remplir(P.toiture, 'pente', to.pente, 'Toiture, pente', '%');
+  for (const [k, lib] of [['faite', 'Faîtage'], ['rive', 'Rives'], ['noue', 'Noues'], ['arete', 'Arêtiers'], ['egout', 'Gouttières (égout)']]) {
+    if (val(to[k]) && !val(P.toiture[k + 'Calc'])) remplir(P.toiture, k, to[k], lib, 'ml');
+    else if (val(to[k])) rap.conserve.push(`${lib} : calcul déjà saisi (${P.toiture[k + 'Calc']}), non modifié`);
+  }
+  // Toitures suivantes : complétées dans l'ordre, ajoutées s'il en manque (4 au plus)
+  P.toituresSup = P.toituresSup || [];
+  (d.toituresSup || []).forEach((ts, i) => {
+    let x = P.toituresSup[i];
+    if (!x) { if (toitsDe(P).length >= TOITS_MAX) return; x = { id: 't' + uid(), nom: ts.nom || '', charpente: '', type: '', surface: '', surfCouv: '', pente: '' }; P.toituresSup.push(x); rap.ecrit.push(`${ts.nom || 'Toiture ' + (i + 2)} ajoutée (charpente et géométrie à choisir)`); }
+    const lib = x.nom || ts.nom || 'Toiture ' + (i + 2);
+    remplir(x, 'surface', ts.surface, lib + ', surface au sol', 'm²');
+    remplir(x, 'surfCouv', ts.surfCouv, lib + ', surface de couverture', 'm²');
+    remplir(x, 'pente', ts.pente, lib + ', pente', '%');
+  });
+  // Murs : repérés par leur nom ; un mur nouveau est ajouté sans type (à choisir dans le configurateur)
+  const nomCat = { soub: 'Mur de soubassement', peri: 'Mur périphérique', refend: 'Mur de refend', pignon: 'Mur pignon' };
+  for (const m of (d.murs || [])) {
+    const cat = nomCat[m.cat] ? m.cat : 'peri';
+    const nom = String(m.nom || '').trim() || nomCat[cat] + ' ' + (P.murs.length + 1);
+    let x = P.murs.find(y => String(y.nom || '').trim().toLowerCase() === nom.toLowerCase());
+    if (!x) {
+      x = { id: 'm' + uid(), cat, nom, longueur: '', hauteur: '', pente: '', nb: '', nbDemi: '', porteur: true, type: '', finition: '', ouvLibre: '', deduire: false };
+      P.murs.push(x);
+      rap.ecrit.push(`${nom} ajouté (${nomCat[cat].toLowerCase()}, type de mur à choisir)`);
+    }
+    remplir(x, 'longueur', m.longueur, nom + ', longueur', 'm');
+    remplir(x, 'hauteur', m.hauteur, nom + ', hauteur', 'm');
+  }
+  // Plâtrerie
+  remplir(pl.cloi, 'ml', ps.cloi_ml, 'Cloisonnement, linéaire', 'ml');
+  remplir(pl.doub, 'ml', ps.doub_ml, 'Doublage, linéaire', 'ml');
+  remplir(pl.pla, 'm2', ps.pla_m2, 'Plafond, surface', 'm²');
+  remplir(pl, 'hauteur', ps.hauteur, 'Hauteur sous plafond', 'm');
+  // Pièces : surface, linéaire, menuiseries extérieures, portes de passage
+  const dimsBP = BP_CHOIX.dim.map(x => x[0]);
+  for (const pc of (d.pieces || [])) {
+    const nom = String(pc.nom || '').trim(); if (!nom) continue;
+    let x = pieces.find(y => nomPieceDe(y).trim().toLowerCase() === nom.toLowerCase());
+    if (!x) { x = { id: 'pn' + uid(), nom, qualif: '', surf: '', perim: '', revet: '', menus: [], portes: '', app: {} }; pieces.push(x); rap.ecrit.push(`Pièce ${nom} ajoutée`); }
+    if (!typePieceNv(nom)) rap.verifier.push(`« ${nom} » : type de pièce non reconnu, les règles d'appareillage ne s'appliqueront pas`);
+    remplir(x, 'surf', pc.surf, nom + ', surface', 'm²');
+    remplir(x, 'perim', pc.perim, nom + ', linéaire', 'ml');
+    x.menus = x.menus || [];
+    for (const m of (pc.menus || [])) {
+      const lib = `${libMenuiserie(m.type, 1)} ${m.l} × ${m.h} cm`;
+      if (x.menus.some(y => (y.type || 'fen') === m.type && num(y.l) === num(m.l) && num(y.h) === num(m.h))) { rap.conserve.push(`${nom} : ${lib} déjà présente, non ajoutée`); continue; }
+      x.menus.push({ id: 'me' + uid(), type: m.type, vantaux: '', ouvrant: '', l: String(m.l), h: String(m.h), vitrage: '', esth: '', secu: '', pose: '', volet: '', ferm: '', moust: '', ouv: '', nb: String(m.nb || 1) });
+      rap.ecrit.push(`${nom} : ${m.nb > 1 ? m.nb + ' × ' : ''}${lib} (choix de la menuiserie à faire)`);
+    }
+    x.blocs = x.blocs || [];
+    for (const pt of (pc.portesInt || [])) {
+      if (x.blocs.length) { rap.conserve.push(`${nom} : portes de passage déjà saisies, non ajoutées`); break; }
+      // Dimension du bloc la plus proche de la largeur mesurée (passage ou dormant)
+      const dim = dimsBP.reduce((a, b) => Math.abs(parseInt(b, 10) - pt.l) < Math.abs(parseInt(a, 10) - pt.l) ? b : a, dimsBP[0]);
+      x.blocs.push({ dim, dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: String(pt.nb || 1) });
+      rap.ecrit.push(`${nom} : ${pt.nb} porte(s) de passage ${dim} (mesurée ${pt.l} cm, destination à choisir)`);
+    }
+  }
+  return { P, pieces, pl, rap };
+}
+$('btnImportSketchup').onclick = () => { if (!courantId) { alert('Ouvrez d\'abord un chantier.'); return; } $('skpFichier').value = ''; $('skpFichier').click(); };
+$('skpFichier').onchange = async e => {
+  const fichier = e.target.files && e.target.files[0]; if (!fichier) return;
+  const c = chantiers.find(x => x.id === courantId); if (!c) return;
+  let d;
+  try { d = JSON.parse(await fichier.text()); } catch (err) { alert('Ce fichier n\'est pas un JSON lisible.'); return; }
+  if (!d || d.format !== 'metre2m-sketchup') { alert('Ce fichier ne vient pas du script SketchUp du métré (format « metre2m-sketchup » attendu).'); return; }
+  const { P, pieces, pl, rap } = skpEtat(c, d);
+  const bloc = (t, l) => l.length ? '\n' + t + '\n' + l.map(x => '  - ' + x).join('\n') + '\n' : '';
+  const texte = `IMPORT SKETCHUP : « ${d.modele || ''} » (${d.date || ''})\nAucune case déjà remplie n'est modifiée.\n`
+    + bloc('Sera écrit :', rap.ecrit) + bloc('Déjà renseigné, non modifié :', rap.conserve) + bloc('À vérifier :', rap.verifier);
+  if (!rap.ecrit.length) { alert(texte + '\nRien de nouveau à écrire.'); return; }
+  if (!confirm(texte + '\nÉcrire dans le configurateur ?')) return;
+  c.projet = P; c.elec = c.elec || { pieces: [] }; c.elec.piecesNv = pieces; c.platNv = pl;
+  sauverFiche(c);
+  ficheRendre(); renderPiecesNv(); renderPlatNv(); renderPeinture();
+  if ($('cfgStatut')) $('cfgStatut').textContent = `Import SketchUp écrit (${rap.ecrit.length} élément(s)). Complétez les choix (types de murs, menuiseries, ouvrages), puis cliquez sur « Générer le métré depuis le configurateur ».`;
+};
