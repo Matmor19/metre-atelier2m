@@ -7745,6 +7745,8 @@ function skpEtat(c, d) {
     }
     remplir(x, 'longueur', m.longueur, nom + ', longueur', 'm');
     remplir(x, 'hauteur', m.hauteur, nom + ', hauteur', 'm');
+    // Épaisseur du mur fini (cm), mesurée sur le groupe SketchUp
+    if (num(m.epaisseur) > 0) remplir(x, 'epMur', String(Math.round(num(m.epaisseur) * 100)), nom + ', épaisseur', 'cm');
   }
   // Plâtrerie
   remplir(pl.cloi, 'ml', ps.cloi_ml, 'Cloisonnement, linéaire', 'ml');
