@@ -7745,12 +7745,14 @@ function skpEtat(c, d) {
     }
     remplir(x, 'longueur', m.longueur, nom + ', longueur', 'm');
     remplir(x, 'hauteur', m.hauteur, nom + ', hauteur', 'm');
-    // Épaisseur du mur fini (cm), mesurée sur le groupe SketchUp
-    if (num(m.epaisseur) > 0) remplir(x, 'epMur', String(Math.round(num(m.epaisseur) * 100)), nom + ', épaisseur', 'cm');
+    // Épaisseur du mur fini (cm) : mur mesuré + doublage (isolant + plaque) pour les murs périphériques
+    const epFini = num(m.epaisseur) + (cat === 'peri' ? num(ps.ep_doublage) : 0);
+    if (epFini > 0) remplir(x, 'epMur', String(Math.round(epFini * 100)), nom + ', épaisseur du mur fini' + (cat === 'peri' && num(ps.ep_doublage) > 0 ? ` (mur ${Math.round(num(m.epaisseur) * 100)} + doublage ${Math.round(num(ps.ep_doublage) * 100)} cm)` : ''), 'cm');
   }
   // Plâtrerie
   remplir(pl.cloi, 'ml', ps.cloi_ml, 'Cloisonnement, linéaire', 'ml');
   remplir(pl.doub, 'ml', ps.doub_ml, 'Doublage, linéaire', 'ml');
+  remplir(pl, 'hauteurDoub', ps.hauteurDoub, 'Doublage, hauteur', 'm');
   remplir(pl.pla, 'm2', ps.pla_m2, 'Plafond, surface', 'm²');
   remplir(pl, 'hauteur', ps.hauteur, 'Hauteur sous plafond', 'm');
   // Pièces : surface, linéaire, menuiseries extérieures, portes de passage

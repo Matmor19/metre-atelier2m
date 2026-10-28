@@ -27,12 +27,15 @@ module A2M
     MENUISERIES = { 'A2M_FENETRE' => 'fen', 'A2M_PORTE_FENETRE' => 'pf', 'A2M_PORTE_ENTREE' => 'pe' }
     PORTE_INT = 'A2M_PORTE_INT'
     CLOISON = 'A2M_CLOISON'
+    # Doublage des murs périphériques : un groupe pour la plaque de plâtre, un groupe pour l'isolant (facultatif)
+    DOUBLAGE = 'A2M_DOUBLAGE'
+    ISOLANT_DOUBLAGE = 'A2M_ISOLANT_DOUBLAGE'
     # Faces : surface (et périmètre pour le terrain et les pièces)
     FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
     # Arêtes (lignes) : linéaire. Faîtage, rive, noue, arêtier et égout sont reconnus tout seuls sur les pans A2M_TOITURE ;
     # ne baliser une ligne à la main que pour forcer un type (elle remplace alors le calcul automatique de ce type).
     LIGNES = %w[A2M_FAITAGE A2M_RIVE A2M_NOUE A2M_ARETIER A2M_EGOUT A2M_RIGOLE A2M_DOUBLAGE A2M_CLOISON]
-    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON]
+    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON, DOUBLAGE, ISOLANT_DOUBLAGE]
 
     POUCE2_EN_M2 = 0.0254 * 0.0254
 
@@ -246,6 +249,7 @@ module A2M
       surf = Hash.new(0.0); perim = Hash.new(0.0); lin = Hash.new(0.0)
       toits = Hash.new { |h, k| h[k] = { vraie: 0.0, sol: 0.0, pente: 0.0 } }
       pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []
+      doub = { plaque: { l: 0.0, aire: 0.0, h: 0.0 }, isolant: { l: 0.0, aire: 0.0, h: 0.0 } }
 
       parcourir(m.entities, Geom::Transformation.new, nil, '') do |genre, e, tr, tag, nom|
         next unless tag.to_s.start_with?('A2M_')
@@ -264,6 +268,13 @@ module A2M
             portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy] }
           elsif tag == CLOISON
             cloisons += b[:l]
+          elsif tag == DOUBLAGE || tag == ISOLANT_DOUBLAGE
+            # Mesuré comme un mur : linéaire à l'axe (la face côté pièce pour la plaque), hauteur, épaisseur
+            murs_de(e, tr, 'doublage', nom).each do |d|
+              cle = tag == DOUBLAGE ? :plaque : :isolant
+              doub[cle][:l] += d['longueur']; doub[cle][:aire] += d['longueur'] * d['epaisseur']
+              doub[cle][:h] = [doub[cle][:h], d['hauteur']].max
+            end
           end
         when :face
           next unless FACES.include?(tag)
@@ -326,7 +337,12 @@ module A2M
       # Plâtrerie
       cl = cloisons + lin['A2M_CLOISON']
       res['plat']['cloi_ml'] = r2(cl) if cl > 0
-      res['plat']['doub_ml'] = r2(lin['A2M_DOUBLAGE']) if lin['A2M_DOUBLAGE'] > 0
+      # Doublage : linéaire et hauteur de la plaque ; épaisseur du doublage (isolant + plaque) ajoutée à l'épaisseur des murs périphériques
+      dl = doub[:plaque][:l] > 0 ? doub[:plaque][:l] : lin['A2M_DOUBLAGE']
+      res['plat']['doub_ml'] = r2(dl) if dl > 0
+      res['plat']['hauteurDoub'] = r2(doub[:plaque][:h]) if doub[:plaque][:h] > 0
+      ep = [:plaque, :isolant].sum { |k| doub[k][:l] > 0 ? doub[k][:aire] / doub[k][:l] : 0.0 }
+      res['plat']['ep_doublage'] = r2(ep) if ep > 0
       res['plat']['pla_m2'] = r2(surf['A2M_PLAFOND']) if surf['A2M_PLAFOND'] > 0
       res['plat']['hauteur'] = HAUTEUR_SOUS_PLAFOND if HAUTEUR_SOUS_PLAFOND
 
