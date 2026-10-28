@@ -3813,7 +3813,7 @@ function piecesCourantes() {
 }
 function projetCalcul(p) {
   const r = { murs: [], brut: 0, deduit: 0, net: 0, tableaux: 0, ouvs: [], toiture: 0, linP: 0, linSoub: 0, linSolin: 0, deltaSoub: 0, soubS: 0, semelle: 0, fouille: 0 };
-  // Épaisseur du mur fini : moyenne des murs périphériques, pondérée par leur longueur
+  // Épaisseur des murs périphériques (maçonnerie seule : la menuiserie couvre l'isolant et la plaque) : moyenne pondérée par la longueur
   let sEp = 0, sLong = 0;
   for (const m of p.murs) {
     const brut = surfaceMur(m);
@@ -4726,7 +4726,7 @@ function ficheRendre() {
           ${(soub || pig) ? '' : murCaseListe(m, id, 'seuil', 'Seuil de porte compris', 'mur-seuil', 'Seuil de porte compris (mur)')}
         </div>` : ''}
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px">
-        ${champ('Épaisseur du mur fini (cm)', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 35"`, m.epMur, '120px'))}
+        ${champ('Épaisseur du mur, maçonnerie seule hors isolant et plaque (cm) — profondeur des tableaux', inp(`${id} data-champ="epMur" inputmode="decimal" placeholder="ex. 20"`, m.epMur, '120px'))}
         ${champ('Ouverture libre (m²)', inp(`${id} data-champ="ouvLibre" inputmode="decimal"`, m.ouvLibre, '120px'))}
         <span style="font-size:13px">Surface à déduire : <strong>${fmt(((calMurs.murs.find(x => x.m === m) || {}).ded) || 0)} m²</strong></span>
       </div></div>`;
@@ -7745,9 +7745,8 @@ function skpEtat(c, d) {
     }
     remplir(x, 'longueur', m.longueur, nom + ', longueur', 'm');
     remplir(x, 'hauteur', m.hauteur, nom + ', hauteur', 'm');
-    // Épaisseur du mur fini (cm) : mur mesuré + doublage (isolant + plaque) pour les murs périphériques
-    const epFini = num(m.epaisseur) + (cat === 'peri' ? num(ps.ep_doublage) : 0);
-    if (epFini > 0) remplir(x, 'epMur', String(Math.round(epFini * 100)), nom + ', épaisseur du mur fini' + (cat === 'peri' && num(ps.ep_doublage) > 0 ? ` (mur ${Math.round(num(m.epaisseur) * 100)} + doublage ${Math.round(num(ps.ep_doublage) * 100)} cm)` : ''), 'cm');
+    // Épaisseur du mur (cm), maçonnerie seule : profondeur des tableaux (la menuiserie couvre l'isolant et la plaque)
+    if (num(m.epaisseur) > 0) remplir(x, 'epMur', String(Math.round(num(m.epaisseur) * 100)), nom + ', épaisseur du mur (maçonnerie)', 'cm');
   }
   // Plâtrerie
   remplir(pl.cloi, 'ml', ps.cloi_ml, 'Cloisonnement, linéaire', 'ml');

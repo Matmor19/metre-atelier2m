@@ -337,7 +337,7 @@ module A2M
       # Plâtrerie
       cl = cloisons + lin['A2M_CLOISON']
       res['plat']['cloi_ml'] = r2(cl) if cl > 0
-      # Doublage : linéaire et hauteur de la plaque ; épaisseur du doublage (isolant + plaque) ajoutée à l'épaisseur des murs périphériques
+      # Doublage : linéaire et hauteur de la plaque ; épaisseur du doublage donnée pour information (les tableaux ne prennent que la maçonnerie)
       dl = doub[:plaque][:l] > 0 ? doub[:plaque][:l] : lin['A2M_DOUBLAGE']
       res['plat']['doub_ml'] = r2(dl) if dl > 0
       res['plat']['hauteurDoub'] = r2(doub[:plaque][:h]) if doub[:plaque][:h] > 0
