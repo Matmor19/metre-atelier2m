@@ -21,7 +21,8 @@ module A2M
     DISTANCE_PIECE_MAX   = 1.0   # m : une menuiserie plus loin que ça de toute pièce est signalée
 
     # ---- Balises ----
-    # Objets (groupe ou composant) : mesurés par leur boîte, dans le sens de leur plus longue arête horizontale
+    # Murs : un groupe par mur, ou un seul groupe par catégorie contenant tous ses murs (mesurés sur leur dessus).
+    # Menuiseries, portes et cloisons (groupe ou composant) : mesurées dans le sens de leur plus longue arête horizontale
     MURS = { 'A2M_MUR_PERI' => 'peri', 'A2M_MUR_SOUB' => 'soub', 'A2M_MUR_REFEND' => 'refend', 'A2M_MUR_PIGNON' => 'pignon' }
     MENUISERIES = { 'A2M_FENETRE' => 'fen', 'A2M_PORTE_FENETRE' => 'pf', 'A2M_PORTE_ENTREE' => 'pe' }
     PORTE_INT = 'A2M_PORTE_INT'
@@ -100,6 +101,64 @@ module A2M
     end
 
     def self.r2(x) (x.to_f * 100).round / 100.0 end
+
+    # Faces d'un groupe (et de ses sous-groupes), sans les menuiseries ni les autres objets balisés qu'il contient
+    def self.faces_de(ents, tr, out)
+      ents.each do |e|
+        next if e.respond_to?(:hidden?) && e.hidden?
+        if e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          next if OBJETS.include?(tag_de(e, nil))
+          faces_de(e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities, tr * e.transformation, out)
+        elsif e.is_a?(Sketchup::Face)
+          out << [e, tr]
+        end
+      end
+    end
+
+    # Linéaire (axe du mur) et épaisseur d'un morceau d'empreinte de mur (vue de dessus) :
+    #  - morceau en anneau (murs qui font le tour) : linéaire = (contour extérieur + contour intérieur) / 2
+    #  - morceau ouvert (refend, pignon, mur isolé) : contour = 2 × linéaire + 2 × épaisseur et surface = linéaire × épaisseur
+    def self.empreinte(aire, contour_ext, contour_int)
+      if contour_int > 0
+        l = (contour_ext + contour_int) / 2.0
+      else
+        demi = contour_ext / 2.0
+        disc = demi * demi - 4.0 * aire
+        l = disc > 0 ? (demi + Math.sqrt(disc)) / 2.0 : demi / 2.0
+      end
+      [l, l > 0 ? aire / l : 0.0]
+    end
+
+    # Murs d'un groupe balisé A2M_MUR_… : un seul mur ou tous les murs de la catégorie dans le même groupe.
+    # Mesure sur le dessus des murs (les baies ne coupent pas le linéaire) ; pour un pignon, sur le dessous.
+    # Une ligne par hauteur de mur trouvée dans le groupe.
+    def self.murs_de(e, tr, cat, nom)
+      faces = []
+      faces_de(e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities, tr, faces)
+      return [] if faces.empty?
+      zs = faces.flat_map { |f, t| f.vertices.map { |v| (t * v.position).z.to_m } }
+      zmin, zmax = zs.min, zs.max
+      horiz = faces.map do |f, t|
+        nz = (t * f.normal).normalize.z
+        next nil if nz.abs < 0.99
+        loops = f.loops.map { |lp| lp.edges.sum { |ed| (t * ed.start.position).distance(t * ed.end.position).to_m } }
+        z = (t * f.vertices[0].position).z.to_m
+        { haut: nz > 0, z: z, aire: f.area(t) * POUCE2_EN_M2, ext: loops[0], int: loops[1..-1].sum }
+      end.compact
+      dessus = horiz.select { |h| h[:haut] && h[:z] > zmin + 0.05 }
+      base = cat == 'pignon' || dessus.empty? ? horiz.select { |h| !h[:haut] && (h[:z] - zmin).abs < 0.02 } : dessus
+      parH = Hash.new { |hh, k| hh[k] = { l: 0.0, aire: 0.0 } }
+      base.each do |h|
+        l, _ep = empreinte(h[:aire], h[:ext], h[:int])
+        haut = base.equal?(dessus) ? h[:z] - zmin : zmax - zmin
+        k = r2(haut)
+        parH[k][:l] += l; parH[k][:aire] += h[:aire]
+      end
+      parH.select { |_, v| v[:l] > 0.05 }.map do |haut, v|
+        { 'cat' => cat, 'nom' => parH.size > 1 ? "#{nom} – hauteur #{haut} m" : nom,
+          'longueur' => r2(v[:l]), 'hauteur' => haut, 'epaisseur' => r2(v[:aire] / v[:l]) }
+      end
+    end
 
     # Distance (m) d'un point à un polygone 2D (0 si dedans)
     def self.distance_poly(px, py, poly)
@@ -195,7 +254,10 @@ module A2M
           b = boite(e, tr)
           next unless b
           if MURS[tag]
-            res['murs'] << { 'cat' => MURS[tag], 'nom' => nom, 'longueur' => r2(b[:l]), 'hauteur' => r2(b[:h]), 'epaisseur' => r2(b[:e]) }
+            n = nom.to_s.strip.empty? ? { 'peri' => 'Murs périphériques', 'soub' => 'Murs de soubassement', 'refend' => 'Murs de refend', 'pignon' => 'Murs pignons' }[MURS[tag]] : nom
+            ms = murs_de(e, tr, MURS[tag], n)
+            res['alertes'] << "#{n} : aucune face horizontale trouvée, mur non mesuré" if ms.empty?
+            res['murs'].concat(ms)
           elsif MENUISERIES[tag]
             menus << { 'type' => MENUISERIES[tag], 'l' => (b[:l] * 100).round, 'h' => (b[:h] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'nom' => nom }
           elsif tag == PORTE_INT
