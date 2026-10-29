@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises pointage bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises pointage palette bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -28,7 +28,8 @@ unless file_loaded?(__FILE__)
     ['elec',        'Poser l\'appareillage électrique',    'Prises, points lumineux, interrupteurs… posés au clic et comptés pièce par pièce', -> { A2M::Electricite.lancer }, true],
     ['extraire',    'Extraire pour le configurateur',      'Enregistre le fichier .json à importer dans le configurateur du métré', -> { A2M::Extraction.lancer }, false],
     ['envoi',       'Envoyer au métré',                    'Envoie l\'extraction directement au métré : bouton « Récupérer depuis SketchUp » dans le configurateur', -> { A2M::Envoi.lancer }, false],
-    ['aide',        'Aide : balises reconnues',            'Liste des balises du métré et de leur usage', -> { A2M::Balises.aide }, false]
+    ['aide',        'Aide : balises reconnues',            'Liste des balises du métré et de leur usage', -> { A2M::Balises.aide }, true],
+    ['palette',     'Palette Atelier 2M',                  'Ouvre la palette flottante : boutons espacés, animés au survol, rangés par étape, avec leur explication', -> { A2M::Palette.ouvrir }, false]
   ]
   menu = UI.menu('Extensions').add_submenu('Métré Atelier 2M')
   ACTIONS_A2M.each do |_ic, titre, _b, action, sep|
@@ -56,12 +57,14 @@ unless file_loaded?(__FILE__)
     cmd = UI::Command.new(titre) { action.call }
     cmd.tooltip = titre
     cmd.status_bar_text = bulle
-    cmd.small_icon = File.join(ico, "#{nom}#{ext == '.png' ? '_16.png' : ext}")
-    cmd.large_icon = File.join(ico, "#{nom}#{ext == '.png' ? '_24.png' : ext}")
+    # Icônes de la barre : version avec marge (boutons aérés)
+    cmd.small_icon = File.join(ico, "tb_#{nom}#{ext == '.png' ? '_16.png' : ext}")
+    cmd.large_icon = File.join(ico, "tb_#{nom}#{ext == '.png' ? '_24.png' : ext}")
     tb.add_item(cmd)
     tb.add_separator if sep
   end
   tb.restore
+  A2M::Palette.au_demarrage
   file_loaded(__FILE__)
 end
 '''
@@ -72,14 +75,27 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
     z.write(os.path.join(ici, 'bibliotheque.rb'), 'a2m_metre/bibliotheque.rb')
-    z.write(os.path.join(ici, 'pointage.rb'), 'a2m_metre/pointage.rb')
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
+    for f in ('pointage', 'palette'):
+        z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     dico = os.path.join(ici, 'icones')
+    # Icônes de la barre d'outils avec une marge transparente autour de la tuile : boutons plus aérés
+    import re, cairosvg
+    for f in sorted(os.listdir(dico)):
+        if f.endswith('.svg') and not f.startswith('tb_'):
+            src = open(os.path.join(dico, f), encoding='utf-8').read()
+            corps = re.sub(r'^.*?<svg[^>]*>|</svg>\s*$', '', src, flags=re.S)
+            tb = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><g transform="translate(2.6 2.6) scale(0.783)">' + corps + '</g></svg>'
+            n = f[:-4]
+            z.writestr('a2m_metre/icones/tb_' + f, tb)
+            z.writestr('a2m_metre/icones/tb_' + n + '.pdf', cairosvg.svg2pdf(bytestring=tb.encode()))
+            for t in (16, 24):
+                z.writestr('a2m_metre/icones/tb_%s_%d.png' % (n, t), cairosvg.svg2png(bytestring=tb.encode(), output_width=t, output_height=t))
     for f in sorted(os.listdir(dico)):
         if f.endswith(('.svg', '.pdf', '.png')):
             z.write(os.path.join(dico, f), 'a2m_metre/icones/' + f)

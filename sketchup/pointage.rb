@@ -39,10 +39,33 @@ module A2M
       z = pts.empty? ? q.z : pts[0].z
       q = Geom::Point3d.new(q.x, q.y, z)
       @info = nil; @guides = []; @ferme = false
-      if @axe && pts.any?
-        q = q.project_to_line([pts[-1], @axe[0]])
-        q = Geom::Point3d.new(q.x, q.y, z)
-        @info = "Sur l'axe #{@axe[1]} (bloqué : même flèche pour débloquer)"
+      if pts.any? && (@axe || view.inference_locked?)
+        # Direction bloquée (flèche ou Maj) : on peut viser un point déjà cliqué (le premier, pour refermer)
+        # ou un point du modèle ; le point retenu est sur la direction bloquée, en face du point visé
+        dir = @axe ? @axe[0] : Geom::Vector3d.new(q.x - pts[-1].x, q.y - pts[-1].y, 0)
+        if dir.length > 1e-6
+          ligne = [pts[-1], dir]
+          ref = nil; dmin = AIMANT
+          pts[0..-2].each_with_index do |p, i|
+            sp = view.screen_coords(p); d = Math.hypot(sp.x - x, sp.y - y)
+            ref = [p, i] if d < dmin && (dmin = d)
+          end
+          ref ||= [@ip.position, nil] if @axe && @ip.degrees_of_freedom == 0
+          if ref
+            q = ref[0].project_to_line(ligne)
+            q = Geom::Point3d.new(q.x, q.y, z)
+            @guides = [[Geom::Point3d.new(ref[0].x, ref[0].y, z), q]]
+          elsif @axe
+            q = q.project_to_line(ligne)
+            q = Geom::Point3d.new(q.x, q.y, z)
+          end
+          nom = @axe ? "l'axe #{@axe[1]}" : 'la direction bloquée'
+          @info = if ref && ref[1] == 0 then "Sur #{nom}, en face du premier point"
+                  elsif ref && ref[1] then "Sur #{nom}, en face du point #{ref[1] + 1} du tracé"
+                  elsif ref then "Sur #{nom}, en face du point visé"
+                  else "Sur #{nom} (#{@axe ? 'même flèche' : 'Maj'} pour débloquer)"
+                  end
+        end
       elsif !view.inference_locked?
         s0 = pts.size >= 3 ? view.screen_coords(pts[0]) : nil
         if s0 && Math.hypot(s0.x - x, s0.y - y) < AIMANT
@@ -104,7 +127,11 @@ module A2M
       view.set_color_from_line(pts[-1], @pos)
       view.draw(GL_LINES, [pts[-1], @pos])
       view.line_width = 1; view.line_stipple = '.'
-      @guides.each { |a, b| view.drawing_color = (a.x - b.x).abs < 0.01 ? 'green' : 'red'; view.draw(GL_LINES, [a, b]) }
+      @guides.each do |a, b|
+        next if a.distance(b) < 0.01
+        view.drawing_color = (a.x - b.x).abs < 0.01 ? 'green' : ((a.y - b.y).abs < 0.01 ? 'red' : 'gray')
+        view.draw(GL_LINES, [a, b])
+      end
       view.line_stipple = ''
       view.draw_points([pts[0]], 12, 2, @ferme ? 'lime' : 'darkgreen') if pts.size >= 3
       view.draw_points([@pos], 8, 1, 'black') unless @guides.empty? && !@axe
