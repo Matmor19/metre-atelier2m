@@ -26,6 +26,7 @@ module A2M
       ['A2M_PLAFOND',          'Plafonds (face)',                                  [245, 245, 220]],
       ['A2M_ISOLANT_SOL',      'Isolation au sol (groupe)',                        [250, 230, 120]],
       ['A2M_CHAPE',            'Chape (groupe)',                                   [200, 190, 170]],
+      ['A2M_PLINTHE',          'Plinthes (dessin seulement, non lues par le métré)', [255, 255, 255]],
       ['A2M_TOITURE',          'Toiture 1 : pans (groupe)',                        [180, 60, 40]],
       ['A2M_TOITURE_2',        'Toiture 2 : pans (groupe)',                        [190, 80, 60]],
       ['A2M_TOITURE_3',        'Toiture 3 : pans (groupe)',                        [200, 100, 80]],

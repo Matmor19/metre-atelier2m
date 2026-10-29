@@ -9,7 +9,7 @@ module A2M
       ['Porte-fenêtre / baie', 'A2M_PORTE_FENETRE', 240, 215, 215],
       ['Porte d\'entrée',     'A2M_PORTE_ENTREE',   90, 215, 215],
       ['Porte intérieure (cloison ou refend)', 'A2M_PORTE_INT', 83, 204, 204],
-      ['Ouverture seule (sans menuiserie)', nil,     90, 215, 215]
+      ['Ouverture libre (passage sans porte)', nil,  90, 215, 215]
     ]
     @r = {}
     @inverse = false   # sens de Group#subtract vérifié au premier perçage (le mur doit perdre du volume)
@@ -143,13 +143,20 @@ module A2M
           r.set_attribute('a2m', 'piece', p[:piece]) if p[:piece]
         end
         # Porte intérieure : les revêtements de sol des deux pièces sont prolongés jusqu'à l'axe de l'épaisseur percée
-        sols = p[:type][1] == 'A2M_PORTE_INT' && prof > 0 ? ajuster_sols(o, p, prof) : []
+        libre = p[:type][1].nil?
+        sols = (p[:type][1] == 'A2M_PORTE_INT' || libre) && prof > 0 ? ajuster_sols(o, p, prof) : []
+        # Empreinte de l'ouverture enregistrée ; plinthes des pièces voisines recoupées (portes et passages, pas les fenêtres)
+        genre = p[:type][1] == 'A2M_FENETRE' ? 'fenetre' : (libre ? 'libre' : 'porte')
+        empreinte = [o[:bas], o[:bas].offset(u, l), o[:bas].offset(u, l).offset(n, -prof), o[:bas].offset(n, -prof)]
+        A2M::Plinthes.enregistrer(empreinte, genre, model) if prof > 0
+        plin = genre == 'fenetre' ? [] : A2M::Plinthes.regenerer_autour(empreinte)
         model.commit_operation
         msg = "Ouverture" #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
+        msg += "\nPlinthes recoupées : #{plin.join(', ')}" if plin.any?
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
         msg += "\nSeulement #{cibles.size} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if cibles.size < p[:n]
-        echecs.any? || cibles.size < p[:n] ? UI.messagebox(msg) : Sketchup.status_text = msg
+        echecs.any? || cibles.size < p[:n] || plin.any? ? UI.messagebox(msg) : Sketchup.status_text = msg
       rescue SensInverse
         model.abort_operation
         @inverse = !@inverse

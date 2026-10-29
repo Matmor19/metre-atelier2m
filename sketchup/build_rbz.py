@@ -9,6 +9,7 @@ require File.join(File.dirname(__FILE__), 'balises')
 require File.join(File.dirname(__FILE__), 'dessin_murs')
 require File.join(File.dirname(__FILE__), 'dessin_sols')
 require File.join(File.dirname(__FILE__), 'ouvertures')
+require File.join(File.dirname(__FILE__), 'plinthes')
 
 # Menus : Extensions > Métré Atelier 2M, et clic droit sur la sélection
 unless file_loaded?(__FILE__)
@@ -20,6 +21,7 @@ unless file_loaded?(__FILE__)
   menu.add_item('Dessiner un mur composé (plusieurs couches)…') { A2M::DessinMurs.lancer_compose }
   menu.add_item('Dessiner une dalle, un plancher, un sol ou un plafond…') { A2M::DessinSols.lancer }
   menu.add_item('Créer une ouverture dans les murs…') { A2M::Ouvertures.lancer }
+  menu.add_item('Poser les plinthes de la pièce sélectionnée…') { A2M::Plinthes.lancer }
   menu.add_separator
   menu.add_item('4. Extraire pour le configurateur…') { A2M::Extraction.lancer }
   menu.add_separator
@@ -32,6 +34,7 @@ unless file_loaded?(__FILE__)
     sm = cm.add_submenu('Métré Atelier 2M')
     sm.add_item('Baliser la sélection…') { A2M::Balises.baliser_selection }
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
+    sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
   end
   # Barre d'outils : un bouton « Mur » pour lancer le dessin sans passer par le menu
   tb = UI::Toolbar.new('Métré Atelier 2M')
@@ -64,6 +67,13 @@ unless file_loaded?(__FILE__)
   cmd3.small_icon = File.join(ico, 'ouv_16.png')
   cmd3.large_icon = File.join(ico, 'ouv_24.png')
   tb.add_item(cmd3)
+  cmd4 = UI::Command.new('Poser les plinthes (métré)') { A2M::Plinthes.lancer }
+  cmd4.tooltip = 'Plinthes le long du revêtement sélectionné, avec votre profil, coupées aux portes'
+  cmd4.status_bar_text = cmd4.tooltip
+  cmd4.menu_text = 'Plinthes'
+  cmd4.small_icon = File.join(ico, 'plinthe_16.png')
+  cmd4.large_icon = File.join(ico, 'plinthe_24.png')
+  tb.add_item(cmd4)
   tb.restore
   file_loaded(__FILE__)
 end
@@ -77,9 +87,11 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
+    z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for t in (16, 24, 32):
         z.write(os.path.join(ici, f'mur_{t}.png'), f'a2m_metre/icones/mur_{t}.png')
         z.write(os.path.join(ici, f'sol_{t}.png'), f'a2m_metre/icones/sol_{t}.png')
         z.write(os.path.join(ici, f'ouv_{t}.png'), f'a2m_metre/icones/ouv_{t}.png')
         z.write(os.path.join(ici, f'compose_{t}.png'), f'a2m_metre/icones/compose_{t}.png')
+        z.write(os.path.join(ici, f'plinthe_{t}.png'), f'a2m_metre/icones/plinthe_{t}.png')
 print('ok', dest)
