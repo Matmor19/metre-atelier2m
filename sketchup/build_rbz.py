@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises pointage palette suivi bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -37,6 +37,8 @@ unless file_loaded?(__FILE__)
     menu.add_separator if sep
   end
   menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
+  menu.add_separator
+  menu.add_item('Rechercher une mise à jour…') { A2M::MiseAJour.verifier(true) }
   UI.add_context_menu_handler do |cm|
     next if Sketchup.active_model.selection.empty?
     # Les menus de Windows ne se colorent pas : un repère ◆ devant le nom pour le trouver d'un coup d'œil
@@ -68,6 +70,7 @@ unless file_loaded?(__FILE__)
   tb.restore
   A2M::Palette.au_demarrage
   A2M::Suivi.demarrer
+  A2M::MiseAJour.au_demarrage
   file_loaded(__FILE__)
 end
 '''
@@ -82,7 +85,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
-    for f in ('pointage', 'palette', 'suivi'):
+    for f in ('pointage', 'palette', 'suivi', 'maj'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
@@ -102,4 +105,8 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     for f in sorted(os.listdir(dico)):
         if f.endswith(('.svg', '.pdf', '.png')):
             z.write(os.path.join(dico, f), 'a2m_metre/icones/' + f)
-print('ok', dest)
+import json, re as _re
+ver = _re.search(r"EXT.version = '([^']+)'", chargeur).group(1)
+notes = json.load(open(os.path.join(ici, 'nouveautes.json'), encoding='utf-8'))
+json.dump({'version': ver, 'notes': notes}, open(os.path.join(ici, 'version.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print('ok', dest, ver)
