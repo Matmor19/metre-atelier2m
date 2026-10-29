@@ -18,8 +18,8 @@ var FICHIER_BIBLIO = 'bibliotheque.json';
 var FICHIER_LISTES = 'listes.json';                           // listes déroulantes du configurateur (réglages)
 var KANBAN_JSON_ID = '144ah2a5Y0rD64P4GW7wkQKRC0pUbK7JI'; // lecture seule
 var DOSSIER_CLIENTS_KANBAN = 'Kanban Atelier 2M - Clients'; // documents envoyés depuis le Kanban
-var NOM_IMAGE_PG = 'IMAGE PG';
-var VERSION_SCRIPT = '2026-10-29';                               // image de la page de garde
+var NOM_IMAGE_PG = 'IMAGE PG';                               // image de la page de garde
+var VERSION_SCRIPT = '2026-10-29';                           // version publiée, visible en ouvrant l'adresse /exec
 
 function reponse_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
