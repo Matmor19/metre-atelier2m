@@ -71,26 +71,34 @@ module A2M
     end
 
     # Les n premiers groupes traversés par un rayon partant de l'extérieur, vers l'intérieur du mur
+    # Retourne aussi la profondeur percée : du point de départ jusqu'à la sortie de la dernière couche
     def self.couches(depart, dir, n)
       model = Sketchup.active_model
-      vus = []; pt = depart; parcours = 0.0
-      30.times do
+      vus = []; pt = depart; parcours = 0.0; fin = 0.0
+      40.times do
         hit = model.raytest([pt, dir])
         break unless hit
         parcours += pt.distance(hit[0])
         break if parcours > 3.m
         g = haut_de(hit[1])
-        vus << g if g && !vus.include?(g)
-        break if vus.size >= n
+        if vus.size >= n
+          break unless g == vus.last
+          fin = parcours
+        else
+          vus << g if g && !vus.include?(g)
+          fin = parcours if g == vus.last
+        end
         pt = hit[0].offset(dir, 0.02)
+        parcours += 0.02
       end
-      vus
+      [vus, fin]
     end
 
     # Perce : boîte de découpe (largeur × hauteur, 3 m de profondeur) soustraite de chaque couche ; nom et balise conservés
     def self.percer(o, p, essai = 0)
       model = Sketchup.active_model
-      cibles = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n])
+      cibles, prof = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n])
+      prof -= 0.5.cm
       if cibles.empty?
         UI.messagebox('Aucun mur trouvé derrière le point cliqué.')
         return
@@ -134,8 +142,11 @@ module A2M
           # Pièce choisie : gardée sur la menuiserie, l'extraction la rattache à cette pièce
           r.set_attribute('a2m', 'piece', p[:piece]) if p[:piece]
         end
+        # Porte intérieure : les revêtements de sol des deux pièces sont prolongés jusqu'à l'axe de l'épaisseur percée
+        sols = p[:type][1] == 'A2M_PORTE_INT' && prof > 0 ? ajuster_sols(o, p, prof) : []
         model.commit_operation
-        msg = "Ouverture #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
+        msg = "Ouverture" #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
+        msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
         msg += "\nSeulement #{cibles.size} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if cibles.size < p[:n]
         echecs.any? || cibles.size < p[:n] ? UI.messagebox(msg) : Sketchup.status_text = msg
@@ -148,6 +159,91 @@ module A2M
         model.abort_operation
         UI.messagebox("L'ouverture n'a pas pu être créée (#{ex.message}).")
       end
+    end
+
+    # ---- Revêtements de sol (groupes A2M_PIECE) prolongés sous la porte, jusqu'à l'axe de l'épaisseur ----
+    def self.pieces_monde
+      res = []
+      fouiller = lambda do |ents, tr, prof|
+        ents.each do |e|
+          next unless e.is_a?(Sketchup::Group)
+          t2 = tr * e.transformation
+          res << [e, t2] if e.layer && e.layer.name == 'A2M_PIECE'
+          fouiller.call(e.entities, t2, prof + 1) if prof < 3
+        end
+      end
+      fouiller.call(Sketchup.active_model.entities, Geom::Transformation.new, 0)
+      res
+    end
+
+    def self.dessus(g)
+      hs = g.entities.grep(Sketchup::Face).select { |f| f.normal.z > 0.99 }
+      return nil if hs.empty?
+      zt = hs.map { |f| f.vertices[0].position.z }.max
+      [hs.select { |f| (f.vertices[0].position.z - zt).abs < 0.01 }, zt]
+    end
+
+    def self.dedans(px, py, poly)
+      d = false; j = poly.size - 1
+      poly.each_with_index { |(xi, yi), i| xj, yj = poly[j]; d = !d if ((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi); j = i }
+      d
+    end
+
+    # Pièce dont le revêtement est sous le point (plan) et à peu près au niveau du bas de la porte
+    def self.piece_sous(pt, zporte)
+      pieces_monde.find do |g, tr|
+        ds = dessus(g); next false unless ds
+        faces, zt = ds
+        zw = (tr * Geom::Point3d.new(0, 0, zt)).z
+        next false if (zw - zporte).abs > 0.3.m
+        faces.any? { |f| dedans(pt.x, pt.y, f.outer_loop.vertices.map { |v| q = tr * v.position; [q.x, q.y] }) }
+      end
+    end
+
+    # Ajoute la bande sous la porte au revêtement, puis reconstruit le volume d'un seul tenant (surface et linéaire justes)
+    def self.prolonger(g, tr, rect_monde)
+      inv = tr.inverse
+      faces, zt = dessus(g)
+      zmin = g.entities.grep(Sketchup::Face).flat_map { |f| f.vertices.map { |v| v.position.z } }.min
+      ep = zt - zmin
+      loc = rect_monde.map { |q| q2 = q.transform(inv); Geom::Point3d.new(q2.x, q2.y, zt) }
+      nf = g.entities.add_face(loc)
+      nf.reverse! if nf && nf.normal.z < 0
+      # Arêtes de jonction entre faces du dessus coplanaires : effacées pour ne faire qu'une face
+      g.entities.grep(Sketchup::Edge).select { |e| e.faces.size == 2 && e.faces.all? { |f| f.normal.z > 0.99 } && (e.start.position.z - zt).abs < 0.01 }.each(&:erase!)
+      top = g.entities.grep(Sketchup::Face).select { |f| f.normal.z > 0.99 && (f.vertices[0].position.z - zt).abs < 0.01 }.max_by(&:area)
+      ext = top.outer_loop.vertices.map(&:position)
+      trous = top.loops.reject(&:outer?).map { |lp| lp.vertices.map(&:position) }
+      g.entities.clear!
+      f = g.entities.add_face(ext)
+      trous.each { |t| h = g.entities.add_face(t); h.erase! if h && h.valid? }
+      f = g.entities.grep(Sketchup::Face).max_by(&:area)
+      f.reverse! if f.normal.z < 0
+      f.pushpull(-ep) if ep > 0.04   # revêtement dessiné en simple face : il reste une face
+      true
+    end
+
+    def self.ajuster_sols(o, p, prof)
+      l = (p[:l] / 100.0).m
+      u, n, b = o[:u], o[:n], o[:bas]
+      z = b.z
+      demi = prof / 2.0
+      res = []
+      # Côté cliqué : du nu de la cloison jusqu'à l'axe ; côté opposé : de l'axe jusqu'à l'autre nu
+      [[0.0, demi, n, 10.cm], [demi, prof, n.reverse, prof + 10.cm]].each do |d0, d1, _cote, sonde|
+        centre = b.offset(u, l / 2.0)
+        test = sonde == 10.cm ? centre.offset(n, 10.cm) : centre.offset(n, -sonde)
+        g, tr = piece_sous(test, z)
+        next unless g
+        a = b.offset(n, -d0); c = b.offset(n, -d1)
+        rect = [a, a.offset(u, l), c.offset(u, l), c]
+        begin
+          res << g.name if prolonger(g, tr, rect)
+        rescue StandardError
+          res << "#{g.name} (à reprendre à la main)"
+        end
+      end
+      res
     end
 
     # Outil : 1) clic sur un point de référence sur la face extérieure du mur ;
