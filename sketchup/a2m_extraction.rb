@@ -265,9 +265,10 @@ module A2M
             res['alertes'] << "#{n} : aucune face horizontale trouvée, mur non mesuré" if ms.empty?
             res['murs'].concat(ms)
           elsif MENUISERIES[tag]
-            menus << { 'type' => MENUISERIES[tag], 'l' => (b[:l] * 100).round, 'h' => (b[:h] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'nom' => nom }
+            menus << { 'type' => MENUISERIES[tag], 'l' => (b[:l] * 100).round, 'h' => (b[:h] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'nom' => nom,
+                       'piece' => e.get_attribute('a2m', 'piece') }
           elsif tag == PORTE_INT
-            portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy] }
+            portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
           elsif tag == CLOISON
             # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte
             mc = murs_de(e, tr, 'cloison', nom)
@@ -359,12 +360,22 @@ module A2M
 
       # Pièces et leurs menuiseries (la plus proche pièce reçoit la menuiserie)
       liste = pieces.map { |n, p| { 'nom' => n, 'surf' => r2(p[:aire]), 'perim' => r2(p[:perim]), 'menus' => [], 'portesInt' => [], poly: p[:poly] } }
+      # Pièce indiquée à la création de l'ouverture : prioritaire ; ajoutée à la liste si elle n'y est pas encore
+      par_nom = lambda do |n|
+        return nil if n.to_s.strip.empty?
+        pc = liste.find { |q| q['nom'].downcase == n.to_s.strip.downcase }
+        unless pc
+          pc = { 'nom' => n.to_s.strip, 'menus' => [], 'portesInt' => [], poly: [] }
+          liste << pc
+        end
+        pc
+      end
       proche = lambda do |x, y|
-        best = liste.min_by { |pc| distance_poly(x.to_f, y.to_f, pc[:poly]) }
+        best = liste.reject { |pc| pc[:poly].empty? }.min_by { |pc| distance_poly(x.to_f, y.to_f, pc[:poly]) }
         best && distance_poly(x.to_f, y.to_f, best[:poly]) <= DISTANCE_PIECE_MAX ? best : nil
       end
       menus.each do |mn|
-        pc = proche.call(mn['x'], mn['y'])
+        pc = par_nom.call(mn['piece']) || proche.call(mn['x'], mn['y'])
         if pc
           ex = pc['menus'].find { |z| z['type'] == mn['type'] && z['l'] == mn['l'] && z['h'] == mn['h'] }
           ex ? ex['nb'] += 1 : pc['menus'] << { 'type' => mn['type'], 'l' => mn['l'], 'h' => mn['h'], 'nb' => 1 }
@@ -373,7 +384,7 @@ module A2M
         end
       end
       portes.each do |pt|
-        pc = proche.call(pt['x'], pt['y'])
+        pc = par_nom.call(pt['piece']) || proche.call(pt['x'], pt['y'])
         if pc
           ex = pc['portesInt'].find { |z| z['l'] == pt['l'] }
           ex ? ex['nb'] += 1 : pc['portesInt'] << { 'l' => pt['l'], 'nb' => 1 }

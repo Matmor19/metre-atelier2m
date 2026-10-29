@@ -15,14 +15,30 @@ module A2M
     @inverse = false   # sens de Group#subtract vérifié au premier perçage (le mur doit perdre du volume)
     class SensInverse < StandardError; end
 
+    AUTO = '(automatique : la pièce la plus proche)'
+    # Noms des pièces déjà présentes dans le modèle (groupes balisés A2M_PIECE)
+    def self.pieces_du_modele
+      noms = []
+      fouiller = lambda do |ents, prof|
+        ents.each do |e|
+          next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          noms << e.name.to_s.strip if e.layer && e.layer.name == 'A2M_PIECE' && !e.name.to_s.strip.empty?
+          fouiller.call(e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities, prof + 1) if prof < 3
+        end
+      end
+      fouiller.call(Sketchup.active_model.entities, 0)
+      noms.uniq.sort
+    end
+
     def self.demander
       t = TYPES.find { |x| x[0] == @r[:type] } || TYPES[0]
       g = @r[t[0]] || {}
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
                          'Nombre de couches à percer (mur + doublages)', 'Poser une menuiserie de réservation balisée ?',
-                         'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, @r[:res] || 'Oui', (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s],
-                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non', ''], 'Créer une ouverture (Métré Atelier 2M)')
+                         'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches',
+                         'Pièce de rattachement'],
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, @r[:res] || 'Oui', (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO],
+                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non', '', ([AUTO] + (pcs = pieces_du_modele)).join('|')], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
@@ -37,7 +53,9 @@ module A2M
         appui = 0 if type[1] == 'A2M_PORTE_INT' && appui == 5
       end
       @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui }
+      piece = rep[7].to_s == AUTO ? nil : rep[7].to_s
+      @r[:piece] = rep[7].to_s
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui, piece: piece }
     end
 
     def self.lancer
@@ -112,7 +130,9 @@ module A2M
           fr.pushpull(-5.cm) rescue nil
           tagm, _ = A2M::Balises.balise(model, p[:type][1], (A2M::Balises::LISTE.find { |x, _, _| x == p[:type][1] } || [])[2])
           r.layer = tagm
-          r.name = "#{p[:type][0]} #{p[:l].round} × #{p[:h].round}"
+          r.name = "#{p[:type][0]} #{p[:l].round} × #{p[:h].round}#{p[:piece] ? ' – ' + p[:piece] : ''}"
+          # Pièce choisie : gardée sur la menuiserie, l'extraction la rattache à cette pièce
+          r.set_attribute('a2m', 'piece', p[:piece]) if p[:piece]
         end
         model.commit_operation
         msg = "Ouverture #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
@@ -139,7 +159,7 @@ module A2M
       def deactivate(view) view.invalidate end
       def statut
         Sketchup.status_text = @ref ? "Déplacez la souris dans le sens voulu le long du mur, tapez la distance depuis le point de référence jusqu'au bord de l'ouverture puis Entrée (ou cliquez). Échap pour recommencer." :
-                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm, linteau à #{@p[:lin].round} cm, #{@p[:n]} couche(s), appui #{@p[:appui]} cm : cliquez un point de référence sur la face du mur (un angle, un bord de baie…)."
+                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm#{@p[:piece] ? ' (' + @p[:piece] + ')' : ''}, linteau à #{@p[:lin].round} cm, #{@p[:n]} couche(s), appui #{@p[:appui]} cm : cliquez un point de référence sur la face du mur (un angle, un bord de baie…)."
         Sketchup.vcb_label = 'Distance'
       end
 
