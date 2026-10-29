@@ -21,15 +21,31 @@ module A2M
     # Choix des menuiseries extérieures, mêmes codes que le configurateur (rien n'est choisi d'office)
     CHOIX_ME = { 'mat' => [['pvc', "PVC"], ['alu', "Aluminium"], ['bois', "Bois"], ['mixte', "Mixte bois/aluminium"], ['acier', "Acier"]], 'vantaux' => [['1', "1 vantail"], ['2', "2 vantaux"], ['3', "3 vantaux"], ['4', "4 vantaux"]], 'ouvrant' => [['francaise', "Ouvrant à la française"], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', "Oscillo-battant"], ['abattant', "Abattant"], ['coulissante', "Coulissante"], ['galandage', "Coulissante à galandage"], ['translation', "Coulissante à translation"], ['fixe', "Châssis fixe"], ['guillotine', "Ouvrant à guillotine"], ['basculant', "Ouvrant basculant"], ['pivotant', "Ouvrant pivotant"]], 'vitrage' => [['simple', "Simple vitrage"], ['double', "Double vitrage standard"], ['vir', "Double vitrage VIR"], ['triple', "Triple vitrage"]], 'ferm' => [['vr-manuel', "Volet roulant manuel"], ['vr-motor', "Volet roulant motorisé"], ['vr-solaire', "Volet roulant solaire"], ['vb-pvc', "Volet battant ou coulissant PVC"], ['vb-alu', "Volet battant ou coulissant alu"], ['vb-bois', "Volet battant ou coulissant bois"], ['brise', "Brise-soleil orientable"], ['screen', "Store screen extérieur"], ['banne', "Store banne"]] }
 
-    def self.choix_menuiserie(tag)
+    RES_SIMPLE = 'Réservation simple (panneau balisé)'
+    RES_AUCUNE = 'Aucune'
+    BIB = 'Bibliothèque : '
+
+    # Choix enregistrés avec un objet de la bibliothèque (codes) : remis en libellés pour la fiche
+    def self.libelles(choix)
+      res = {}
+      (choix || {}).each do |c, v|
+        next if c == 'volet'
+        x = (CHOIX_ME[c] || []).find { |k, _| k == v }
+        res[c] = x[1] if x
+      end
+      res['ferm'] = 'Aucune' if choix && choix['volet'] == 'non'
+      res
+    end
+
+    def self.choix_menuiserie(tag, depuis_objet = nil)
       return nil unless %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE].include?(tag)
       porte = tag == 'A2M_PORTE_ENTREE'
       champs = porte ? %w[mat vantaux] : %w[mat vantaux ouvrant vitrage ferm]
       libs = { 'mat' => 'Matériau', 'vantaux' => 'Nombre de vantaux', 'ouvrant' => 'Type d\'ouvrant', 'vitrage' => 'Vitrage', 'ferm' => 'Fermeture (volet, store…)' }
-      prec = @r[:me] || {}
+      prec = depuis_objet ? libelles(depuis_objet) : (@r[:me] || {})
       listes = champs.map { |c| ([A_CHOISIR] + (c == 'ferm' ? ['Aucune'] : []) + CHOIX_ME[c].map(&:last)).join('|') }
       defauts = champs.map { |c| prec[c] || A_CHOISIR }
-      rep = UI.inputbox(champs.map { |c| libs[c] }, defauts, listes, 'Menuiserie : choix pour le configurateur (facultatif)')
+      rep = UI.inputbox(champs.map { |c| libs[c] }, defauts, listes, depuis_objet ? 'Menuiserie : choix de l\'objet de la bibliothèque (modifiables)' : 'Menuiserie : choix pour le configurateur (facultatif)')
       return {} unless rep
       @r[:me] = Hash[champs.zip(rep)]
       res = {}
@@ -64,12 +80,16 @@ module A2M
     def self.demander
       t = TYPES.find { |x| x[0] == @r[:type] } || TYPES[0]
       g = @r[t[0]] || {}
+      objs = (A2M::Bibliotheque.objets_de(TYPES.map { |x| x[1] }.compact) rescue [])
+      menus = [RES_SIMPLE, RES_AUCUNE] + objs.map { |o| "#{BIB}#{o['nom']} (#{o['type']})" }
+      res0 = { 'Oui' => RES_SIMPLE, 'Non' => RES_AUCUNE }[@r[:res]] || @r[:res]
+      res0 = RES_SIMPLE unless menus.include?(res0)
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
-                         'Nombre de couches à percer (mur + doublages)', 'Poser une menuiserie de réservation balisée ?',
+                         'Nombre de couches à percer (mur + doublages)', 'Menuiserie posée dans l\'ouverture',
                          'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches',
                          'Pièce de rattachement'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, @r[:res] || 'Oui', (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO],
-                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non', '', ([AUTO] + (pcs = pieces_du_modele)).join('|')], 'Créer une ouverture (Métré Atelier 2M)')
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO],
+                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', menus.join('|'), '', ([AUTO] + (pcs = pieces_du_modele)).join('|')], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
@@ -86,8 +106,18 @@ module A2M
       @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
       piece = rep[7].to_s == AUTO ? nil : rep[7].to_s
       @r[:piece] = rep[7].to_s
-      me = rep[5] == 'Oui' ? choix_menuiserie(type[1]) : nil
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui, piece: piece, me: me }
+      obj = rep[5].start_with?(BIB) ? objs[menus.index(rep[5]) - 2] : nil
+      if obj && obj['balise'] != type[1]
+        UI.messagebox("« #{obj['nom']} » est rangé comme #{obj['type']} : choisissez ce type d'ouverture, ou un autre objet.")
+        return nil
+      end
+      if obj && type[1].nil?
+        UI.messagebox('Une ouverture libre ne reçoit pas de menuiserie.')
+        return nil
+      end
+      pose = rep[5] != RES_AUCUNE
+      me = pose ? choix_menuiserie(type[1], obj && obj['choix']) : nil
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, appui: appui, piece: piece, me: me }
     end
 
     def self.lancer
@@ -162,8 +192,17 @@ module A2M
             cut.erase! if cut.valid?
           end
         end
-        # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré
-        if p[:res]
+        # Menuiserie de la bibliothèque : étirée à la taille percée (profils inchangés), posée à 5 cm du nu extérieur
+        # (porte intérieure : au milieu de l'épaisseur percée)
+        if p[:res] && p[:obj]
+          nd = A2M::Bibliotheque.definition_etiree(p[:obj], p[:l], p[:h], model)
+          ur = Z_AXIS.cross(n).normalize            # de gauche à droite, vu de l'extérieur
+          org = u.dot(ur) > 0 ? b : b.offset(u, l)
+          ep = nd.bounds.height
+          recul = p[:type][1] == 'A2M_PORTE_INT' && prof > 0 ? [(prof - ep) / 2.0, 0].max : 5.cm
+          r = ents.add_instance(nd, Geom::Transformation.axes(org.offset(n.reverse, recul), ur, n.reverse, Z_AXIS))
+        elsif p[:res]
+          # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré
           r = ents.add_group
           c1 = b.offset(n.reverse, 5.cm)
           cadre = 5.cm
@@ -180,10 +219,12 @@ module A2M
             x0 = i0.offset(u, (l - 2 * cadre) * k / nv)
             r.entities.add_line(x0, x0.offset(Z_AXIS, h - 2 * cadre))
           end
+        end
+        if p[:res]
           r.set_attribute('a2m', 'me', JSON.generate(p[:me])) if p[:me] && !p[:me].empty?
           tagm, _ = A2M::Balises.balise(model, p[:type][1], (A2M::Balises::LISTE.find { |x, _, _| x == p[:type][1] } || [])[2])
           r.layer = tagm
-          r.name = "#{p[:type][0]} #{p[:l].round} × #{p[:h].round}#{p[:piece] ? ' – ' + p[:piece] : ''}"
+          r.name = "#{p[:obj] ? p[:obj]['nom'] : p[:type][0]} #{p[:l].round} × #{p[:h].round}#{p[:piece] ? ' – ' + p[:piece] : ''}"
           # Pièce choisie : gardée sur la menuiserie, l'extraction la rattache à cette pièce
           r.set_attribute('a2m', 'piece', p[:piece]) if p[:piece]
         end

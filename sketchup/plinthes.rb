@@ -202,9 +202,16 @@ module A2M
         end
       end
       unless profil
-        rep = UI.inputbox(['Hauteur de la plinthe (cm)', 'Épaisseur (cm)'], ['10', '1.2'], 'Plinthes : pas de profil sélectionné, profil rectangulaire')
+        # Pas de profil sélectionné : un profil de la bibliothèque, ou un rectangle
+        rect = 'Profil rectangulaire (cotes ci-dessous)'
+        bib = (A2M::Bibliotheque.plinthes rescue [])
+        noms = [rect] + bib.map { |o| o['nom'] }
+        rep = UI.inputbox(['Profil', 'Hauteur si rectangulaire (cm)', 'Épaisseur si rectangulaire (cm)'], [@profil && noms.include?(@profil) ? @profil : noms[-1], '10', '1.2'],
+                          [noms.join('|'), '', ''], 'Plinthes : choix du profil')
         return unless rep
-        profil = profil_rectangle(rep[0].tr(',', '.').to_f, rep[1].tr(',', '.').to_f)
+        @profil = rep[0]
+        o = bib.find { |x| x['nom'] == rep[0] }
+        profil = o ? o['profil'] : profil_rectangle(rep[1].tr(',', '.').to_f, rep[2].tr(',', '.').to_f)
       end
       model.start_operation('Poser les plinthes (métré)', true)
       begin

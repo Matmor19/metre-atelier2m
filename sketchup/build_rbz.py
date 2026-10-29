@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -22,7 +22,9 @@ unless file_loaded?(__FILE__)
     ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente et débord', -> { A2M::Toiture.lancer }, false],
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
     ['ouverture',   'Créer une ouverture',                 'Perce le mur et ses doublages, pose la menuiserie (choix du configurateur) et recoupe les plinthes', -> { A2M::Ouvertures.lancer }, false],
-    ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
+    ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
+    ['objet',       'Paramétrer un objet pour la bibliothèque', 'Fenêtre, porte, coulissant ou plinthe déjà dessiné (ou éclaté) : repère, lignes d\'étirement, choix du configurateur, rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
+    ['biblio',      'Bibliothèque d\'objets',              'Poser un objet de la bibliothèque à la taille voulue (profils inchangés), ouvrir ou changer le dossier', -> { A2M::Bibliotheque.gerer }, false],
     ['elec',        'Poser l\'appareillage électrique',    'Prises, points lumineux, interrupteurs… posés au clic et comptés pièce par pièce', -> { A2M::Electricite.lancer }, true],
     ['extraire',    'Extraire pour le configurateur',      'Enregistre le fichier .json à importer dans le configurateur du métré', -> { A2M::Extraction.lancer }, false],
     ['envoi',       'Envoyer au métré',                    'Envoie l\'extraction directement au métré : bouton « Récupérer depuis SketchUp » dans le configurateur', -> { A2M::Envoi.lancer }, false],
@@ -40,6 +42,7 @@ unless file_loaded?(__FILE__)
     sm.add_item('Baliser la sélection…') { A2M::Balises.baliser_selection }
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
+    sm.add_item('Paramétrer pour la bibliothèque…') { A2M::Bibliotheque.parametrer }
     sm.add_item('Créer la toiture sur ces murs…') { A2M::Toiture.lancer }
     sm.add_item('Créer les semelles sous ces murs…') { A2M::Fondations.lancer }
     sm.add_item('Pièces automatiques avec ces murs…') { A2M::PiecesAuto.lancer }
@@ -68,6 +71,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre.rb', chargeur)
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
+    z.write(os.path.join(ici, 'bibliotheque.rb'), 'a2m_metre/bibliotheque.rb')
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
