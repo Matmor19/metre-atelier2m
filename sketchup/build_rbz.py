@@ -23,7 +23,7 @@ unless file_loaded?(__FILE__)
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
     ['ouverture',   'Créer une ouverture',                 'Perce le mur et ses doublages, pose la menuiserie (choix du configurateur) et recoupe les plinthes', -> { A2M::Ouvertures.lancer }, false],
     ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
-    ['objet',       'Paramétrer un objet pour la bibliothèque', 'Fenêtre, porte, coulissant ou plinthe déjà dessiné (ou éclaté) : repère, lignes d\'étirement, choix du configurateur, rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
+    ['objet',       'Paramétrer un objet pour la bibliothèque', 'Menuiserie, porte, appui, seuil, façade de placard, plinthe, mobilier… : objet dessiné, éclaté ou composant dynamique (gardé entier), rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
     ['biblio',      'Bibliothèque d\'objets',              'Poser un objet de la bibliothèque à la taille voulue (profils inchangés), ouvrir ou changer le dossier', -> { A2M::Bibliotheque.gerer }, false],
     ['elec',        'Poser l\'appareillage électrique',    'Prises, points lumineux, interrupteurs… posés au clic et comptés pièce par pièce', -> { A2M::Electricite.lancer }, true],
     ['extraire',    'Extraire pour le configurateur',      'Enregistre le fichier .json à importer dans le configurateur du métré', -> { A2M::Extraction.lancer }, false],
@@ -39,7 +39,8 @@ unless file_loaded?(__FILE__)
   menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
   UI.add_context_menu_handler do |cm|
     next if Sketchup.active_model.selection.empty?
-    sm = cm.add_submenu('Métré Atelier 2M')
+    # Les menus de Windows ne se colorent pas : un repère ◆ devant le nom pour le trouver d'un coup d'œil
+    sm = cm.add_submenu('◆ Métré Atelier 2M')
     sm.add_item('Baliser la sélection…') { A2M::Balises.baliser_selection }
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }

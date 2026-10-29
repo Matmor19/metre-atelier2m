@@ -77,10 +77,32 @@ module A2M
       ['Fenêtre',                            'A2M_FENETRE',       'Fenetres'],
       ['Porte-fenêtre, baie ou coulissant',  'A2M_PORTE_FENETRE', 'Portes-fenetres'],
       ['Porte d\'entrée',                    'A2M_PORTE_ENTREE',  'Portes d\'entree'],
-      ['Porte intérieure',                   'A2M_PORTE_INT',     'Portes interieures'],
+      ['Porte intérieure de passage',        'A2M_PORTE_INT',     'Portes interieures'],
+      ['Appui de fenêtre',                   nil,                 'Appuis'],
+      ['Seuil',                              nil,                 'Seuils'],
+      ['Façade de placard',                  nil,                 'Placards'],
       ['Plinthe (profil)',                   'A2M_PLINTHE',       'Plinthes'],
+      ['Mobilier, cuisine, sanitaire',       nil,                 'Mobilier'],
       ['Autre objet (hors métré)',           nil,                 'Divers']
     ]
+    NOUVEAU_TYPE = 'Nouveau type…'
+    DC = 'dynamic_attributes'
+    AUCUN = '(aucun : taille fixe)'
+
+    # Types de la liste : ceux d'origine, puis ceux que vous avez ajoutés (types.json du dossier de la bibliothèque)
+    def self.types
+      f = File.join(dossier, 'types.json')
+      persos = File.exist?(f) ? (JSON.parse(File.read(f, encoding: 'UTF-8')) rescue []) : []
+      TYPES + persos.map { |n| [n, nil, nom_fichier(n)] }
+    end
+
+    def self.ajouter_type(nom)
+      f = File.join(dossier, 'types.json')
+      persos = File.exist?(f) ? (JSON.parse(File.read(f, encoding: 'UTF-8')) rescue []) : []
+      return if persos.include?(nom) || TYPES.any? { |t| t[0] == nom }
+      FileUtils.mkdir_p(dossier)
+      File.write(f, JSON.pretty_generate(persos + [nom]), encoding: 'UTF-8')
+    end
     EXT_VERS_MOI = 'Le côté que je regarde (vue actuelle)'
     EXT_OPPOSE = 'Le côté opposé'
 
@@ -240,12 +262,18 @@ module A2M
       libs = ['Nom de l\'objet', 'Type', 'Face extérieure (vue de la rue, côté pose)', 'Nombre de vantaux (menuiseries)',
               'Matériau', 'Type d\'ouvrant', 'Vitrage', 'Fermeture (volet, store…)']
       defs = [defaut_nom, prec[1] || TYPES[0][0], prec[2] || EXT_VERS_MOI, prec[3] || ac, prec[4] || ac, prec[5] || ac, prec[6] || ac, prec[7] || ac]
-      listes = ['', TYPES.map(&:first).join('|'), [EXT_VERS_MOI, EXT_OPPOSE].join('|'),
+      listes = ['', (types.map(&:first) + [NOUVEAU_TYPE]).join('|'), [EXT_VERS_MOI, EXT_OPPOSE].join('|'),
                 ([ac] + me['vantaux'].map(&:last)).join('|'), ([ac] + me['mat'].map(&:last)).join('|'),
                 ([ac] + me['ouvrant'].map(&:last)).join('|'), ([ac] + me['vitrage'].map(&:last)).join('|'),
                 ([ac, 'Aucune'] + me['ferm'].map(&:last)).join('|')]
       rep = UI.inputbox(libs, defs, listes, 'Paramétrer l\'objet sélectionné (bibliothèque Atelier 2M)')
       return nil unless rep
+      if rep[1] == NOUVEAU_TYPE
+        rn = UI.inputbox(['Nom du nouveau type (ex. : Escalier, Garde-corps, Poêle…)'], [''], 'Nouveau type d\'objet')
+        return nil unless rn && !rn[0].to_s.strip.empty?
+        ajouter_type(rn[0].to_s.strip)
+        rep[1] = rn[0].to_s.strip
+      end
       @fiche = rep
       choix = {}
       { 'vantaux' => 3, 'mat' => 4, 'ouvrant' => 5, 'vitrage' => 6 }.each do |c, i|
@@ -255,7 +283,7 @@ module A2M
       if rep[7] == 'Aucune' then choix['volet'] = 'non'
       elsif (code = me['ferm'].find { |_, l| l == rep[7] }) then choix['volet'] = 'oui'; choix['ferm'] = code[0]
       end
-      { nom: rep[0].to_s.strip.empty? ? defaut_nom : rep[0].to_s.strip, type: TYPES.find { |t| t[0] == rep[1] },
+      { nom: rep[0].to_s.strip.empty? ? defaut_nom : rep[0].to_s.strip, type: types.find { |t| t[0] == rep[1] } || TYPES[-1],
         ext: rep[2] == EXT_VERS_MOI, vantaux: (choix['vantaux'] || 0).to_i, choix: choix }
     end
 
@@ -270,6 +298,7 @@ module A2M
       f = fiche(nom0)
       return nil unless f
       return parametrer_plinthe(model, ents, f) if f[:type][1] == 'A2M_PLINTHE'
+      return parametrer_dynamique(model, inst0, f) if inst0.is_a?(Sketchup::ComponentInstance) && dynamique?(inst0)
       model.start_operation('Paramétrer un objet (bibliothèque)', true)
       begin
         g = inst0 || model.active_entities.add_group(ents)
@@ -350,6 +379,7 @@ module A2M
       d.save_thumbnail(chemin.sub(/\.skp\z/, '.png')) rescue nil
       liste << info.merge('fichier' => rel)
       sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
+      return "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, composant dynamique : #{info['attr_l'] ? 'largeur réglable' : 'largeur fixe'}, #{info['attr_h'] ? 'hauteur réglable' : 'hauteur fixe'})" if info['mode'] == 'dynamique'
       "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, #{info['lx'].size} ligne(s) en largeur, #{info['lz'].size} en hauteur)"
     end
 
@@ -391,6 +421,140 @@ module A2M
 
     def self.plinthes() objets.select { |o| o['balise'] == 'A2M_PLINTHE' && o['profil'] } end
 
+    # ---- Composants dynamiques : gardés entiers (réglages, options, animation au clic) ----
+    def self.dynamique?(e)
+      !!(e.attribute_dictionary(DC) || (e.respond_to?(:definition) && e.definition.attribute_dictionary(DC)))
+    end
+
+    def self.attributs_dc(inst)
+      h = {}
+      [inst.definition, inst].each { |o| (o.attribute_dictionary(DC) || {}).each_pair { |k, v| h[k] = v } }
+      h
+    end
+
+    # Réglages modifiables par l'utilisateur (fenêtre « Options du composant »), plus lenx / lenz
+    def self.reglages_dc(h)
+      h.keys.reject { |k| k.start_with?('_') }.sort.map do |k|
+        acc = h["_#{k}_access"].to_s
+        next nil unless %w[TEXTBOX LIST].include?(acc) || %w[lenx lenz].include?(k)
+        lab = h["_#{k}_formlabel"].to_s
+        [k, lab.empty? ? k : lab, h[k]]
+      end.compact
+    end
+
+    UNITES_LONGUEUR = %w[DEFAULT INCHES FEET MILLIMETERS CENTIMETERS METERS]
+    # Valeur d'un réglage → pouces : réglage de longueur (stocké en pouces), sinon nombre dans une unité devinée
+    # en comparant à la taille réelle (cm, mm, m ou pouces)
+    def self.facteur(h, k, taille)
+      u = h["_#{k}_units"].to_s
+      return 1.0 if u.empty? || UNITES_LONGUEUR.include?(u)
+      v = h[k].to_s.tr(',', '.').to_f
+      return 2.54 if v <= 0 || taille <= 0
+      [2.54, 25.4, 0.0254, 1.0].min_by { |f| (v - taille * f).abs / (taille * f) }
+    end
+
+    def self.parametrer_dynamique(model, inst, f)
+      view = model.active_view
+      h = attributs_dc(inst)
+      regs = reglages_dc(h)
+      b = inst.definition.bounds
+      libs = regs.map { |k, l, v| "#{l} (#{k} = #{v})" }
+      auto = lambda do |re, defaut|
+        r = regs.find { |k, l, _| k != 'lenx' && k != 'lenz' && (l =~ re || k =~ re) } || regs.find { |k, _, _| k == defaut }
+        r ? libs[regs.index(r)] : AUCUN
+      end
+      rep = UI.inputbox(['Réglage du composant qui donne la LARGEUR', 'Réglage du composant qui donne la HAUTEUR'],
+                        [auto.call(/larg|width/i, 'lenx'), auto.call(/haut|height/i, 'lenz')],
+                        [([AUCUN] + libs).join('|'), ([AUCUN] + libs).join('|')],
+                        "#{f[:nom]} : composant dynamique (gardé entier, avec ses options et son animation)")
+      return :passe unless rep
+      kl = rep[0] == AUCUN ? nil : regs[libs.index(rep[0])][0]
+      kh = rep[1] == AUCUN ? nil : regs[libs.index(rep[1])][0]
+      t = repere(inst, f[:ext], view)
+      model.start_operation('Paramétrer un composant dynamique (bibliothèque)', true)
+      begin
+        inst.make_unique if inst.definition.count_instances > 1
+        d = inst.definition
+        # Les options choisies sur cet exemplaire deviennent celles de l'objet rangé
+        (inst.attribute_dictionary(DC) || {}).each_pair { |k, v| d.set_attribute(DC, k, v) }
+        ext_y = t && t.yaxis.dot(inst.transformation.yaxis) < 0 ? 'max' : 'min'
+        balise = f[:type][1]
+        info = { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => balise, 'mode' => 'dynamique', 'vantaux' => f[:vantaux], 'choix' => f[:choix],
+                 'attr_l' => kl, 'attr_h' => kh, 'f_l' => kl && facteur(h, kl, b.width), 'f_h' => kh && facteur(h, kh, b.depth),
+                 'u_l' => kl && h["_#{kl}_units"], 'u_h' => kh && h["_#{kh}_units"], 'ext_y' => ext_y,
+                 'l0' => b.width.to_f, 'h0' => b.depth.to_f, 'p0' => b.height.to_f, 'version' => 2 }
+        d.set_attribute(DICO, 'info', JSON.generate(info))
+        inst.name = f[:nom] if inst.name.to_s.empty?
+        if balise
+          tag, _ = A2M::Balises.balise(model, balise, (A2M::Balises::LISTE.find { |x, _, _| x == balise } || [])[2])
+          inst.layer = tag
+          inst.set_attribute('a2m', 'me', JSON.generate(f[:choix])) if f[:choix].any?
+        end
+        model.commit_operation
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("#{f[:nom]} : paramétrage impossible (#{ex.message}).")
+        return :passe
+      end
+      ranger(d, f[:type], f[:nom], info)
+    end
+
+    def self.charger(obj, model)
+      base = model.definitions.find { |d| d.get_attribute(DICO, 'source') == obj['fichier'] }
+      return base if base
+      base = model.definitions.load(File.join(dossier, obj['fichier']))
+      base.set_attribute(DICO, 'source', obj['fichier'])
+      base
+    end
+
+    # Inscrit la largeur et la hauteur dans les réglages du composant puis le fait se redessiner (comme dans « Options du composant »)
+    def self.regler_dc(inst, obj, l_cm, h_cm)
+      [['attr_l', 'f_l', 'u_l', l_cm], ['attr_h', 'f_h', 'u_h', h_cm]].each do |ka, kf, ku, v|
+        k = obj[ka]; next unless k
+        val = pouces(v) * (obj[kf] || 1.0).to_f
+        val = val.round if obj[ku] == 'INTEGER'
+        val = val.round(2).to_s if obj[ku] == 'STRING'
+        inst.set_attribute(DC, k, val)
+      end
+      return false unless defined?($dc_observers) && $dc_observers
+      dc = $dc_observers.get_latest_class
+      begin
+        dc.redraw(inst, false)
+      rescue ArgumentError, NoMethodError
+        dc.redraw_with_undo(inst)
+      end
+      true
+    rescue StandardError
+      false
+    end
+
+    # Place un exemplaire : face extérieure de l'objet sur le plan voulu (recul depuis le nu), de gauche à droite vu de l'extérieur
+    def self.placer(inst, org, ur, nrev, recul, ext_y)
+      b = inst.definition.bounds
+      o = org.offset(nrev, recul)
+      inst.transformation = if ext_y == 'max'
+        Geom::Transformation.axes(o.offset(ur, b.width), ur.reverse, nrev.reverse, Z_AXIS) * Geom::Transformation.translation(Geom::Vector3d.new(-b.min.x, -b.max.y, -b.min.z))
+      else
+        Geom::Transformation.axes(o, ur, nrev, Z_AXIS) * Geom::Transformation.translation(Geom::Vector3d.new(-b.min.x, -b.min.y, -b.min.z))
+      end
+    end
+
+    # Exemplaire à la taille voulue : composant dynamique réglé, ou objet étiré. recul : bloc qui reçoit la profondeur de l'objet
+    def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model)
+      if obj['mode'] == 'dynamique'
+        inst = ents.add_instance(charger(obj, model), Geom::Transformation.new)
+        unless regler_dc(inst, obj, l_cm, h_cm)
+          @alerte = "#{obj['nom']} : l'extension Composants dynamiques n'a pas répondu, l'objet garde sa taille d'origine."
+        end
+      else
+        inst = ents.add_instance(definition_etiree(obj, l_cm, h_cm, model), Geom::Transformation.new)
+      end
+      placer(inst, org, ur, nrev, recul.call(inst.definition.bounds.height), obj['ext_y'] || 'min')
+      inst
+    end
+
+    def self.alerte!() a = @alerte; @alerte = nil; a end
+
     # ---- Étirement : définition à la taille voulue (réutilisée si elle existe déjà dans le modèle) ----
     def self.definition_etiree(obj, l_cm, h_cm, model = Sketchup.active_model)
       chemin = File.join(dossier, obj['fichier'])
@@ -398,11 +562,7 @@ module A2M
       cle = "#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
       deja = model.definitions.find { |d| d.get_attribute(DICO, 'cle') == cle }
       return deja if deja
-      base = model.definitions.find { |d| d.get_attribute(DICO, 'source') == obj['fichier'] }
-      unless base
-        base = model.definitions.load(chemin)
-        base.set_attribute(DICO, 'source', obj['fichier'])
-      end
+      base = charger(obj, model)
       lx = obj['lx'] || []; lz = obj['lz'] || []
       dx = A2M::Etirement.deltas(lx, l - obj['l0'].to_f)
       dz = A2M::Etirement.deltas(lz, h - obj['h0'].to_f)
@@ -474,9 +634,14 @@ module A2M
       model = Sketchup.active_model
       model.start_operation('Poser un objet de la bibliothèque', true)
       begin
-        nd = definition_etiree(obj, l, h, model)
+        inst = instance_pour(model.active_entities, obj, l, h, ORIGIN, X_AXIS, Y_AXIS, ->(_ep) { 0 }, model)
         model.commit_operation
-        model.place_component(nd)
+        a = alerte!
+        UI.messagebox(a) if a
+        # L'objet est posé à l'origine et sélectionné : l'outil Déplacer le met où vous voulez
+        model.selection.clear
+        model.selection.add(inst)
+        Sketchup.send_action('selectMoveTool:')
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox(ex.message)

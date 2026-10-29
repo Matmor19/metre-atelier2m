@@ -195,12 +195,12 @@ module A2M
         # Menuiserie de la bibliothèque : étirée à la taille percée (profils inchangés), posée à 5 cm du nu extérieur
         # (porte intérieure : au milieu de l'épaisseur percée)
         if p[:res] && p[:obj]
-          nd = A2M::Bibliotheque.definition_etiree(p[:obj], p[:l], p[:h], model)
           ur = Z_AXIS.cross(n).normalize            # de gauche à droite, vu de l'extérieur
           org = u.dot(ur) > 0 ? b : b.offset(u, l)
-          ep = nd.bounds.height
-          recul = p[:type][1] == 'A2M_PORTE_INT' && prof > 0 ? [(prof - ep) / 2.0, 0].max : 5.cm
-          r = ents.add_instance(nd, Geom::Transformation.axes(org.offset(n.reverse, recul), ur, n.reverse, Z_AXIS))
+          interieure = p[:type][1] == 'A2M_PORTE_INT' && prof > 0
+          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse,
+                                              ->(ep) { interieure ? [(prof - ep) / 2.0, 0].max : 5.cm }, model)
+          alerte = A2M::Bibliotheque.alerte!
         elsif p[:res]
           # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré
           r = ents.add_group
@@ -240,9 +240,10 @@ module A2M
         msg = "Ouverture" #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
         msg += "\nPlinthes recoupées : #{plin.join(', ')}" if plin.any?
+        msg += "\n#{alerte}" if alerte
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
         msg += "\nSeulement #{cibles.size} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if cibles.size < p[:n]
-        echecs.any? || cibles.size < p[:n] || plin.any? ? UI.messagebox(msg) : Sketchup.status_text = msg
+        echecs.any? || cibles.size < p[:n] || plin.any? || alerte ? UI.messagebox(msg) : Sketchup.status_text = msg
       rescue SensInverse
         model.abort_operation
         @inverse = !@inverse
