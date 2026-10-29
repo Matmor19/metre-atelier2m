@@ -8,6 +8,7 @@ module A2M
       ['Fenêtre',             'A2M_FENETRE',       100, 125, 215],
       ['Porte-fenêtre / baie', 'A2M_PORTE_FENETRE', 240, 215, 215],
       ['Porte d\'entrée',     'A2M_PORTE_ENTREE',   90, 215, 215],
+      ['Porte intérieure (cloison ou refend)', 'A2M_PORTE_INT', 83, 204, 204],
       ['Ouverture seule (sans menuiserie)', nil,     90, 215, 215]
     ]
     @r = {}
@@ -20,7 +21,7 @@ module A2M
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
                          'Nombre de couches à percer (mur + doublages)', 'Poser une menuiserie de réservation balisée ?',
                          'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (@r[:n] || 1).to_s, @r[:res] || 'Oui', (@r[:appui] || 5).to_s],
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, @r[:res] || 'Oui', (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s],
                         [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non', ''], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
@@ -30,7 +31,12 @@ module A2M
         return nil
       end
       appui = [rep[6].to_s.tr(',', '.').to_f, 0].max
-      @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[:appui] = appui; @r[type[0]] = { l: l, h: h, lin: lin }
+      # Type changé dans la liste : ses propres valeurs par défaut (porte intérieure : pas d'appui, 1 couche)
+      if rep[0] != t[0] && !@r[type[0]]
+        l, h, lin = type[2].to_f, type[3].to_f, type[4].to_f if rep[1].to_f == t[2] && rep[2].to_f == t[3] && rep[3].to_f == t[4]
+        appui = 0 if type[1] == 'A2M_PORTE_INT' && appui == 5
+      end
+      @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
       { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui }
     end
 
