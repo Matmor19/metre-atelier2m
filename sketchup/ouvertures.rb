@@ -197,9 +197,7 @@ module A2M
         if p[:res] && p[:obj]
           ur = Z_AXIS.cross(n).normalize            # de gauche à droite, vu de l'extérieur
           org = u.dot(ur) > 0 ? b : b.offset(u, l)
-          interieure = p[:type][1] == 'A2M_PORTE_INT' && prof > 0
-          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse,
-                                              ->(ep) { interieure ? [(prof - ep) / 2.0, 0].max : 5.cm }, model)
+          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse, ->(_ep) { 0 }, model)
           alerte = A2M::Bibliotheque.alerte!
         elsif p[:res]
           # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré
@@ -219,6 +217,13 @@ module A2M
             x0 = i0.offset(u, (l - 2 * cadre) * k / nv)
             r.entities.add_line(x0, x0.offset(Z_AXIS, h - 2 * cadre))
           end
+        end
+        if p[:res] && prof > 0
+          # Toutes les menuiseries : face intérieure au nu intérieur de la dernière couche percée
+          d = r.respond_to?(:definition) ? r.definition : r.entities.parent
+          fond = (0..7).map { |i| -((d.bounds.corner(i).transform(r.transformation)) - b).dot(n) }.max
+          dep = prof - fond
+          r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dep, -n.y * dep, 0))) if dep.abs > 0.01
         end
         if p[:res]
           r.set_attribute('a2m', 'me', JSON.generate(p[:me])) if p[:me] && !p[:me].empty?

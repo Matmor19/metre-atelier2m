@@ -541,7 +541,8 @@ module A2M
 
     # Exemplaire à la taille voulue : composant dynamique réglé, ou objet étiré. recul : bloc qui reçoit la profondeur de l'objet
     def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model)
-      if obj['mode'] == 'dynamique'
+      dyn = obj['mode'] == 'dynamique'
+      if dyn
         inst = ents.add_instance(charger(obj, model), Geom::Transformation.new)
         unless regler_dc(inst, obj, l_cm, h_cm)
           @alerte = "#{obj['nom']} : l'extension Composants dynamiques n'a pas répondu, l'objet garde sa taille d'origine."
@@ -549,6 +550,23 @@ module A2M
       else
         inst = ents.add_instance(definition_etiree(obj, l_cm, h_cm, model), Geom::Transformation.new)
       end
+      # Contrôle de la taille réelle : un objet qui dépasse (seuil, rejingot ou formule comprise dans le composant)
+      # est réglé à nouveau pour faire exactement la largeur et la hauteur de l'ouverture
+      cl, ch = l_cm.to_f, h_cm.to_f
+      2.times do
+        b = inst.definition.bounds
+        el = b.width.to_f * 2.54 - l_cm.to_f; eh = b.depth.to_f * 2.54 - h_cm.to_f
+        el = 0 if dyn && !obj['attr_l'] || !dyn && (obj['lx'] || []).empty?
+        eh = 0 if dyn && !obj['attr_h'] || !dyn && (obj['lz'] || []).empty?
+        break if el.abs < 0.2 && eh.abs < 0.2
+        cl -= el; ch -= eh
+        if dyn then regler_dc(inst, obj, cl, ch)
+        else inst.definition = definition_etiree(obj, cl, ch, model)
+        end
+      end
+      b = inst.definition.bounds
+      ecart = [b.width.to_f * 2.54 - l_cm.to_f, b.depth.to_f * 2.54 - h_cm.to_f]
+      @alerte = [@alerte, "#{obj['nom']} : taille obtenue #{(b.width.to_f * 2.54).round(1)} × #{(b.depth.to_f * 2.54).round(1)} cm au lieu de #{l_cm.round(1)} × #{h_cm.round(1)} cm."].compact.join("\n") if ecart.any? { |e| e.abs >= 0.2 }
       placer(inst, org, ur, nrev, recul.call(inst.definition.bounds.height), obj['ext_y'] || 'min')
       inst
     end
