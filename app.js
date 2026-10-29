@@ -7793,10 +7793,14 @@ function skpEtat(c, d) {
     x.blocs = x.blocs || [];
     for (const pt of (pc.portesInt || [])) {
       if (x.blocs.length) { rap.conserve.push(`${nom} : portes de passage déjà saisies, non ajoutées`); break; }
-      // Dimension du bloc la plus proche de la largeur mesurée (passage ou dormant)
-      const dim = dimsBP.reduce((a, b) => Math.abs(parseInt(b, 10) - pt.l) < Math.abs(parseInt(a, 10) - pt.l) ? b : a, dimsBP[0]);
-      x.blocs.push({ dim, dest: '', pousse: '', ame: '', type: '', fin: '', pose: '', ouv: '', nb: String(pt.nb || 1) });
-      rap.ecrit.push(`${nom} : ${pt.nb} porte(s) de passage ${dim} (mesurée ${pt.l} cm, destination à choisir)`);
+      // Porte posée avec l'outil Porte intérieure : son vantail et ses choix ; sinon la dimension de bloc la plus proche de la largeur mesurée
+      const dim = pt.dim && dimsBP.includes(pt.dim) ? pt.dim : dimsBP.reduce((a, b) => Math.abs(parseInt(b, 10) - pt.l) < Math.abs(parseInt(a, 10) - pt.l) ? b : a, dimsBP[0]);
+      const ch = pt.choix || {};
+      const pris = k => (BP_CHOIX[k] || []).some(([v]) => v === ch[k]) ? ch[k] : '';
+      const bl = { dim, dest: pris('dest'), pousse: pris('pousse'), ame: pris('ame'), type: pris('type'), fin: pris('fin'), pose: pris('pose'), ouv: '', nb: String(pt.nb || 1) };
+      x.blocs.push(bl);
+      const faits = ['dest', 'pousse', 'ame', 'type', 'fin', 'pose'].filter(k => bl[k]).map(k => bl[k]);
+      rap.ecrit.push(`${nom} : ${pt.nb} porte(s) de passage ${dim}${faits.length ? ' — ' + faits.join(', ') : ''}${pt.dim ? '' : ` (mesurée ${pt.l} cm)`} (${faits.length ? 'autres choix' : 'destination et choix'} à faire)`);
     }
   }
   // Surfaces sans case dans le configurateur : rappelées pour être reportées au métré

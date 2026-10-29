@@ -136,13 +136,36 @@ module A2M
     def self.nom_fichier(nom) nom.to_s.gsub(/[\\\/:*?"<>|]+/, '-').strip[0, 80] end
 
     # ---- Parcours de la géométrie ----
+    # Élément masqué (variante cachée d'un composant dynamique, balise éteinte) : ignoré dans les mesures
+    def self.cache?(e)
+      (e.respond_to?(:hidden?) && e.hidden?) || (e.respond_to?(:layer) && e.layer && !e.layer.visible?)
+    end
+
+    # Encombrement de ce qui se voit seulement (les composants dynamiques gardent des pièces cachées)
+    def self.boite_visible(defn)
+      bb = Geom::BoundingBox.new
+      ajout = lambda do |ents, tr, prof|
+        ents.each do |e|
+          next if cache?(e)
+          case e
+          when Sketchup::Edge then bb.add(tr * e.start.position); bb.add(tr * e.end.position)
+          when Sketchup::Group then ajout.call(e.entities, tr * e.transformation, prof + 1) if prof < 10
+          when Sketchup::ComponentInstance then ajout.call(e.definition.entities, tr * e.transformation, prof + 1) if prof < 10
+          end
+        end
+      end
+      ajout.call(defn.entities, Geom::Transformation.new, 0)
+      bb.empty? ? defn.bounds : bb
+    end
+
     def self.points(ents, tr, acc)
       ents.each do |e|
+        next if cache?(e)
         case e
         when Sketchup::Edge then e.vertices.each { |v| acc << tr * v.position }
         when Sketchup::Group then points(e.entities, tr * e.transformation, acc)
         when Sketchup::ComponentInstance
-          b = e.definition.bounds
+          b = boite_visible(e.definition)
           8.times { |i| acc << tr * (e.transformation * b.corner(i)) }
         end
       end
@@ -288,6 +311,15 @@ module A2M
         ext: rep[2] == EXT_VERS_MOI, vantaux: (choix['vantaux'] || 0).to_i, choix: choix }
     end
 
+    # Porte intérieure : dimension du vantail de l'objet (repère du métré) et côté des paumelles, vu du côté regardé
+    def self.fiche_porte(nom, l0, h0)
+      m = nom.to_s.match(/(\d{2,3})\s*[x×X*]\s*(\d{3})/)
+      rep = UI.inputbox(['Vantail de cet objet : largeur (cm)', 'Vantail : hauteur (cm)', 'Paumelles, vu du côté que vous regardez (côté poussant)'],
+                        [m ? m[1] : cm(l0).round.to_s, m ? m[2] : '204', 'à droite'], ['', '', 'à droite|à gauche'], "#{nom} : porte intérieure")
+      return nil unless rep
+      { 'vl0' => rep[0].tr(',', '.').to_f, 'vh0' => rep[1].tr(',', '.').to_f, 'paumelles' => rep[2] == 'à gauche' ? 'gauche' : 'droite' }
+    end
+
     # Un objet : retourne son nom (rangé), :passe (laissé de côté) ou nil (arrêt demandé)
     def self.parametrer_lot(model, ents)
       view = model.active_view
@@ -313,7 +345,7 @@ module A2M
         # Géométrie remise dans le repère de l'objet : origine en bas, à gauche, devant
         d.entities.transform_entities(t.inverse * inst.transformation, d.entities.to_a)
         inst.transformation = t
-        bb = d.bounds
+        bb = boite_visible(d)
         l0, p0, h0 = bb.width, bb.height, bb.depth
         ouvrir_sous_composants(d.entities, l0, h0)
         pts = points(d.entities, Geom::Transformation.new, [])
@@ -346,6 +378,11 @@ module A2M
         balise = f[:type][1]
         info = { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => balise, 'vantaux' => f[:vantaux], 'choix' => f[:choix],
                  'l0' => l0.to_f, 'h0' => h0.to_f, 'p0' => p0.to_f, 'lx' => lx, 'lz' => lz, 'version' => 1 }
+        if balise == 'A2M_PORTE_INT'
+          fp = fiche_porte(f[:nom], l0, h0)
+          raise Interrupt unless fp
+          info.merge!(fp)
+        end
         info.each { |k, v| d.set_attribute(DICO, k, v.is_a?(Hash) || v.is_a?(Array) ? JSON.generate(v) : v) }
         d.name = model.definitions.unique_name(f[:nom])
         inst.name = f[:nom]
@@ -512,7 +549,7 @@ module A2M
       view = model.active_view
       h = attributs_dc(inst)
       regs = reglages_dc(h)
-      b = inst.definition.bounds
+      b = boite_visible(inst.definition)
       libs = regs.map { |k, l, v| "#{l} (#{k} = #{v})" }
       auto = lambda do |re, defaut|
         r = regs.find { |k, l, _| k != 'lenx' && k != 'lenz' && (l =~ re || k =~ re) } || regs.find { |k, _, _| k == defaut }
@@ -525,6 +562,8 @@ module A2M
       return :passe unless rep
       kl = rep[0] == AUCUN ? nil : regs[libs.index(rep[0])][0]
       kh = rep[1] == AUCUN ? nil : regs[libs.index(rep[1])][0]
+      fp = f[:type][1] == 'A2M_PORTE_INT' ? fiche_porte(f[:nom], b.width, b.depth) : {}
+      return :passe unless fp
       t = repere(inst, f[:ext], view)
       model.start_operation('Paramétrer un composant dynamique (bibliothèque)', true)
       begin
@@ -537,7 +576,7 @@ module A2M
         info = { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => balise, 'mode' => 'dynamique', 'vantaux' => f[:vantaux], 'choix' => f[:choix],
                  'attr_l' => kl, 'attr_h' => kh, 'f_l' => kl && facteur(h, kl, b.width), 'f_h' => kh && facteur(h, kh, b.depth),
                  'u_l' => kl && h["_#{kl}_units"], 'u_h' => kh && h["_#{kh}_units"], 'ext_y' => ext_y,
-                 'l0' => b.width.to_f, 'h0' => b.depth.to_f, 'p0' => b.height.to_f, 'version' => 2 }
+                 'l0' => b.width.to_f, 'h0' => b.depth.to_f, 'p0' => b.height.to_f, 'version' => 2 }.merge(fp)
         d.set_attribute(DICO, 'info', JSON.generate(info))
         inst.name = f[:nom] if inst.name.to_s.empty?
         if balise
@@ -585,7 +624,7 @@ module A2M
 
     # Place un exemplaire : face extérieure de l'objet sur le plan voulu (recul depuis le nu), de gauche à droite vu de l'extérieur
     def self.placer(inst, org, ur, nrev, recul, ext_y)
-      b = inst.definition.bounds
+      b = boite_visible(inst.definition)
       o = org.offset(nrev, recul)
       inst.transformation = if ext_y == 'max'
         Geom::Transformation.axes(o.offset(ur, b.width), ur.reverse, nrev.reverse, Z_AXIS) * Geom::Transformation.translation(Geom::Vector3d.new(-b.min.x, -b.max.y, -b.min.z))
@@ -595,7 +634,9 @@ module A2M
     end
 
     # Exemplaire à la taille voulue : composant dynamique réglé, ou objet étiré. recul : bloc qui reçoit la profondeur de l'objet
-    def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model, opts = {})
+    # ajuster : l'encombrement visible doit faire la taille de l'ouverture (menuiseries extérieures) ;
+    # sans ajustement, l_cm et h_cm sont les cotes données au composant (porte intérieure : son vantail)
+    def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model, opts = {}, ajuster = true)
       dyn = obj['mode'] == 'dynamique'
       if dyn
         inst = ents.add_instance(charger(obj, model), Geom::Transformation.new)
@@ -609,9 +650,11 @@ module A2M
       # Contrôle de la taille réelle : un objet qui dépasse (seuil, rejingot ou formule comprise dans le composant)
       # est réglé à nouveau pour faire exactement la largeur et la hauteur de l'ouverture
       cl, ch = l_cm.to_f, h_cm.to_f
-      2.times do
-        b = inst.definition.bounds
+      (ajuster ? 2 : 0).times do
+        b = boite_visible(inst.definition)
         el = b.width.to_f * 2.54 - l_cm.to_f; eh = b.depth.to_f * 2.54 - h_cm.to_f
+        # Écart trop grand : ce n'est pas un dépassement (seuil, rejingot) mais un objet mal mesuré : on n'y touche pas
+        break if el.abs > 0.25 * l_cm.to_f || eh.abs > 0.25 * h_cm.to_f
         el = 0 if dyn && !obj['attr_l'] || !dyn && (obj['lx'] || []).empty?
         eh = 0 if dyn && !obj['attr_h'] || !dyn && (obj['lz'] || []).empty?
         break if el.abs < 0.2 && eh.abs < 0.2
@@ -620,10 +663,10 @@ module A2M
         else inst.definition = definition_etiree(obj, cl, ch, model)
         end
       end
-      b = inst.definition.bounds
+      b = boite_visible(inst.definition)
       ecart = [b.width.to_f * 2.54 - l_cm.to_f, b.depth.to_f * 2.54 - h_cm.to_f]
-      @alerte = [@alerte, "#{obj['nom']} : taille obtenue #{(b.width.to_f * 2.54).round(1)} × #{(b.depth.to_f * 2.54).round(1)} cm au lieu de #{l_cm.round(1)} × #{h_cm.round(1)} cm."].compact.join("\n") if ecart.any? { |e| e.abs >= 0.2 }
-      placer(inst, org, ur, nrev, recul.call(inst.definition.bounds.height), obj['ext_y'] || 'min')
+      @alerte = [@alerte, "#{obj['nom']} : taille obtenue #{(b.width.to_f * 2.54).round(1)} × #{(b.depth.to_f * 2.54).round(1)} cm au lieu de #{l_cm.round(1)} × #{h_cm.round(1)} cm."].compact.join("\n") if ajuster && ecart.any? { |e| e.abs >= 0.2 }
+      placer(inst, org, ur, nrev, recul.call(b.height), obj['ext_y'] || 'min')
       inst
     end
 

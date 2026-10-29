@@ -9,7 +9,6 @@ module A2M
       ['Fenêtre',             'A2M_FENETRE',       100, 125, 215],
       ['Porte-fenêtre / baie', 'A2M_PORTE_FENETRE', 240, 215, 215],
       ['Porte d\'entrée',     'A2M_PORTE_ENTREE',   90, 215, 215],
-      ['Porte intérieure (cloison ou refend)', 'A2M_PORTE_INT', 83, 204, 204],
       ['Ouverture libre (passage sans porte)', nil,  90, 215, 215]
     ]
     @r = {}
@@ -138,7 +137,8 @@ module A2M
     # Les n premiers groupes traversés par un rayon partant de l'extérieur, vers l'intérieur du mur
     # Retourne aussi la profondeur percée : du point de départ jusqu'à la sortie de la dernière couche
     # Bornes : pour chaque couche, distances d'entrée et de sortie depuis le départ. Les menuiseries suivies sont traversées sans compter.
-    def self.couches(depart, dir, n)
+    # contigu : on s'arrête dès qu'un vide de plus de 2 cm sépare deux couches (porte intérieure : la cloison seule)
+    def self.couches(depart, dir, n, contigu = false)
       model = Sketchup.active_model
       vus = []; pt = depart; parcours = 0.0; fin = 0.0; bornes = {}
       40.times do
@@ -156,6 +156,7 @@ module A2M
           break unless g == vus.last
           fin = parcours
         else
+          break if contigu && vus.any? && !vus.include?(g) && parcours - fin > 2.cm
           vus << g unless vus.include?(g)
           fin = parcours if g == vus.last
         end
@@ -186,7 +187,7 @@ module A2M
     # Découpe les couches derrière l'ouverture o ; chaque mur percé garde la liste de ses trous (« trous »)
     # Retour : couches (pour reboucher), échecs, profondeur percée, nombre de couches trouvées
     def self.decouper(o, p, id, model)
-      cibles, prof, bornes = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n])
+      cibles, prof, bornes = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n], p[:contigu])
       prof -= 0.5.cm
       return nil if cibles.empty?
       ents = model.active_entities
@@ -274,7 +275,7 @@ module A2M
         if p[:res] && prof > 0
           # Toutes les menuiseries : face intérieure au nu intérieur de la dernière couche percée
           d = r.respond_to?(:definition) ? r.definition : r.entities.parent
-          fond = (0..7).map { |i| -((d.bounds.corner(i).transform(r.transformation)) - b).dot(n) }.max
+          fond = (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(d).corner(i).transform(r.transformation)) - b).dot(n) }.max
           dep = prof - fond
           r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dep, -n.y * dep, 0))) if dep.abs > 0.01
         end

@@ -10,7 +10,7 @@ module A2M
     GROUPES = [
       ['Préparer',            %w[balises baliser pieces pieces_auto controle]],
       ['Dessiner',            %w[mur compose sol toiture fondation]],
-      ['Ouvertures, finitions', %w[ouverture plinthe elec]],
+      ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
       ['Bibliothèque',        %w[objet biblio]],
       ['Métré',               %w[extraire envoi aide]]
     ]

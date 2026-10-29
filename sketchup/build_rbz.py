@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -22,6 +22,7 @@ unless file_loaded?(__FILE__)
     ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente, débord et épaisseur', -> { A2M::Toiture.lancer }, false],
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
     ['ouverture',   'Créer une ouverture',                 'Perce le mur et ses doublages, pose la menuiserie au nu intérieur, à la taille exacte de l\'ouverture, recoupe les plinthes ; l\'ouverture suit la menuiserie déplacée, le mur est rebouché si elle est supprimée', -> { A2M::Ouvertures.lancer }, false],
+    ['porte',       'Poser une porte intérieure',          'Bloc-porte de passage (63 à 103 × 204) dans une cloison ou un refend : réservation, toute l\'épaisseur, centré, sens au Tab, choix du configurateur', -> { A2M::PortesInt.lancer }, false],
     ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
     ['objet',       'Paramétrer un objet pour la bibliothèque', 'Menuiserie, porte, appui, seuil, façade de placard, plinthe, mobilier… : objet dessiné, éclaté ou composant dynamique (gardé entier), rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
     ['biblio',      'Bibliothèque d\'objets',              'Poser un objet de la bibliothèque à la taille voulue (profils inchangés), ouvrir ou changer le dossier', -> { A2M::Bibliotheque.gerer }, false],
@@ -85,7 +86,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
-    for f in ('pointage', 'palette', 'suivi', 'maj'):
+    for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')

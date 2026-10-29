@@ -273,7 +273,10 @@ module A2M
             menus << { 'type' => MENUISERIES[tag], 'l' => (b[:l] * 100).round, 'h' => (b[:h] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'nom' => nom,
                        'piece' => e.get_attribute('a2m', 'piece'), 'choix' => (JSON.parse(e.get_attribute('a2m', 'me', '{}')) rescue {}) }
           elsif tag == PORTE_INT
-            portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
+            # Porte posée avec l'outil Porte intérieure : son vantail et ses choix ; sinon la largeur mesurée
+            bp = (JSON.parse(e.get_attribute('a2m', 'bp', 'null')) rescue nil)
+            l = bp && bp['dim'] ? bp['dim'].to_i : (b[:l] * 100).round
+            portes << { 'l' => l, 'dim' => bp && bp['dim'], 'choix' => bp ? bp.reject { |k, _| k == 'dim' } : {}, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
           elsif tag == CLOISON
             # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte
             mc = murs_de(e, tr, 'cloison', nom)
@@ -413,8 +416,8 @@ module A2M
       portes.each do |pt|
         pc = par_nom.call(pt['piece']) || proche.call(pt['x'], pt['y'])
         if pc
-          ex = pc['portesInt'].find { |z| z['l'] == pt['l'] }
-          ex ? ex['nb'] += 1 : pc['portesInt'] << { 'l' => pt['l'], 'nb' => 1 }
+          ex = pc['portesInt'].find { |z| z['l'] == pt['l'] && z['dim'] == pt['dim'] && z['choix'] == pt['choix'] }
+          ex ? ex['nb'] += 1 : pc['portesInt'] << { 'l' => pt['l'], 'dim' => pt['dim'], 'choix' => pt['choix'], 'nb' => 1 }
         else
           res['alertes'] << "Porte intérieure (#{pt['l']} cm) : aucune pièce à moins de #{DISTANCE_PIECE_MAX} m"
         end

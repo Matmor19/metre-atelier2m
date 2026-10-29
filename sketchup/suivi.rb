@@ -129,7 +129,7 @@ module A2M
       d = { 'id' => id, 'genre' => genre, 't' => t_tab(r.transformation), 'couches' => couches,
             'empreinte' => empreinte.map(&:to_a),
             'o' => { 'bas' => o[:bas].transform(inv).to_a, 'u' => o[:u].transform(inv).to_a, 'n' => o[:n].transform(inv).to_a },
-            'p' => { 'l' => p[:l], 'h' => p[:h], 'n' => p[:n], 'appui' => p[:appui], 'tag' => p[:type][1], 'lib' => p[:type][0] } }
+            'p' => { 'l' => p[:l], 'h' => p[:h], 'n' => p[:n], 'appui' => p[:appui], 'tag' => p[:type][1], 'lib' => p[:type][0], 'contigu' => p[:contigu] } }
       ecrire(r, d)
       attacher(r)
     end
@@ -308,15 +308,16 @@ module A2M
       end
       bas = bas.offset(n, (nu - bas).dot(n))
       o = { bas: bas, u: u, n: n, centre: bas.offset(u, l / 2.0).offset(Z_AXIS, h / 2.0) }
-      p = { l: pr['l'], h: pr['h'], n: pr['n'], appui: pr['appui'], type: [pr['lib'], pr['tag']] }
+      p = { l: pr['l'], h: pr['h'], n: pr['n'], appui: pr['appui'], type: [pr['lib'], pr['tag']], contigu: pr['contigu'] }
       dec = A2M::Ouvertures.decouper(o, p, d['id'], model)
       journal(dec ? "  repercé dans #{dec[:nb]} couche(s), profondeur #{(dec[:prof].to_f * 2.54).round(1)} cm#{dec[:echecs].any? ? ', échecs : ' + dec[:echecs].join(', ') : ''}" : '  aucun mur trouvé à la nouvelle place')
       raise "perçage impossible dans : #{dec[:echecs].join(', ')}" if dec && dec[:echecs].any?
       if dec
         # Face intérieure au nu intérieur de la dernière couche percée
         defn = r.respond_to?(:definition) ? r.definition : r.entities.parent
-        fond = (0..7).map { |i| -((defn.bounds.corner(i).transform(r.transformation)) - bas).dot(n) }.max
-        dp = dec[:prof] - fond
+        prs = (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(defn).corner(i).transform(r.transformation)) - bas).dot(n) }
+        # Porte intérieure : centrée dans l'épaisseur ; menuiserie extérieure : face intérieure au nu intérieur
+        dp = pr['tag'] == 'A2M_PORTE_INT' ? dec[:prof] / 2.0 - (prs.min + prs.max) / 2.0 : dec[:prof] - prs.max
         r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dp, -n.y * dp, 0))) if dp.abs > 0.01
         d['couches'] = dec[:couches]
         emp = [bas, bas.offset(u, l), bas.offset(u, l).offset(n, -dec[:prof]), bas.offset(n, -dec[:prof])]
