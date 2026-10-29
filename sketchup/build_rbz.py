@@ -55,7 +55,7 @@ unless file_loaded?(__FILE__)
   tb = UI::Toolbar.new('Métré Atelier 2M')
   ACTIONS_A2M.each do |nom, titre, bulle, action, sep|
     cmd = UI::Command.new(titre) { action.call }
-    cmd.tooltip = titre
+    cmd.tooltip = "#{titre} — #{bulle}"   # bulle au survol : le nom de l'outil et ce qu'il fait
     cmd.status_bar_text = bulle
     # Icônes de la barre : version avec marge (boutons aérés)
     cmd.small_icon = File.join(ico, "tb_#{nom}#{ext == '.png' ? '_16.png' : ext}")

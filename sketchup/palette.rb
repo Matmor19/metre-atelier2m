@@ -24,7 +24,7 @@ module A2M
         btns = noms.select { |n| act[n] }.map do |n|
           svg = File.read(File.join(dico, "#{n}.svg"), encoding: 'UTF-8') rescue ''
           t, b = act[n]
-          "<button data-n=\"#{n}\" title=\"#{t.gsub('"', '&quot;')}\"><span class=\"ic\">#{svg}</span><span class=\"lib\">#{t}</span><span class=\"bulle\">#{b.gsub('<', '&lt;')}</span></button>"
+          "<button data-n=\"#{n}\"><span class=\"ic\">#{svg}</span><span class=\"lib\">#{t}</span><span class=\"bulle\">#{b.gsub('<', '&lt;')}</span></button>"
         end.join
         "<section><h2>#{titre}</h2><div class=\"grille\">#{btns}</div></section>"
       end.join
@@ -43,19 +43,39 @@ module A2M
         button:active .ic{transform:translateY(0) scale(.94);box-shadow:0 1px 3px rgba(0,0,0,.3)}
         button.actif .ic{box-shadow:0 0 0 3px var(--g)}
         .lib,.bulle{display:none}
+        #bulle{position:fixed;z-index:9;pointer-events:none;max-width:230px;background:var(--g);color:#fff;border-radius:7px;padding:7px 9px 8px;
+          box-shadow:0 6px 16px rgba(0,0,0,.28);opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+        #bulle.vue{opacity:1;transform:translateY(0)}
+        #bulle b{display:block;font-size:12px;color:var(--o);margin-bottom:2px}
+        #bulle span{font-size:11.5px;line-height:1.35}
+        #bulle:after{content:"";position:absolute;left:var(--fl,20px);border:6px solid transparent}
+        #bulle.dessous:after{top:-12px;border-bottom-color:var(--g)}
+        #bulle.dessus:after{bottom:-12px;border-top-color:var(--g)}
         #info{position:sticky;bottom:0;background:var(--f);border-top:1px solid #e2dbd3;padding:7px 2px 4px;min-height:52px}
         #info b{display:block;font-size:12.5px;margin-bottom:2px}
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         </style></head><body>
         #{blocs}
+        <div id="bulle"></div>
         <div id="info"><b>Métré Atelier 2M</b><span>Survolez un bouton pour voir à quoi il sert, cliquez pour le lancer.</span></div>
         <script>
-        var info=document.getElementById('info');
+        var info=document.getElementById('info'), bulle=document.getElementById('bulle'), minu=null;
+        // Bulle d'aide à côté du bouton survolé : sous le bouton, ou au-dessus s'il n'y a pas la place
+        function montrer(b){
+          var t='<b>'+b.querySelector('.lib').textContent+'</b><span>'+b.querySelector('.bulle').innerHTML+'</span>';
+          info.innerHTML=t; bulle.innerHTML=t; bulle.className='';
+          var r=b.getBoundingClientRect(), w=bulle.offsetWidth, h=bulle.offsetHeight, W=innerWidth, H=innerHeight;
+          var x=Math.max(6,Math.min(W-w-6,r.left+r.width/2-w/2)), dessous=r.bottom+10+h<H-4;
+          bulle.style.left=x+'px'; bulle.style.top=(dessous?r.bottom+10:r.top-h-10)+'px';
+          bulle.style.setProperty('--fl',Math.max(8,Math.min(w-20,r.left+r.width/2-x-6))+'px');
+          bulle.className=(dessous?'dessous':'dessus')+' vue';
+        }
         document.querySelectorAll('button').forEach(function(b){
-          b.addEventListener('mouseenter',function(){info.innerHTML='<b>'+b.querySelector('.lib').textContent+'</b><span>'+b.querySelector('.bulle').innerHTML+'</span>';});
+          b.addEventListener('mouseenter',function(){clearTimeout(minu);minu=setTimeout(function(){montrer(b)},250);});
+          b.addEventListener('mouseleave',function(){clearTimeout(minu);bulle.className='';});
           b.addEventListener('click',function(){
             document.querySelectorAll('button.actif').forEach(function(x){x.classList.remove('actif')});
-            b.classList.add('actif'); b.blur(); sketchup.lancer(b.dataset.n);
+            b.classList.add('actif'); b.blur(); bulle.className=''; sketchup.lancer(b.dataset.n);
           });
         });
         </script></body></html>
