@@ -18,9 +18,10 @@ module A2M
       t = TYPES.find { |x| x[0] == @r[:type] } || TYPES[0]
       g = @r[t[0]] || {}
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
-                         'Nombre de couches à percer (mur + doublages)', 'Poser une menuiserie de réservation balisée ?'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (@r[:n] || 1).to_s, @r[:res] || 'Oui'],
-                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non'], 'Créer une ouverture (Métré Atelier 2M)')
+                         'Nombre de couches à percer (mur + doublages)', 'Poser une menuiserie de réservation balisée ?',
+                         'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches'],
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (@r[:n] || 1).to_s, @r[:res] || 'Oui', (@r[:appui] || 5).to_s],
+                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', 'Oui|Non', ''], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
@@ -28,8 +29,9 @@ module A2M
         UI.messagebox('Largeur et hauteur supérieures à 0, et hauteur sous linteau au moins égale à la hauteur de l\'ouverture.')
         return nil
       end
-      @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin }
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1] }
+      appui = [rep[6].to_s.tr(',', '.').to_f, 0].max
+      @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[:appui] = appui; @r[type[0]] = { l: l, h: h, lin: lin }
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui }
     end
 
     def self.lancer
@@ -75,9 +77,12 @@ module A2M
         u, n, b = o[:u], o[:n], o[:bas]
         l = (p[:l] / 100.0).m; h = (p[:h] / 100.0).m
         c0 = b.offset(n, 5.cm)
-        rect = [c0, c0.offset(u, l), c0.offset(u, l).offset(Z_AXIS, h), c0.offset(Z_AXIS, h)]
         echecs = []
-        cibles.each do |g|
+        cibles.each_with_index do |g, i|
+          # Mur maçonné et isolant (2 premières couches) : allège abaissée pour l'appui ou le seuil ; plaque et couches suivantes : à la cote
+          bas_i = i < 2 && p[:appui].to_f > 0 ? c0.offset(Z_AXIS, -(p[:appui] / 100.0).m) : c0
+          haut_i = h + (c0.z - bas_i.z)
+          rect = [bas_i, bas_i.offset(u, l), bas_i.offset(u, l).offset(Z_AXIS, haut_i), bas_i.offset(Z_AXIS, haut_i)]
           cut = ents.add_group
           f = cut.entities.add_face(rect)
           f.reverse! if f.normal.dot(n) > 0     # la normale vers l'intérieur du mur
@@ -128,7 +133,7 @@ module A2M
       def deactivate(view) view.invalidate end
       def statut
         Sketchup.status_text = @ref ? "Déplacez la souris dans le sens voulu le long du mur, tapez la distance depuis le point de référence jusqu'au bord de l'ouverture puis Entrée (ou cliquez). Échap pour recommencer." :
-                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm, linteau à #{@p[:lin].round} cm, #{@p[:n]} couche(s) : cliquez un point de référence sur la face du mur (un angle, un bord de baie…)."
+                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm, linteau à #{@p[:lin].round} cm, #{@p[:n]} couche(s), appui #{@p[:appui]} cm : cliquez un point de référence sur la face du mur (un angle, un bord de baie…)."
         Sketchup.vcb_label = 'Distance'
       end
 
