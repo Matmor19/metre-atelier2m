@@ -13,6 +13,8 @@ module A2M
       ['Isolation au sol',        'A2M_ISOLANT_SOL',   'A2M_ISOLANT_SOL',    10.0, 0, 'Isolant de sol'],
       ['Chape',                   'A2M_CHAPE',         'A2M_CHAPE',           5.0, 0, 'Chape'],
       ['Revêtement de sol (une pièce)', 'A2M_PIECE',   'A2M_PIECE',           1.0, 0, nil],
+      ['Terrasse (pièce extérieure)', 'A2M_PIECE',     'A2M_PIECE',          12.0, 0, nil],
+      ['Allée ou accès',          'A2M_ALLEE',         'A2M_ALLEE',          10.0, 0, 'Allée'],
       ['Plafond',                 'A2M_PLAFOND',       'A2M_PLAFOND',         1.3, 0, 'Plafond']
     ]
     NIVEAUX = ['RDC', 'Étage']
@@ -36,7 +38,7 @@ module A2M
       alt = 2.5 if type[0] == 'Plafond' && alt.zero? && !(@reglages[type[0]] || {})[:alt] && rep[0] != t[0]
       nom = nil
       if type[5].nil?
-        rp = UI.inputbox(['Nom de la pièce (ex. Séjour, Chambre 1)'], [''], 'Revêtement de sol')
+        rp = UI.inputbox(['Nom de la pièce (ex. Séjour, Chambre 1)'], [type[0].start_with?('Terrasse') ? 'Terrasse' : ''], 'Revêtement de sol')
         return nil unless rp && !rp[0].to_s.strip.empty?
         nom = rp[0].to_s.strip
       end

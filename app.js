@@ -7709,6 +7709,16 @@ function skpEtat(c, d) {
   remplir(P.terrain, 'surface', t.surface, 'Terrain, surface', 'm²');
   remplir(P.terrain, 'perimetre', t.perimetre, 'Terrain, périmètre', 'ml');
   remplir(P.terrain, 'decap', t.decap, 'Surface à décaper', 'm²');
+  remplir(P.terrain, 'resEau', t.resEau, 'Longueur eau potable', 'ml');
+  remplir(P.terrain, 'resEu', t.resEu, 'Longueur eaux usées', 'ml');
+  remplir(P.terrain, 'resEp', t.resEp, 'Longueur eaux pluviales', 'ml');
+  remplir(P.terrain, 'resElec', t.resElec, 'Longueur électricité', 'ml');
+  // Équipements extérieurs : piscine (choix « Oui » seulement si rien n'est encore choisi)
+  P.equip = P.equip || {};
+  if ((d.equip || {}).piscine === 'oui') {
+    if (!P.equip.piscine) { P.equip.piscine = 'oui'; rap.ecrit.push('Piscine enterrée : Oui'); }
+    else if (P.equip.piscine !== 'oui') rap.conserve.push(`Piscine enterrée : déjà « ${P.equip.piscine} », non modifié`);
+  }
   remplir(P.fond, 'rigLin', f.rigLin, 'Fouilles en rigoles, linéaire', 'ml');
   remplir(P.fond, 'rigLarg', f.rigLarg, 'Fouilles en rigoles, largeur', 'm');
   remplir(P.fond, 'rigHt', f.rigHt, 'Fouilles en rigoles, hauteur', 'm');
@@ -7767,8 +7777,18 @@ function skpEtat(c, d) {
     for (const m of (pc.menus || [])) {
       const lib = `${libMenuiserie(m.type, 1)} ${m.l} × ${m.h} cm`;
       if (x.menus.some(y => (y.type || 'fen') === m.type && num(y.l) === num(m.l) && num(y.h) === num(m.h))) { rap.conserve.push(`${nom} : ${lib} déjà présente, non ajoutée`); continue; }
-      x.menus.push({ id: 'me' + uid(), type: m.type, vantaux: '', ouvrant: '', l: String(m.l), h: String(m.h), vitrage: '', esth: '', secu: '', pose: '', volet: '', ferm: '', moust: '', ouv: '', nb: String(m.nb || 1) });
-      rap.ecrit.push(`${nom} : ${m.nb > 1 ? m.nb + ' × ' : ''}${lib} (choix de la menuiserie à faire)`);
+      // Choix faits dans SketchUp (matériau, vantaux, ouvrant, vitrage, fermeture) : repris ; les autres restent à choisir
+      const ch = m.choix || {};
+      x.menus.push({ id: 'me' + uid(), type: m.type, mat: ch.mat || '', vantaux: ch.vantaux || '', ouvrant: ch.ouvrant || '', l: String(m.l), h: String(m.h), vitrage: ch.vitrage || '', esth: '', secu: '', pose: '', volet: ch.volet || '', ferm: ch.ferm || '', moust: '', ouv: '', nb: String(m.nb || 1) });
+      const libCh = ['mat', 'vantaux', 'ouvrant', 'vitrage', 'ferm'].filter(k => ch[k]).map(k => ((ME_CHOIX[k] || []).find(([c]) => c === ch[k]) || [0, ch[k]])[1]).join(', ');
+      rap.ecrit.push(`${nom} : ${m.nb > 1 ? m.nb + ' × ' : ''}${lib}${libCh ? ' — ' + libCh : ''} (${libCh ? 'autres choix' : 'choix de la menuiserie'} à faire)`);
+    }
+    // Appareillage posé dans SketchUp : nombre par appareil (une valeur déjà saisie dans la pièce est gardée)
+    x.app = x.app || {};
+    for (const [k, n] of Object.entries(pc.app || {})) {
+      const a = PNV_APPAREIL.find(z => z.cle === k); if (!a || !(num(n) > 0)) continue;
+      if (x.app[k] === undefined || x.app[k] === '') { x.app[k] = String(n); rap.ecrit.push(`${nom} : ${a.libelle.toLowerCase()} = ${n}`); }
+      else if (num(x.app[k]) !== num(n)) rap.conserve.push(`${nom} : ${a.libelle.toLowerCase()} déjà à ${x.app[k]} (SketchUp : ${n}), non modifié`);
     }
     x.blocs = x.blocs || [];
     for (const pt of (pc.portesInt || [])) {
@@ -7783,14 +7803,35 @@ function skpEtat(c, d) {
   const inf = d.infos || {};
   if (num(inf.isolant_sol) > 0) rap.verifier.push(`Isolation au sol : ${fmt(num(inf.isolant_sol))} m² (pas de case dans le configurateur, à reporter au métré)`);
   if (num(inf.chape) > 0) rap.verifier.push(`Chape : ${fmt(num(inf.chape))} m² (pas de case dans le configurateur, à reporter au métré)`);
+  if (num(inf.allees) > 0) rap.verifier.push(`Allées et accès : ${fmt(num(inf.allees))} m² (pas de case dans le configurateur, à reporter au métré)`);
+  if (inf.piscine) rap.verifier.push(`Piscine : ${inf.piscine} (à détailler au métré)`);
   return { P, pieces, pl, rap };
 }
 $('btnImportSketchup').onclick = () => { if (!courantId) { alert('Ouvrez d\'abord un chantier.'); return; } $('skpFichier').value = ''; $('skpFichier').click(); };
 $('skpFichier').onchange = async e => {
   const fichier = e.target.files && e.target.files[0]; if (!fichier) return;
-  const c = chantiers.find(x => x.id === courantId); if (!c) return;
   let d;
   try { d = JSON.parse(await fichier.text()); } catch (err) { alert('Ce fichier n\'est pas un JSON lisible.'); return; }
+  importerSkp(d);
+};
+// Extraction envoyée directement depuis SketchUp (dossier « SketchUp » du script du métré)
+$('btnRecupSketchup').onclick = async () => {
+  if (!courantId) { alert('Ouvrez d\'abord un chantier.'); return; }
+  if (!lsGet('url', '') || !lsGet('jeton', '')) { alert('Renseignez d\'abord l\'adresse et le jeton du script dans les Réglages.'); return; }
+  let r;
+  try { r = await post({ action: 'lister_sketchup' }); } catch (err) { alert('Connexion au script impossible.'); return; }
+  if (!r.ok) { alert('Le script du métré ne connaît pas encore les envois SketchUp : mettez-le à jour (voir metre_apps_script.gs).'); return; }
+  if (!r.depots.length) { alert('Aucun envoi reçu depuis SketchUp.'); return; }
+  const liste = r.depots.map((x, i) => `${i + 1}. ${x.fichier.replace(/\.json$/, '').replace(/_/g, ' ')}`).join('\n');
+  const n = prompt('Envois reçus depuis SketchUp (le plus récent en premier) :\n\n' + liste + '\n\nNuméro à importer :', '1');
+  const k = parseInt(n, 10);
+  if (!k || !r.depots[k - 1]) return;
+  const l = await post({ action: 'lire_sketchup', fichier: r.depots[k - 1].fichier });
+  if (!l.ok || !l.extraction) { alert('Envoi illisible.'); return; }
+  importerSkp(l.extraction);
+};
+function importerSkp(d) {
+  const c = chantiers.find(x => x.id === courantId); if (!c) return;
   if (!d || d.format !== 'metre2m-sketchup') { alert('Ce fichier ne vient pas du script SketchUp du métré (format « metre2m-sketchup » attendu).'); return; }
   const { P, pieces, pl, rap } = skpEtat(c, d);
   const bloc = (t, l) => l.length ? '\n' + t + '\n' + l.map(x => '  - ' + x).join('\n') + '\n' : '';

@@ -41,6 +41,12 @@ function dossierChantiers_() {
   return it.hasNext() ? it.next() : parent.createFolder(DOSSIER_CHANTIERS);
 }
 
+function dossierSketchup_() {
+  var parent = dossierMetre_();
+  var it = parent.getFoldersByName('SketchUp');
+  return it.hasNext() ? it.next() : parent.createFolder('SketchUp');
+}
+
 function fichierDans_(dossier, nom) {
   var it = dossier.getFilesByName(nom);
   return it.hasNext() ? it.next() : null;
@@ -175,6 +181,31 @@ function doPost(e) {
                    addr: k.addr, cadr: k.cadr, nat: k.nat, surf: k.surf, resume: k.resume };
         });
         return reponse_({ ok: true, clients: cartes });
+      }
+
+      /* ---- Extension SketchUp : dépôt d'une extraction, lue ensuite par le configurateur ---- */
+      case 'deposer_sketchup': {
+        var dsk = dossierSketchup_();
+        var nomD = Utilities.formatDate(new Date(), 'Europe/Paris', 'yyyy-MM-dd_HH-mm-ss') + '_' +
+          String((data.extraction && data.extraction.modele) || 'modele').replace(/[^\w\-]+/g, '_').slice(0, 60) + '.json';
+        dsk.createFile(nomD, JSON.stringify(data.extraction), 'application/json');
+        return reponse_({ ok: true, fichier: nomD });
+      }
+
+      case 'lister_sketchup': {
+        var depots = [];
+        var itd = dossierSketchup_().getFiles();
+        while (itd.hasNext()) {
+          var fd = itd.next();
+          depots.push({ fichier: fd.getName(), maj: fd.getLastUpdated().toISOString() });
+        }
+        depots.sort(function (a, b) { return a.fichier < b.fichier ? 1 : -1; });
+        return reponse_({ ok: true, depots: depots.slice(0, 20) });
+      }
+
+      case 'lire_sketchup': {
+        var fl = fichierDans_(dossierSketchup_(), data.fichier);
+        return reponse_({ ok: true, extraction: fl ? JSON.parse(fl.getBlob().getDataAsString()) : null });
       }
 
       default:

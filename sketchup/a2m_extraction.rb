@@ -30,12 +30,16 @@ module A2M
     # Doublage des murs périphériques : un groupe pour la plaque de plâtre, un groupe pour l'isolant (facultatif)
     DOUBLAGE = 'A2M_DOUBLAGE'
     ISOLANT_DOUBLAGE = 'A2M_ISOLANT_DOUBLAGE'
+    SEMELLE = 'A2M_SEMELLE'
     # Faces : surface (et périmètre pour le terrain et les pièces)
-    FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_ISOLANT_SOL A2M_CHAPE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
+    FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_ISOLANT_SOL A2M_CHAPE A2M_ALLEE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
     # Arêtes (lignes) : linéaire. Faîtage, rive, noue, arêtier et égout sont reconnus tout seuls sur les pans A2M_TOITURE ;
     # ne baliser une ligne à la main que pour forcer un type (elle remplace alors le calcul automatique de ce type).
-    LIGNES = %w[A2M_FAITAGE A2M_RIVE A2M_NOUE A2M_ARETIER A2M_EGOUT A2M_RIGOLE A2M_DOUBLAGE A2M_CLOISON]
-    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON, DOUBLAGE, ISOLANT_DOUBLAGE]
+    LIGNES = %w[A2M_FAITAGE A2M_RIVE A2M_NOUE A2M_ARETIER A2M_EGOUT A2M_RIGOLE A2M_DOUBLAGE A2M_CLOISON
+                A2M_CLOTURE A2M_RESEAU_EAU A2M_RESEAU_EU A2M_RESEAU_EP A2M_RESEAU_ELEC]
+    ELEC = 'A2M_ELEC'
+    PISCINE = 'A2M_PISCINE'
+    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON, DOUBLAGE, ISOLANT_DOUBLAGE, SEMELLE, ELEC, PISCINE]
 
     POUCE2_EN_M2 = 0.0254 * 0.0254
 
@@ -249,6 +253,7 @@ module A2M
       surf = Hash.new(0.0); perim = Hash.new(0.0); lin = Hash.new(0.0)
       toits = Hash.new { |h, k| h[k] = { vraie: 0.0, sol: 0.0, pente: 0.0 } }
       pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []
+      sem = { l: 0.0, aire: 0.0, h: 0.0 }; elecs = []; piscines = []
       doub = { plaque: { l: 0.0, aire: 0.0, h: 0.0 }, isolant: { l: 0.0, aire: 0.0, h: 0.0 } }
 
       # Surfaces horizontales par groupe : dessus et dessous comptés séparément, on garde le plus grand (une dalle n'est comptée qu'une fois)
@@ -266,13 +271,22 @@ module A2M
             res['murs'].concat(ms)
           elsif MENUISERIES[tag]
             menus << { 'type' => MENUISERIES[tag], 'l' => (b[:l] * 100).round, 'h' => (b[:h] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'nom' => nom,
-                       'piece' => e.get_attribute('a2m', 'piece') }
+                       'piece' => e.get_attribute('a2m', 'piece'), 'choix' => (JSON.parse(e.get_attribute('a2m', 'me', '{}')) rescue {}) }
           elsif tag == PORTE_INT
             portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
           elsif tag == CLOISON
             # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte
             mc = murs_de(e, tr, 'cloison', nom)
             cloisons += mc.empty? ? b[:l] : mc.sum { |x| x['longueur'] }
+          elsif tag == ELEC
+            # Appareillage : compté par pièce (pièce choisie, sinon la plus proche)
+            app = e.get_attribute('a2m', 'app')
+            elecs << { 'app' => app, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') } if app
+          elsif tag == PISCINE
+            piscines << { 'nom' => nom, 'volume' => (e.manifold? ? e.volume * 0.0254**3 : nil), 'l' => b[:l], 'e' => b[:e] }
+          elsif tag == SEMELLE
+            # Semelles filantes : linéaire à l'axe, largeur (épaisseur de l'empreinte), hauteur
+            murs_de(e, tr, 'semelle', nom).each { |d| sem[:l] += d['longueur']; sem[:aire] += d['longueur'] * d['epaisseur']; sem[:h] = [sem[:h], d['hauteur']].max }
           elsif tag == DOUBLAGE || tag == ISOLANT_DOUBLAGE
             # Mesuré comme un mur : linéaire à l'axe (la face côté pièce pour la plaque), hauteur, épaisseur
             murs_de(e, tr, 'doublage', nom).each do |d|
@@ -319,11 +333,18 @@ module A2M
       hz.each { |(tag, _c), v| surf[tag] += [v[:haut], v[:bas]].max }
       # Terrain, fondations, planchers
       res['terrain']['surface'] = r2(surf['A2M_TERRAIN']) if surf['A2M_TERRAIN'] > 0
-      res['terrain']['perimetre'] = r2(perim['A2M_TERRAIN']) if perim['A2M_TERRAIN'] > 0
+      # Périmètre du terrain (sert à la clôture) : la clôture tracée a priorité sur le contour du terrain
+      res['terrain']['perimetre'] = r2(lin['A2M_CLOTURE'] > 0 ? lin['A2M_CLOTURE'] : perim['A2M_TERRAIN']) if lin['A2M_CLOTURE'] > 0 || perim['A2M_TERRAIN'] > 0
+      { 'resEau' => 'A2M_RESEAU_EAU', 'resEu' => 'A2M_RESEAU_EU', 'resEp' => 'A2M_RESEAU_EP', 'resElec' => 'A2M_RESEAU_ELEC' }.each { |k, t| res['terrain'][k] = r2(lin[t]) if lin[t] > 0 }
       res['terrain']['decap'] = r2(surf['A2M_DECAPAGE']) if surf['A2M_DECAPAGE'] > 0
-      res['fond']['rigLin'] = r2(lin['A2M_RIGOLE']) if lin['A2M_RIGOLE'] > 0
-      res['fond']['rigLarg'] = RIGOLE_LARGEUR if RIGOLE_LARGEUR
-      res['fond']['rigHt'] = RIGOLE_HAUTEUR if RIGOLE_HAUTEUR
+      # Fouilles en rigoles : semelles A2M_SEMELLE (linéaire, largeur, hauteur), sinon lignes A2M_RIGOLE et réglages du script
+      if sem[:l] > 0
+        res['fond']['rigLin'] = r2(sem[:l]); res['fond']['rigLarg'] = r2(sem[:aire] / sem[:l]); res['fond']['rigHt'] = r2(sem[:h])
+      else
+        res['fond']['rigLin'] = r2(lin['A2M_RIGOLE']) if lin['A2M_RIGOLE'] > 0
+        res['fond']['rigLarg'] = RIGOLE_LARGEUR if RIGOLE_LARGEUR
+        res['fond']['rigHt'] = RIGOLE_HAUTEUR if RIGOLE_HAUTEUR
+      end
       res['plancher']['brut'] = r2(surf['A2M_DALLAGE']) if surf['A2M_DALLAGE'] > 0
       res['plancher']['surface'] = r2(surf['A2M_PLANCHER_ETAGE']) if surf['A2M_PLANCHER_ETAGE'] > 0
 
@@ -356,6 +377,12 @@ module A2M
       res['infos'] = {}
       res['infos']['isolant_sol'] = r2(surf['A2M_ISOLANT_SOL']) if surf['A2M_ISOLANT_SOL'] > 0
       res['infos']['chape'] = r2(surf['A2M_CHAPE']) if surf['A2M_CHAPE'] > 0
+      res['infos']['allees'] = r2(surf['A2M_ALLEE']) if surf['A2M_ALLEE'] > 0
+      unless piscines.empty?
+        res['equip'] = { 'piscine' => 'oui' }
+        v = piscines.map { |x| x['volume'] }.compact.sum
+        res['infos']['piscine'] = "#{piscines.size} piscine(s)#{v > 0 ? ", volume #{r2(v)} m³" : ''}"
+      end
       res['plat']['hauteur'] = HAUTEUR_SOUS_PLAFOND if HAUTEUR_SOUS_PLAFOND
 
       # Pièces et leurs menuiseries (la plus proche pièce reçoit la menuiserie)
@@ -377,8 +404,8 @@ module A2M
       menus.each do |mn|
         pc = par_nom.call(mn['piece']) || proche.call(mn['x'], mn['y'])
         if pc
-          ex = pc['menus'].find { |z| z['type'] == mn['type'] && z['l'] == mn['l'] && z['h'] == mn['h'] }
-          ex ? ex['nb'] += 1 : pc['menus'] << { 'type' => mn['type'], 'l' => mn['l'], 'h' => mn['h'], 'nb' => 1 }
+          ex = pc['menus'].find { |z| z['type'] == mn['type'] && z['l'] == mn['l'] && z['h'] == mn['h'] && z['choix'] == mn['choix'] }
+          ex ? ex['nb'] += 1 : pc['menus'] << { 'type' => mn['type'], 'l' => mn['l'], 'h' => mn['h'], 'nb' => 1, 'choix' => mn['choix'] }
         else
           res['alertes'] << "Menuiserie #{mn['nom']} (#{mn['l']} × #{mn['h']} cm) : aucune pièce A2M_PIECE à moins de #{DISTANCE_PIECE_MAX} m"
         end
@@ -390,6 +417,15 @@ module A2M
           ex ? ex['nb'] += 1 : pc['portesInt'] << { 'l' => pt['l'], 'nb' => 1 }
         else
           res['alertes'] << "Porte intérieure (#{pt['l']} cm) : aucune pièce à moins de #{DISTANCE_PIECE_MAX} m"
+        end
+      end
+      elecs.each do |el|
+        pc = par_nom.call(el['piece']) || proche.call(el['x'], el['y'])
+        if pc
+          pc['app'] ||= Hash.new(0)
+          pc['app'][el['app']] += 1
+        else
+          res['alertes'] << "Appareillage (#{el['app']}) : aucune pièce à moins de #{DISTANCE_PIECE_MAX} m"
         end
       end
       res['pieces'] = liste.map { |pc| pc.reject { |k, _| k == :poly } }

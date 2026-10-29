@@ -1,6 +1,7 @@
 # encoding: UTF-8
 # Métré Atelier 2M : percement des ouvertures dans les murs (et les couches de doublage derrière)
 require 'sketchup.rb'
+require 'json'
 
 module A2M
   module Ouvertures
@@ -16,6 +17,36 @@ module A2M
     class SensInverse < StandardError; end
 
     AUTO = '(automatique : la pièce la plus proche)'
+    A_CHOISIR = '— à choisir —'
+    # Choix des menuiseries extérieures, mêmes codes que le configurateur (rien n'est choisi d'office)
+    CHOIX_ME = { 'mat' => [['pvc', "PVC"], ['alu', "Aluminium"], ['bois', "Bois"], ['mixte', "Mixte bois/aluminium"], ['acier', "Acier"]], 'vantaux' => [['1', "1 vantail"], ['2', "2 vantaux"], ['3', "3 vantaux"], ['4', "4 vantaux"]], 'ouvrant' => [['francaise', "Ouvrant à la française"], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', "Oscillo-battant"], ['abattant', "Abattant"], ['coulissante', "Coulissante"], ['galandage', "Coulissante à galandage"], ['translation', "Coulissante à translation"], ['fixe', "Châssis fixe"], ['guillotine', "Ouvrant à guillotine"], ['basculant', "Ouvrant basculant"], ['pivotant', "Ouvrant pivotant"]], 'vitrage' => [['simple', "Simple vitrage"], ['double', "Double vitrage standard"], ['vir', "Double vitrage VIR"], ['triple', "Triple vitrage"]], 'ferm' => [['vr-manuel', "Volet roulant manuel"], ['vr-motor', "Volet roulant motorisé"], ['vr-solaire', "Volet roulant solaire"], ['vb-pvc', "Volet battant ou coulissant PVC"], ['vb-alu', "Volet battant ou coulissant alu"], ['vb-bois', "Volet battant ou coulissant bois"], ['brise', "Brise-soleil orientable"], ['screen', "Store screen extérieur"], ['banne', "Store banne"]] }
+
+    def self.choix_menuiserie(tag)
+      return nil unless %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE].include?(tag)
+      porte = tag == 'A2M_PORTE_ENTREE'
+      champs = porte ? %w[mat vantaux] : %w[mat vantaux ouvrant vitrage ferm]
+      libs = { 'mat' => 'Matériau', 'vantaux' => 'Nombre de vantaux', 'ouvrant' => 'Type d\'ouvrant', 'vitrage' => 'Vitrage', 'ferm' => 'Fermeture (volet, store…)' }
+      prec = @r[:me] || {}
+      listes = champs.map { |c| ([A_CHOISIR] + (c == 'ferm' ? ['Aucune'] : []) + CHOIX_ME[c].map(&:last)).join('|') }
+      defauts = champs.map { |c| prec[c] || A_CHOISIR }
+      rep = UI.inputbox(champs.map { |c| libs[c] }, defauts, listes, 'Menuiserie : choix pour le configurateur (facultatif)')
+      return {} unless rep
+      @r[:me] = Hash[champs.zip(rep)]
+      res = {}
+      champs.each_with_index do |c, i|
+        v = rep[i]
+        next if v == A_CHOISIR
+        if c == 'ferm'
+          res['volet'] = v == 'Aucune' ? 'non' : 'oui'
+          code = CHOIX_ME['ferm'].find { |_, l| l == v }
+          res['ferm'] = code[0] if code
+        else
+          code = CHOIX_ME[c].find { |_, l| l == v }
+          res[c] = code[0] if code
+        end
+      end
+      res
+    end
     # Noms des pièces déjà présentes dans le modèle (groupes balisés A2M_PIECE)
     def self.pieces_du_modele
       noms = []
@@ -55,7 +86,8 @@ module A2M
       @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
       piece = rep[7].to_s == AUTO ? nil : rep[7].to_s
       @r[:piece] = rep[7].to_s
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui, piece: piece }
+      me = rep[5] == 'Oui' ? choix_menuiserie(type[1]) : nil
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: rep[5] == 'Oui' && type[1], appui: appui, piece: piece, me: me }
     end
 
     def self.lancer
@@ -134,8 +166,21 @@ module A2M
         if p[:res]
           r = ents.add_group
           c1 = b.offset(n.reverse, 5.cm)
-          fr = r.entities.add_face([c1, c1.offset(u, l), c1.offset(u, l).offset(Z_AXIS, h), c1.offset(Z_AXIS, h)])
-          fr.pushpull(-5.cm) rescue nil
+          cadre = 5.cm
+          ext = [c1, c1.offset(u, l), c1.offset(u, l).offset(Z_AXIS, h), c1.offset(Z_AXIS, h)]
+          i0 = c1.offset(u, cadre).offset(Z_AXIS, cadre)
+          int = [i0, i0.offset(u, l - 2 * cadre), i0.offset(u, l - 2 * cadre).offset(Z_AXIS, h - 2 * cadre), i0.offset(Z_AXIS, h - 2 * cadre)]
+          fr = r.entities.add_face(ext)
+          vit = r.entities.add_face(int)
+          fr = r.entities.grep(Sketchup::Face).max_by(&:area) if fr.nil? || !fr.valid?
+          # Cadre en épaisseur ; vitrage au milieu ; un montant par vantail supplémentaire
+          (r.entities.grep(Sketchup::Face).find { |x| x != vit && x.valid? } || fr).pushpull(-7.cm) rescue nil
+          nv = ((p[:me] || {})['vantaux'] || '1').to_i
+          (1...nv).each do |k|
+            x0 = i0.offset(u, (l - 2 * cadre) * k / nv)
+            r.entities.add_line(x0, x0.offset(Z_AXIS, h - 2 * cadre))
+          end
+          r.set_attribute('a2m', 'me', JSON.generate(p[:me])) if p[:me] && !p[:me].empty?
           tagm, _ = A2M::Balises.balise(model, p[:type][1], (A2M::Balises::LISTE.find { |x, _, _| x == p[:type][1] } || [])[2])
           r.layer = tagm
           r.name = "#{p[:type][0]} #{p[:l].round} × #{p[:h].round}#{p[:piece] ? ' – ' + p[:piece] : ''}"
