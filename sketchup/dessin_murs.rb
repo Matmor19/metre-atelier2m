@@ -79,8 +79,9 @@ module A2M
     #  - mur composé : le tracé est la face extérieure de la 1re couche, les couches s'empilent du côté choisi
     def self.couches_de(p)
       if p[:couches]
-        s = 0.0
-        sg = p[:cote] == 1 ? 1.0 : -1.0   # 1 : couches à gauche du tracé ; 0 : à droite
+        # 0 : couches à droite du tracé ; 1 : à gauche ; 2 : tracé dans l'axe de l'épaisseur totale (couches de gauche à droite)
+        sg = p[:cote] == 1 ? 1.0 : -1.0
+        s = p[:cote] == 2 ? -p[:couches].sum { |c| (c[:e] / 100.0).m } / 2.0 : 0.0
         p[:couches].map do |c|
           e = (c[:e] / 100.0).m
           d1, d2 = sg * s, sg * (s + e)
@@ -134,12 +135,31 @@ module A2M
     end
 
     # ---- Mur composé : nombre de couches, puis type, épaisseur et hauteur de chacune ----
+    COTES_COMPOSE = ['à droite du tracé', 'à gauche du tracé', 'dans l\'axe du tracé']
+    TAB = 9   # touche Tab : change le côté du mur par rapport au tracé
+
+    # Libellé du côté en cours (barre d'état et texte près du curseur)
+    def self.lib_cote(p)
+      p[:couches] ? "Couches #{COTES_COMPOSE[p[:cote]]}" : ['Tracé dans l\'axe du mur', 'Mur à droite du tracé', 'Mur à gauche du tracé'][p[:trace]]
+    end
+
+    # Tab : axe → à droite → à gauche (mur simple) ; à droite → à gauche → dans l'axe (mur composé). Le choix est retenu.
+    def self.cote_suivant(p)
+      if p[:couches]
+        p[:cote] = (p[:cote] + 1) % 3
+        (@reglages[:compose] ||= {})[:cote] = COTES_COMPOSE[p[:cote]]
+      else
+        p[:trace] = (p[:trace] + 1) % 3
+        @reglages[:trace] = TRACES[p[:trace]]
+      end
+    end
+
     COMPO_DEFAUT = [['Mur périphérique', 20.0, 2.50], ['Doublage : isolant', 14.0, 2.50], ['Doublage : plaque de plâtre', 1.3, 2.50]]
     def self.lancer_compose
       r = @reglages[:compose] || {}
       rep = UI.inputbox(['Nombre de couches (de l\'extérieur vers l\'intérieur)', 'Le tracé est la face extérieure ; les couches partent'],
                         [(r[:n] || 3).to_s, r[:cote] || 'à droite du tracé'],
-                        ['1|2|3|4|5', 'à droite du tracé|à gauche du tracé'], 'Mur composé (Métré Atelier 2M)')
+                        ['1|2|3|4|5', COTES_COMPOSE.join('|')], 'Mur composé (Métré Atelier 2M)')
       return unless rep
       n = rep[0].to_i
       prec = r[:couches] || []
@@ -159,7 +179,7 @@ module A2M
         return UI.messagebox("Couche #{i + 1} : l'épaisseur et la hauteur doivent être supérieures à 0.") if e <= 0 || h <= 0
         couches << { type: type, e: e, h: h }
       end
-      cote = rep[1] == 'à gauche du tracé' ? 1 : 0
+      cote = COTES_COMPOSE.index(rep[1]) || 0
       @reglages[:compose] = { n: n, cote: rep[1], couches: couches.map { |c| [c[:type][0], c[:e], c[:h]] } }
       tot = couches.sum { |c| c[:e] }
       p = { couches: couches, cote: cote, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: tot.round(1) }
@@ -177,8 +197,8 @@ module A2M
       end
 
       def maj_statut
-        lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm, couches #{@p[:cote] == 1 ? 'à gauche' : 'à droite'} du tracé)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
-        Sketchup.status_text = "#{lib}. Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
+        lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
+        Sketchup.status_text = "#{lib}, #{A2M::DessinMurs.lib_cote(@p).downcase} (Tab pour changer). Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
                                'Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
@@ -192,7 +212,16 @@ module A2M
         view.invalidate
       end
 
-      def onKeyDown(key, rpt, _flags, view) @pt.touche_bas(key, rpt, view, @pts) end
+      def onKeyDown(key, rpt, _flags, view)
+        if key == A2M::DessinMurs::TAB
+          return true if rpt > 1
+          A2M::DessinMurs.cote_suivant(@p)
+          maj_statut
+          view.invalidate
+          return true
+        end
+        @pt.touche_bas(key, rpt, view, @pts)
+      end
       def onKeyUp(key, _rpt, _flags, view) @pt.touche_haut(key, view) end
 
       def ajouter(pt, view, ferme = false)
@@ -243,6 +272,11 @@ module A2M
 
       def draw(view)
         @pt.dessiner(view, @pts, 'orange')
+        # Côté en cours, écrit près du curseur
+        if @pt.pos
+          sp = view.screen_coords(@pt.pos)
+          view.draw_text(Geom::Point3d.new(sp.x + 18, sp.y + 14, 0), "#{A2M::DessinMurs.lib_cote(@p)}  (Tab)", color: 'DimGray', size: 10) rescue nil
+        end
         return if @pts.empty? || @pt.pos.nil?
         chemin = @pts + [@pt.pos]
         # Aperçu de l'épaisseur
