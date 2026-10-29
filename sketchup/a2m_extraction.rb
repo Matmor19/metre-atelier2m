@@ -267,7 +267,9 @@ module A2M
           elsif tag == PORTE_INT
             portes << { 'l' => (b[:l] * 100).round, 'x' => b[:cx], 'y' => b[:cy] }
           elsif tag == CLOISON
-            cloisons += b[:l]
+            # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte
+            mc = murs_de(e, tr, 'cloison', nom)
+            cloisons += mc.empty? ? b[:l] : mc.sum { |x| x['longueur'] }
           elsif tag == DOUBLAGE || tag == ISOLANT_DOUBLAGE
             # Mesuré comme un mur : linéaire à l'axe (la face côté pièce pour la plaque), hauteur, épaisseur
             murs_de(e, tr, 'doublage', nom).each do |d|
