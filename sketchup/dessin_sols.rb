@@ -82,34 +82,36 @@ module A2M
 
     # Outil : clics successifs sur le contour ; clic sur le premier point ou Entrée pour fermer ; Échap pour annuler
     class Outil
-      def initialize(p) @p = p; @pts = []; @ip = Sketchup::InputPoint.new; @ip0 = Sketchup::InputPoint.new end
+      def initialize(p) @p = p; @pts = []; @pt = A2M::Pointeur.new end
       def activate() statut end
       def resume(view) statut; view.invalidate end
       def deactivate(view) view.invalidate end
       def statut
-        Sketchup.status_text = "#{@p[:type][0]}#{@p[:nom] ? ' (' + @p[:nom] + ')' : ''} — ép. #{@p[:e]} cm#{(@p[:alt] || 0).to_f > 0 ? ", posé à #{@p[:alt]} m au-dessus du tracé" : ''}. Cliquez le contour (au sol) ; " \
-                               'tapez une longueur puis Entrée ; clic sur le 1er point ou Entrée pour fermer ; Échap pour annuler.'
+        Sketchup.status_text = "#{@p[:type][0]}#{@p[:nom] ? ' (' + @p[:nom] + ')' : ''} — ép. #{@p[:e]} cm#{(@p[:alt] || 0).to_f > 0 ? ", posé à #{@p[:alt]} m au-dessus du tracé" : ''}. Cliquez le contour (au sol, accrochages SketchUp) ; " \
+                               'tapez une longueur puis Entrée ; Maj = bloquer la direction, flèches droite/gauche = axes rouge/vert ; clic sur le 1er point (carré vert) ou Entrée pour fermer ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
       def sol(pt) Geom::Point3d.new(pt.x, pt.y, @pts.empty? ? pt.z : @pts[0].z) end
       def onMouseMove(_f, x, y, view)
-        @pts.empty? ? @ip.pick(view, x, y) : @ip.pick(view, x, y, @ip0)
-        Sketchup.vcb_value = @pts[-1].distance(sol(@ip.position)).to_l.to_s if @pts.any?
+        q = @pt.bouger(view, x, y, @pts)
+        Sketchup.vcb_value = @pts[-1].distance(q).to_l.to_s if @pts.any?
         view.invalidate
       end
-      def ajouter(pt, view)
+      def onKeyDown(key, rpt, _f, view) @pt.touche_bas(key, rpt, view, @pts) end
+      def onKeyUp(key, _rpt, _f, view) @pt.touche_haut(key, view) end
+      def ajouter(pt, view, ferme = false)
         pt = sol(pt)
-        if @pts.size >= 3 && pt.distance(@pts[0]) < 0.4
+        if @pts.size >= 3 && (ferme || pt.distance(@pts[0]) < 0.4)
           fermer(view)
           return
         end
         return if @pts.any? && pt.distance(@pts[-1]) < 0.04
-        @pts << pt; @ip0.copy!(@ip); view.invalidate
+        @pts << pt; @pt.valider; view.invalidate
       end
       def fermer(view)
         if @pts.size >= 3
           A2M::DessinSols.construire(@pts.dup, @p)
-          @pts.clear; @ip0.clear
+          @pts.clear; @pt.vider(Sketchup.active_model.active_view)
           # Revêtement : une pièce par contour ; on redemande le nom pour la pièce suivante
           if @p[:nom]
             rp = UI.inputbox(['Nom de la pièce suivante (vide pour arrêter)'], [''], 'Revêtement de sol')
@@ -118,34 +120,33 @@ module A2M
         end
         statut; view.invalidate
       end
-      def onLButtonDown(_f, _x, _y, view) ajouter(@ip.position, view) end
+      def onLButtonDown(_f, _x, _y, view) ajouter(@pt.pos || @pt.ip.position, view, @pt.ferme?) end
       def onReturn(view) fermer(view) end
       def onUserText(text, view)
         l = text.to_l rescue nil
-        return UI.beep unless l && @pts.any?
-        dir = sol(@ip.position) - @pts[-1]
+        return UI.beep unless l && @pts.any? && @pt.pos
+        dir = @pt.pos - @pts[-1]
         return UI.beep if dir.length < 0.001
         dir.length = l
         ajouter(@pts[-1].offset(dir), view)
       end
-      def onCancel(_r, view) @pts.empty? ? Sketchup.active_model.select_tool(nil) : (@pts.clear; @ip0.clear; view.invalidate) end
+      def onCancel(_r, view) @pts.empty? ? Sketchup.active_model.select_tool(nil) : (@pts.clear; @pt.vider(view); view.invalidate) end
       def draw(view)
-        @ip.draw(view) if @ip.display?
-        return if @pts.empty?
-        view.line_width = 2; view.drawing_color = 'green'
-        view.draw(GL_LINE_STRIP, @pts + [sol(@ip.position)])
-        view.line_width = 1; view.drawing_color = 'gray'
-        view.draw(GL_LINES, [sol(@ip.position), @pts[0]]) if @pts.size >= 2
+        @pt.dessiner(view, @pts, 'green')
+        return if @pts.empty? || @pt.pos.nil?
+        view.line_width = 1; view.drawing_color = 'gray'; view.line_stipple = '-'
+        view.draw(GL_LINES, [@pt.pos, @pts[0]]) if @pts.size >= 2 && !@pt.ferme?
+        view.line_stipple = ''
         # Aperçu à la hauteur de pose
         if (@p[:alt] || 0).to_f > 0
           dz = Geom::Vector3d.new(0, 0, @p[:alt].to_f.m)
           view.line_stipple = '-'; view.drawing_color = 'blue'
-          view.draw(GL_LINE_STRIP, (@pts + [sol(@ip.position)]).map { |q| q.offset(dz) })
+          view.draw(GL_LINE_STRIP, (@pts + [@pt.pos]).map { |q| q.offset(dz) })
           view.line_stipple = ''
         end
       end
       def getExtents
-        bb = Geom::BoundingBox.new; @pts.each { |q| bb.add(q) }; bb.add(@ip.position) if @ip.valid?; bb
+        bb = Geom::BoundingBox.new; @pts.each { |q| bb.add(q) }; bb.add(@pt.pos) if @pt.pos; bb
       end
     end
   end

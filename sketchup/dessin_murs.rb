@@ -169,7 +169,7 @@ module A2M
     # ---- L'outil : clics successifs ; Entrée ou double-clic termine ; clic sur le premier point ferme le tour ----
     class Outil
       def initialize(p)
-        @p = p; @pts = []; @ip = Sketchup::InputPoint.new; @ip0 = Sketchup::InputPoint.new
+        @p = p; @pts = []; @pt = A2M::Pointeur.new
       end
 
       def activate
@@ -178,8 +178,8 @@ module A2M
 
       def maj_statut
         lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm, couches #{@p[:cote] == 1 ? 'à gauche' : 'à droite'} du tracé)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
-        Sketchup.status_text = "#{lib}. Cliquez les points du tracé ; " \
-                               'tapez une longueur puis Entrée ; double-clic ou Entrée pour finir ; clic sur le 1er point pour fermer ; Échap pour annuler.'
+        Sketchup.status_text = "#{lib}. Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
+                               'Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
 
@@ -187,33 +187,28 @@ module A2M
       def resume(view) maj_statut; view.invalidate end
 
       def onMouseMove(_flags, x, y, view)
-        @pts.empty? ? @ip.pick(view, x, y) : @ip.pick(view, x, y, @ip0)
-        if @pts.any?
-          d = @pts[-1].distance(sol(@ip.position))
-          Sketchup.vcb_value = d.to_l.to_s
-        end
+        q = @pt.bouger(view, x, y, @pts)
+        Sketchup.vcb_value = @pts[-1].distance(q).to_l.to_s if @pts.any?
         view.invalidate
       end
 
-      def sol(pt)
-        z = @pts.empty? ? pt.z : @pts[0].z
-        Geom::Point3d.new(pt.x, pt.y, z)
-      end
+      def onKeyDown(key, rpt, _flags, view) @pt.touche_bas(key, rpt, view, @pts) end
+      def onKeyUp(key, _rpt, _flags, view) @pt.touche_haut(key, view) end
 
-      def ajouter(pt, view)
-        pt = sol(pt)
-        if @pts.size >= 3 && pt.distance(@pts[0]) < 0.4   # environ 1 cm : retour au premier point = tour fermé
+      def ajouter(pt, view, ferme = false)
+        pt = Geom::Point3d.new(pt.x, pt.y, @pts.empty? ? pt.z : @pts[0].z)
+        if @pts.size >= 3 && (ferme || pt.distance(@pts[0]) < 0.4)   # retour au premier point = tour fermé
           A2M::DessinMurs.construire(@pts.dup, true, @p)
           return reset(view)
         end
         return if @pts.any? && pt.distance(@pts[-1]) < 0.04
         @pts << pt
-        @ip0.copy!(@ip)
+        @pt.valider
         view.invalidate
       end
 
       def onLButtonDown(_flags, _x, _y, view)
-        ajouter(@ip.position, view)
+        ajouter(@pt.pos || @pt.ip.position, view, @pt.ferme?)
       end
 
       def onLButtonDoubleClick(_flags, _x, _y, view)
@@ -224,8 +219,8 @@ module A2M
 
       def onUserText(text, view)
         l = text.to_l rescue nil
-        return UI.beep unless l && @pts.any?
-        dir = sol(@ip.position) - @pts[-1]
+        return UI.beep unless l && @pts.any? && @pt.pos
+        dir = @pt.pos - @pts[-1]
         return UI.beep if dir.length < 0.001
         dir.length = l
         ajouter(@pts[-1].offset(dir), view)
@@ -239,7 +234,7 @@ module A2M
       end
 
       def reset(view)
-        @pts.clear; @ip0.clear; maj_statut; view.invalidate
+        @pts.clear; @pt.vider(view); maj_statut; view.invalidate
       end
 
       def onCancel(_reason, view)
@@ -247,17 +242,17 @@ module A2M
       end
 
       def draw(view)
-        @ip.draw(view) if @ip.display?
-        return if @pts.empty?
-        chemin = @pts + [sol(@ip.position)]
-        view.line_width = 2
-        view.drawing_color = 'orange'
-        view.draw(GL_LINE_STRIP, chemin)
+        @pt.dessiner(view, @pts, 'orange')
+        return if @pts.empty? || @pt.pos.nil?
+        chemin = @pts + [@pt.pos]
         # Aperçu de l'épaisseur
-        if chemin.size >= 2 && chemin[-1].distance(chemin[-2]) > 0.01
+        if chemin[-1].distance(chemin[-2]) > 0.01
           cs = A2M::DessinMurs.couches_de(@p)
           dg = cs.map { |c| c[2] }.max; dd = cs.map { |c| c[3] }.min
-          a = A2M::DessinMurs.decale(chemin, dg, false); b = A2M::DessinMurs.decale(chemin, dd, false)
+          ferme = @pt.ferme?
+          ch = ferme ? @pts : chemin
+          a = A2M::DessinMurs.decale(ch, dg, ferme); b = A2M::DessinMurs.decale(ch, dd, ferme)
+          a << a[0] if ferme; b << b[0] if ferme
           z = chemin[0].z
           view.line_width = 1
           view.drawing_color = 'gray'
@@ -269,7 +264,7 @@ module A2M
       def getExtents
         bb = Geom::BoundingBox.new
         @pts.each { |q| bb.add(q) }
-        bb.add(@ip.position) if @ip.valid?
+        bb.add(@pt.pos) if @pt.pos
         bb
       end
     end

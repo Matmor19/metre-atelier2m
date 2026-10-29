@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises pointage bibliotheque dessin_murs dessin_sols ouvertures plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -72,6 +72,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
     z.write(os.path.join(ici, 'bibliotheque.rb'), 'a2m_metre/bibliotheque.rb')
+    z.write(os.path.join(ici, 'pointage.rb'), 'a2m_metre/pointage.rb')
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
