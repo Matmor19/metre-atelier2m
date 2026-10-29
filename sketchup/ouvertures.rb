@@ -207,9 +207,14 @@ module A2M
         f.pushpull(3.m)
         nom = g.name; tag = g.layer
         vol = g.volume rescue -1
+        bb0 = g.bounds
         res = @inverse ? g.subtract(cut) : cut.subtract(g)
         if res
-          raise SensInverse if vol > 0 && (res.volume rescue 0) > vol + 1
+          # Le mur percé perd du volume et reste dans son encombrement (sinon c'est la boîte de découpe qui a été gardée)
+          bb1 = res.bounds
+          dehors = bb1.min.x < bb0.min.x - 0.1 || bb1.min.y < bb0.min.y - 0.1 || bb1.min.z < bb0.min.z - 0.1 ||
+                   bb1.max.x > bb0.max.x + 0.1 || bb1.max.y > bb0.max.y + 0.1 || bb1.max.z > bb0.max.z + 0.1
+          raise SensInverse if dehors || (vol > 0 && (res.volume rescue 0) > vol + 1)
           res.name = nom; res.layer = tag
           att.each { |k, v| res.set_attribute('a2m', k, v) }
           trous = (JSON.parse(att['trous'] || '[]') rescue [])

@@ -45,6 +45,7 @@ unless file_loaded?(__FILE__)
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
     sm.add_item('Paramétrer pour la bibliothèque…') { A2M::Bibliotheque.parametrer }
+    sm.add_item('Recaler l\'ouverture sur la menuiserie') { A2M::Suivi.recaler }
     sm.add_item('Créer la toiture sur ces murs…') { A2M::Toiture.lancer }
     sm.add_item('Créer les semelles sous ces murs…') { A2M::Fondations.lancer }
     sm.add_item('Pièces automatiques avec ces murs…') { A2M::PiecesAuto.lancer }

@@ -7,6 +7,7 @@
 # chaque mur garde la liste de ses trous (a2m/trous) : rien n'est rebouché deux fois, même après une annulation.
 require 'sketchup.rb'
 require 'json'
+require 'fileutils'
 
 module A2M
   module Suivi
@@ -24,8 +25,27 @@ module A2M
 
     class ObsAjout < Sketchup::EntitiesObserver
       def onElementAdded(_ents, e)
-        A2M::Suivi.plus_tard(e, :ajout) if (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.valid? && e.get_attribute('a2m', 'ouv')
+        A2M::Suivi.plus_tard(e, :ajout) if A2M::Suivi.suivie?(e)
       end
+      # Déplacement : selon les versions de SketchUp, signalé ici plutôt que par l'observateur de la menuiserie
+      def onElementModified(_ents, e)
+        A2M::Suivi.plus_tard(e, :change) if A2M::Suivi.suivie?(e)
+      end
+    end
+
+    def self.suivie?(e)
+      (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.valid? && !e.get_attribute('a2m', 'ouv').nil?
+    rescue StandardError
+      false
+    end
+
+    # ---- Journal (Documents\Atelier 2M\journal_ouvertures.txt) : ce que le suivi a fait, pour comprendre un souci ----
+    def self.journal(txt)
+      f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'journal_ouvertures.txt')
+      FileUtils.mkdir_p(File.dirname(f))
+      File.open(f, 'a:UTF-8') { |io| io.puts "#{Time.now.strftime('%d/%m %H:%M:%S')}  #{txt}" }
+    rescue StandardError
+      nil
     end
 
     # Les changements notés sont traités une fois l'action de l'utilisateur terminée (déplacement lâché, suppression validée)
@@ -83,6 +103,26 @@ module A2M
 
     def self.t_tab(t) t.to_a.map { |v| v.to_f.round(4) } end
 
+    # Commande de secours : reboucher puis repercer à la place actuelle de la menuiserie sélectionnée
+    def self.recaler
+      model = Sketchup.active_model
+      sel = model.selection.to_a.select { |e| suivie?(e) }
+      return UI.messagebox('Sélectionnez une ou plusieurs menuiseries posées avec l\'outil Ouverture (version 2.4 ou plus).') if sel.empty?
+      sel.each do |r|
+        d = donnees(r)
+        journal("recaler « #{r.name} » (#{d['id']})")
+        operation(model, 'Recaler l\'ouverture') do
+          reboucher(model, d)
+          recouper(model, r, d)
+        end
+        attacher(r)
+      end
+      Sketchup.status_text = "#{sel.size} ouverture(s) recalée(s) sur leur menuiserie."
+    rescue StandardError => ex
+      journal("ERREUR recaler : #{ex.message}")
+      UI.messagebox("Recalage impossible (#{ex.message}).")
+    end
+
     # Après une création d'ouverture (dans l'opération de perçage)
     def self.lier(r, o, p, id, couches, empreinte, genre)
       inv = r.transformation.inverse
@@ -97,6 +137,7 @@ module A2M
     # ---- Traitement différé (on ne modifie jamais le modèle pendant un observateur) ----
     def self.plus_tard(e, quoi)
       return if @occupe
+      return if quoi == :change && @attente[e] == :ajout
       @attente[e] = quoi unless @attente[e] == :efface
     end
 
@@ -120,7 +161,8 @@ module A2M
           when :ajout then ajout(model, e) if e.valid?
           end
         rescue StandardError => ex
-          Sketchup.status_text = "Ouverture suivie : #{ex.message}"
+          journal("ERREUR #{quoi} : #{ex.class} #{ex.message} — #{ex.backtrace.to_a.first(3).join(' | ')}")
+          UI.messagebox("L'ouverture n'a pas pu suivre la menuiserie (#{ex.message}).\nRien n'a été modifié. Clic droit sur la menuiserie > ◆ Métré Atelier 2M > Recaler l'ouverture.")
         end
       end
     end
@@ -151,6 +193,7 @@ module A2M
       return unless d
       @cache[r] = d
       return if t_tab(r.transformation).zip(d['t']).all? { |a, b| (a - b).abs < 0.001 }   # pas bougé (attribut, balise, annulation…)
+      journal("déplacement de « #{r.name} » (#{d['id']}) : #{murs_avec(model, d).size} mur(s) à reboucher")
       operation(model, 'L\'ouverture suit la menuiserie') do
         reboucher(model, d)
         recouper(model, r, d)
@@ -207,7 +250,12 @@ module A2M
         att = A2M::Ouvertures.attributs(g)
         nom = g.name; tag = g.layer; mat = g.material
         res = g.union(bloc)
-        next unless res
+        unless res
+          journal("  rebouchage impossible dans « #{g.name} » (mur non solide ?)")
+          bloc.erase! if bloc.valid?
+          raise "le mur « #{g.name} » n'a pas pu être rebouché"
+        end
+        journal("  rebouché : « #{nom} »")
         res.name = nom; res.layer = tag; res.material = mat if mat
         att.each { |k, v| res.set_attribute('a2m', k, v) }
         res.set_attribute('a2m', 'trous', JSON.generate(trous(res) - [d['id']]))
@@ -262,6 +310,8 @@ module A2M
       o = { bas: bas, u: u, n: n, centre: bas.offset(u, l / 2.0).offset(Z_AXIS, h / 2.0) }
       p = { l: pr['l'], h: pr['h'], n: pr['n'], appui: pr['appui'], type: [pr['lib'], pr['tag']] }
       dec = A2M::Ouvertures.decouper(o, p, d['id'], model)
+      journal(dec ? "  repercé dans #{dec[:nb]} couche(s), profondeur #{(dec[:prof].to_f * 2.54).round(1)} cm#{dec[:echecs].any? ? ', échecs : ' + dec[:echecs].join(', ') : ''}" : '  aucun mur trouvé à la nouvelle place')
+      raise "perçage impossible dans : #{dec[:echecs].join(', ')}" if dec && dec[:echecs].any?
       if dec
         # Face intérieure au nu intérieur de la dernière couche percée
         defn = r.respond_to?(:definition) ? r.definition : r.entities.parent
