@@ -116,8 +116,11 @@ module A2M
         return nil
       end
       pose = rep[5] != RES_AUCUNE
+      # Composant dynamique : ses autres réglages (épaisseurs, nombre de vantaux, options…) choisis pour cette ouverture
+      opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
+      return nil if opts.nil?
       me = pose ? choix_menuiserie(type[1], obj && obj['choix']) : nil
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, appui: appui, piece: piece, me: me }
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, opts: opts, appui: appui, piece: piece, me: me }
     end
 
     def self.lancer
@@ -242,7 +245,7 @@ module A2M
         if p[:res] && p[:obj]
           ur = Z_AXIS.cross(n).normalize            # de gauche à droite, vu de l'extérieur
           org = u.dot(ur) > 0 ? b : b.offset(u, l)
-          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse, ->(_ep) { 0 }, model)
+          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse, ->(_ep) { 0 }, model, p[:opts])
           alerte = A2M::Bibliotheque.alerte!
         elsif p[:res]
           # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré

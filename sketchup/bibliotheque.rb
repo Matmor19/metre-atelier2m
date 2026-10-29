@@ -6,6 +6,7 @@
 # les points situés après une ligne d'étirement glissent, ils ne sont jamais mis à l'échelle.
 require 'json'
 require 'fileutils'
+require 'uri'
 
 module A2M
   # ---- Calcul pur de l'étirement (sans SketchUp : testable seul) ; unités : pouces ----
@@ -436,13 +437,67 @@ module A2M
     def self.reglages_dc(h)
       h.keys.reject { |k| k.start_with?('_') }.sort.map do |k|
         acc = h["_#{k}_access"].to_s
-        next nil unless %w[TEXTBOX LIST].include?(acc) || %w[lenx lenz].include?(k)
+        next nil unless %w[TEXTBOX LIST CHECKBOX].include?(acc) || %w[lenx lenz].include?(k)
         lab = h["_#{k}_formlabel"].to_s
         [k, lab.empty? ? k : lab, h[k]]
       end.compact
     end
 
     UNITES_LONGUEUR = %w[DEFAULT INCHES FEET MILLIMETERS CENTIMETERS METERS]
+
+    def self.sans_html(t) t.to_s.gsub(/<[^>]*>/, '').gsub('&nbsp;', ' ').strip end
+
+    # Autres réglages du composant (hors largeur et hauteur), lus dans l'objet de la bibliothèque :
+    # [clé, libellé, valeur affichée, liste de choix (libellé => valeur) ou nil, réglage de longueur ?]
+    def self.options_dc(obj, model = Sketchup.active_model)
+      return [] unless obj && obj['mode'] == 'dynamique'
+      base = charger(obj, model)
+      h = {}
+      (base.attribute_dictionary(DC) || {}).each_pair { |k, v| h[k] = v }
+      reglages_dc(h).reject { |k, _, _| [obj['attr_l'], obj['attr_h'], 'lenx', 'leny', 'lenz'].include?(k) }.map do |k, lab, v|
+        acc = h["_#{k}_access"].to_s
+        u = h["_#{k}_units"].to_s
+        # Unité « par défaut » : longueur, sauf pour un compte (nombre, quantité…) ou une valeur non numérique
+        num = v.is_a?(Numeric) || v.to_s =~ /\A-?\d+(\.\d+)?\z/
+        longueur = (UNITES_LONGUEUR.include?(u) && u != 'DEFAULT') || (u == 'DEFAULT' && num && sans_html(lab) !~ /nombre|nb|quantit|compte|count/i)
+        choix = nil
+        if acc == 'LIST'
+          choix = h["_#{k}_options"].to_s.split('&').reject(&:empty?).map { |x| a, b = x.split('=', 2); [(URI.decode_www_form_component(a.to_s) rescue a.to_s), (URI.decode_www_form_component(b.to_s) rescue b.to_s)] }
+        elsif acc == 'CHECKBOX'
+          choix = [['Oui', 'true'], ['Non', 'false']]
+        end
+        aff = if choix then (choix.find { |_, val| val.to_s == v.to_s } || [v.to_s])[0]
+              elsif longueur then (v.to_f * 2.54).round(2).to_s
+              else v.to_s
+              end
+        [k, sans_html(lab), aff, choix, longueur]
+      end
+    end
+
+    # Fenêtre des autres réglages : valeurs de l'objet, ou celles de la dernière pose de ce même objet
+    def self.demander_options(obj, model = Sketchup.active_model)
+      opts = options_dc(obj, model)
+      return {} if opts.empty?
+      @derniers ||= {}
+      prec = @derniers[obj['fichier']] || {}
+      libs = opts.map { |_, lab, _, ch, lg| lg ? "#{lab} (cm)" : lab }
+      vals = opts.map { |k, _, aff, _, _| prec[k] || aff }
+      listes = opts.map { |_, _, _, ch, _| ch ? ch.map(&:first).join('|') : '' }
+      rep = UI.inputbox(libs, vals, listes, "#{obj['nom']} : réglages du composant")
+      return nil unless rep
+      @derniers[obj['fichier']] = Hash[opts.map(&:first).zip(rep)]
+      res = {}
+      opts.each_with_index do |(k, _, aff, ch, lg), i|
+        v = rep[i]
+        next if v.to_s == aff.to_s && !prec[k]   # inchangé : le composant garde sa valeur
+        res[k] = if ch then (ch.find { |l, _| l == v } || [nil, v])[1]
+                 elsif lg then pouces(v.to_s.tr(',', '.').to_f)
+                 elsif v.to_s =~ /\A-?\d+([.,]\d+)?\z/ then v.tr(',', '.').to_f
+                 else v
+                 end
+      end
+      res
+    end
     # Valeur d'un réglage → pouces : réglage de longueur (stocké en pouces), sinon nombre dans une unité devinée
     # en comparant à la taille réelle (cm, mm, m ou pouces)
     def self.facteur(h, k, taille)
@@ -540,10 +595,11 @@ module A2M
     end
 
     # Exemplaire à la taille voulue : composant dynamique réglé, ou objet étiré. recul : bloc qui reçoit la profondeur de l'objet
-    def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model)
+    def self.instance_pour(ents, obj, l_cm, h_cm, org, ur, nrev, recul, model = Sketchup.active_model, opts = {})
       dyn = obj['mode'] == 'dynamique'
       if dyn
         inst = ents.add_instance(charger(obj, model), Geom::Transformation.new)
+        (opts || {}).each { |k, v| inst.set_attribute(DC, k, v) }   # épaisseurs, nombre de vantaux… choisis à la pose
         unless regler_dc(inst, obj, l_cm, h_cm)
           @alerte = "#{obj['nom']} : l'extension Composants dynamiques n'a pas répondu, l'objet garde sa taille d'origine."
         end
@@ -652,7 +708,9 @@ module A2M
       model = Sketchup.active_model
       model.start_operation('Poser un objet de la bibliothèque', true)
       begin
-        inst = instance_pour(model.active_entities, obj, l, h, ORIGIN, X_AXIS, Y_AXIS, ->(_ep) { 0 }, model)
+        opts = demander_options(obj, model)
+        raise Interrupt if opts.nil?
+        inst = instance_pour(model.active_entities, obj, l, h, ORIGIN, X_AXIS, Y_AXIS, ->(_ep) { 0 }, model, opts)
         model.commit_operation
         a = alerte!
         UI.messagebox(a) if a
@@ -660,6 +718,8 @@ module A2M
         model.selection.clear
         model.selection.add(inst)
         Sketchup.send_action('selectMoveTool:')
+      rescue Interrupt
+        model.abort_operation
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox(ex.message)
