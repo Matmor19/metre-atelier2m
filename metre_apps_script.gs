@@ -18,7 +18,8 @@ var FICHIER_BIBLIO = 'bibliotheque.json';
 var FICHIER_LISTES = 'listes.json';                           // listes déroulantes du configurateur (réglages)
 var KANBAN_JSON_ID = '144ah2a5Y0rD64P4GW7wkQKRC0pUbK7JI'; // lecture seule
 var DOSSIER_CLIENTS_KANBAN = 'Kanban Atelier 2M - Clients'; // documents envoyés depuis le Kanban
-var NOM_IMAGE_PG = 'IMAGE PG';                               // image de la page de garde
+var NOM_IMAGE_PG = 'IMAGE PG';
+var VERSION_SCRIPT = '2026-10-29';                               // image de la page de garde
 
 function reponse_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
@@ -68,7 +69,8 @@ function ecrireJson_(dossier, nom, obj) {
 
 function doGet(e) {
   // Simple contrôle de présence : l'application ne lit que par POST.
-  return reponse_({ ok: true, service: 'metre-atelier2m' });
+  // Ouvrir l'adresse /exec dans le navigateur montre la version publiée : « sketchup: true » = envoi depuis SketchUp accepté
+  return reponse_({ ok: true, service: 'metre-atelier2m', version: VERSION_SCRIPT, sketchup: true });
 }
 
 function doPost(e) {
