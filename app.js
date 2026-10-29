@@ -7779,6 +7779,10 @@ function skpEtat(c, d) {
       rap.ecrit.push(`${nom} : ${pt.nb} porte(s) de passage ${dim} (mesurée ${pt.l} cm, destination à choisir)`);
     }
   }
+  // Surfaces sans case dans le configurateur : rappelées pour être reportées au métré
+  const inf = d.infos || {};
+  if (num(inf.isolant_sol) > 0) rap.verifier.push(`Isolation au sol : ${fmt(num(inf.isolant_sol))} m² (pas de case dans le configurateur, à reporter au métré)`);
+  if (num(inf.chape) > 0) rap.verifier.push(`Chape : ${fmt(num(inf.chape))} m² (pas de case dans le configurateur, à reporter au métré)`);
   return { P, pieces, pl, rap };
 }
 $('btnImportSketchup').onclick = () => { if (!courantId) { alert('Ouvrez d\'abord un chantier.'); return; } $('skpFichier').value = ''; $('skpFichier').click(); };

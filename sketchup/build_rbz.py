@@ -7,6 +7,7 @@ s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'
 s += r'''
 require File.join(File.dirname(__FILE__), 'balises')
 require File.join(File.dirname(__FILE__), 'dessin_murs')
+require File.join(File.dirname(__FILE__), 'dessin_sols')
 
 # Menus : Extensions > Métré Atelier 2M, et clic droit sur la sélection
 unless file_loaded?(__FILE__)
@@ -15,6 +16,7 @@ unless file_loaded?(__FILE__)
   menu.add_item('2. Baliser la sélection…') { A2M::Balises.baliser_selection }
   menu.add_item('3. Baliser et nommer les pièces sélectionnées…') { A2M::Balises.nommer_pieces }
   menu.add_item('Dessiner un mur, un doublage ou une cloison…') { A2M::DessinMurs.lancer }
+  menu.add_item('Dessiner une dalle, un plancher, un sol ou un plafond…') { A2M::DessinSols.lancer }
   menu.add_separator
   menu.add_item('4. Extraire pour le configurateur…') { A2M::Extraction.lancer }
   menu.add_separator
@@ -38,6 +40,13 @@ unless file_loaded?(__FILE__)
   cmd.small_icon = File.join(ico, 'mur_16.png')
   cmd.large_icon = File.join(ico, 'mur_24.png')
   tb.add_item(cmd)
+  cmd2 = UI::Command.new('Dessiner un sol ou un plafond (métré)') { A2M::DessinSols.lancer }
+  cmd2.tooltip = 'Dessiner une dalle, un plancher, un isolant de sol, une chape, un revêtement ou un plafond sur la bonne balise'
+  cmd2.status_bar_text = cmd2.tooltip
+  cmd2.menu_text = 'Sol'
+  cmd2.small_icon = File.join(ico, 'sol_16.png')
+  cmd2.large_icon = File.join(ico, 'sol_24.png')
+  tb.add_item(cmd2)
   tb.restore
   file_loaded(__FILE__)
 end
@@ -49,6 +58,8 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
+    z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     for t in (16, 24, 32):
         z.write(os.path.join(ici, f'mur_{t}.png'), f'a2m_metre/icones/mur_{t}.png')
+        z.write(os.path.join(ici, f'sol_{t}.png'), f'a2m_metre/icones/sol_{t}.png')
 print('ok', dest)

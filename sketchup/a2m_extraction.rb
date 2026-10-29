@@ -31,7 +31,7 @@ module A2M
     DOUBLAGE = 'A2M_DOUBLAGE'
     ISOLANT_DOUBLAGE = 'A2M_ISOLANT_DOUBLAGE'
     # Faces : surface (et périmètre pour le terrain et les pièces)
-    FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
+    FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_ISOLANT_SOL A2M_CHAPE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
     # Arêtes (lignes) : linéaire. Faîtage, rive, noue, arêtier et égout sont reconnus tout seuls sur les pans A2M_TOITURE ;
     # ne baliser une ligne à la main que pour forcer un type (elle remplace alors le calcul automatique de ce type).
     LIGNES = %w[A2M_FAITAGE A2M_RIVE A2M_NOUE A2M_ARETIER A2M_EGOUT A2M_RIGOLE A2M_DOUBLAGE A2M_CLOISON]
@@ -51,7 +51,7 @@ module A2M
     end
 
     # Parcourt tout le modèle avec les transformations ; un objet balisé (mur, menuiserie…) ne transmet pas sa balise à son contenu
-    def self.parcourir(ents, tr, tag, nom, &bloc)
+    def self.parcourir(ents, tr, tag, nom, cont = 0, &bloc)
       ents.each do |e|
         next if e.respond_to?(:hidden?) && e.hidden?
         next if e.respond_to?(:layer) && e.layer && !e.layer.visible?
@@ -60,16 +60,16 @@ module A2M
           tr2 = tr * e.transformation
           sous = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
           if OBJETS.include?(t)
-            bloc.call(:objet, e, tr2, t, nom_de(e))
-            parcourir(sous, tr2, nil, nom, &bloc)
+            bloc.call(:objet, e, tr2, t, nom_de(e), cont)
+            parcourir(sous, tr2, nil, nom, e.entityID, &bloc)
           else
             n = nom_de(e)
-            parcourir(sous, tr2, t, n.empty? ? nom : n, &bloc)
+            parcourir(sous, tr2, t, n.empty? ? nom : n, e.entityID, &bloc)
           end
         elsif e.is_a?(Sketchup::Face)
-          bloc.call(:face, e, tr, t, nom)
+          bloc.call(:face, e, tr, t, nom, cont)
         elsif e.is_a?(Sketchup::Edge)
-          bloc.call(:arete, e, tr, t, nom)
+          bloc.call(:arete, e, tr, t, nom, cont)
         end
       end
     end
@@ -251,7 +251,9 @@ module A2M
       pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []
       doub = { plaque: { l: 0.0, aire: 0.0, h: 0.0 }, isolant: { l: 0.0, aire: 0.0, h: 0.0 } }
 
-      parcourir(m.entities, Geom::Transformation.new, nil, '') do |genre, e, tr, tag, nom|
+      # Surfaces horizontales par groupe : dessus et dessous comptés séparément, on garde le plus grand (une dalle n'est comptée qu'une fois)
+      hz = Hash.new { |h, k| h[k] = { haut: 0.0, bas: 0.0 } }
+      parcourir(m.entities, Geom::Transformation.new, nil, '') do |genre, e, tr, tag, nom, cont|
         next unless tag.to_s.start_with?('A2M_')
         case genre
         when :objet
@@ -300,8 +302,10 @@ module A2M
             if pieces[n].nil? || aire > pieces[n][:aire]
               pieces[n] = { aire: aire, perim: per, poly: poly }
             end
+          elsif tag != 'A2M_TERRAIN'
+            next if nz.abs < 0.99
+            hz[[tag, cont]][nz > 0 ? :haut : :bas] += aire
           else
-            next if nz.abs < 0.99 && tag != 'A2M_TERRAIN'
             surf[tag] += aire
             perim[tag] += e.outer_loop.edges.sum { |ed| (tr * ed.start.position).distance(tr * ed.end.position).to_m } if tag == 'A2M_TERRAIN'
           end
@@ -311,6 +315,7 @@ module A2M
         end
       end
 
+      hz.each { |(tag, _c), v| surf[tag] += [v[:haut], v[:bas]].max }
       # Terrain, fondations, planchers
       res['terrain']['surface'] = r2(surf['A2M_TERRAIN']) if surf['A2M_TERRAIN'] > 0
       res['terrain']['perimetre'] = r2(perim['A2M_TERRAIN']) if perim['A2M_TERRAIN'] > 0
@@ -346,6 +351,10 @@ module A2M
       ep = [:plaque, :isolant].sum { |k| doub[k][:l] > 0 ? doub[k][:aire] / doub[k][:l] : 0.0 }
       res['plat']['ep_doublage'] = r2(ep) if ep > 0
       res['plat']['pla_m2'] = r2(surf['A2M_PLAFOND']) if surf['A2M_PLAFOND'] > 0
+      # Sans case dans le configurateur : donnés pour information (à reporter au métré)
+      res['infos'] = {}
+      res['infos']['isolant_sol'] = r2(surf['A2M_ISOLANT_SOL']) if surf['A2M_ISOLANT_SOL'] > 0
+      res['infos']['chape'] = r2(surf['A2M_CHAPE']) if surf['A2M_CHAPE'] > 0
       res['plat']['hauteur'] = HAUTEUR_SOUS_PLAFOND if HAUTEUR_SOUS_PLAFOND
 
       # Pièces et leurs menuiseries (la plus proche pièce reçoit la menuiserie)
