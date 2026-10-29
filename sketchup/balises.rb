@@ -90,6 +90,11 @@ module A2M
       Sketchup.status_text = "#{sel.size} élément(s) balisé(s) #{nom}"
     end
 
+    def self.aide
+      UI.messagebox("Balises du métré :\n\n" + LISTE.map { |n, u, _| "#{n} : #{u}" }.join("\n") +
+        "\n\nLa toiture (faîtage, rives, noues, arêtiers, égouts) est reconnue toute seule à partir des pans : les balises de lignes ne servent qu'à forcer un type.")
+    end
+
     # Pièces : met A2M_PIECE sur les groupes sélectionnés et demande leur nom s'il manque
     def self.nommer_pieces
       model = Sketchup.active_model

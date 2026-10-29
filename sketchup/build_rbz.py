@@ -25,10 +25,7 @@ unless file_loaded?(__FILE__)
   menu.add_separator
   menu.add_item('4. Extraire pour le configurateur…') { A2M::Extraction.lancer }
   menu.add_separator
-  menu.add_item('Aide : balises reconnues') do
-    UI.messagebox("Balises du métré :\n\n" + A2M::Balises::LISTE.map { |n, u, _| "#{n} : #{u}" }.join("\n") +
-      "\n\nLa toiture (faîtage, rives, noues, arêtiers, égouts) est reconnue toute seule à partir des pans : les balises de lignes ne servent qu'à forcer un type.")
-  end
+  menu.add_item('Aide : balises reconnues') { A2M::Balises.aide }
   UI.add_context_menu_handler do |cm|
     next if Sketchup.active_model.selection.empty?
     sm = cm.add_submenu('Métré Atelier 2M')
@@ -36,44 +33,31 @@ unless file_loaded?(__FILE__)
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
   end
-  # Barre d'outils : un bouton « Mur » pour lancer le dessin sans passer par le menu
-  tb = UI::Toolbar.new('Métré Atelier 2M')
-  cmd = UI::Command.new('Dessiner un mur (métré)') { A2M::DessinMurs.lancer }
-  cmd.tooltip = 'Dessiner un mur, un doublage ou une cloison sur la bonne balise du métré'
-  cmd.status_bar_text = cmd.tooltip
-  cmd.menu_text = 'Mur'
+  # Barre d'outils aux couleurs d'Atelier 2M : un pictogramme par bouton, une bulle d'aide au survol
   ico = File.join(File.dirname(__FILE__), 'icones')
-  cmd.small_icon = File.join(ico, 'mur_16.png')
-  cmd.large_icon = File.join(ico, 'mur_24.png')
-  tb.add_item(cmd)
-  cmdc = UI::Command.new('Dessiner un mur composé (métré)') { A2M::DessinMurs.lancer_compose }
-  cmdc.tooltip = 'Mur composé : mur, isolant, plaque… en une seule fois, chaque couche sur sa balise'
-  cmdc.status_bar_text = cmdc.tooltip
-  cmdc.menu_text = 'Mur composé'
-  cmdc.small_icon = File.join(ico, 'compose_16.png')
-  cmdc.large_icon = File.join(ico, 'compose_24.png')
-  tb.add_item(cmdc)
-  cmd2 = UI::Command.new('Dessiner un sol ou un plafond (métré)') { A2M::DessinSols.lancer }
-  cmd2.tooltip = 'Dessiner une dalle, un plancher, un isolant de sol, une chape, un revêtement ou un plafond sur la bonne balise'
-  cmd2.status_bar_text = cmd2.tooltip
-  cmd2.menu_text = 'Sol'
-  cmd2.small_icon = File.join(ico, 'sol_16.png')
-  cmd2.large_icon = File.join(ico, 'sol_24.png')
-  tb.add_item(cmd2)
-  cmd3 = UI::Command.new('Créer une ouverture (métré)') { A2M::Ouvertures.lancer }
-  cmd3.tooltip = 'Percer une ouverture dans le mur et ses doublages, avec une menuiserie de réservation balisée'
-  cmd3.status_bar_text = cmd3.tooltip
-  cmd3.menu_text = 'Ouverture'
-  cmd3.small_icon = File.join(ico, 'ouv_16.png')
-  cmd3.large_icon = File.join(ico, 'ouv_24.png')
-  tb.add_item(cmd3)
-  cmd4 = UI::Command.new('Poser les plinthes (métré)') { A2M::Plinthes.lancer }
-  cmd4.tooltip = 'Plinthes le long du revêtement sélectionné, avec votre profil, coupées aux portes'
-  cmd4.status_bar_text = cmd4.tooltip
-  cmd4.menu_text = 'Plinthes'
-  cmd4.small_icon = File.join(ico, 'plinthe_16.png')
-  cmd4.large_icon = File.join(ico, 'plinthe_24.png')
-  tb.add_item(cmd4)
+  ext = Sketchup.platform == :platform_win ? '.svg' : '.pdf'
+  ext = '.png' if Sketchup.version.to_i < 16
+  tb = UI::Toolbar.new('Métré Atelier 2M')
+  [
+    ['balises',   'Créer les balises du métré',           'Crée les balises A2M_ du métré (dossier « Métré A2M »), sans toucher à celles qui existent', -> { A2M::Balises.creer }],
+    ['baliser',   'Baliser la sélection',                 'Met la balise choisie sur les groupes, composants, faces ou lignes sélectionnés', -> { A2M::Balises.baliser_selection }],
+    ['pieces',    'Baliser et nommer les pièces',         'Met A2M_PIECE sur les groupes de sol sélectionnés et demande le nom de chaque pièce', -> { A2M::Balises.nommer_pieces }],
+    ['mur',       'Dessiner un mur',                      'Mur, doublage ou cloison : hauteur, épaisseur et tracé (axe ou face), posé sur sa balise', -> { A2M::DessinMurs.lancer }],
+    ['compose',   'Dessiner un mur composé',              'Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise', -> { A2M::DessinMurs.lancer_compose }],
+    ['sol',       'Dessiner un sol ou un plafond',        'Dalle, plancher, isolant de sol, chape, revêtement (pièce) ou plafond, avec épaisseur et hauteur de pose', -> { A2M::DessinSols.lancer }],
+    ['ouverture', 'Créer une ouverture',                  'Perce le mur et ses doublages (largeur, hauteur, linteau, distance), pose la menuiserie de réservation et recoupe les plinthes', -> { A2M::Ouvertures.lancer }],
+    ['plinthe',   'Poser les plinthes',                   'Plinthes le long du revêtement sélectionné, avec votre profil, coupées aux portes', -> { A2M::Plinthes.lancer }],
+    ['extraire',  'Extraire pour le configurateur',       'Enregistre le fichier .json à importer dans le configurateur du métré', -> { A2M::Extraction.lancer }],
+    ['aide',      'Aide : balises reconnues',             'Liste des balises du métré et de leur usage', -> { A2M::Balises.aide }]
+  ].each do |nom, titre, bulle, action|
+    cmd = UI::Command.new(titre) { action.call }
+    cmd.tooltip = titre
+    cmd.status_bar_text = bulle
+    cmd.small_icon = File.join(ico, "#{nom}#{ext == '.png' ? '_16.png' : ext}")
+    cmd.large_icon = File.join(ico, "#{nom}#{ext == '.png' ? '_24.png' : ext}")
+    tb.add_item(cmd)
+    tb.add_separator if %w[pieces plinthe].include?(nom)
+  end
   tb.restore
   file_loaded(__FILE__)
 end
@@ -88,10 +72,8 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
-    for t in (16, 24, 32):
-        z.write(os.path.join(ici, f'mur_{t}.png'), f'a2m_metre/icones/mur_{t}.png')
-        z.write(os.path.join(ici, f'sol_{t}.png'), f'a2m_metre/icones/sol_{t}.png')
-        z.write(os.path.join(ici, f'ouv_{t}.png'), f'a2m_metre/icones/ouv_{t}.png')
-        z.write(os.path.join(ici, f'compose_{t}.png'), f'a2m_metre/icones/compose_{t}.png')
-        z.write(os.path.join(ici, f'plinthe_{t}.png'), f'a2m_metre/icones/plinthe_{t}.png')
+    dico = os.path.join(ici, 'icones')
+    for f in sorted(os.listdir(dico)):
+        if f.endswith(('.svg', '.pdf', '.png')):
+            z.write(os.path.join(dico, f), 'a2m_metre/icones/' + f)
 print('ok', dest)
