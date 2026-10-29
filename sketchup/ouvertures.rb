@@ -134,64 +134,109 @@ module A2M
 
     # Les n premiers groupes traversés par un rayon partant de l'extérieur, vers l'intérieur du mur
     # Retourne aussi la profondeur percée : du point de départ jusqu'à la sortie de la dernière couche
+    # Bornes : pour chaque couche, distances d'entrée et de sortie depuis le départ. Les menuiseries suivies sont traversées sans compter.
     def self.couches(depart, dir, n)
       model = Sketchup.active_model
-      vus = []; pt = depart; parcours = 0.0; fin = 0.0
+      vus = []; pt = depart; parcours = 0.0; fin = 0.0; bornes = {}
       40.times do
         hit = model.raytest([pt, dir])
         break unless hit
-        parcours += pt.distance(hit[0])
+        parcours = (hit[0] - depart).dot(dir)
         break if parcours > 3.m
         g = haut_de(hit[1])
+        g = nil if g && g.get_attribute('a2m', 'ouv')
+        if g.nil?
+          pt = hit[0].offset(dir, 0.02)
+          next
+        end
         if vus.size >= n
           break unless g == vus.last
           fin = parcours
         else
-          vus << g if g && !vus.include?(g)
+          vus << g unless vus.include?(g)
           fin = parcours if g == vus.last
         end
+        (bornes[g] ||= [parcours, parcours])[1] = parcours if vus.include?(g)
         pt = hit[0].offset(dir, 0.02)
-        parcours += 0.02
       end
-      [vus, fin]
+      [vus, fin, vus.map { |g| bornes[g] }]
+    end
+
+    def self.inverse?() @inverse end
+    def self.inverser!() @inverse = !@inverse end
+
+    # Identifiant durable d'un mur (gardé d'une découpe à l'autre, contrairement aux identifiants de SketchUp)
+    def self.mur_id(g)
+      id = g.get_attribute('a2m', 'mur_id')
+      return id if id
+      id = "M#{Time.now.to_f.to_s.tr('.', '')}#{rand(1000)}"
+      g.set_attribute('a2m', 'mur_id', id)
+      id
+    end
+
+    def self.attributs(g)
+      h = {}
+      (g.attribute_dictionary('a2m') || {}).each_pair { |k, v| h[k] = v }
+      h
+    end
+
+    # Découpe les couches derrière l'ouverture o ; chaque mur percé garde la liste de ses trous (« trous »)
+    # Retour : couches (pour reboucher), échecs, profondeur percée, nombre de couches trouvées
+    def self.decouper(o, p, id, model)
+      cibles, prof, bornes = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n])
+      prof -= 0.5.cm
+      return nil if cibles.empty?
+      ents = model.active_entities
+      u, n, b = o[:u], o[:n], o[:bas]
+      l = (p[:l] / 100.0).m; h = (p[:h] / 100.0).m
+      c0 = b.offset(n, 5.cm)
+      echecs = []; recs = []
+      cibles.each_with_index do |g, i|
+        # Mur maçonné et isolant (2 premières couches) : allège abaissée pour l'appui ou le seuil ; plaque et couches suivantes : à la cote
+        bas_i = i < 2 && p[:appui].to_f > 0 ? c0.offset(Z_AXIS, -(p[:appui] / 100.0).m) : c0
+        haut_i = h + (c0.z - bas_i.z)
+        rect = [bas_i, bas_i.offset(u, l), bas_i.offset(u, l).offset(Z_AXIS, haut_i), bas_i.offset(Z_AXIS, haut_i)]
+        mid = mur_id(g)
+        att = attributs(g)
+        cut = ents.add_group
+        f = cut.entities.add_face(rect)
+        f.reverse! if f.normal.dot(n) > 0     # la normale vers l'intérieur du mur
+        f.pushpull(3.m)
+        nom = g.name; tag = g.layer
+        vol = g.volume rescue -1
+        res = @inverse ? g.subtract(cut) : cut.subtract(g)
+        if res
+          raise SensInverse if vol > 0 && (res.volume rescue 0) > vol + 1
+          res.name = nom; res.layer = tag
+          att.each { |k, v| res.set_attribute('a2m', k, v) }
+          trous = (JSON.parse(att['trous'] || '[]') rescue [])
+          res.set_attribute('a2m', 'trous', JSON.generate((trous + [id]).uniq)) if id
+          e0, e1 = bornes[i].map { |d| d - 0.5.cm + 5.cm }   # profondeurs d'entrée et de sortie depuis le plan de découpe
+          recs << { 'mur' => mid, 'rect' => rect.map(&:to_a), 'n' => n.to_a, 'e0' => e0.to_f, 'e1' => e1.to_f }
+        else
+          echecs << (nom.to_s.empty? ? 'groupe sans nom' : nom)
+          cut.erase! if cut.valid?
+        end
+      end
+      { couches: recs, echecs: echecs, prof: prof, nb: cibles.size }
     end
 
     # Perce : boîte de découpe (largeur × hauteur, 3 m de profondeur) soustraite de chaque couche ; nom et balise conservés
     def self.percer(o, p, essai = 0)
       model = Sketchup.active_model
-      cibles, prof = couches(o[:centre].offset(o[:n], 0.5.cm), o[:n].reverse, p[:n])
-      prof -= 0.5.cm
-      if cibles.empty?
-        UI.messagebox('Aucun mur trouvé derrière le point cliqué.')
-        return
-      end
       model.start_operation('Créer une ouverture (métré)', true)
       begin
         ents = model.active_entities
         u, n, b = o[:u], o[:n], o[:bas]
         l = (p[:l] / 100.0).m; h = (p[:h] / 100.0).m
-        c0 = b.offset(n, 5.cm)
-        echecs = []
-        cibles.each_with_index do |g, i|
-          # Mur maçonné et isolant (2 premières couches) : allège abaissée pour l'appui ou le seuil ; plaque et couches suivantes : à la cote
-          bas_i = i < 2 && p[:appui].to_f > 0 ? c0.offset(Z_AXIS, -(p[:appui] / 100.0).m) : c0
-          haut_i = h + (c0.z - bas_i.z)
-          rect = [bas_i, bas_i.offset(u, l), bas_i.offset(u, l).offset(Z_AXIS, haut_i), bas_i.offset(Z_AXIS, haut_i)]
-          cut = ents.add_group
-          f = cut.entities.add_face(rect)
-          f.reverse! if f.normal.dot(n) > 0     # la normale vers l'intérieur du mur
-          f.pushpull(3.m)
-          nom = g.name; tag = g.layer
-          vol = g.volume rescue -1
-          res = @inverse ? g.subtract(cut) : cut.subtract(g)
-          if res
-            raise SensInverse if vol > 0 && (res.volume rescue 0) > vol + 1
-            res.name = nom; res.layer = tag
-          else
-            echecs << (nom.to_s.empty? ? 'groupe sans nom' : nom)
-            cut.erase! if cut.valid?
-          end
+        id = "O#{Time.now.to_f.to_s.tr('.', '')}#{rand(1000)}"
+        dec = decouper(o, p, p[:res] ? id : nil, model)
+        unless dec
+          model.abort_operation
+          UI.messagebox('Aucun mur trouvé derrière le point cliqué.')
+          return
         end
+        echecs = dec[:echecs]; prof = dec[:prof]; nb = dec[:nb]
         # Menuiserie de la bibliothèque : étirée à la taille percée (profils inchangés), posée à 5 cm du nu extérieur
         # (porte intérieure : au milieu de l'épaisseur percée)
         if p[:res] && p[:obj]
@@ -239,16 +284,18 @@ module A2M
         # Empreinte de l'ouverture enregistrée ; plinthes des pièces voisines recoupées (portes et passages, pas les fenêtres)
         genre = p[:type][1] == 'A2M_FENETRE' ? 'fenetre' : (libre ? 'libre' : 'porte')
         empreinte = [o[:bas], o[:bas].offset(u, l), o[:bas].offset(u, l).offset(n, -prof), o[:bas].offset(n, -prof)]
-        A2M::Plinthes.enregistrer(empreinte, genre, model) if prof > 0
+        A2M::Plinthes.enregistrer(empreinte, genre, model, p[:res] ? id : nil) if prof > 0
         plin = genre == 'fenetre' ? [] : A2M::Plinthes.regenerer_autour(empreinte)
+        # Menuiserie suivie : si elle est déplacée, l'ouverture la suit ; si elle est supprimée, le mur est rebouché
+        A2M::Suivi.lier(r, o, p, id, dec[:couches], empreinte, genre) if p[:res] && r
         model.commit_operation
-        msg = "Ouverture" #{p[:l].round} × #{p[:h].round} cm percée dans #{cibles.size - echecs.size} couche(s)."
+        msg = "Ouverture #{p[:l].round} × #{p[:h].round} cm percée dans #{nb - echecs.size} couche(s)."
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
         msg += "\nPlinthes recoupées : #{plin.join(', ')}" if plin.any?
         msg += "\n#{alerte}" if alerte
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
-        msg += "\nSeulement #{cibles.size} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if cibles.size < p[:n]
-        echecs.any? || cibles.size < p[:n] || plin.any? || alerte ? UI.messagebox(msg) : Sketchup.status_text = msg
+        msg += "\nSeulement #{nb} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if nb < p[:n]
+        echecs.any? || nb < p[:n] || plin.any? || alerte ? UI.messagebox(msg) : Sketchup.status_text = msg
       rescue SensInverse
         model.abort_operation
         @inverse = !@inverse

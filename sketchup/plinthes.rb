@@ -13,10 +13,18 @@ module A2M
       JSON.parse(model.get_attribute('a2m', 'ouvertures', '[]')) rescue []
     end
 
-    def self.enregistrer(rect, genre, model = Sketchup.active_model)
+    def self.enregistrer(rect, genre, model = Sketchup.active_model, id = nil)
       liste = ouvertures(model)
-      liste << { 'pts' => rect.map { |q| [q.x.to_f, q.y.to_f] }, 'z' => rect[0].z.to_f, 'genre' => genre }
+      liste << { 'pts' => rect.map { |q| [q.x.to_f, q.y.to_f] }, 'z' => rect[0].z.to_f, 'genre' => genre, 'id' => id }
       model.set_attribute('a2m', 'ouvertures', JSON.generate(liste))
+    end
+
+    # Ouverture rebouchée ou déplacée : son empreinte est retirée de la liste
+    def self.retirer(id, model = Sketchup.active_model)
+      return unless id
+      liste = ouvertures(model)
+      reste = liste.reject { |o| o['id'] == id }
+      model.set_attribute('a2m', 'ouvertures', JSON.generate(reste)) if reste.size != liste.size
     end
 
     # ---- Profil : face dessinée dans un plan vertical ; dos de la plinthe = sa plus longue arête verticale ----
