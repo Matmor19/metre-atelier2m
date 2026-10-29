@@ -13,7 +13,7 @@ module A2M
       ['Isolation au sol',        'A2M_ISOLANT_SOL',   'A2M_ISOLANT_SOL',    10.0, 0, 'Isolant de sol'],
       ['Chape',                   'A2M_CHAPE',         'A2M_CHAPE',           5.0, 0, 'Chape'],
       ['Revêtement de sol (une pièce)', 'A2M_PIECE',   'A2M_PIECE',           1.0, 0, nil],
-      ['Plafond',                 'A2M_PLAFOND',       'A2M_PLAFOND',         1.3, 1, 'Plafond']
+      ['Plafond',                 'A2M_PLAFOND',       'A2M_PLAFOND',         1.3, 0, 'Plafond']
     ]
     NIVEAUX = ['RDC', 'Étage']
     SENS = ['Au-dessus du tracé (le tracé est le dessous)', 'En dessous du tracé (le tracé est le dessus)']
@@ -22,22 +22,26 @@ module A2M
     def self.demander
       t = TYPES.find { |x| x[0] == @reglages[:type] } || TYPES[0]
       r = @reglages[t[0]] || {}
-      rep = UI.inputbox(['Type', 'Niveau', 'Épaisseur (cm)', 'Pose'],
-                        [t[0], @reglages[:niveau] || NIVEAUX[0], (r[:e] || t[3]).to_s, SENS[r[:sens] || t[4]]],
-                        [TYPES.map(&:first).join('|'), NIVEAUX.join('|'), '', SENS.join('|')], 'Dessiner un sol ou un plafond (Métré Atelier 2M)')
+      alt0 = r[:alt] || (t[0] == 'Plafond' ? 2.5 : 0.0)
+      rep = UI.inputbox(['Type', 'Niveau', 'Épaisseur (cm)', 'Pose', 'Hauteur au-dessus du tracé (m) — plafond : hauteur sous plafond'],
+                        [t[0], @reglages[:niveau] || NIVEAUX[0], (r[:e] || t[3]).to_s, SENS[r[:sens] || t[4]], alt0.to_s],
+                        [TYPES.map(&:first).join('|'), NIVEAUX.join('|'), '', SENS.join('|'), ''], 'Dessiner un sol ou un plafond (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       e = rep[2].to_s.tr(',', '.').to_f
       return UI.messagebox('L\'épaisseur doit être supérieure à 0.') && nil if e <= 0
       sens = SENS.index(rep[3]) || 0
+      alt = rep[4].to_s.tr(',', '.').to_f
+      # Type changé dans la liste : le plafond propose 2,50 m s'il n'a pas encore de réglage
+      alt = 2.5 if type[0] == 'Plafond' && alt.zero? && !(@reglages[type[0]] || {})[:alt] && rep[0] != t[0]
       nom = nil
       if type[5].nil?
         rp = UI.inputbox(['Nom de la pièce (ex. Séjour, Chambre 1)'], [''], 'Revêtement de sol')
         return nil unless rp && !rp[0].to_s.strip.empty?
         nom = rp[0].to_s.strip
       end
-      @reglages[:type] = type[0]; @reglages[:niveau] = rep[1]; @reglages[type[0]] = { e: e, sens: sens }
-      { type: type, etage: rep[1] == 'Étage', e: e, sens: sens, nom: nom }
+      @reglages[:type] = type[0]; @reglages[:niveau] = rep[1]; @reglages[type[0]] = { e: e, sens: sens, alt: alt }
+      { type: type, etage: rep[1] == 'Étage', e: e, sens: sens, nom: nom, alt: alt }
     end
 
     def self.lancer
@@ -50,7 +54,7 @@ module A2M
       model.start_operation('Dessiner un sol ou un plafond (métré)', true)
       begin
         grp = model.active_entities.add_group
-        z = pts[0].z
+        z = pts[0].z + (p[:alt] || 0).to_f.m   # hauteur de pose au-dessus du tracé (plafond : hauteur sous plafond)
         f = grp.entities.add_face(pts.map { |q| Geom::Point3d.new(q.x, q.y, z) })
         f.reverse! if f.normal.z < 0
         e = (p[:e] / 100.0).m
@@ -81,7 +85,7 @@ module A2M
       def resume(view) statut; view.invalidate end
       def deactivate(view) view.invalidate end
       def statut
-        Sketchup.status_text = "#{@p[:type][0]}#{@p[:nom] ? ' (' + @p[:nom] + ')' : ''} — ép. #{@p[:e]} cm. Cliquez le contour ; " \
+        Sketchup.status_text = "#{@p[:type][0]}#{@p[:nom] ? ' (' + @p[:nom] + ')' : ''} — ép. #{@p[:e]} cm#{(@p[:alt] || 0).to_f > 0 ? ", posé à #{@p[:alt]} m au-dessus du tracé" : ''}. Cliquez le contour (au sol) ; " \
                                'tapez une longueur puis Entrée ; clic sur le 1er point ou Entrée pour fermer ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
@@ -130,6 +134,13 @@ module A2M
         view.draw(GL_LINE_STRIP, @pts + [sol(@ip.position)])
         view.line_width = 1; view.drawing_color = 'gray'
         view.draw(GL_LINES, [sol(@ip.position), @pts[0]]) if @pts.size >= 2
+        # Aperçu à la hauteur de pose
+        if (@p[:alt] || 0).to_f > 0
+          dz = Geom::Vector3d.new(0, 0, @p[:alt].to_f.m)
+          view.line_stipple = '-'; view.drawing_color = 'blue'
+          view.draw(GL_LINE_STRIP, (@pts + [sol(@ip.position)]).map { |q| q.offset(dz) })
+          view.line_stipple = ''
+        end
       end
       def getExtents
         bb = Geom::BoundingBox.new; @pts.each { |q| bb.add(q) }; bb.add(@ip.position) if @ip.valid?; bb
