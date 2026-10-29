@@ -17,6 +17,7 @@ unless file_loaded?(__FILE__)
   menu.add_item('2. Baliser la sélection…') { A2M::Balises.baliser_selection }
   menu.add_item('3. Baliser et nommer les pièces sélectionnées…') { A2M::Balises.nommer_pieces }
   menu.add_item('Dessiner un mur, un doublage ou une cloison…') { A2M::DessinMurs.lancer }
+  menu.add_item('Dessiner un mur composé (plusieurs couches)…') { A2M::DessinMurs.lancer_compose }
   menu.add_item('Dessiner une dalle, un plancher, un sol ou un plafond…') { A2M::DessinSols.lancer }
   menu.add_item('Créer une ouverture dans les murs…') { A2M::Ouvertures.lancer }
   menu.add_separator
@@ -42,6 +43,13 @@ unless file_loaded?(__FILE__)
   cmd.small_icon = File.join(ico, 'mur_16.png')
   cmd.large_icon = File.join(ico, 'mur_24.png')
   tb.add_item(cmd)
+  cmdc = UI::Command.new('Dessiner un mur composé (métré)') { A2M::DessinMurs.lancer_compose }
+  cmdc.tooltip = 'Mur composé : mur, isolant, plaque… en une seule fois, chaque couche sur sa balise'
+  cmdc.status_bar_text = cmdc.tooltip
+  cmdc.menu_text = 'Mur composé'
+  cmdc.small_icon = File.join(ico, 'compose_16.png')
+  cmdc.large_icon = File.join(ico, 'compose_24.png')
+  tb.add_item(cmdc)
   cmd2 = UI::Command.new('Dessiner un sol ou un plafond (métré)') { A2M::DessinSols.lancer }
   cmd2.tooltip = 'Dessiner une dalle, un plancher, un isolant de sol, une chape, un revêtement ou un plafond sur la bonne balise'
   cmd2.status_bar_text = cmd2.tooltip
@@ -73,4 +81,5 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
         z.write(os.path.join(ici, f'mur_{t}.png'), f'a2m_metre/icones/mur_{t}.png')
         z.write(os.path.join(ici, f'sol_{t}.png'), f'a2m_metre/icones/sol_{t}.png')
         z.write(os.path.join(ici, f'ouv_{t}.png'), f'a2m_metre/icones/ouv_{t}.png')
+        z.write(os.path.join(ici, f'compose_{t}.png'), f'a2m_metre/icones/compose_{t}.png')
 print('ok', dest)

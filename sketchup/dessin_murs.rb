@@ -74,40 +74,96 @@ module A2M
 
     def self.aire(poly) poly.each_with_index.sum { |(x1, y1), i| x2, y2 = poly[(i + 1) % poly.size]; x1 * y2 - x2 * y1 } / 2.0 end
 
-    # Crée le mur : empreinte décalée selon le tracé, extrudée sur la hauteur, dans un groupe sur la balise du type
-    def self.construire(pts, ferme, p)
-      e = (p[:e] / 100.0).m; h = p[:h].m
-      dg, dd = [[e / 2.0, -e / 2.0], [0.0, -e], [e, 0.0]][p[:trace]]
-      z = pts[0].z
-      model = Sketchup.active_model
-      model.start_operation('Dessiner un mur (métré)', true)
-      begin
-        grp = model.active_entities.add_group
-        ents = grp.entities
-        a = decale(pts, dg, ferme); b = decale(pts, dd, ferme)
-        p3 = ->(poly) { poly.map { |x, y| Geom::Point3d.new(x, y, z) } }
-        if ferme
-          ext, int = aire(a).abs >= aire(b).abs ? [a, b] : [b, a]
-          f = ents.add_face(p3.call(ext))
-          trou = ents.add_face(p3.call(int))
-          trou.erase! if trou && trou.valid?
-          f = ents.grep(Sketchup::Face).max_by(&:area)
-        else
-          f = ents.add_face(p3.call(a + b.reverse))
+    # Couches à construire : [type, hauteur (m), décalage gauche, décalage droit (pouces)]
+    #  - mur simple : selon le tracé (axe, face gauche, face droite)
+    #  - mur composé : le tracé est la face extérieure de la 1re couche, les couches s'empilent du côté choisi
+    def self.couches_de(p)
+      if p[:couches]
+        s = 0.0
+        sg = p[:cote] == 1 ? 1.0 : -1.0   # 1 : couches à gauche du tracé ; 0 : à droite
+        p[:couches].map do |c|
+          e = (c[:e] / 100.0).m
+          d1, d2 = sg * s, sg * (s + e)
+          s += e
+          [c[:type], c[:h], [d1, d2].max, [d1, d2].min, c[:e]]
         end
-        f.reverse! if f.normal.z < 0
-        f.pushpull(h)
-        type = p[:type]
-        l, _ = A2M::Balises.balise(model, type[1], (A2M::Balises::LISTE.find { |n, _, _| n == type[1] } || [])[2])
-        grp.layer = l
-        num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(type[4]) }
-        grp.name = "#{type[4]} #{num}"
+      else
+        e = (p[:e] / 100.0).m
+        dg, dd = [[e / 2.0, -e / 2.0], [0.0, -e], [e, 0.0]][p[:trace]]
+        [[p[:type], p[:h], dg, dd, p[:e]]]
+      end
+    end
+
+    # Une couche : empreinte entre deux décalages du tracé, extrudée sur la hauteur, dans un groupe sur la balise du type
+    def self.construire_couche(pts, ferme, type, hm, dg, dd)
+      model = Sketchup.active_model
+      z = pts[0].z
+      grp = model.active_entities.add_group
+      ents = grp.entities
+      a = decale(pts, dg, ferme); b = decale(pts, dd, ferme)
+      p3 = ->(poly) { poly.map { |x, y| Geom::Point3d.new(x, y, z) } }
+      if ferme
+        ext, int = aire(a).abs >= aire(b).abs ? [a, b] : [b, a]
+        ents.add_face(p3.call(ext))
+        trou = ents.add_face(p3.call(int))
+        trou.erase! if trou && trou.valid?
+        f = ents.grep(Sketchup::Face).max_by(&:area)
+      else
+        f = ents.add_face(p3.call(a + b.reverse))
+      end
+      f.reverse! if f.normal.z < 0
+      f.pushpull(hm.m)
+      l, _ = A2M::Balises.balise(model, type[1], (A2M::Balises::LISTE.find { |n, _, _| n == type[1] } || [])[2])
+      grp.layer = l
+      num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(type[4]) }
+      grp.name = "#{type[4]} #{num}"
+      grp
+    end
+
+    def self.construire(pts, ferme, p)
+      model = Sketchup.active_model
+      model.start_operation(p[:couches] ? 'Dessiner un mur composé (métré)' : 'Dessiner un mur (métré)', true)
+      begin
+        noms = couches_de(p).map { |type, hm, dg, dd, ecm| g = construire_couche(pts, ferme, type, hm, dg, dd); "#{g.name} (#{ecm} cm)" }
         model.commit_operation
-        Sketchup.status_text = "#{grp.name} créé : hauteur #{p[:h]} m, épaisseur #{p[:e]} cm, balise #{type[1]}"
+        Sketchup.status_text = "Créé : #{noms.join(' + ')}"
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Le mur n'a pas pu être créé (#{ex.message}). Vérifiez que le tracé ne se recoupe pas.")
       end
+    end
+
+    # ---- Mur composé : nombre de couches, puis type, épaisseur et hauteur de chacune ----
+    COMPO_DEFAUT = [['Mur périphérique', 20.0, 2.50], ['Doublage : isolant', 14.0, 2.50], ['Doublage : plaque de plâtre', 1.3, 2.50]]
+    def self.lancer_compose
+      r = @reglages[:compose] || {}
+      rep = UI.inputbox(['Nombre de couches (de l\'extérieur vers l\'intérieur)', 'Le tracé est la face extérieure ; les couches partent'],
+                        [(r[:n] || 3).to_s, r[:cote] || 'à droite du tracé'],
+                        ['1|2|3|4|5', 'à droite du tracé|à gauche du tracé'], 'Mur composé (Métré Atelier 2M)')
+      return unless rep
+      n = rep[0].to_i
+      prec = r[:couches] || []
+      lib = []; val = []; lst = []
+      n.times do |i|
+        d = prec[i] || COMPO_DEFAUT[i] || COMPO_DEFAUT[-1]
+        lib += ["Couche #{i + 1} : type", "Couche #{i + 1} : épaisseur (cm)", "Couche #{i + 1} : hauteur (m)"]
+        val += [d[0], d[1].to_s, d[2].to_s]
+        lst += [TYPES.map(&:first).join('|'), '', '']
+      end
+      rep2 = UI.inputbox(lib, val, lst, "Mur composé : #{n} couche(s), de l'extérieur vers l'intérieur")
+      return unless rep2
+      couches = []
+      n.times do |i|
+        type = TYPES.find { |x| x[0] == rep2[i * 3] }
+        e = rep2[i * 3 + 1].to_s.tr(',', '.').to_f; h = rep2[i * 3 + 2].to_s.tr(',', '.').to_f
+        return UI.messagebox("Couche #{i + 1} : l'épaisseur et la hauteur doivent être supérieures à 0.") if e <= 0 || h <= 0
+        couches << { type: type, e: e, h: h }
+      end
+      cote = rep[1] == 'à gauche du tracé' ? 1 : 0
+      @reglages[:compose] = { n: n, cote: rep[1], couches: couches.map { |c| [c[:type][0], c[:e], c[:h]] } }
+      tot = couches.sum { |c| c[:e] }
+      p = { couches: couches, cote: cote, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: tot.round(1) }
+      Sketchup.active_model.select_tool(Outil.new(p))
     end
 
     # ---- L'outil : clics successifs ; Entrée ou double-clic termine ; clic sur le premier point ferme le tour ----
@@ -121,7 +177,8 @@ module A2M
       end
 
       def maj_statut
-        Sketchup.status_text = "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm. Cliquez les points du tracé ; " \
+        lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm, couches #{@p[:cote] == 1 ? 'à gauche' : 'à droite'} du tracé)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
+        Sketchup.status_text = "#{lib}. Cliquez les points du tracé ; " \
                                'tapez une longueur puis Entrée ; double-clic ou Entrée pour finir ; clic sur le 1er point pour fermer ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
@@ -198,8 +255,8 @@ module A2M
         view.draw(GL_LINE_STRIP, chemin)
         # Aperçu de l'épaisseur
         if chemin.size >= 2 && chemin[-1].distance(chemin[-2]) > 0.01
-          p = @p; e = (p[:e] / 100.0).m
-          dg, dd = [[e / 2.0, -e / 2.0], [0.0, -e], [e, 0.0]][p[:trace]]
+          cs = A2M::DessinMurs.couches_de(@p)
+          dg = cs.map { |c| c[2] }.max; dd = cs.map { |c| c[3] }.min
           a = A2M::DessinMurs.decale(chemin, dg, false); b = A2M::DessinMurs.decale(chemin, dd, false)
           z = chemin[0].z
           view.line_width = 1
