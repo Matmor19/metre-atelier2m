@@ -124,10 +124,10 @@ module A2M
     end
 
     # Après une création d'ouverture (dans l'opération de perçage)
-    def self.lier(r, o, p, id, couches, empreinte, genre)
+    def self.lier(r, o, p, id, couches, empreinte, genre, annexes = [])
       inv = r.transformation.inverse
       d = { 'id' => id, 'genre' => genre, 't' => t_tab(r.transformation), 'couches' => couches,
-            'empreinte' => empreinte.map(&:to_a),
+            'empreinte' => empreinte.map(&:to_a), 'annexes' => annexes.map(&:persistent_id),
             'o' => { 'bas' => o[:bas].transform(inv).to_a, 'u' => o[:u].transform(inv).to_a, 'n' => o[:n].transform(inv).to_a },
             'p' => { 'l' => p[:l], 'h' => p[:h], 'n' => p[:n], 'appui' => p[:appui], 'tag' => p[:type][1], 'lib' => p[:type][0], 'contigu' => p[:contigu] } }
       ecrire(r, d)
@@ -156,7 +156,12 @@ module A2M
           when :efface
             d = @cache.delete(e)
             # Rien à reboucher si aucun mur n'a ce trou (annulation d'un perçage, par exemple)
-            operation(model, 'Reboucher l\'ouverture') { reboucher(model, d) } if d && murs_avec(model, d).any?
+            if d && murs_avec(model, d).any?
+              operation(model, 'Reboucher l\'ouverture') do
+                annexes(model, d).each { |a| a.erase! if a.valid? }   # appui ou seuil supprimés avec la menuiserie
+                reboucher(model, d)
+              end
+            end
           when :change then changer(model, e) if e.valid?
           when :ajout then ajout(model, e) if e.valid?
           end
@@ -194,7 +199,10 @@ module A2M
       @cache[r] = d
       return if t_tab(r.transformation).zip(d['t']).all? { |a, b| (a - b).abs < 0.001 }   # pas bougé (attribut, balise, annulation…)
       journal("déplacement de « #{r.name} » (#{d['id']}) : #{murs_avec(model, d).size} mur(s) à reboucher")
+      delta = r.transformation * Geom::Transformation.new(d['t']).inverse
       operation(model, 'L\'ouverture suit la menuiserie') do
+        # Appuis et seuils posés avec la menuiserie : déplacés avec elle
+        annexes(model, d).each { |a| a.transform!(delta) }
         reboucher(model, d)
         recouper(model, r, d)
       end
@@ -213,6 +221,10 @@ module A2M
         operation(model, 'Ouverture de la menuiserie') { recouper(model, r, d) }   # collée après un Couper
       end
       attacher(r)
+    end
+
+    def self.annexes(model, d)
+      (d['annexes'] || []).map { |pid| model.find_entity_by_persistent_id(pid) rescue nil }.compact.select(&:valid?)
     end
 
     # ---- Murs ----

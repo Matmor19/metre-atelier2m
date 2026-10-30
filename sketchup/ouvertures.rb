@@ -20,6 +20,7 @@ module A2M
     # Choix des menuiseries extérieures, mêmes codes que le configurateur (rien n'est choisi d'office)
     CHOIX_ME = { 'mat' => [['pvc', "PVC"], ['alu', "Aluminium"], ['bois', "Bois"], ['mixte', "Mixte bois/aluminium"], ['acier', "Acier"]], 'vantaux' => [['1', "1 vantail"], ['2', "2 vantaux"], ['3', "3 vantaux"], ['4', "4 vantaux"]], 'ouvrant' => [['francaise', "Ouvrant à la française"], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', "Oscillo-battant"], ['abattant', "Abattant"], ['coulissante', "Coulissante"], ['galandage', "Coulissante à galandage"], ['translation', "Coulissante à translation"], ['fixe', "Châssis fixe"], ['guillotine', "Ouvrant à guillotine"], ['basculant', "Ouvrant basculant"], ['pivotant', "Ouvrant pivotant"]], 'vitrage' => [['simple', "Simple vitrage"], ['double', "Double vitrage standard"], ['vir', "Double vitrage VIR"], ['triple', "Triple vitrage"]], 'ferm' => [['vr-manuel', "Volet roulant manuel"], ['vr-motor', "Volet roulant motorisé"], ['vr-solaire', "Volet roulant solaire"], ['vb-pvc', "Volet battant ou coulissant PVC"], ['vb-alu', "Volet battant ou coulissant alu"], ['vb-bois', "Volet battant ou coulissant bois"], ['brise', "Brise-soleil orientable"], ['screen', "Store screen extérieur"], ['banne', "Store banne"]] }
 
+    AUCUN_AS = 'Aucun'
     RES_SIMPLE = 'Réservation simple (panneau balisé)'
     RES_AUCUNE = 'Aucune'
     BIB = 'Bibliothèque : '
@@ -83,12 +84,16 @@ module A2M
       menus = [RES_SIMPLE, RES_AUCUNE] + objs.map { |o| "#{BIB}#{o['nom']} (#{o['type']})" }
       res0 = { 'Oui' => RES_SIMPLE, 'Non' => RES_AUCUNE }[@r[:res]] || @r[:res]
       res0 = RES_SIMPLE unless menus.include?(res0)
+      # Appuis et seuils de la bibliothèque (types « Appui de fenêtre » et « Seuil »)
+      aps = (A2M::Bibliotheque.objets.select { |o| o['fichier'] && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
+      asl = [AUCUN_AS] + aps.map { |o| "#{o['nom']} (#{o['type']})" }
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
                          'Nombre de couches à percer (mur + doublages)', 'Menuiserie posée dans l\'ouverture',
                          'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches',
-                         'Pièce de rattachement'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO],
-                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', menus.join('|'), '', ([AUTO] + (pcs = pieces_du_modele)).join('|')], 'Créer une ouverture (Métré Atelier 2M)')
+                         'Pièce de rattachement', 'Appui ou seuil posé sous l\'ouverture', 'Appui ou seuil : débord sur la façade (cm)'],
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO,
+                         asl.include?(g[:as]) ? g[:as] : AUCUN_AS, (g[:debord] || 4).to_s],
+                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', menus.join('|'), '', ([AUTO] + (pcs = pieces_du_modele)).join('|'), asl.join('|'), ''], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
@@ -119,7 +124,11 @@ module A2M
       opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
       me = pose ? choix_menuiserie(type[1], obj && obj['choix']) : nil
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, opts: opts, appui: appui, piece: piece, me: me }
+      as_obj = rep[8] == AUCUN_AS ? nil : aps[asl.index(rep[8]) - 1]
+      debord = rep[9].to_s.tr(',', '.').to_f
+      @r[type[0]] = (@r[type[0]] || {}).merge(as: rep[8], debord: debord)
+      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, opts: opts, appui: appui, piece: piece, me: me,
+        as_obj: as_obj, debord: debord }
     end
 
     def self.lancer
@@ -279,6 +288,8 @@ module A2M
           dep = prof - fond
           r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dep, -n.y * dep, 0))) if dep.abs > 0.01
         end
+        # Appui ou seuil de la bibliothèque : 1 pièce, ou 2, 3… pièces égales, centrées sous l'ouverture, dessus au bas de la menuiserie
+        annexes = p[:as_obj] ? poser_appuis(ents, o, p, model) : []
         if p[:res]
           r.set_attribute('a2m', 'me', JSON.generate(p[:me])) if p[:me] && !p[:me].empty?
           tagm, _ = A2M::Balises.balise(model, p[:type][1], (A2M::Balises::LISTE.find { |x, _, _| x == p[:type][1] } || [])[2])
@@ -296,7 +307,7 @@ module A2M
         A2M::Plinthes.enregistrer(empreinte, genre, model, p[:res] ? id : nil) if prof > 0
         plin = genre == 'fenetre' ? [] : A2M::Plinthes.regenerer_autour(empreinte)
         # Menuiserie suivie : si elle est déplacée, l'ouverture la suit ; si elle est supprimée, le mur est rebouché
-        A2M::Suivi.lier(r, o, p, id, dec[:couches], empreinte, genre) if p[:res] && r
+        A2M::Suivi.lier(r, o, p, id, dec[:couches], empreinte, genre, annexes) if p[:res] && r
         model.commit_operation
         msg = "Ouverture #{p[:l].round} × #{p[:h].round} cm percée dans #{nb - echecs.size} couche(s)."
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
@@ -313,6 +324,25 @@ module A2M
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("L'ouverture n'a pas pu être créée (#{ex.message}).")
+      end
+    end
+
+    def self.poser_appuis(ents, o, p, model)
+      obj = p[:as_obj]
+      k, lg = A2M::Etirement.decoupe(p[:l], obj['longueurs'] || A2M::Bibliotheque::LONGUEURS[obj['type']] || [p[:l]])
+      return [] unless k
+      n = o[:n]; u = o[:u]; b = o[:bas]
+      ur = Z_AXIS.cross(n).normalize
+      l = (p[:l] / 100.0).m
+      gauche = u.dot(ur) > 0 ? b : b.offset(u, l)
+      h0 = obj['h0'].to_f
+      depart = gauche.offset(ur, (l - k * (lg / 100.0).m) / 2.0).offset(Z_AXIS, -h0)
+      (0...k).map do |i|
+        org = depart.offset(ur, i * (lg / 100.0).m)
+        a = A2M::Bibliotheque.instance_pour(ents, obj, lg, h0 * 2.54, org, ur, n.reverse, ->(_e) { -(p[:debord].to_f / 100.0).m }, model, {}, false)
+        a.name = "#{obj['nom']} #{lg.round} cm#{k > 1 ? " (#{i + 1}/#{k})" : ''}"
+        a.set_attribute('a2m', 'appui_de', p[:type][0])
+        a
       end
     end
 

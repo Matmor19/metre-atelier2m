@@ -1,3 +1,6 @@
 [
-  "Correction (SketchUp 2027) : un objet de la bibliothèque avec des arrondis (nez d'appui, moulures) ne se déforme plus quand on le pose à une autre dimension"
+  "Appuis et seuils : chaque appui ou seuil de la bibliothèque garde sa gamme de longueurs (par défaut celles du configurateur)",
+  "Outil Ouverture : choix de l'appui ou du seuil posé sous l'ouverture ; la plus petite longueur qui couvre est posée, ou 2, 3… pièces égales au-delà de la plus longue, centrées, avec débord sur la façade",
+  "L'appui ou le seuil suit la menuiserie quand elle est déplacée, et disparaît avec elle",
+  "Bibliothèque d'objets : réglage des longueurs d'un appui ou d'un seuil déjà rangé"
 ]

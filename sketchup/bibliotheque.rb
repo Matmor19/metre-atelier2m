@@ -63,6 +63,16 @@ module A2M
       lignes.zip(ds).all? { |(_, w), d| d >= 0 || (w > 0 && w + d >= MARGE) }
     end
 
+    # Appui ou seuil pour une ouverture de largeur l (cm), comme le configurateur du métré :
+    # la plus petite longueur de la gamme qui couvre ; au-delà de la plus grande, largeur divisée en 2, 3… parts égales
+    def self.decoupe(l, longueurs)
+      ls = longueurs.map(&:to_f).select { |x| x > 0 }.sort
+      return nil if ls.empty?
+      k = 1
+      k += 1 while l.to_f / k > ls[-1] && k < 20
+      [k, ls.find { |x| x >= l.to_f / k - 1e-9 } || ls[-1]]
+    end
+
     # Déplacement d'un point placé à la cote x : somme des écarts des lignes situées avant lui
     def self.decale(x, lignes, ds)
       d = 0.0
@@ -88,6 +98,19 @@ module A2M
       ['Autre objet (hors métré)',           nil,                 'Divers']
     ]
     NOUVEAU_TYPE = 'Nouveau type…'
+    # Gammes de longueurs proposées par défaut (mêmes que le configurateur : gamme Tendance)
+    LONGUEURS = { 'Appui de fenêtre' => [40, 50, 60, 70, 80, 90, 100, 105, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 280, 300, 360],
+                  'Seuil' => [90, 110, 130, 150, 190, 220, 250] }
+
+    def self.appui_ou_seuil?(o) LONGUEURS.key?(o['type'].to_s) || o['longueurs'] end
+
+    def self.fiche_longueurs(o_type, prec = nil)
+      def_l = (prec || LONGUEURS[o_type] || []).map { |x| x.to_f % 1 == 0 ? x.to_i : x }.join(' ; ')
+      rep = UI.inputbox(["Longueurs disponibles (cm, séparées par ;) : la plus courte qui couvre l'ouverture est posée, en 2, 3… parts égales au-delà de la plus longue"],
+                        [def_l], "#{o_type} : longueurs de la gamme")
+      return nil unless rep
+      rep[0].to_s.split(/[;\s]+/).map { |v| v.tr(',', '.').to_f }.select { |x| x > 0 }.uniq.sort
+    end
     DC = 'dynamic_attributes'
     AUCUN = '(aucun : taille fixe)'
 
@@ -383,6 +406,11 @@ module A2M
           fp = fiche_porte(f[:nom], l0, h0)
           raise Interrupt unless fp
           info.merge!(fp)
+        end
+        if LONGUEURS.key?(f[:type][0])
+          ls = fiche_longueurs(f[:type][0])
+          raise Interrupt unless ls
+          info['longueurs'] = ls
         end
         info.each { |k, v| d.set_attribute(DICO, k, v.is_a?(Hash) || v.is_a?(Array) ? JSON.generate(v) : v) }
         d.name = model.definitions.unique_name(f[:nom])
@@ -723,14 +751,16 @@ module A2M
     # ---- Commande : la bibliothèque (poser un objet hors d'un mur, ouvrir ou changer le dossier) ----
     def self.gerer
       liste = objets
-      actions = ['Poser un objet à la taille voulue', 'Ouvrir le dossier de la bibliothèque', 'Changer de dossier']
+      actions = ['Poser un objet à la taille voulue', 'Longueurs d\'un appui ou d\'un seuil (gamme)', 'Ouvrir le dossier de la bibliothèque', 'Changer de dossier']
       rep = UI.inputbox(['Que faire ?'], [actions[0]], [actions.join('|')], "Bibliothèque d'objets : #{liste.size} objet(s)")
       return unless rep
       case rep[0]
       when actions[1]
+        regler_longueurs(liste)
+      when actions[2]
         FileUtils.mkdir_p(dossier)
         UI.openURL('file:///' + dossier.tr('\\', '/'))
-      when actions[2]
+      when actions[3]
         d = UI.select_directory(title: 'Dossier de la bibliothèque d\'objets', directory: File.directory?(dossier) ? dossier : nil)
         if d
           Sketchup.write_default('A2M_Metre', 'dossier_biblio', d)
@@ -739,6 +769,21 @@ module A2M
       else
         poser_libre(liste)
       end
+    end
+
+    # Gamme de longueurs d'un appui ou d'un seuil déjà rangé
+    def self.regler_longueurs(liste)
+      as = liste.select { |o| o['fichier'] && appui_ou_seuil?(o) }
+      return UI.messagebox('Aucun appui ni seuil dans la bibliothèque (types « Appui de fenêtre » ou « Seuil »).') if as.empty?
+      noms = as.map { |o| "#{o['nom']} (#{o['type']})" }
+      rep = UI.inputbox(['Appui ou seuil'], [noms[0]], [noms.join('|')], 'Longueurs de la gamme')
+      return unless rep
+      o = as[noms.index(rep[0])]
+      ls = fiche_longueurs(o['type'], o['longueurs'])
+      return unless ls
+      l2 = objets.map { |x| x['nom'] == o['nom'] ? x.merge('longueurs' => ls) : x }
+      sauver_index(l2)
+      UI.messagebox("#{o['nom']} : #{ls.size} longueur(s) enregistrée(s).")
     end
 
     def self.poser_libre(liste)
