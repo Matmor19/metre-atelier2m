@@ -11,6 +11,7 @@ require 'json'
 require 'fileutils'
 require File.join(File.dirname(__FILE__), 'hachures_moteur')
 require File.join(File.dirname(__FILE__), 'hachures_fr')
+require File.join(File.dirname(__FILE__), 'hachures_onde')
 
 module A2M
   module Hachures
@@ -20,7 +21,7 @@ module A2M
     # Balises qui donnent des volumes coupés
     BALISES = %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_CLOISON
                  A2M_ISOLANT_SOL A2M_CHAPE A2M_PLANELLE A2M_ISOLANT_PLANELLE A2M_SEMELLE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
-    DEFAUT = { 'trait' => '#1e1e1e', 'trait_op' => 100, 'fond' => '#ffffff', 'fond_op' => 0, 'ep' => 4, 'taille' => 10, 'angle' => 0 }
+    DEFAUT = { 'trait' => '#1e1e1e', 'trait_op' => 100, 'fond' => '#ffffff', 'fond_op' => 0, 'ep' => 4, 'taille' => 10, 'angle' => 0, 'largeur' => 80 }
     # Hachures gratuites téléchargées sur cet ordinateur, pour votre usage
     INTERNET = 'https://draftsperson.net/hatchpatterns/'
     ARCHIVES = (1..11).map { |i| "Brick #{i}" } + ['Stone'] + [1, 2, 3, 5, 6, 7, 8, 9, 10, 11].map { |i| "Stone #{i}" } +
@@ -154,7 +155,7 @@ module A2M
           sources << [File.basename(d) + (reste.empty? ? '' : ' › ' + reste), s, d]
         end
       end
-      @cat = {}
+      @cat = { A2M::Onde::ID => A2M::Onde::MOTIF.dup }
       sources.each do |groupe, d, ajout|
         (File.file?(d) ? [d] : Dir.glob(File.join(d, '*.pat')).sort).each do |f|
           begin
@@ -190,6 +191,7 @@ module A2M
     def self.construire(model, b, r = reglages)
       x = r[b]
       return nil unless x.is_a?(Hash) && x['motif']
+      return nil if x['motif'] == A2M::Onde::ID           # isolant ondulé : une hachure par groupe (onde_objet)
       m = catalogue[x['motif']] || catalogue(true)[x['motif']]
       return nil unless m
       o = DEFAUT.merge(x)
@@ -224,9 +226,42 @@ module A2M
       nil
     end
 
+    def self.onde?(x) x.is_a?(Hash) && x['motif'] == A2M::Onde::ID end
+
+    # Isolant ondulé centré : hachure propre à ce groupe, onde au milieu de chacun de ses murs (coupes verticales)
+    def self.onde_objet(model, e, x)
+      ents = e.respond_to?(:definition) ? e.definition.entities : e.entities
+      bd = A2M::Onde.bandes(e.is_a?(Sketchup::Group) ? e : Struct.new(:transformation, :entities).new(e.transformation, ents))
+      return nil if bd.empty?
+      o = DEFAUT.merge(x)
+      pas, phi, = A2M::Onde.pas(bd)
+      largeur = o['largeur'].to_f / 100.0 * bd.map(&:last).min
+      png, boucle = A2M::Onde.png(pas, phi, largeur, o)
+      id = e.persistent_id rescue e.entityID
+      tex = File.join(dossier, 'textures')
+      Dir.glob(File.join(tex, "onde_#{id}_*.png")).each { |f| File.delete(f) rescue nil }
+      f = File.join(tex, "onde_#{id}_#{Time.now.to_i}#{rand(1000)}.png")
+      File.binwrite(f, png)
+      hp = model.hatch_patterns
+      nom = "#{PREFIXE}isolant ondulé #{id}"
+      h = hp[nom]
+      unless h
+        base = bibliotheque_sketchup.first or raise 'bibliothèque de hachures de SketchUp introuvable'
+        h = hp.add(nom, base)
+      end
+      h.clear_fill_pattern rescue nil
+      h.set_fill_texture_image_and_file_name(Sketchup::ImageRep.new(f), f)
+      h.set_uv_scale(pas / 2.54, boucle / 2.54)
+      h.rotation_angle = 0
+      e.hatch_pattern = h
+      h
+    end
+
     # Pose la hachure réglée pour la balise de ce groupe (appelée par les outils de dessin)
     def self.poser(ent, model = Sketchup.active_model)
       return unless disponible?(model) && ent && ent.layer
+      x = reglages[ent.layer.name]
+      return onde_objet(model, ent, x) if onde?(x)
       m = motif_couche(model, ent.layer.name)
       ent.hatch_pattern = m if m
     rescue StandardError
@@ -246,6 +281,13 @@ module A2M
       avant = r[b].is_a?(Hash) ? r[b].reject { |k, _| %w[nom fichier source].include?(k) } : {}
       r[b] = DEFAUT.merge(avant).merge(donnees)
       enregistrer(r)
+      if onde?(r[b])
+        h = model.hatch_patterns[nom_couche(b)] rescue nil
+        model.hatch_patterns.remove(h) if h
+        rien = objets(model, b).reject { |e| onde_objet(model, e, r[b]) }
+        raise "aucun mur parallèle aux axes rouge ou vert dans #{rien.size} objet(s)" if rien.any? && rien.size == objets(model, b).size
+        return
+      end
       h = construire(model, b, r) or raise 'motif introuvable'
       objets(model, b).each { |e| e.hatch_pattern = h }
     end
@@ -317,7 +359,7 @@ module A2M
     end
 
     def self.motifs_pour_page
-      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'], 'origine' => m['origine'] } }
+      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'], 'origine' => m['origine'], 'onde' => m['onde'] } }
     end
 
     def self.regler
@@ -403,6 +445,10 @@ module A2M
       manque = []; n = 0
       model.start_operation('Hachures de coupe (métré)', true)
       r.each_key do |b|
+        if onde?(r[b])
+          objets(model, b).each { |e| n += 1 if onde_objet(model, e, r[b]) }
+          next
+        end
         m = motif_couche(model, b, r)
         unless m
           manque << libelle(b)

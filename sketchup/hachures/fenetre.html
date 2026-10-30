@@ -67,7 +67,7 @@ button:disabled{opacity:.5;cursor:default}
 </main>
 <footer><span>1. Cliquez sur une couche · 2. choisissez un motif et réglez-le (aperçu) · 3. « Appliquer la hachure » : elle est posée sur toutes les couches de ce type et sur tout ce que vous dessinerez ensuite, dans tous vos modèles. Ctrl+Z annule.</span><button class="p" onclick="sketchup.fermer()">Fermer</button></footer>
 <script>
-var DEF={trait:'#1e1e1e',trait_op:100,fond:'#ffffff',fond_op:0,ep:4,taille:10,angle:0};
+var DEF={trait:'#1e1e1e',trait_op:100,fond:'#ffffff',fond_op:0,ep:4,taille:10,angle:0,largeur:80};
 var E={couches:[],style:true}, M=[], MI={}, sel=null, cours=null;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function rgba(h,op){var n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+(op/100)+')'}
@@ -89,6 +89,18 @@ function segments(f,x0,y0,x1,y1){
   return res;
 }
 function damier(ctx,w,h){var s=6;for(var y=0;y<h;y+=s)for(var x=0;x<w;x+=s){ctx.fillStyle=((x+y)/s)%2?'#e9e5e0':'#faf8f6';ctx.fillRect(x,y,s,s);}}
+// Isolant ondulé centré : une couche coupée (bande verticale), la ligne de laine au milieu
+function ondeDessin(ctx,w,h,r){
+  var ep=Math.min(w*0.62,h*1.2), x0=(w-ep)/2, lw=(r.largeur||80)/100*ep, a=lw/2, cx=w/2;
+  ctx.fillStyle='#ffffff'; ctx.fillRect(x0,0,ep,h);
+  ctx.fillStyle=rgba(r.fond,r.fond_op); ctx.fillRect(x0,0,ep,h);
+  ctx.strokeStyle='#9a9088'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0+.5,0); ctx.lineTo(x0+.5,h); ctx.moveTo(x0+ep-.5,0); ctx.lineTo(x0+ep-.5,h); ctx.stroke();
+  var boucle=lw*0.75, rr=boucle/(2*Math.PI), bb=2*rr;
+  ctx.strokeStyle=rgba(r.trait,r.trait_op); ctx.lineWidth=Math.max(r.ep/100*lw,0.8); ctx.lineCap='round'; ctx.beginPath();
+  var n=Math.ceil(h/boucle)+2;
+  for(var s=-2*Math.PI;s<=2*Math.PI*n;s+=Math.PI/40){var u=cx+a*Math.cos(s), v=rr*s-bb*Math.sin(s); if(s===-2*Math.PI) ctx.moveTo(u,v); else ctx.lineTo(u,v);}
+  ctx.stroke();
+}
 // pas : nombre de pixels pour un écartement de référence
 function dessiner(cv,m,r,pas){
   var dpr=window.devicePixelRatio||1, w=cv.clientWidth||cv.width, h=cv.clientHeight||cv.height;
@@ -97,6 +109,7 @@ function dessiner(cv,m,r,pas){
   damier(ctx,w,h);
   if(!m){ctx.fillStyle='#a99';ctx.font='10px Segoe UI';ctx.textAlign='center';ctx.fillText('aucune',w/2,h/2+3);return;}
   r=r||DEF;
+  if(m.onde){ondeDessin(ctx,w,h,r);return;}
   ctx.fillStyle=rgba(r.fond,r.fond_op); ctx.fillRect(0,0,w,h);
   var s=pas/m.ref, ang=-(r.angle||0)*Math.PI/180;
   ctx.save(); ctx.translate(w/2,h/2); ctx.rotate(ang); ctx.scale(s,-s);
@@ -159,12 +172,14 @@ function reglage(){
    '<label>Épaisseur</label><div class="lig"><input type="range" id="ep" min="1" max="20" step="0.5" value="'+cours.ep+'"><output id="o_ep"></output><span style="color:#a99;font-size:11.5px">en % de l\'écartement</span></div>'+
    '<label>Fond</label><div class="lig"><input type="color" id="fond" value="'+cours.fond+'"> opacité <input type="range" id="fond_op" min="0" max="100" value="'+cours.fond_op+'"><output id="o_fond_op"></output>'+
      '<span style="color:#a99;font-size:11.5px">0 % : on voit la couleur de la couche</span></div>'+
-   '<label>Taille</label><div class="lig">écartement <input type="number" id="taille" min="0.2" step="0.5" value="'+cours.taille+'"> cm &nbsp; angle <input type="number" id="angle" step="15" value="'+cours.angle+'"> °</div>'+
+   (m&&m.onde?
+   '<label>Largeur</label><div class="lig"><input type="range" id="largeur" min="30" max="100" step="5" value="'+(cours.largeur||80)+'"><output id="o_largeur"></output><span style="color:#a99;font-size:11.5px">de l\'épaisseur de la couche · ligne centrée dans chaque mur, en coupe verticale</span></div>'
+   :'<label>Taille</label><div class="lig">écartement <input type="number" id="taille" min="0.2" step="0.5" value="'+cours.taille+'"> cm &nbsp; angle <input type="number" id="angle" step="15" value="'+cours.angle+'"> °</div>')+
    '<span></span><div class="lig"><button class="p" id="appliquer">Appliquer la hachure</button><span id="note"></span><span style="flex:1"></span><button id="retirer">Retirer la hachure</button></div></div>';
-  var maj=function(){['trait_op','fond_op'].forEach(function(k){document.getElementById('o_'+k).textContent=cours[k]+' %'}); document.getElementById('o_ep').textContent=cours.ep+' %';
+  var maj=function(){['trait_op','fond_op','largeur'].forEach(function(k){var o=document.getElementById('o_'+k); if(o) o.textContent=(cours[k]==null?80:cours[k])+' %'}); document.getElementById('o_ep').textContent=cours.ep+' %';
     dessiner(document.getElementById('grand'),m,cours,18); galerie(true); boutons();};
-  ['trait','trait_op','ep','fond','fond_op','taille','angle'].forEach(function(k){
-    var i=document.getElementById(k);
+  ['trait','trait_op','ep','fond','fond_op','taille','angle','largeur'].forEach(function(k){
+    var i=document.getElementById(k); if(!i) return;
     i.oninput=i.onchange=function(){cours[k]=i.type==='color'?i.value:parseFloat(i.value)||0; maj();};
   });
   document.getElementById('appliquer').onclick=function(){ if(sel&&cours){ sketchup.regler(sel, JSON.stringify(cours)); var a=document.getElementById('appliquer'); a.disabled=true; document.getElementById('note').textContent='Application…'; } };
