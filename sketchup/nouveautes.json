@@ -1,4 +1,5 @@
 [
-  "Appuis et seuils : la pièce garde sa longueur réelle, encastrements compris (un appui 100 fait 106 cm et dépasse de 3 cm dans chaque tableau) ; elle n'est plus coupée quand sa longueur correspond à l'ouverture",
-  "Le choix de la longueur reste le calcul du configurateur : la plus petite longueur de la gamme qui couvre la largeur de l'ouverture, sinon 2, 3… pièces égales"
+  "Hachures de coupe : nouvelle fenêtre avec l'aperçu de la hachure de chaque couche et la galerie de toutes les hachures (celles du modèle et toute la bibliothèque de SketchUp), avec recherche",
+  "Hachures : couleur de fond, angle et échelle réglables pour chaque couche, appliqués tout de suite dans la vue",
+  "Hachures : enregistrées en fichiers dans Documents\\Atelier 2M\\Hachures et rechargées toutes seules dans vos autres modèles ; bouton pour activer le remplissage de coupe du style"
 ]
