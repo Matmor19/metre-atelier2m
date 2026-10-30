@@ -4,6 +4,7 @@
 # une fenêtre montre les nouveautés et propose de l'installer : téléchargement et installation automatiques.
 require 'sketchup.rb'
 require 'json'
+require 'zlib'
 
 module A2M
   module MiseAJour
@@ -56,9 +57,72 @@ module A2M
       end
     end
 
-    # Vérification discrète quelques secondes après le démarrage (SketchUp a fini de s'ouvrir)
+    # ---- Fichier .rbz déposé dans un dossier (le vôtre, et Téléchargements) ----
+    def self.dossiers
+      base = ENV['USERPROFILE'] || ENV['HOME'] || Dir.home
+      d = Sketchup.read_default('A2M_Metre', 'dossier_rbz').to_s
+      ([d] + [File.join(base, 'Downloads'), File.join(base, 'Téléchargements')]).reject(&:empty?).select { |x| File.directory?(x) }.uniq
+    end
+
+    # Version écrite dans un .rbz (lecture du fichier a2m_metre.rb dans l'archive, sans rien installer)
+    def self.version_rbz(f)
+      donnees = File.binread(f)
+      i = 0
+      while (i = donnees.index("PK\x03\x04".b, i))
+        meth, = donnees[i + 8, 2].unpack('v')
+        taille, = donnees[i + 18, 4].unpack('V')
+        ln, lx = donnees[i + 26, 4].unpack('vv')
+        nom = donnees[i + 30, ln]
+        brut = donnees[i + 30 + ln + lx, taille]
+        if nom == 'a2m_metre.rb'
+          txt = meth == 8 ? Zlib::Inflate.new(-Zlib::MAX_WBITS).inflate(brut) : brut
+          m = txt.force_encoding('UTF-8').match(/EXT\.version\s*=\s*'([^']+)'/)
+          return m && m[1]
+        end
+        i += 30 + ln + lx + taille
+      end
+      nil
+    rescue StandardError
+      nil
+    end
+
+    # Le plus récent des a2m_metre*.rbz trouvés, s'il est plus récent que la version installée
+    def self.rbz_local
+      meilleur = nil
+      dossiers.each do |d|
+        Dir.glob(File.join(d.tr('\\', '/'), 'a2m_metre*.rbz')).each do |f|
+          v = version_rbz(f)
+          next unless v && plus_recente?(v, installee)
+          meilleur = [v, f] if meilleur.nil? || plus_recente?(v, meilleur[0])
+        end
+      end
+      meilleur
+    end
+
+    def self.installer_local(v, f)
+      q = UI.messagebox("Métré Atelier 2M : le fichier\n#{f}\ncontient la version #{v} (installée : #{installee}).\n\nL'installer maintenant ?", MB_YESNO)
+      return unless q == IDYES
+      Sketchup.install_from_archive(f)
+      UI.messagebox("Version #{v} installée.\n\nFermez SketchUp puis rouvrez-le pour l'utiliser.")
+    rescue StandardError => ex
+      UI.messagebox("Installation impossible (#{ex.message}).")
+    end
+
+    # Commande : le dossier où vous déposez le fichier .rbz
+    def self.choisir_dossier
+      d = UI.select_directory(title: 'Dossier où vous déposez le fichier a2m_metre.rbz')
+      return unless d
+      Sketchup.write_default('A2M_Metre', 'dossier_rbz', d)
+      l = rbz_local
+      l ? installer_local(*l) : UI.messagebox("Dossier retenu : #{d}\nÀ chaque ouverture de SketchUp, un a2m_metre.rbz plus récent qui s'y trouve vous sera proposé.")
+    end
+
+    # Au démarrage : d'abord un .rbz plus récent dans vos dossiers, sinon la version publiée en ligne
     def self.au_demarrage
-      UI.start_timer(8, false) { verifier(false) }
+      UI.start_timer(8, false) do
+        l = rbz_local
+        l ? installer_local(*l) : verifier(false)
+      end
     end
   end
 end

@@ -1,6 +1,7 @@
 {
- "version": "2.7.1",
+ "version": "2.7.2",
  "notes": [
-  "Bouton « Hachures de coupe par couche » dans la barre d'outils et dans la palette (rubrique Dessiner)"
+  "Mise à jour par fichier : à l'ouverture de SketchUp, un a2m_metre.rbz plus récent posé dans votre dossier (ou dans Téléchargements) vous est proposé à l'installation",
+  "Menu Extensions > Métré Atelier 2M > Dossier du fichier .rbz pour les mises à jour"
  ]
 }

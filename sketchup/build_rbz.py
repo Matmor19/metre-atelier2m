@@ -44,6 +44,7 @@ unless file_loaded?(__FILE__)
   menu.add_item('Appliquer les hachures au modèle') { A2M::Hachures.appliquer }
   menu.add_separator
   menu.add_item('Rechercher une mise à jour…') { A2M::MiseAJour.verifier(true) }
+  menu.add_item('Dossier du fichier .rbz pour les mises à jour…') { A2M::MiseAJour.choisir_dossier }
   UI.add_context_menu_handler do |cm|
     next if Sketchup.active_model.selection.empty?
     # Les menus de Windows ne se colorent pas : un repère ◆ devant le nom pour le trouver d'un coup d'œil
