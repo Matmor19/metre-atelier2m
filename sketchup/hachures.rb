@@ -1,23 +1,30 @@
 # encoding: UTF-8
 # Métré Atelier 2M : hachures de coupe par type de couche (SketchUp 2027 et plus)
-# Une fenêtre montre, pour chaque type de couche (mur, isolant, plaque, cloison, chape…), l'aperçu de sa hachure ;
-# un clic sur une couche ouvre la galerie des hachures (celles du modèle et toute la bibliothèque de SketchUp),
-# la couleur de fond, l'angle et l'échelle se règlent à côté. Tout s'applique tout de suite dans la vue.
-# Chaque couche a sa propre hachure dans le modèle (« A2M · Murs périphériques »…), enregistrée aussi en fichier .skh
-# dans Documents\Atelier 2M\Hachures : elle est rechargée toute seule dans les autres modèles.
+# Chaque couche (mur, isolant, plaque, cloison, chape…) reçoit un motif (.pat) et ses réglages :
+# couleur et transparence du trait, couleur et transparence du fond, épaisseur, écartement, angle.
+# Le motif est dessiné par l'extension en une image qui se répète (texture de la hachure) : tout est réglable,
+# et l'aperçu de la fenêtre est exactement ce qui sera posé.
+# Motifs : ceux de l'Atelier 2M (fournis), ceux de SketchUp, ceux téléchargés sur internet
+# et tout fichier .pat déposé dans Documents\Atelier 2M\Hachures\Motifs.
 require 'sketchup.rb'
 require 'json'
-require 'digest'
 require 'fileutils'
+require File.join(File.dirname(__FILE__), 'hachures_moteur')
 
 module A2M
   module Hachures
     CLE = 'A2M_Metre'
-    AUCUNE = '(aucune hachure)'
     PREFIXE = 'A2M · '
+    ICI = File.dirname(__FILE__)
     # Balises qui donnent des volumes coupés
     BALISES = %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_CLOISON
                  A2M_ISOLANT_SOL A2M_CHAPE A2M_PLANELLE A2M_ISOLANT_PLANELLE A2M_SEMELLE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
+    DEFAUT = { 'trait' => '#1e1e1e', 'trait_op' => 100, 'fond' => '#ffffff', 'fond_op' => 0, 'ep' => 4, 'taille' => 10, 'angle' => 0 }
+    # Hachures gratuites téléchargées sur cet ordinateur, pour votre usage
+    INTERNET = 'https://draftsperson.net/hatchpatterns/'
+    ARCHIVES = (1..11).map { |i| "Brick #{i}" } + ['Stone'] + [1, 2, 3, 5, 6, 7, 8, 9, 10, 11].map { |i| "Stone #{i}" } +
+               ['wood'] + (1..6).map { |i| "Wood #{i}" } + ([1, 2, 3, 4, 5] + (7..16).to_a).map { |i| "parquet #{i}" } +
+               (1..10).map { |i| format('Roof %02d', i) } + ['Urban'] + (1..7).map { |i| format('Urban %02d', i) } + ['autopat']
 
     def self.disponible?(model = Sketchup.active_model)
       model.respond_to?(:hatch_patterns) && Sketchup::Group.method_defined?(:hatch_pattern=)
@@ -25,15 +32,12 @@ module A2M
 
     def self.dossier
       d = File.join(File.dirname(A2M::Bibliotheque.dossier), 'Hachures')
-      FileUtils.mkdir_p(File.join(d, 'apercus'))
+      %w[Motifs SketchUp textures].each { |s| FileUtils.mkdir_p(File.join(d, s)) }
       d
     end
 
-    # Réglages : { balise => { 'nom' => hachure du modèle, 'fichier' => .skh, 'source' => motif choisi } }
-    # (ancienne forme : { balise => nom de la hachure })
     def self.reglages
-      r = JSON.parse(Sketchup.read_default(CLE, 'hachures', '{}').to_s) rescue {}
-      r.each_with_object({}) { |(b, v), h| h[b] = v.is_a?(Hash) ? v : { 'nom' => v.to_s, 'source' => v.to_s } }
+      JSON.parse(Sketchup.read_default(CLE, 'hachures', '{}').to_s) rescue {}
     end
 
     def self.enregistrer(r)
@@ -46,29 +50,65 @@ module A2M
 
     def self.nom_couche(b) "#{PREFIXE}#{libelle(b)}" end
 
-    # Hachure d'une couche dans ce modèle ; rechargée depuis son fichier .skh si le modèle ne l'a pas encore
-    def self.motif_couche(model, b, r = reglages)
-      x = r[b] or return nil
+    # ---- Motifs ----
+    def self.bibliotheque_sketchup
+      v = Sketchup.version.to_i
+      bases = [ENV['ProgramData'], ENV['APPDATA'], ENV['LOCALAPPDATA']].compact
+      dirs = bases.flat_map { |b| ["#{b}/SketchUp/SketchUp 20#{v}/SketchUp/HatchPatterns", "#{b}/SketchUp/SketchUp 20#{v}/HatchPatterns"] }
+      dirs << (Sketchup.get_resource_path('../HatchPatterns') rescue nil)
+      dirs.compact.map { |d| d.tr('\\', '/') }.select { |d| File.directory?(d) }.uniq.flat_map { |d| Dir.glob(File.join(d, '**', '*.skh')) }.uniq.sort
+    end
+
+    # Les hachures de SketchUp sont recopiées une fois en fichiers .pat (pour les dessiner avec nos réglages)
+    def self.exporter_sketchup(model)
+      dest = File.join(dossier, 'SketchUp')
+      marque = File.join(dest, 'fait.txt')
+      return if File.exist?(marque)
       hp = model.hatch_patterns
-      m = hp[x['nom'].to_s] rescue nil
-      return m if m
-      f = x['fichier'].to_s
-      return nil if f.empty? || !File.exist?(f)
-      hp.add(x['nom'], f)
-    rescue StandardError
-      nil
+      bibliotheque_sketchup.each_with_index do |f, i|
+        nom = File.basename(f, '.skh')
+        sortie = File.join(dest, "#{nom}.pat")
+        m = nil
+        begin
+          m = hp.add("A2M export #{i}", f)
+          m.save_fill_pattern_to_file(sortie)
+          t = A2M::MotifPat.texte_fichier(sortie)
+          File.write(sortie, t.sub(/^\*[^,\n]*/, "*#{nom}"), encoding: 'UTF-8')
+        rescue StandardError
+          File.delete(sortie) if File.exist?(sortie) && File.size(sortie).zero?
+        ensure
+          hp.remove(m) if m && m.valid?
+        end
+      end
+      File.write(marque, Time.now.to_s)
     end
 
-    # Pose la hachure réglée pour la balise de ce groupe (appelée par les outils de dessin)
-    def self.poser(ent, model = Sketchup.active_model)
-      return unless disponible?(model) && ent && ent.layer
-      m = motif_couche(model, ent.layer.name)
-      ent.hatch_pattern = m if m
-    rescue StandardError
-      nil
+    # Catalogue : { id => motif } ; id = « groupe|fichier|nom »
+    def self.catalogue(recharger = false)
+      return @cat if @cat && !recharger
+      sources = [['Atelier 2M', File.join(ICI, 'hachures')], ['SketchUp', File.join(dossier, 'SketchUp')]]
+      motifs = File.join(dossier, 'Motifs').tr('\\', '/')
+      Dir.glob(File.join(motifs, '**', '*.pat')).map { |f| File.dirname(f) }.uniq.sort.each do |d|
+        rel = d == motifs ? 'Mes motifs' : d.sub(motifs + '/', '').split('/').first
+        sources << [rel, d]
+      end
+      @cat = {}
+      sources.each do |groupe, d|
+        Dir.glob(File.join(d, '*.pat')).sort.each do |f|
+          begin
+            A2M::MotifPat.lire(A2M::MotifPat.texte_fichier(f)).each do |m|
+              id = "#{groupe}|#{File.basename(f)}|#{m['nom']}"
+              @cat[id] = m.merge('groupe' => groupe, 'id' => id)
+            end
+          rescue StandardError
+            next
+          end
+        end
+      end
+      @cat
     end
 
-    # Tous les groupes et composants de cette balise (3 niveaux d'imbrication)
+    # ---- Hachure d'une couche dans le modèle ----
     def self.objets(model, b)
       res = []
       fouiller = lambda do |ents, prof|
@@ -83,118 +123,124 @@ module A2M
       res
     end
 
-    # ---- Galerie : hachures du modèle et bibliothèque de SketchUp, avec leur aperçu ----
-    def self.fichiers_bibliotheque
-      dirs = []
-      dirs << (Sketchup.get_resource_path('../HatchPatterns') rescue nil)
-      dirs << (Sketchup.get_resource_path('HatchPatterns') rescue nil)
-      dirs << File.join(File.dirname(Sketchup.find_support_file('Materials').to_s), 'HatchPatterns') rescue nil
-      dirs.compact.select { |d| File.directory?(d) }.uniq.flat_map { |d| Dir.glob(File.join(d, '**', '*.skh')) }.uniq.sort
+    # Fabrique (ou refait) la hachure de la couche : image du motif avec ses couleurs, à la bonne échelle
+    def self.construire(model, b, r = reglages)
+      x = r[b]
+      return nil unless x.is_a?(Hash) && x['motif']
+      m = catalogue[x['motif']] || catalogue(true)[x['motif']]
+      return nil unless m
+      o = DEFAUT.merge(x)
+      png, tx, ty = A2M::MotifPat.png(m, o)
+      tex = File.join(dossier, 'textures')
+      Dir.glob(File.join(tex, "#{b}_*.png")).each { |f| File.delete(f) rescue nil }
+      f = File.join(tex, "#{b}_#{Time.now.to_i}#{rand(1000)}.png")
+      File.binwrite(f, png)
+      hp = model.hatch_patterns
+      h = hp[nom_couche(b)]
+      unless h
+        base = bibliotheque_sketchup.first or raise 'bibliothèque de hachures de SketchUp introuvable'
+        h = hp.add(nom_couche(b), base)
+      end
+      h.clear_fill_pattern rescue nil
+      h.set_fill_texture_image_and_file_name(Sketchup::ImageRep.new(f), f)
+      k = o['taille'].to_f / m['ref']                     # centimètres par unité du motif
+      h.set_uv_scale([tx * k / 2.54, 0.01].max, [ty * k / 2.54, 0.01].max)
+      h.rotation_angle = o['angle'].to_f
+      h
     end
 
-    def self.png_en_texte(f)
-      return nil unless f && File.exist?(f)
-      'data:image/png;base64,' + [File.binread(f)].pack('m0')
-    end
-
-    def self.apercu_motif(m, cle)
-      f = File.join(dossier, 'apercus', "#{cle}.png")
-      img = m.thumbnail_image
-      img.save_file(f) if img
-      png_en_texte(f)
+    def self.motif_couche(model, b, r = reglages)
+      h = model.hatch_patterns[nom_couche(b)] rescue nil
+      return h if h
+      x = r[b] or return nil
+      if x.is_a?(Hash) && x['motif'] then construire(model, b, r)
+      elsif x.is_a?(Hash) && x['nom'] then (model.hatch_patterns[x['nom']] rescue nil)   # réglage de la version précédente
+      elsif x.is_a?(String) then (model.hatch_patterns[x] rescue nil)
+      end
     rescue StandardError
       nil
     end
 
-    # Aperçu d'un fichier .skh : gardé en cache ; pour le fabriquer, la hachure est chargée un instant puis retirée
-    def self.apercu_fichier(model, chemin)
-      f = File.join(dossier, 'apercus', Digest::MD5.hexdigest("#{chemin}|#{File.mtime(chemin).to_i}") + '.png')
-      return png_en_texte(f) if File.exist?(f)
-      hp = model.hatch_patterns
-      tmp = "A2M apercu #{rand(1_000_000)}"
-      m = hp.add(tmp, chemin)
-      img = m.thumbnail_image
-      img.save_file(f) if img
-      hp.remove(m)
-      png_en_texte(f)
+    # Pose la hachure réglée pour la balise de ce groupe (appelée par les outils de dessin)
+    def self.poser(ent, model = Sketchup.active_model)
+      return unless disponible?(model) && ent && ent.layer
+      m = motif_couche(model, ent.layer.name)
+      ent.hatch_pattern = m if m
     rescue StandardError
       nil
     end
 
-    def self.galerie(model)
-      vus = {}
-      liste = []
-      model.hatch_patterns.each do |m|
-        next if m.name.start_with?(PREFIXE) || m.name.start_with?('A2M apercu')
-        vus[m.name.downcase] = true
-        liste << { 'cle' => "m:#{m.name}", 'nom' => m.name, 'img' => apercu_motif(m, 'modele_' + Digest::MD5.hexdigest(m.name)), 'ou' => 'Modèle' }
-      end
-      fichiers_bibliotheque.each do |f|
-        nom = File.basename(f, '.skh')
-        next if vus[nom.downcase]
-        vus[nom.downcase] = true
-        liste << { 'cle' => "f:#{f}", 'nom' => nom, 'img' => apercu_fichier(model, f), 'ou' => File.basename(File.dirname(f)) }
-      end
-      liste
-    end
-
-    def self.etat(model)
+    def self.regler_couche(model, b, donnees)
       r = reglages
-      couches = BALISES.map do |b|
-        m = motif_couche(model, b, r)
-        d = { 'balise' => b, 'libelle' => libelle(b), 'source' => r[b] && r[b]['source'], 'nb' => objets(model, b).size }
-        if m
-          c = m.fill_color
-          d.merge!('img' => apercu_motif(m, 'couche_' + b), 'couleur' => format('#%02x%02x%02x', c.red, c.green, c.blue),
-                   'angle' => m.rotation_angle.round(1), 'echelle' => m.uv_scale[0].round(3))
-        end
-        d
-      end
-      { 'couches' => couches, 'style' => (model.rendering_options['SectionCutFilled'] ? true : false) }
-    end
-
-    # Hachure d'une couche remplacée par le motif choisi (copie propre à la couche, réglable sans toucher aux autres)
-    def self.choisir(model, b, cle)
-      r = reglages
-      hp = model.hatch_patterns
-      ancien = hp[nom_couche(b)] rescue nil
-      if cle.to_s.empty?
+      if donnees.nil? || donnees['motif'].to_s.empty?
         objets(model, b).each { |e| e.hatch_pattern = nil rescue nil }
-        hp.remove(ancien) if ancien
+        h = model.hatch_patterns[nom_couche(b)] rescue nil
+        model.hatch_patterns.remove(h) if h
         r.delete(b)
         enregistrer(r)
         return
       end
-      source = if cle.start_with?('f:') then cle[2..-1]
-               else
-                 m = hp[cle[2..-1]] or raise 'hachure introuvable'
-                 t = File.join(dossier, "source_#{Digest::MD5.hexdigest(m.name)}.skh")
-                 m.write(t) or raise "copie de « #{m.name} » impossible"
-                 t
-               end
-      ancien.name = "#{nom_couche(b)} (remplacée #{rand(1_000_000)})" if ancien
-      nouveau = hp.add(nom_couche(b), source)
-      objets(model, b).each { |e| e.hatch_pattern = nouveau }
-      hp.remove(ancien) if ancien
-      f = File.join(dossier, "#{b}.skh")
-      nouveau.write(f)
-      r[b] = { 'nom' => nouveau.name, 'fichier' => f, 'source' => cle.sub(/\A[mf]:/, '').then { |s| File.basename(s, '.skh') } }
+      avant = r[b].is_a?(Hash) ? r[b].reject { |k, _| %w[nom fichier source].include?(k) } : {}
+      r[b] = DEFAUT.merge(avant).merge(donnees)
       enregistrer(r)
+      h = construire(model, b, r) or raise 'motif introuvable'
+      objets(model, b).each { |e| e.hatch_pattern = h }
     end
 
-    def self.regler_motif(model, b, couleur, angle, echelle)
-      m = motif_couche(model, b) or return
-      m.fill_color = Sketchup::Color.new(couleur) if couleur.to_s =~ /\A#\h{6}\z/
-      m.rotation_angle = angle.to_f
-      e = echelle.to_f
-      m.set_uv_scale(e, e) if e > 0
-      x = reglages[b]
-      m.write(x['fichier']) if x && !x['fichier'].to_s.empty?
-      # Les objets reprennent la hachure modifiée (rafraîchit la vue)
-      objets(model, b).each { |o| o.hatch_pattern = m }
+    # ---- Téléchargement de hachures (.pat) sur internet ----
+    def self.telecharger(progres, fini)
+      dest = File.join(dossier, 'Motifs', 'Internet - draftsperson.net')
+      FileUtils.mkdir_p(dest)
+      liste = ARCHIVES.map { |n| [n, "#{INTERNET}#{n.gsub(' ', '%20')}.zip"] } +
+              %w[fanpaver flagst-2].map { |n| [n, "#{INTERNET}#{n}.pat"] }
+      ok = 0; nb = 0; i = 0
+      suivant = nil
+      suivant = lambda do
+        if i >= liste.size
+          fini.call(ok, nb)
+          return
+        end
+        nom, url = liste[i]
+        i += 1
+        progres.call(i, liste.size, nom)
+        @req = Sketchup::Http::Request.new(url, Sketchup::Http::GET)
+        @req.start do |_rq, rep|
+          begin
+            corps = rep.body.to_s.b
+            if rep.status_code.to_i == 200 && corps.start_with?('PK'.b)
+              A2M::MotifPat.dezipper(corps).each do |f, data|
+                next unless f =~ /\.pat\z/i
+                File.binwrite(File.join(dest, "#{nom} - #{File.basename(f)}"), data)
+                nb += 1
+              end
+              ok += 1
+            elsif rep.status_code.to_i == 200 && url.end_with?('.pat') && corps.include?('*'.b)
+              File.binwrite(File.join(dest, "#{nom}.pat"), corps)
+              nb += 1; ok += 1
+            end
+          rescue StandardError
+            nil
+          end
+          UI.start_timer(0.05, false) { suivant.call }
+        end
+      end
+      suivant.call
     end
 
     # ---- Fenêtre ----
+    def self.etat(model)
+      r = reglages
+      couches = BALISES.map do |b|
+        x = r[b].is_a?(Hash) && r[b]['motif'] ? DEFAUT.merge(r[b]) : nil
+        { 'balise' => b, 'libelle' => libelle(b), 'nb' => objets(model, b).size, 'r' => x }
+      end
+      { 'couches' => couches, 'style' => (model.rendering_options['SectionCutFilled'] ? true : false) }
+    end
+
+    def self.motifs_pour_page
+      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'] } }
+    end
+
     def self.regler
       model = Sketchup.active_model
       return UI.messagebox('Les hachures de coupe demandent SketchUp 2027 ou plus récent.') unless disponible?(model)
@@ -202,17 +248,30 @@ module A2M
         @dlg.bring_to_front
         return
       end
-      @dlg = UI::HtmlDialog.new(dialog_title: 'Hachures de coupe par couche', preferences_key: 'A2M_Metre_Hachures', scrollable: false,
-                                resizable: true, width: 900, height: 640, min_width: 640, min_height: 420, style: UI::HtmlDialog::STYLE_DIALOG)
-      @dlg.set_html(html)
+      @dlg = UI::HtmlDialog.new(dialog_title: 'Hachures de coupe par couche', preferences_key: 'A2M_Metre_Hachures2', scrollable: false,
+                                resizable: true, width: 1040, height: 740, min_width: 760, min_height: 500, style: UI::HtmlDialog::STYLE_DIALOG)
+      @dlg.set_file(File.join(ICI, 'hachures', 'fenetre.html'))
       envoyer = lambda do |quoi, donnees|
-        @dlg.execute_script("recevoir(#{JSON.generate(quoi)}, #{JSON.generate(donnees)})")
+        @dlg.execute_script("recevoir(#{JSON.generate(quoi)}, #{JSON.generate(donnees)})") if @dlg
       end
-      operation = lambda do |nom, &bloc|
+      @dlg.add_action_callback('pret') do |_c|
         m = Sketchup.active_model
-        m.start_operation(nom, true)
+        envoyer.call('etat', etat(m))
+        UI.start_timer(0.1, false) do
+          begin
+            exporter_sketchup(m)
+          rescue StandardError
+            nil
+          end
+          catalogue(true)
+          envoyer.call('motifs', motifs_pour_page)
+        end
+      end
+      @dlg.add_action_callback('regler') do |_c, b, json|
+        m = Sketchup.active_model
+        m.start_operation('Hachure de coupe (métré)', true)
         begin
-          bloc.call(m)
+          regler_couche(m, b, json.to_s.empty? ? nil : JSON.parse(json))
           m.commit_operation
         rescue StandardError => ex
           m.abort_operation
@@ -220,122 +279,24 @@ module A2M
         end
         envoyer.call('etat', etat(m))
       end
-      @dlg.add_action_callback('pret') do |_c|
-        m = Sketchup.active_model
-        envoyer.call('etat', etat(m))
-        UI.start_timer(0.1, false) { envoyer.call('galerie', galerie(m)) }
-      end
-      @dlg.add_action_callback('choisir') do |_c, b, cle|
-        operation.call('Hachure de coupe (métré)') { |m| choisir(m, b, cle) }
-      end
-      @dlg.add_action_callback('regler') do |_c, b, couleur, angle, echelle|
-        operation.call('Réglage de hachure (métré)') { |m| regler_motif(m, b, couleur, angle, echelle) }
-      end
       @dlg.add_action_callback('style') do |_c|
         m = Sketchup.active_model
         m.rendering_options['SectionCutFilled'] = true
         envoyer.call('etat', etat(m))
       end
+      @dlg.add_action_callback('dossier') { |_c| UI.openURL('file:///' + File.join(dossier, 'Motifs').tr('\\', '/')) }
+      @dlg.add_action_callback('internet') do |_c|
+        telecharger(
+          ->(i, n, nom) { envoyer.call('progres', { 'i' => i, 'n' => n, 'nom' => nom }) },
+          lambda do |ok, nb|
+            catalogue(true)
+            envoyer.call('motifs', motifs_pour_page)
+            envoyer.call('progres', { 'fin' => true, 'ok' => ok, 'nb' => nb })
+          end
+        )
+      end
       @dlg.add_action_callback('fermer') { |_c| @dlg.close }
       @dlg.show
-    end
-
-    def self.html
-      <<~HTML
-        <!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
-        :root{--o:#E07838;--g:#3C3C3C;--f:#F6F3EF;--l:#e2dbd3}
-        *{box-sizing:border-box}
-        body{margin:0;font:13px "Segoe UI",Arial,sans-serif;background:var(--f);color:var(--g);display:flex;flex-direction:column;height:100vh}
-        header{padding:10px 14px;border-bottom:1px solid var(--l);display:flex;gap:10px;align-items:center}
-        header b{font-size:15px;flex:1}
-        #alerte{display:none;background:#fff3e6;border:1px solid var(--o);border-radius:6px;padding:6px 10px;margin:8px 14px 0}
-        #alerte button{margin-left:8px}
-        main{flex:1;display:flex;min-height:0}
-        #couches{width:320px;overflow:auto;border-right:1px solid var(--l);padding:8px}
-        .c{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;cursor:pointer;border:2px solid transparent}
-        .c:hover{background:#fff}
-        .c.sel{border-color:var(--o);background:#fff}
-        .vig{width:52px;height:52px;border:1px solid var(--l);border-radius:6px;background:#fff center/cover no-repeat;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;color:#a99}
-        .c .t{flex:1;min-width:0}
-        .c .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .c .t span{font-size:11.5px;color:#8a7f75}
-        #droite{flex:1;display:flex;flex-direction:column;min-width:0}
-        #reglage{padding:10px 14px;border-bottom:1px solid var(--l);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-        #reglage h3{margin:0;font-size:14px;width:100%}
-        #reglage label{display:flex;align-items:center;gap:6px}
-        #reglage input[type=number]{width:70px;padding:3px}
-        #reglage input[type=color]{width:40px;height:26px;padding:0;border:1px solid var(--l)}
-        #gal{flex:1;overflow:auto;padding:10px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;align-content:start}
-        .m{cursor:pointer;text-align:center;border-radius:8px;padding:4px;border:2px solid transparent}
-        .m:hover{background:#fff}
-        .m.sel{border-color:var(--o);background:#fff}
-        .m .vig{width:100%;height:76px}
-        .m span{display:block;font-size:11px;margin-top:3px;word-break:break-word}
-        .m i{display:block;font-size:10px;color:#a99;font-style:normal}
-        #filtre{padding:4px 8px;border:1px solid var(--l);border-radius:6px;width:180px}
-        footer{padding:8px 14px;border-top:1px solid var(--l);display:flex;gap:10px;align-items:center}
-        footer span{flex:1;color:#8a7f75;font-size:11.5px}
-        button{font:inherit;padding:5px 12px;border-radius:6px;border:1px solid #cfc6bc;background:#fff;cursor:pointer}
-        button.p{background:var(--o);border-color:var(--o);color:#fff}
-        .vide{color:#8a7f75;padding:20px}
-        </style></head><body>
-        <header><b>Hachures de coupe par couche</b><input id="filtre" placeholder="Chercher une hachure…"></header>
-        <div id="alerte">Le style actif n'a pas « Remplissage de coupe » : les hachures ne se verront pas en coupe.<button id="btnStyle">L'activer</button></div>
-        <main>
-          <div id="couches"></div>
-          <div id="droite">
-            <div id="reglage"><div class="vide">Cliquez sur une couche à gauche pour choisir sa hachure.</div></div>
-            <div id="gal"><div class="vide">Chargement des hachures…</div></div>
-          </div>
-        </main>
-        <footer><span>Chaque changement s'applique tout de suite à toutes les couches de ce type et à tout ce que vous dessinerez ensuite, dans tous vos modèles. Ctrl+Z annule.</span><button class="p" onclick="sketchup.fermer()">Fermer</button></footer>
-        <script>
-        var E={couches:[]}, G=null, sel=null;
-        function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-        function vig(img,t){return img?'<div class="vig" style="background-image:url('+img+')"></div>':'<div class="vig">'+(t||'aucune')+'</div>'}
-        function couche(){return E.couches.filter(function(c){return c.balise===sel})[0]}
-        function dessiner(){
-          document.getElementById('alerte').style.display=E.style?'none':'block';
-          document.getElementById('couches').innerHTML=E.couches.map(function(c){
-            return '<div class="c'+(c.balise===sel?' sel':'')+'" data-b="'+c.balise+'">'+vig(c.img)+'<div class="t"><b>'+esc(c.libelle)+'</b><span>'+
-              (c.source?esc(c.source):'aucune hachure')+(c.nb?' · '+c.nb+' objet(s) dans ce modèle':'')+'</span></div></div>';
-          }).join('');
-          document.querySelectorAll('.c').forEach(function(d){d.onclick=function(){sel=d.dataset.b;dessiner();}});
-          var c=couche(), r=document.getElementById('reglage');
-          if(!c){r.innerHTML='<div class="vide">Cliquez sur une couche à gauche pour choisir sa hachure.</div>';}
-          else if(!c.img){r.innerHTML='<h3>'+esc(c.libelle)+' : choisissez une hachure ci-dessous</h3>';}
-          else{
-            r.innerHTML='<h3>'+esc(c.libelle)+' : '+esc(c.source)+'</h3>'+
-              '<label>Couleur de fond <input type="color" id="coul" value="'+c.couleur+'"></label>'+
-              '<label>Angle <input type="number" id="ang" step="5" value="'+c.angle+'"> °</label>'+
-              '<label>Échelle <input type="number" id="ech" step="0.25" min="0.05" value="'+c.echelle+'"></label>'+
-              '<button onclick="sketchup.choisir(sel,\\'\\')">Retirer la hachure</button>';
-            ['coul','ang','ech'].forEach(function(id){document.getElementById(id).onchange=function(){
-              sketchup.regler(sel,document.getElementById('coul').value,document.getElementById('ang').value,document.getElementById('ech').value);
-            }});
-          }
-          galerie();
-        }
-        function galerie(){
-          var g=document.getElementById('gal');
-          if(!G){return;}
-          var c=couche(), f=document.getElementById('filtre').value.toLowerCase();
-          var l=G.filter(function(m){return !f||m.nom.toLowerCase().indexOf(f)>=0||m.ou.toLowerCase().indexOf(f)>=0});
-          if(!l.length){g.innerHTML='<div class="vide">Aucune hachure trouvée.</div>';return;}
-          g.innerHTML=l.map(function(m){
-            return '<div class="m'+(c&&c.source===m.nom?' sel':'')+'" data-k="'+esc(m.cle)+'">'+vig(m.img,'sans aperçu')+'<span>'+esc(m.nom)+'</span><i>'+esc(m.ou)+'</i></div>';
-          }).join('');
-          document.querySelectorAll('.m').forEach(function(d){d.onclick=function(){
-            if(!sel){alert('Choisissez d\\'abord une couche à gauche.');return;}
-            sketchup.choisir(sel,d.dataset.k);
-          }});
-        }
-        function recevoir(q,d){ if(q==='etat'){E=d;dessiner();} else {G=d;galerie();} }
-        document.getElementById('filtre').oninput=galerie;
-        document.getElementById('btnStyle').onclick=function(){sketchup.style()};
-        sketchup.pret();
-        </script></body></html>
-      HTML
     end
 
     # Commande : applique les hachures réglées à tous les groupes et composants balisés du modèle

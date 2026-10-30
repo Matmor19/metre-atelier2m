@@ -1,5 +1,6 @@
 [
-  "Hachures de coupe : nouvelle fenêtre avec l'aperçu de la hachure de chaque couche et la galerie de toutes les hachures (celles du modèle et toute la bibliothèque de SketchUp), avec recherche",
-  "Hachures : couleur de fond, angle et échelle réglables pour chaque couche, appliqués tout de suite dans la vue",
-  "Hachures : enregistrées en fichiers dans Documents\\Atelier 2M\\Hachures et rechargées toutes seules dans vos autres modèles ; bouton pour activer le remplissage de coupe du style"
+  "Hachures : nouvelle fenêtre avec galerie de motifs dessinés en direct : 23 motifs Atelier 2M (maçonnerie, béton, isolant laine en zigzag, polystyrène, plâtre, terre, gravier, bois, pierre, étanchéité…), toutes les hachures de SketchUp, et vos fichiers .pat",
+  "Hachures : bouton « Télécharger des hachures sur internet » (briques, pierres, bois, parquets, toitures… en fichiers .pat gratuits)",
+  "Hachures : couleur et opacité du trait, couleur et opacité du fond (0 % : on voit la couleur de la couche), épaisseur, écartement en cm et angle, pour chaque couche",
+  "Hachures : l'aperçu est exactement ce qui est posé ; réglages retrouvés dans tous vos modèles"
 ]
