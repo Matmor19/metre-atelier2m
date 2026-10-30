@@ -9,6 +9,20 @@ require 'zlib'
 module A2M
   module MiseAJour
     BASE = 'https://raw.githubusercontent.com/Matmor19/metre-atelier2m/main/sketchup/'
+    API = 'https://api.github.com/repos/Matmor19/metre-atelier2m/commits/main'
+
+    # Adresse des fichiers au dernier enregistrement publié (évite le cache de GitHub, qui peut servir
+    # l'ancienne version pendant quelques minutes) ; sans réponse de GitHub : l'adresse habituelle
+    def self.base
+      @rq0 = Sketchup::Http::Request.new(API, Sketchup::Http::GET)
+      @rq0.headers = { 'User-Agent' => 'A2M-Metre-SketchUp', 'Accept' => 'application/vnd.github+json' } rescue nil
+      @rq0.start do |_q, rep|
+        sha = (JSON.parse(rep.body)['sha'] rescue nil) if rep.status_code == 200
+        yield sha && sha =~ /\A\h{40}\z/ ? "https://raw.githubusercontent.com/Matmor19/metre-atelier2m/#{sha}/sketchup/" : BASE
+      end
+    rescue StandardError
+      yield BASE
+    end
 
     def self.installee() A2M::Metre::EXT.version.to_s end
 
@@ -19,7 +33,12 @@ module A2M
     # manuel : lancé depuis le menu (on répond aussi quand tout est à jour ou que la connexion échoue)
     def self.verifier(manuel = false)
       return unless defined?(Sketchup::Http::Request)
-      @req = Sketchup::Http::Request.new("#{BASE}version.json?#{Time.now.to_i}", Sketchup::Http::GET)
+      base { |b| verifier_depuis(b, manuel) }
+    end
+
+    def self.verifier_depuis(b, manuel)
+      @base = b
+      @req = Sketchup::Http::Request.new("#{b}version.json?#{Time.now.to_i}", Sketchup::Http::GET)
       @req.start do |_rq, rep|
         begin
           raise "réponse #{rep.status_code}" unless rep.status_code == 200
@@ -42,7 +61,7 @@ module A2M
 
     def self.telecharger(v)
       Sketchup.status_text = "Métré Atelier 2M : téléchargement de la version #{v}…"
-      @req2 = Sketchup::Http::Request.new("#{BASE}a2m_metre.rbz?#{Time.now.to_i}", Sketchup::Http::GET)
+      @req2 = Sketchup::Http::Request.new("#{@base || BASE}a2m_metre.rbz?#{Time.now.to_i}", Sketchup::Http::GET)
       @req2.start do |_rq, rep|
         begin
           raise "réponse #{rep.status_code}" unless rep.status_code == 200 && rep.body.to_s.bytesize > 1000

@@ -1,7 +1,6 @@
 {
- "version": "2.13.4",
+ "version": "2.13.5",
  "notes": [
-  "Bibliothèque : les appuis et seuils rangés par erreur comme fenêtres (« Appuis 100 », « Seuil 90 »…) sont reclassés tout seuls, avec leur gamme et leur longueur",
-  "Mise en bibliothèque : le type est proposé d'après le nom de l'objet (appui, seuil, porte, fenêtre, plinthe…) au lieu de reprendre celui de l'objet précédent"
+  "Mise à jour : la nouvelle version est trouvée dès sa publication (plus d'attente du cache de GitHub)"
  ]
 }
