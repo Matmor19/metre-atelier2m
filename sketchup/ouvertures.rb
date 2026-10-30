@@ -403,12 +403,19 @@ module A2M
         k, lg = A2M::Etirement.decoupe(p[:l], obj['longueurs'] || A2M::Bibliotheque::LONGUEURS[obj['type']] || [p[:l]])
         return [] unless k
       end
-      # Objet d'une gamme : sa taille réelle ; objet étiré : étiré à la longueur de la gamme, puis coupé comme les autres
-      lp = obj['membres'] || obj['gamme'] ? obj['l0'].to_f * 2.54 : lg
+      # Encastrement : un appui « 100 » mesure en vrai 106 cm (3 cm pris dans chaque tableau).
+      # La longueur de la gamme se compare à la largeur de l'ouverture (même calcul que le configurateur),
+      # la pièce garde sa longueur réelle et dépasse de moitié de chaque côté, sans être coupée si elle suffit.
+      nominal = obj['longueur'].to_f
+      e = nominal > 0 ? obj['l0'].to_f * 2.54 - nominal : 0.0
+      e = 0.0 if e < 0 || e > 30
+      # Objet d'une gamme : sa taille réelle ; objet étiré : étiré à la longueur de la gamme (+ encastrement), puis coupé comme les autres
+      lp = obj['membres'] || obj['gamme'] ? obj['l0'].to_f * 2.54 : lg + e
       n = o[:n]; u = o[:u]; b = o[:bas]
       ur = Z_AXIS.cross(n).normalize
-      l = (p[:l] / 100.0).m
-      gauche = u.dot(ur) > 0 ? b : b.offset(u, l)
+      l0 = (p[:l] / 100.0).m
+      l = ((p[:l] + e) / 100.0).m                          # longueur couverte : ouverture + encastrements
+      gauche = (u.dot(ur) > 0 ? b : b.offset(u, l0)).offset(ur, -(e / 200.0).m)
       h0 = obj['h0'].to_f
       part = l / k                                          # longueur de chaque pièce posée
       lpi = (lp / 100.0).m
@@ -423,13 +430,16 @@ module A2M
                 end
         org = gauche.offset(ur, debut).offset(Z_AXIS, -h0)
         a = A2M::Bibliotheque.instance_pour(ents, obj, lp, h0 * 2.54, org, ur, n.reverse, recul, model, {}, false)
-        if lpi - part > 0.04                                # plus long que sa part : coupé
+        coupe = lpi - part > 0.04
+        if coupe                                            # plus long que sa part : coupé
           c = couper(ents, a, gauche, ur, n, a0, a1)
           if c then a = c
           else alertes << "#{obj['nom']} : objet non solide, pièce non coupée (#{lp.round} cm au lieu de #{(part * 2.54).round(1)} cm)"
           end
         end
-        a.name = "#{obj['gamme'] || obj['nom']} #{(part * 2.54).round(1)} cm (coupé dans #{(obj['longueur'] || lg).to_f.round})#{k > 1 ? " #{i + 1}/#{k}" : ''}"
+        lgn = (obj['longueur'] || lg).to_f.round
+        a.name = (coupe ? "#{obj['gamme'] || obj['nom']} #{(part * 2.54).round(1)} cm (coupé dans #{lgn})" : "#{obj['gamme'] || obj['nom']} #{lgn}") +
+                 (k > 1 ? " #{i + 1}/#{k}" : '')
         a.set_attribute('a2m', 'appui_de', p[:type][0])
         a
       end

@@ -1,5 +1,4 @@
 [
-  "Ouverture : toutes les couches collées sont percées (mur, isolant, plaque), même quand SketchUp confond leurs faces",
-  "Menuiseries dynamiques : elles prennent la taille de l'ouverture même si le composant ignore la largeur et la hauteur inscrites",
-  "Ouverture : une face de mur retournée ne fait plus poser la menuiserie du mauvais côté"
+  "Appuis et seuils : la pièce garde sa longueur réelle, encastrements compris (un appui 100 fait 106 cm et dépasse de 3 cm dans chaque tableau) ; elle n'est plus coupée quand sa longueur correspond à l'ouverture",
+  "Le choix de la longueur reste le calcul du configurateur : la plus petite longueur de la gamme qui couvre la largeur de l'ouverture, sinon 2, 3… pièces égales"
 ]
