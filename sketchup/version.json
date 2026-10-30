@@ -1,7 +1,7 @@
 {
- "version": "2.13.3",
+ "version": "2.13.4",
  "notes": [
-  "Correction : toutes les couches collées (mur, isolant, plaque) sont percées ; la face commune entre deux couches faisait croire à un vide",
-  "Correction : composants dynamiques — la taille de la menuiserie se règle par sa cote (lenx / lenz) et plus par un réglage de profil (« dormant, largeur »), y compris pour les objets déjà rangés"
+  "Bibliothèque : les appuis et seuils rangés par erreur comme fenêtres (« Appuis 100 », « Seuil 90 »…) sont reclassés tout seuls, avec leur gamme et leur longueur",
+  "Mise en bibliothèque : le type est proposé d'après le nom de l'objet (appui, seuil, porte, fenêtre, plinthe…) au lieu de reprendre celui de l'objet précédent"
  ]
 }

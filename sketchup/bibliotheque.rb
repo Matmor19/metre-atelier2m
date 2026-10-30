@@ -173,7 +173,26 @@ module A2M
     def self.objets
       f = index_chemin
       return [] unless File.exist?(f)
-      (JSON.parse(File.read(f, encoding: 'UTF-8')) rescue [])
+      liste = (JSON.parse(File.read(f, encoding: 'UTF-8')) rescue [])
+      reparer(liste)
+    end
+
+    # Appuis et seuils rangés par erreur sous un autre type (nom « Appuis 100 », « Seuil 90 »… mais type Fenêtre) :
+    # reclassés une fois pour toutes, avec leur gamme (le nom sans le chiffre) et leur longueur (le chiffre)
+    def self.reparer(liste)
+      modif = false
+      liste = liste.map do |o|
+        t = type_d_apres(o['nom'])
+        next o unless ['Appui de fenêtre', 'Seuil'].include?(t) && o['type'] != t && o['fichier']
+        m = o['nom'].to_s.match(/\A(.*?)\s*(\d+([.,]\d+)?)\s*(cm)?\s*\z/)
+        next o unless m
+        modif = true
+        o.merge('type' => t, 'balise' => nil, 'gamme' => m[1].strip, 'longueur' => m[2].tr(',', '.').to_f, 'lx' => [], 'lz' => [])
+      end
+      sauver_index(liste) if modif
+      liste
+    rescue StandardError
+      liste
     end
 
     def self.sauver_index(liste)
@@ -331,13 +350,28 @@ module A2M
       lots.map(&:first)
     end
 
+    # Type déduit du nom de l'objet (« Appuis 100 » → appui, « Seuil 90 » → seuil…) : évite de garder par erreur le type du précédent
+    def self.type_d_apres(nom)
+      n = nom.to_s.downcase
+      return 'Appui de fenêtre' if n =~ /appui/
+      return 'Seuil' if n =~ /seuil/
+      return 'Plinthe (profil)' if n =~ /plinthe/
+      return 'Planelle (profil)' if n =~ /planelle/
+      return 'Façade de placard' if n =~ /placard/
+      return 'Porte-fenêtre, baie ou coulissant' if n =~ /porte.?fen|baie|coulissan|galandage/
+      return 'Porte intérieure de passage' if n =~ /\bbp\b|bloc.?porte|porte.*(int|passage)/
+      return 'Porte d\'entrée' if n =~ /porte/
+      return 'Fenêtre' if n =~ /fen[eê]tre|ch[aâ]ssis|oscillo/
+      nil
+    end
+
     def self.fiche(defaut_nom)
       me = A2M::Ouvertures::CHOIX_ME
       ac = A2M::Ouvertures::A_CHOISIR
       prec = @fiche || {}
       libs = ['Nom de l\'objet', 'Type', 'Face extérieure (vue de la rue, côté pose)', 'Nombre de vantaux (menuiseries)',
               'Matériau', 'Type d\'ouvrant', 'Vitrage', 'Fermeture (volet, store…)']
-      defs = [defaut_nom, prec[1] || TYPES[0][0], prec[2] || EXT_VERS_MOI, prec[3] || ac, prec[4] || ac, prec[5] || ac, prec[6] || ac, prec[7] || ac]
+      defs = [defaut_nom, type_d_apres(defaut_nom) || prec[1] || TYPES[0][0], prec[2] || EXT_VERS_MOI, prec[3] || ac, prec[4] || ac, prec[5] || ac, prec[6] || ac, prec[7] || ac]
       listes = ['', (types.map(&:first) + [NOUVEAU_TYPE]).join('|'), [EXT_VERS_MOI, EXT_OPPOSE].join('|'),
                 ([ac] + me['vantaux'].map(&:last)).join('|'), ([ac] + me['mat'].map(&:last)).join('|'),
                 ([ac] + me['ouvrant'].map(&:last)).join('|'), ([ac] + me['vitrage'].map(&:last)).join('|'),
