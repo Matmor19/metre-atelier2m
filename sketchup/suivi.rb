@@ -131,9 +131,9 @@ module A2M
       return UI.messagebox("Sélectionnez l'ouverture (sa réservation ou sa menuiserie), posée avec l'outil Ouverture.") unless r
       d = donnees(r)
       tag = r.layer && r.layer.name
-      porte = tag == 'A2M_PORTE_ENTREE'
-      objs = (A2M::Bibliotheque.objets_de(A2M::Ouvertures.balises_de(porte ? 'Porte' : 'Fenêtre')) rescue [])
-      return UI.messagebox("La bibliothèque n'a pas encore de #{porte ? 'porte' : 'fenêtre ni de baie'} : rangez l'objet d'abord (Paramétrer un objet pour la bibliothèque).") if objs.empty?
+      objs = (A2M::Bibliotheque.objets_de([tag]) rescue [])
+      lib = { 'A2M_FENETRE' => 'fenêtre', 'A2M_PORTE_FENETRE' => 'porte-fenêtre ou baie', 'A2M_PORTE_ENTREE' => 'porte d\'entrée' }[tag] || 'menuiserie de ce type'
+      return UI.messagebox("La bibliothèque n'a pas encore de #{lib} : rangez l'objet d'abord (Paramétrer un objet pour la bibliothèque).") if objs.empty?
       noms = objs.map { |o| "#{o['nom']} (#{o['type']})" }
       pr = d['p']
       rep = UI.inputbox(['Menuiserie (bibliothèque)'], [noms[0]], [noms.join('|')], "Ouverture #{pr['l'].round} × #{pr['h'].round} cm")

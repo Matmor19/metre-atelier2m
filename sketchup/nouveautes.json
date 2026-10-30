@@ -1,5 +1,5 @@
 [
-  "Outil Ouverture : type (Fenêtre ou Porte), largeur, hauteur, appui ou seuil oui/non, puis la bibliothèque limitée au type choisi (fenêtres et baies, ou portes)",
-  "Rien de ce type dans la bibliothèque : l'ouverture est créée vide (réservation balisée), sans question en plus",
-  "Nouveau : clic droit sur une ouverture › Poser une menuiserie de la bibliothèque sur l'ouverture — l'objet prend les dimensions exactes de l'ouverture"
+  "Outil Ouverture : type Fenêtre, Porte-fenêtre / baie ou Porte d'entrée (chaque type montre exactement ses objets de la bibliothèque), hauteur sous linteau dans la fiche",
+  "Réservation : toutes les couches abaissées sauf la dernière (intérieure) — 5 cm sous les fenêtres (appui), 7 cm sous les portes-fenêtres et portes d'entrée (seuil)",
+  "La deuxième fiche apparaît dès que la bibliothèque a un objet, un appui ou un seuil pour ce type ; sinon la barre d'état dit ce qui manque"
 ]

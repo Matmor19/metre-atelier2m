@@ -104,10 +104,11 @@ module A2M
     end
 
     VIDE = 'Aucune : ouverture vide (objet à poser plus tard)'
-    TYPES_SAISIE = ['Fenêtre', 'Porte']
-    # Bibliothèque montrée selon le type : fenêtres et baies, ou portes
+    TYPES_SAISIE = ['Fenêtre', 'Porte-fenêtre / baie', 'Porte d\'entrée']
+    TAG_SAISIE = { 'Fenêtre' => 'A2M_FENETRE', 'Porte-fenêtre / baie' => 'A2M_PORTE_FENETRE', 'Porte d\'entrée' => 'A2M_PORTE_ENTREE' }
+    # Bibliothèque montrée selon le type : exactement les objets de ce type
     def self.balises_de(type_saisie)
-      type_saisie == 'Porte' ? %w[A2M_PORTE_ENTREE] : %w[A2M_FENETRE A2M_PORTE_FENETRE]
+      [TAG_SAISIE[type_saisie] || type_saisie]
     end
 
     # Saisie : type (fenêtre ou porte), largeur, hauteur, appui ou seuil oui/non ; puis le choix dans la bibliothèque,
@@ -115,20 +116,20 @@ module A2M
     # l'objet se pose dessus plus tard (clic droit › Poser une menuiserie de la bibliothèque sur l'ouverture).
     def self.demander
       r = reg
-      rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Appui ou seuil'],
-                        [@r[:ts] || TYPES_SAISIE[0], (@r[:l] || 100).to_s, (@r[:h] || 125).to_s, @r[:as_oui] || 'Oui'],
-                        [TYPES_SAISIE.join('|'), '', '', 'Oui|Non'], 'Ouverture')
+      rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm, depuis le bas du mur)', 'Appui ou seuil'],
+                        [TYPES_SAISIE.include?(@r[:ts]) ? @r[:ts] : TYPES_SAISIE[0], (@r[:l] || 100).to_s, (@r[:h] || 125).to_s, (@r[:lin] || r['lin']).to_s, @r[:as_oui] || 'Oui'],
+                        [TYPES_SAISIE.join('|'), '', '', '', 'Oui|Non'], 'Ouverture')
       return nil unless rep
       ts = rep[0]
-      l, h = rep[1..2].map { |v| v.to_s.tr(',', '.').to_f }
-      return UI.messagebox('Largeur et hauteur supérieures à 0.') && nil if l <= 0 || h <= 0
-      @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:as_oui] = rep[3]
-      haute = h >= r['seuil_porte'].to_f                  # baie ou porte : seuil ; fenêtre : appui
+      l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
+      return UI.messagebox('Largeur et hauteur supérieures à 0, linteau au moins à la hauteur de l\'ouverture.') && nil if l <= 0 || h <= 0 || lin < h
+      @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:lin] = lin; @r[:as_oui] = rep[4]
+      haute = ts != 'Fenêtre'                             # porte-fenêtre ou porte d'entrée : seuil ; fenêtre : appui
       objs = (A2M::Bibliotheque.objets_de(balises_de(ts)) rescue [])
       menus = objs.map { |o| "#{o['nom']} (#{o['type']})" } + [VIDE]
       aps = []; asl = []
-      if rep[3] == 'Oui'
-        ty = ts == 'Porte' || haute ? 'Seuil' : 'Appui de fenêtre'
+      ty = haute ? 'Seuil' : 'Appui de fenêtre'
+      if rep[4] == 'Oui'
         gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
         aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
               (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
@@ -136,8 +137,8 @@ module A2M
       end
       prec = @r[ts] || {}
       choix_menu = VIDE; choix_as = nil
-      # Deuxième fiche seulement s'il y a quelque chose à choisir
-      if objs.any? || asl.size > 1
+      # Deuxième fiche dès qu'il y a quelque chose dans la bibliothèque pour ce type
+      if objs.any? || asl.any?
         libs = ['Menuiserie (bibliothèque)']; vals = [menus.include?(prec[:menu]) ? prec[:menu] : menus[0]]; lst = [menus.join('|')]
         if asl.any?
           libs << (ty == 'Seuil' ? 'Seuil (bibliothèque)' : 'Appui (bibliothèque)')
@@ -147,18 +148,20 @@ module A2M
         return nil unless rep2
         choix_menu = rep2[0]; choix_as = rep2[1]
         @r[ts] = { menu: choix_menu, as: choix_as }
-      elsif asl.size == 1
-        choix_as = asl[0]                                   # une seule gamme : prise d'office (appui ou seuil demandé « Oui »)
       end
+      manque = []
+      manque << "aucune #{ts.downcase} dans la bibliothèque : ouverture vide" if objs.empty?
+      manque << "aucun #{ty == 'Seuil' ? 'seuil' : 'appui'} dans la bibliothèque (type « #{ty} »)" if rep[4] == 'Oui' && asl.empty?
+      Sketchup.status_text = manque.join(' ; ') if manque.any?
       obj = choix_menu == VIDE ? nil : objs[menus.index(choix_menu)]
-      tag = obj ? obj['balise'] : (ts == 'Porte' ? 'A2M_PORTE_ENTREE' : (haute ? 'A2M_PORTE_FENETRE' : 'A2M_FENETRE'))
+      tag = obj ? obj['balise'] : TAG_SAISIE[ts]
       type = TYPES.find { |x| x[1] == tag }
       opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
       me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
       as_obj = choix_as ? aps[asl.index(choix_as)] : nil
-      { type: type, l: l, h: h, lin: [r['lin'].to_f, h].max, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
-        appui: ts == 'Porte' || haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
+      { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
+        appui: haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
     end
 
     def self.lancer
@@ -235,8 +238,9 @@ module A2M
       c0 = b.offset(n, 5.cm)
       echecs = []; recs = []
       cibles.each_with_index do |g, i|
-        # Mur maçonné et isolant (2 premières couches) : allège abaissée pour l'appui ou le seuil ; plaque et couches suivantes : à la cote
-        bas_i = i < 2 && p[:appui].to_f > 0 ? c0.offset(Z_AXIS, -(p[:appui] / 100.0).m) : c0
+        # Réservation de l'appui ou du seuil : toutes les couches abaissées sauf la dernière (la plus à l'intérieur)
+        baisse = p[:appui].to_f > 0 && (cibles.size == 1 || i < cibles.size - 1)
+        bas_i = baisse ? c0.offset(Z_AXIS, -(p[:appui] / 100.0).m) : c0
         haut_i = h + (c0.z - bas_i.z)
         rect = [bas_i, bas_i.offset(u, l), bas_i.offset(u, l).offset(Z_AXIS, haut_i), bas_i.offset(Z_AXIS, haut_i)]
         mid = mur_id(g)
