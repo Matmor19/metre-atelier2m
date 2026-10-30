@@ -23,7 +23,7 @@ unless file_loaded?(__FILE__)
     ['planelle',    'Poser les planelles en rive de dalle', 'Planelles sur tout le pourtour de la dalle : votre profil dessiné (en L…, avec isolant), un profil de la bibliothèque ou un rectangle ; dans l\'épaisseur (dalle recoupée) ou à l\'extérieur', -> { A2M::Planelles.lancer }, false],
     ['hachures',    'Hachures de coupe par couche',        'Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l\'appliquer au modèle déjà dessiné', -> { A2M::Hachures.regler }, false],
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
-    ['ouverture',   'Créer une ouverture',                 'Perce le mur et ses doublages, pose la menuiserie au nu intérieur, à la taille exacte de l\'ouverture, recoupe les plinthes ; l\'ouverture suit la menuiserie déplacée, le mur est rebouché si elle est supprimée', -> { A2M::Ouvertures.lancer }, false],
+    ['ouverture',   'Créer une ouverture',                 'Largeur et hauteur suffisent : porte ou fenêtre reconnue, menuiserie et appui ou seuil proposés ; perce toutes les couches, suit la menuiserie déplacée', -> { A2M::Ouvertures.lancer }, false],
     ['porte',       'Poser une porte intérieure',          'Bloc-porte de passage (63 à 103 × 204) dans une cloison ou un refend : réservation, toute l\'épaisseur, centré, sens au Tab, choix du configurateur', -> { A2M::PortesInt.lancer }, false],
     ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
     ['objet',       'Paramétrer un objet pour la bibliothèque', 'Menuiserie, porte, appui, seuil, façade de placard, plinthe, mobilier… : objet dessiné, éclaté ou composant dynamique (gardé entier), rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
@@ -40,6 +40,7 @@ unless file_loaded?(__FILE__)
     menu.add_item(titre + '…') { action.call }
     menu.add_separator if sep
   end
+  menu.add_item('Réglages de l\'outil Ouverture…') { A2M::Ouvertures.regler }
   menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
   menu.add_separator
   menu.add_item('Hachures de coupe par couche…') { A2M::Hachures.regler }

@@ -82,61 +82,71 @@ module A2M
       noms.uniq.sort
     end
 
+    # ---- Réglages de l'outil (une fois pour toutes, menu Extensions › Métré Atelier 2M) ----
+    REG_DEF = { 'lin' => 215, 'seuil_porte' => 180, 'res_fen' => 5, 'res_porte' => 7, 'debord' => 4, 'options' => false, 'choix' => false }
+
+    def self.reg
+      REG_DEF.merge(JSON.parse(Sketchup.read_default('A2M_Metre', 'ouverture', '{}').to_s)) rescue REG_DEF.dup
+    end
+
+    def self.regler
+      r = reg
+      on = ->(b) { b ? 'Oui' : 'Non' }
+      rep = UI.inputbox(['Hauteur sous linteau (cm, depuis le bas du mur)', 'Porte à partir d\'une hauteur de (cm)',
+                         'Réservation sous les fenêtres, appui (cm)', 'Réservation sous les portes, seuil (cm)', 'Débord de l\'appui ou du seuil sur la façade (cm)',
+                         'Demander les réglages des composants dynamiques à chaque pose', 'Demander les choix du configurateur à chaque pose'],
+                        [r['lin'], r['seuil_porte'], r['res_fen'], r['res_porte'], r['debord'], on.call(r['options']), on.call(r['choix'])].map(&:to_s),
+                        ['', '', '', '', '', 'Non|Oui', 'Non|Oui'], 'Réglages de l\'outil Ouverture')
+      return unless rep
+      n = rep[0..4].map { |v| v.to_s.tr(',', '.').to_f }
+      Sketchup.write_default('A2M_Metre', 'ouverture', JSON.generate('lin' => n[0], 'seuil_porte' => n[1], 'res_fen' => n[2], 'res_porte' => n[3],
+                                                                   'debord' => n[4], 'options' => rep[5] == 'Oui', 'choix' => rep[6] == 'Oui'))
+    end
+
+    RES_FEN = 'Réservation fenêtre (panneau balisé)'
+    RES_PF = 'Réservation porte-fenêtre (panneau balisé)'
+    RES_PE = 'Réservation porte d\'entrée (panneau balisé)'
+    TROU = 'Aucune (le trou seul)'
+    LIBRE = 'Passage libre (sans porte ni seuil)'
+
+    # Fiche courte : largeur et hauteur ; porte ou fenêtre déduite de la hauteur ; puis la menuiserie et l'appui
+    # ou le seuil qui conviennent (les derniers choisis sont proposés). Tout le reste vient des réglages de l'outil.
     def self.demander
-      t = TYPES.find { |x| x[0] == @r[:type] } || TYPES[0]
-      g = @r[t[0]] || {}
-      objs = (A2M::Bibliotheque.objets_de(TYPES.map { |x| x[1] }.compact) rescue [])
-      menus = [RES_SIMPLE, RES_AUCUNE] + objs.map { |o| "#{BIB}#{o['nom']} (#{o['type']})" }
-      res0 = { 'Oui' => RES_SIMPLE, 'Non' => RES_AUCUNE }[@r[:res]] || @r[:res]
-      res0 = RES_SIMPLE unless menus.include?(res0)
-      # Appuis et seuils de la bibliothèque (types « Appui de fenêtre » et « Seuil »)
-      # Gammes (un objet par longueur) puis objets étirés
-      gms = (A2M::Bibliotheque.gammes rescue {})
-      aps = gms.map { |(g, ty), ms| { 'gamme' => g, 'type' => ty, 'membres' => ms } } +
-            (A2M::Bibliotheque.objets.select { |o| o['fichier'] && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
-      asl = [AUCUN_AS] + aps.map { |o| o['membres'] ? "Gamme #{o['gamme']} (#{o['type']}, #{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : "#{o['nom']} (#{o['type']})" }
-      rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
-                         'Nombre de couches à percer (mur + doublages)', 'Menuiserie posée dans l\'ouverture',
-                         'Réservation appui / seuil (cm) : allège abaissée sur les 2 premières couches (fenêtre 5, porte 7)',
-                         'Pièce de rattachement', 'Appui ou seuil posé sous l\'ouverture', 'Appui ou seuil : débord sur la façade (cm)'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || reservation(t[1])).to_s, @r[:piece] || AUTO,
-                         asl.include?(g[:as]) ? g[:as] : AUCUN_AS, (g[:debord] || 4).to_s],
-                        [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', menus.join('|'), '', ([AUTO] + (pcs = pieces_du_modele)).join('|'), asl.join('|'), ''], 'Créer une ouverture (Métré Atelier 2M)')
+      r = reg
+      rep = UI.inputbox(['Largeur (cm)', 'Hauteur (cm)'], [(@r[:l] || 100).to_s, (@r[:h] || 125).to_s], 'Ouverture')
       return nil unless rep
-      type = TYPES.find { |x| x[0] == rep[0] }
-      l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
-      if l <= 0 || h <= 0 || lin < h
-        UI.messagebox('Largeur et hauteur supérieures à 0, et hauteur sous linteau au moins égale à la hauteur de l\'ouverture.')
-        return nil
-      end
-      appui = [rep[6].to_s.tr(',', '.').to_f, 0].max
-      # Type changé dans la liste : ses propres valeurs par défaut (porte intérieure : pas d'appui, 1 couche)
-      if rep[0] != t[0] && !@r[type[0]]
-        l, h, lin = type[2].to_f, type[3].to_f, type[4].to_f if rep[1].to_f == t[2] && rep[2].to_f == t[3] && rep[3].to_f == t[4]
-        appui = reservation(type[1]) if appui == reservation(t[1])
-      end
-      @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
-      piece = rep[7].to_s == AUTO ? nil : rep[7].to_s
-      @r[:piece] = rep[7].to_s
-      obj = rep[5].start_with?(BIB) ? objs[menus.index(rep[5]) - 2] : nil
-      if obj && obj['balise'] != type[1]
-        UI.messagebox("« #{obj['nom']} » est rangé comme #{obj['type']} : choisissez ce type d'ouverture, ou un autre objet.")
-        return nil
-      end
-      if obj && type[1].nil?
-        UI.messagebox('Une ouverture libre ne reçoit pas de menuiserie.')
-        return nil
-      end
-      pose = rep[5] != RES_AUCUNE
-      # Composant dynamique : ses autres réglages (épaisseurs, nombre de vantaux, options…) choisis pour cette ouverture
-      opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
+      l, h = rep.map { |v| v.to_s.tr(',', '.').to_f }
+      return UI.messagebox('Largeur et hauteur supérieures à 0.') && nil if l <= 0 || h <= 0
+      @r[:l] = l; @r[:h] = h
+      porte = h >= r['seuil_porte'].to_f
+      cle = porte ? :porte : :fen
+      tags = porte ? %w[A2M_PORTE_FENETRE A2M_PORTE_ENTREE] : %w[A2M_FENETRE]
+      objs = (A2M::Bibliotheque.objets_de(tags) rescue [])
+      menus = objs.map { |o| "#{o['nom']} (#{o['type']})" } + (porte ? [RES_PF, RES_PE, LIBRE] : [RES_FEN, TROU])
+      # Appuis sous les fenêtres, seuils sous les portes : gammes puis objets étirés
+      ty = porte ? 'Seuil' : 'Appui de fenêtre'
+      gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
+      aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
+            (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
+      asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] } + [AUCUN_AS]
+      prec = @r[cle] || {}
+      champs = ['Menuiserie'] + [porte ? 'Seuil' : 'Appui']
+      rep2 = UI.inputbox(champs, [menus.include?(prec[:menu]) ? prec[:menu] : menus[0], asl.include?(prec[:as]) ? prec[:as] : asl[0]],
+                         [menus.join('|'), asl.join('|')], "#{porte ? 'Porte' : 'Fenêtre'} #{l.round} × #{h.round} cm")
+      return nil unless rep2
+      @r[cle] = { menu: rep2[0], as: rep2[1] }
+      obj = menus.index(rep2[0]) < objs.size ? objs[menus.index(rep2[0])] : nil
+      tag = obj ? obj['balise'] : { RES_FEN => 'A2M_FENETRE', TROU => 'A2M_FENETRE', RES_PF => 'A2M_PORTE_FENETRE', RES_PE => 'A2M_PORTE_ENTREE', LIBRE => nil }[rep2[0]]
+      type = TYPES.find { |x| x[1] == tag }
+      pose = ![TROU, LIBRE].include?(rep2[0])
+      opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
-      me = pose ? choix_menuiserie(type[1], obj && obj['choix']) : nil
-      as_obj = rep[8] == AUCUN_AS ? nil : aps[asl.index(rep[8]) - 1]
-      debord = rep[9].to_s.tr(',', '.').to_f
-      @r[type[0]] = (@r[type[0]] || {}).merge(as: rep[8], debord: debord)
-      { type: type, l: l, h: h, lin: lin, n: [[rep[4].to_i, 1].max, 4].min, res: pose && type[1], obj: obj, opts: opts, appui: appui, piece: piece, me: me,
-        as_obj: as_obj, debord: debord }
+      # Choix du configurateur : ceux rangés avec l'objet ; demandés seulement si le réglage le dit
+      me = pose && r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
+      as_obj = rep2[1] == AUCUN_AS || tag.nil? ? nil : aps[asl.index(rep2[1])]
+      lin = [r['lin'].to_f, h].max
+      { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: pose && tag, obj: obj, opts: opts,
+        appui: tag.nil? ? 0 : (porte ? r['res_porte'].to_f : r['res_fen'].to_f), piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
     end
 
     def self.lancer
@@ -324,8 +334,8 @@ module A2M
         aa = alerte_appui!
         msg += "\n#{aa}" if aa
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
-        msg += "\nSeulement #{nb} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if nb < p[:n]
-        echecs.any? || nb < p[:n] || plin.any? || alerte || aa ? UI.messagebox(msg) : Sketchup.status_text = msg
+        msg += "\nSeulement #{nb} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if nb < p[:n] && !p[:contigu]
+        echecs.any? || (nb < p[:n] && !p[:contigu]) || plin.any? || alerte || aa ? UI.messagebox(msg) : Sketchup.status_text = msg
       rescue SensInverse
         model.abort_operation
         @inverse = !@inverse
@@ -505,7 +515,7 @@ module A2M
       def deactivate(view) view.invalidate end
       def statut
         Sketchup.status_text = @ref ? "Déplacez la souris dans le sens voulu le long du mur, tapez la distance depuis le point de référence jusqu'au bord de l'ouverture puis Entrée (ou cliquez). Échap pour recommencer." :
-                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm#{@p[:piece] ? ' (' + @p[:piece] + ')' : ''}, linteau à #{@p[:lin].round} cm, #{@p[:n]} couche(s), appui #{@p[:appui]} cm : cliquez un point de référence sur la face du mur (un angle, un bord de baie…)."
+                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm (linteau à #{@p[:lin].round} cm) : cliquez un point de référence sur la face extérieure du mur (un angle, un bord de baie…). Réglages : Extensions › Métré Atelier 2M › Réglages de l'outil Ouverture."
         Sketchup.vcb_label = 'Distance'
       end
 

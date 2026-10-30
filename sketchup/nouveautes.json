@@ -1,3 +1,5 @@
 [
-  "Appuis et seuils : même calcul que le configurateur, puis les pièces sont coupées (pas étirées) pour que leur total fasse exactement la largeur de l'ouverture ; les bouts finis restent aux extrémités"
+  "Outil Ouverture simplifié : seulement largeur et hauteur ; porte ou fenêtre reconnue d'après la hauteur (porte à partir de 180 cm)",
+  "Puis une seule question : la menuiserie et l'appui (fenêtre) ou le seuil (porte) qui conviennent, les derniers choisis étant proposés",
+  "Toutes les couches du mur sont percées d'office ; linteau, réservations, débord se règlent une fois pour toutes : Extensions › Métré Atelier 2M › Réglages de l'outil Ouverture"
 ]
