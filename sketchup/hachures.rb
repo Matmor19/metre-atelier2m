@@ -122,12 +122,15 @@ module A2M
       sources = [['Atelier 2M', File.join(ICI, 'hachures')], ['SketchUp', File.join(dossier, 'SketchUp')]]
       motifs = File.join(dossier, 'Motifs').tr('\\', '/')
       Dir.glob(File.join(motifs, '**', '*.pat')).map { |f| File.dirname(f) }.uniq.sort.each do |d|
-        rel = d == motifs ? 'Mes motifs' : d.sub(motifs + '/', '').split('/').first
+        # (Windows : majuscules et minuscules indifférentes dans les chemins)
+        reste = d.downcase.start_with?(motifs.downcase) ? d[motifs.size..-1].to_s.sub(%r{\A/}, '') : File.basename(d)
+        rel = reste.empty? ? 'Mes motifs' : reste.split('/').first
         sources << [rel, d]
       end
       dossiers_ajoutes.each do |d|
         Dir.glob(File.join(d, '**', '*.pat')).map { |f| File.dirname(f) }.uniq.sort.each do |s|
-          sources << [File.basename(d) + (s == d ? '' : ' › ' + s.sub(d + '/', '')), s, d]
+          reste = s.downcase.start_with?(d.downcase) ? s[d.size..-1].to_s.sub(%r{\A/}, '') : File.basename(s)
+          sources << [File.basename(d) + (reste.empty? ? '' : ' › ' + reste), s, d]
         end
       end
       @cat = {}
