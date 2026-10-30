@@ -1,7 +1,6 @@
 {
- "version": "2.11.0",
+ "version": "2.11.1",
  "notes": [
-  "Gammes d'appuis et de seuils : un objet par longueur (40, 50, 60…), rangé avec le nom de sa gamme et sa longueur",
-  "Outil Ouverture : choisissez la gamme, l'objet de la bonne longueur est posé tel quel (ou 2, 3… objets égaux au-delà de la plus grande longueur), centré sous l'ouverture"
+  "Appuis et seuils : même calcul que le configurateur, puis les pièces sont coupées (pas étirées) pour que leur total fasse exactement la largeur de l'ouverture ; les bouts finis restent aux extrémités"
  ]
 }

@@ -321,9 +321,11 @@ module A2M
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
         msg += "\nPlinthes recoupées : #{plin.join(', ')}" if plin.any?
         msg += "\n#{alerte}" if alerte
+        aa = alerte_appui!
+        msg += "\n#{aa}" if aa
         msg += "\nNon percé (le groupe n'est pas un solide) : #{echecs.join(', ')}" if echecs.any?
         msg += "\nSeulement #{nb} couche(s) trouvée(s) sur #{p[:n]} demandée(s)." if nb < p[:n]
-        echecs.any? || nb < p[:n] || plin.any? || alerte ? UI.messagebox(msg) : Sketchup.status_text = msg
+        echecs.any? || nb < p[:n] || plin.any? || alerte || aa ? UI.messagebox(msg) : Sketchup.status_text = msg
       rescue SensInverse
         model.abort_operation
         @inverse = !@inverse
@@ -335,31 +337,78 @@ module A2M
       end
     end
 
+    # Appui ou seuil sous l'ouverture : même calcul que le configurateur (plus petite longueur qui couvre,
+    # au-delà de la plus grande : 2, 3… pièces), puis chaque pièce est COUPÉE (pas étirée) pour que le total fasse
+    # exactement la largeur de l'ouverture. Les bouts finis restent aux extrémités : la première pièce est coupée
+    # à droite, la dernière à gauche, celles du milieu des deux côtés.
     def self.poser_appuis(ents, o, p, model)
       obj = p[:as_obj]
       if obj['membres']
-        # Gamme : l'objet de la longueur trouvée, posé à sa taille réelle
         k, lg = A2M::Etirement.decoupe(p[:l], obj['membres'].map { |m| m['longueur'] })
         return [] unless k
         obj = obj['membres'].find { |m| (m['longueur'].to_f - lg).abs < 0.01 }
-        lg = obj['l0'].to_f * 2.54
       else
         k, lg = A2M::Etirement.decoupe(p[:l], obj['longueurs'] || A2M::Bibliotheque::LONGUEURS[obj['type']] || [p[:l]])
         return [] unless k
       end
+      # Objet d'une gamme : sa taille réelle ; objet étiré : étiré à la longueur de la gamme, puis coupé comme les autres
+      lp = obj['membres'] || obj['gamme'] ? obj['l0'].to_f * 2.54 : lg
       n = o[:n]; u = o[:u]; b = o[:bas]
       ur = Z_AXIS.cross(n).normalize
       l = (p[:l] / 100.0).m
       gauche = u.dot(ur) > 0 ? b : b.offset(u, l)
       h0 = obj['h0'].to_f
-      depart = gauche.offset(ur, (l - k * (lg / 100.0).m) / 2.0).offset(Z_AXIS, -h0)
-      (0...k).map do |i|
-        org = depart.offset(ur, i * (lg / 100.0).m)
-        a = A2M::Bibliotheque.instance_pour(ents, obj, lg, h0 * 2.54, org, ur, n.reverse, ->(_e) { -(p[:debord].to_f / 100.0).m }, model, {}, false)
-        a.name = "#{obj['gamme'] || obj['nom']} #{(obj['longueur'] || lg).to_f.round} cm#{k > 1 ? " (#{i + 1}/#{k})" : ''}"
+      part = l / k                                          # longueur de chaque pièce posée
+      lpi = (lp / 100.0).m
+      recul = ->(_e) { -(p[:debord].to_f / 100.0).m }
+      alertes = []
+      res = (0...k).map do |i|
+        a0 = part * i; a1 = part * (i + 1)                  # morceau gardé, le long de l'ouverture
+        debut = if k == 1 then 0.0                          # une seule pièce : bout gauche gardé, coupée à droite
+                elsif i.zero? then 0.0
+                elsif i == k - 1 then l - lpi               # dernière : bout droit gardé, coupée à gauche
+                else (a0 + a1) / 2.0 - lpi / 2.0             # milieu : coupée des deux côtés
+                end
+        org = gauche.offset(ur, debut).offset(Z_AXIS, -h0)
+        a = A2M::Bibliotheque.instance_pour(ents, obj, lp, h0 * 2.54, org, ur, n.reverse, recul, model, {}, false)
+        if lpi - part > 0.04                                # plus long que sa part : coupé
+          c = couper(ents, a, gauche, ur, n, a0, a1)
+          if c then a = c
+          else alertes << "#{obj['nom']} : objet non solide, pièce non coupée (#{lp.round} cm au lieu de #{(part * 2.54).round(1)} cm)"
+          end
+        end
+        a.name = "#{obj['gamme'] || obj['nom']} #{(part * 2.54).round(1)} cm (coupé dans #{(obj['longueur'] || lg).to_f.round})#{k > 1 ? " #{i + 1}/#{k}" : ''}"
         a.set_attribute('a2m', 'appui_de', p[:type][0])
         a
       end
+      @alerte_appui = alertes.join("\n") if alertes.any?
+      res
+    end
+
+    def self.alerte_appui!() a = @alerte_appui; @alerte_appui = nil; a end
+
+    # Coupe : intersection de la pièce avec une boîte qui ne garde que [a0, a1] le long de l'ouverture
+    def self.couper(ents, inst, gauche, ur, n, a0, a1)
+      bb = inst.bounds
+      z0 = bb.min.z - 1.m; ht = bb.depth + 2.m
+      p0 = Geom::Point3d.new(gauche.x, gauche.y, z0)
+      rect = [p0.offset(ur, a0).offset(n, 2.m), p0.offset(ur, a1).offset(n, 2.m), p0.offset(ur, a1).offset(n, -3.m), p0.offset(ur, a0).offset(n, -3.m)]
+      boite = ents.add_group
+      f = boite.entities.add_face(rect)
+      f.reverse! if f.normal.z < 0
+      f.pushpull(ht)
+      nom = inst.name; tag = inst.layer
+      r = inst.intersect(boite)
+      if r
+        r.name = nom; r.layer = tag
+        r
+      else
+        boite.erase! if boite.valid?
+        nil
+      end
+    rescue StandardError
+      boite.erase! if boite && boite.valid?
+      nil
     end
 
     # ---- Revêtements de sol (groupes A2M_PIECE) prolongés sous la porte, jusqu'à l'axe de l'épaisseur ----
