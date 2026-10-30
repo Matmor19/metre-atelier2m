@@ -1,4 +1,4 @@
 [
-  "Bibliothèque d'objets : corriger le type d'objets déjà rangés (toute une série d'un coup, ex. « Appuis » passés en appuis de fenêtre avec leur gamme), retirer un objet, voir la liste",
-  "Outil Ouverture : si l'objet choisi ne peut pas prendre la taille de l'ouverture, l'ouverture est quand même créée avec une réservation, et le message dit pourquoi"
+  "Correction : toutes les couches collées (mur, isolant, plaque) sont percées ; la face commune entre deux couches faisait croire à un vide",
+  "Correction : composants dynamiques — la taille de la menuiserie se règle par sa cote (lenx / lenz) et plus par un réglage de profil (« dormant, largeur »), y compris pour les objets déjà rangés"
 ]

@@ -538,6 +538,7 @@ module A2M
     end
 
     UNITES_LONGUEUR = %w[DEFAULT INCHES FEET MILLIMETERS CENTIMETERS METERS]
+    PROFIL_RE = /dormant|ouvrant|montant|traverse|[ée]paisseur|profil|parclose|chicane/i
 
     def self.sans_html(t) t.to_s.gsub(/<[^>]*>/, '').gsub('&nbsp;', ' ').strip end
 
@@ -608,8 +609,12 @@ module A2M
       regs = reglages_dc(h)
       b = boite_visible(inst.definition)
       libs = regs.map { |k, l, v| "#{l} (#{k} = #{v})" }
+      # Taille de l'objet : lenx / lenz quand le composant les laisse modifier ; sinon un réglage « largeur » / « hauteur »
+      # qui n'est pas celui d'un profil (dormant, ouvrant, montant, traverse, épaisseur)
       auto = lambda do |re, defaut|
-        r = regs.find { |k, l, _| k != 'lenx' && k != 'lenz' && (l =~ re || k =~ re) } || regs.find { |k, _, _| k == defaut }
+        r = regs.find { |k, _, _| k == defaut && %w[TEXTBOX LIST].include?(h["_#{k}_access"].to_s) } ||
+            regs.find { |k, l, _| k != 'lenx' && k != 'lenz' && (l =~ re || k =~ re) && sans_html(l) !~ PROFIL_RE } ||
+            regs.find { |k, _, _| k == defaut }
         r ? libs[regs.index(r)] : AUCUN
       end
       rep = UI.inputbox(['Réglage du composant qui donne la LARGEUR', 'Réglage du composant qui donne la HAUTEUR'],
@@ -660,8 +665,14 @@ module A2M
 
     # Inscrit la largeur et la hauteur dans les réglages du composant puis le fait se redessiner (comme dans « Options du composant »)
     def self.regler_dc(inst, obj, l_cm, h_cm)
-      [['attr_l', 'f_l', 'u_l', l_cm], ['attr_h', 'f_h', 'u_h', h_cm]].each do |ka, kf, ku, v|
+      h = attributs_dc(inst)
+      [['attr_l', 'f_l', 'u_l', l_cm, 'lenx'], ['attr_h', 'f_h', 'u_h', h_cm, 'lenz']].each do |ka, kf, ku, v, len|
         k = obj[ka]; next unless k
+        # Objet rangé avec un réglage de profil (ex. « dormant, largeur ») : la vraie taille est lenx / lenz si modifiable
+        if k != len && sans_html(h["_#{k}_formlabel"]) =~ PROFIL_RE && %w[TEXTBOX LIST].include?(h["_#{len}_access"].to_s)
+          k = len
+          obj = obj.merge(kf => 1.0, ku => nil)
+        end
         val = pouces(v) * (obj[kf] || 1.0).to_f
         val = val.round if obj[ku] == 'INTEGER'
         val = val.round(2).to_s if obj[ku] == 'STRING'

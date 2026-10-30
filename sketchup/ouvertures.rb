@@ -194,15 +194,26 @@ module A2M
           pt = hit[0].offset(dir, 0.02)
           next
         end
+        # Face touchée en sortie (sa normale va dans le sens du rayon) : on était déjà dans cette couche,
+        # son entrée est confondue avec la sortie de la couche précédente (couches collées l'une à l'autre)
+        sortie = false
+        face = hit[1].last
+        if face.is_a?(Sketchup::Face)
+          t = Geom::Transformation.new
+          hit[1][0..-2].each { |e| t *= e.transformation if e.respond_to?(:transformation) }
+          sortie = face.normal.transform(t).dot(dir) > 0
+        end
+        nouvelle = !vus.include?(g)
+        entree = nouvelle && sortie && vus.any? ? fin : parcours
         if vus.size >= n
           break unless g == vus.last
           fin = parcours
         else
-          break if contigu && vus.any? && !vus.include?(g) && parcours - fin > 2.cm
-          vus << g unless vus.include?(g)
+          break if contigu && vus.any? && nouvelle && entree - fin > 2.cm
+          vus << g if nouvelle
           fin = parcours if g == vus.last
         end
-        (bornes[g] ||= [parcours, parcours])[1] = parcours if vus.include?(g)
+        (bornes[g] ||= [entree, parcours])[1] = parcours if vus.include?(g)
         pt = hit[0].offset(dir, 0.02)
       end
       [vus, fin, vus.map { |g| bornes[g] }]
