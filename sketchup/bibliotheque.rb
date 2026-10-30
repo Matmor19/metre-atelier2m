@@ -83,6 +83,7 @@ module A2M
       ['Seuil',                              nil,                 'Seuils'],
       ['Façade de placard',                  nil,                 'Placards'],
       ['Plinthe (profil)',                   'A2M_PLINTHE',       'Plinthes'],
+      ['Planelle (profil)',                  'A2M_PLANELLE',      'Planelles'],
       ['Mobilier, cuisine, sanitaire',       nil,                 'Mobilier'],
       ['Autre objet (hors métré)',           nil,                 'Divers']
     ]
@@ -330,7 +331,7 @@ module A2M
       nom0 = inst0 ? (inst0.name.to_s.empty? ? (inst0.respond_to?(:definition) ? inst0.definition.name : 'Objet') : inst0.name) : 'Objet'
       f = fiche(nom0)
       return nil unless f
-      return parametrer_plinthe(model, ents, f) if f[:type][1] == 'A2M_PLINTHE'
+      return parametrer_plinthe(model, ents, f) if %w[A2M_PLINTHE A2M_PLANELLE].include?(f[:type][1])
       return parametrer_dynamique(model, inst0, f) if inst0.is_a?(Sketchup::ComponentInstance) && dynamique?(inst0)
       model.start_operation('Paramétrer un objet (bibliothèque)', true)
       begin
@@ -452,7 +453,7 @@ module A2M
         return :passe unless UI.messagebox("« #{f[:nom]} » existe déjà dans la bibliothèque. Le remplacer ?", MB_YESNO) == IDYES
         liste.reject! { |o| o['nom'] == f[:nom] }
       end
-      liste << { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => 'A2M_PLINTHE', 'profil' => profil.map { |w, z| [w.to_f, z.to_f] }, 'h0' => h.to_f, 'l0' => e.to_f, 'version' => 1 }
+      liste << { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => f[:type][1], 'profil' => profil.map { |w, z| [w.to_f, z.to_f] }, 'h0' => h.to_f, 'l0' => e.to_f, 'version' => 1 }
       sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
       "#{f[:nom]} (profil de plinthe #{cm(h)} × #{cm(e)} cm)"
     end

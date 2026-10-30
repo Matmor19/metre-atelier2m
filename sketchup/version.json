@@ -1,7 +1,7 @@
 {
- "version": "2.8.0",
+ "version": "2.8.1",
  "notes": [
-  "Nouvel outil Planelles : planelles (et isolant derrière) sur tout le pourtour de la dalle sélectionnée, dans l'épaisseur (dalle recoupée) ou à l'extérieur ; hachures de coupe réglables",
-  "Le linéaire de planelles est rappelé à l'import dans le configurateur, à reporter au métré"
+  "Planelles : votre propre profil dessiné (en L ou autre, avec son isolant dans le même plan), décalage vertical, nu extérieur au choix, profil rangé dans la bibliothèque pour le réutiliser",
+  "Bibliothèque : nouveau type « Planelle (profil) »"
  ]
 }
