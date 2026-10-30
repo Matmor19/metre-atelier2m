@@ -10,6 +10,7 @@ require 'sketchup.rb'
 require 'json'
 require 'fileutils'
 require File.join(File.dirname(__FILE__), 'hachures_moteur')
+require File.join(File.dirname(__FILE__), 'hachures_fr')
 
 module A2M
   module Hachures
@@ -159,7 +160,8 @@ module A2M
           begin
             A2M::MotifPat.lire(A2M::MotifPat.texte_fichier(f), File.basename(f, '.*')).each do |m|
               id = "#{groupe}|#{File.basename(f)}|#{m['nom']}"
-              @cat[id] = m.merge('groupe' => groupe, 'id' => id, 'ajout' => ajout)
+              fr = groupe == 'Atelier 2M' ? m['description'] : A2M::MotifPat.francais(m['nom'], m['description'])
+              @cat[id] = m.merge('groupe' => groupe, 'id' => id, 'ajout' => ajout, 'description' => fr, 'origine' => m['description'])
             end
           rescue StandardError
             next
@@ -315,7 +317,7 @@ module A2M
     end
 
     def self.motifs_pour_page
-      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'] } }
+      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'], 'origine' => m['origine'] } }
     end
 
     def self.regler

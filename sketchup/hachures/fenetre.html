@@ -183,9 +183,9 @@ function galerie(seulementDessin){
   if(!M.length) return;
   if(seulementDessin){clearTimeout(minuterie); minuterie=setTimeout(function(){g.querySelectorAll('.m').forEach(function(d){dessiner(d.querySelector('canvas'),MI[d.dataset.k],cours||DEF,11)})},60); return;}
   var gr=document.getElementById('groupe').value, f=document.getElementById('filtre').value.toLowerCase();
-  var l=M.filter(function(m){return (!gr||m.groupe===gr)&&(!f||(m.nom+' '+m.desc+' '+m.groupe).toLowerCase().indexOf(f)>=0)});
+  var l=M.filter(function(m){return (!gr||m.groupe===gr)&&(!f||(m.nom+' '+m.desc+' '+(m.origine||'')+' '+m.groupe).toLowerCase().indexOf(f)>=0)});
   if(!l.length){g.innerHTML='<div class="vide">Aucun motif trouvé.</div>';return;}
-  g.innerHTML=l.map(function(m){return '<div class="m'+(cours&&cours.motif===m.id?' sel':'')+'" data-k="'+esc(m.id)+'" title="'+esc(m.desc)+'"><canvas></canvas><span>'+esc(m.desc.length<60?m.desc:m.nom)+'</span><i>'+esc(m.groupe)+'</i></div>'}).join('');
+  g.innerHTML=l.map(function(m){return '<div class="m'+(cours&&cours.motif===m.id?' sel':'')+'" data-k="'+esc(m.id)+'" title="'+esc(m.desc+(m.origine&&m.origine!==m.desc?' ('+m.origine+')':''))+'"><canvas></canvas><span>'+esc(m.desc.length<60?m.desc:m.nom)+'</span><i>'+esc(m.groupe)+'</i></div>'}).join('');
   var ds=g.querySelectorAll('.m'), i=0;
   (function lot(){var n=0; while(i<ds.length&&n<40){var d=ds[i++]; dessiner(d.querySelector('canvas'),MI[d.dataset.k],cours||DEF,11); n++;} if(i<ds.length) requestAnimationFrame(lot);})();
   ds.forEach(function(d){d.onclick=function(){
