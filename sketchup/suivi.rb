@@ -123,6 +123,69 @@ module A2M
       UI.messagebox("Recalage impossible (#{ex.message}).")
     end
 
+    # Commande : poser un objet de la bibliothèque sur une ouverture existante (vide ou déjà équipée).
+    # L'objet prend les dimensions exactes de l'ouverture, se pose au nu intérieur, et reprend son suivi.
+    def self.poser_sur
+      model = Sketchup.active_model
+      r = model.selection.to_a.find { |e| suivie?(e) }
+      return UI.messagebox("Sélectionnez l'ouverture (sa réservation ou sa menuiserie), posée avec l'outil Ouverture.") unless r
+      d = donnees(r)
+      tag = r.layer && r.layer.name
+      porte = tag == 'A2M_PORTE_ENTREE'
+      objs = (A2M::Bibliotheque.objets_de(A2M::Ouvertures.balises_de(porte ? 'Porte' : 'Fenêtre')) rescue [])
+      return UI.messagebox("La bibliothèque n'a pas encore de #{porte ? 'porte' : 'fenêtre ni de baie'} : rangez l'objet d'abord (Paramétrer un objet pour la bibliothèque).") if objs.empty?
+      noms = objs.map { |o| "#{o['nom']} (#{o['type']})" }
+      pr = d['p']
+      rep = UI.inputbox(['Menuiserie (bibliothèque)'], [noms[0]], [noms.join('|')], "Ouverture #{pr['l'].round} × #{pr['h'].round} cm")
+      return unless rep
+      obj = objs[noms.index(rep[0])]
+      t = r.transformation
+      bas = Geom::Point3d.new(d['o']['bas']).transform(t)
+      u = Geom::Vector3d.new(d['o']['u']).transform(t); u = Geom::Vector3d.new(u.x, u.y, 0).normalize
+      n = Geom::Vector3d.new(d['o']['n']).transform(t); n = Geom::Vector3d.new(n.x, n.y, 0).normalize
+      emp = d['empreinte'].map { |q| Geom::Point3d.new(q) }
+      prof = emp.size == 4 ? emp[0].distance(emp[3]) : 0
+      l = (pr['l'] / 100.0).m
+      ur = Z_AXIS.cross(n).normalize
+      org = u.dot(ur) > 0 ? bas : bas.offset(u, l)
+      attrs = {}
+      (r.attribute_dictionary('a2m') || {}).each_pair { |k, v| attrs[k] = v }
+      @occupe = true
+      model.start_operation('Poser une menuiserie sur l\'ouverture', true)
+      begin
+        ents = r.parent.entities
+        nv = A2M::Bibliotheque.instance_pour(ents, obj, pr['l'], pr['h'], org, ur, n.reverse, ->(_e) { 0 }, model, {})
+        if prof > 0
+          defn = nv.respond_to?(:definition) ? nv.definition : nv.entities.parent
+          fond = (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(defn).corner(i).transform(nv.transformation)) - bas).dot(n) }.max
+          dp = prof - fond
+          nv.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dp, -n.y * dp, 0))) if dp.abs > 0.01
+        end
+        attrs.each { |k, v| nv.set_attribute('a2m', k, v) }
+        nv.set_attribute('a2m', 'me', JSON.generate(obj['choix'])) if obj['choix'] && obj['choix'].any?
+        lt, _ = A2M::Balises.balise(model, obj['balise'], (A2M::Balises::LISTE.find { |x, _, _| x == obj['balise'] } || [])[2])
+        nv.layer = lt
+        nv.name = "#{obj['nom']} #{pr['l'].round} × #{pr['h'].round}"
+        # Le suivi passe à la nouvelle menuiserie (repère recalculé), l'ancienne est retirée sans reboucher le mur
+        inv = nv.transformation.inverse
+        d['o'] = { 'bas' => bas.transform(inv).to_a, 'u' => u.transform(inv).to_a, 'n' => n.transform(inv).to_a }
+        d['t'] = t_tab(nv.transformation)
+        d['p'] = pr.merge('tag' => obj['balise'], 'lib' => obj['type'])
+        @cache.delete(r)
+        r.erase!
+        ecrire(nv, d)
+        attacher(nv)
+        model.commit_operation
+        a = A2M::Bibliotheque.alerte!
+        UI.messagebox(a) if a
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("La menuiserie n'a pas pu être posée (#{ex.message}).")
+      ensure
+        @occupe = false
+      end
+    end
+
     # Après une création d'ouverture (dans l'opération de perçage)
     def self.lier(r, o, p, id, couches, empreinte, genre, annexes = [])
       inv = r.transformation.inverse

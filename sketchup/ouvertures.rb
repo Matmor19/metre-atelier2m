@@ -103,50 +103,62 @@ module A2M
                                                                    'debord' => n[4], 'options' => rep[5] == 'Oui', 'choix' => rep[6] == 'Oui'))
     end
 
-    RES_FEN = 'Réservation fenêtre (panneau balisé)'
-    RES_PF = 'Réservation porte-fenêtre (panneau balisé)'
-    RES_PE = 'Réservation porte d\'entrée (panneau balisé)'
-    TROU = 'Aucune (le trou seul)'
-    LIBRE = 'Passage libre (sans porte ni seuil)'
+    VIDE = 'Aucune : ouverture vide (objet à poser plus tard)'
+    TYPES_SAISIE = ['Fenêtre', 'Porte']
+    # Bibliothèque montrée selon le type : fenêtres et baies, ou portes
+    def self.balises_de(type_saisie)
+      type_saisie == 'Porte' ? %w[A2M_PORTE_ENTREE] : %w[A2M_FENETRE A2M_PORTE_FENETRE]
+    end
 
-    # Fiche courte : largeur et hauteur ; porte ou fenêtre déduite de la hauteur ; puis la menuiserie et l'appui
-    # ou le seuil qui conviennent (les derniers choisis sont proposés). Tout le reste vient des réglages de l'outil.
+    # Saisie : type (fenêtre ou porte), largeur, hauteur, appui ou seuil oui/non ; puis le choix dans la bibliothèque,
+    # limité au type. Rien de ce type dans la bibliothèque : l'ouverture est créée vide (une réservation balisée),
+    # l'objet se pose dessus plus tard (clic droit › Poser une menuiserie de la bibliothèque sur l'ouverture).
     def self.demander
       r = reg
-      rep = UI.inputbox(['Largeur (cm)', 'Hauteur (cm)'], [(@r[:l] || 100).to_s, (@r[:h] || 125).to_s], 'Ouverture')
+      rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Appui ou seuil'],
+                        [@r[:ts] || TYPES_SAISIE[0], (@r[:l] || 100).to_s, (@r[:h] || 125).to_s, @r[:as_oui] || 'Oui'],
+                        [TYPES_SAISIE.join('|'), '', '', 'Oui|Non'], 'Ouverture')
       return nil unless rep
-      l, h = rep.map { |v| v.to_s.tr(',', '.').to_f }
+      ts = rep[0]
+      l, h = rep[1..2].map { |v| v.to_s.tr(',', '.').to_f }
       return UI.messagebox('Largeur et hauteur supérieures à 0.') && nil if l <= 0 || h <= 0
-      @r[:l] = l; @r[:h] = h
-      porte = h >= r['seuil_porte'].to_f
-      cle = porte ? :porte : :fen
-      tags = porte ? %w[A2M_PORTE_FENETRE A2M_PORTE_ENTREE] : %w[A2M_FENETRE]
-      objs = (A2M::Bibliotheque.objets_de(tags) rescue [])
-      menus = objs.map { |o| "#{o['nom']} (#{o['type']})" } + (porte ? [RES_PF, RES_PE, LIBRE] : [RES_FEN, TROU])
-      # Appuis sous les fenêtres, seuils sous les portes : gammes puis objets étirés
-      ty = porte ? 'Seuil' : 'Appui de fenêtre'
-      gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
-      aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
-            (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
-      asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] } + [AUCUN_AS]
-      prec = @r[cle] || {}
-      champs = ['Menuiserie'] + [porte ? 'Seuil' : 'Appui']
-      rep2 = UI.inputbox(champs, [menus.include?(prec[:menu]) ? prec[:menu] : menus[0], asl.include?(prec[:as]) ? prec[:as] : asl[0]],
-                         [menus.join('|'), asl.join('|')], "#{porte ? 'Porte' : 'Fenêtre'} #{l.round} × #{h.round} cm")
-      return nil unless rep2
-      @r[cle] = { menu: rep2[0], as: rep2[1] }
-      obj = menus.index(rep2[0]) < objs.size ? objs[menus.index(rep2[0])] : nil
-      tag = obj ? obj['balise'] : { RES_FEN => 'A2M_FENETRE', TROU => 'A2M_FENETRE', RES_PF => 'A2M_PORTE_FENETRE', RES_PE => 'A2M_PORTE_ENTREE', LIBRE => nil }[rep2[0]]
+      @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:as_oui] = rep[3]
+      haute = h >= r['seuil_porte'].to_f                  # baie ou porte : seuil ; fenêtre : appui
+      objs = (A2M::Bibliotheque.objets_de(balises_de(ts)) rescue [])
+      menus = objs.map { |o| "#{o['nom']} (#{o['type']})" } + [VIDE]
+      aps = []; asl = []
+      if rep[3] == 'Oui'
+        ty = ts == 'Porte' || haute ? 'Seuil' : 'Appui de fenêtre'
+        gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
+        aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
+              (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
+        asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] }
+      end
+      prec = @r[ts] || {}
+      choix_menu = VIDE; choix_as = nil
+      # Deuxième fiche seulement s'il y a quelque chose à choisir
+      if objs.any? || asl.size > 1
+        libs = ['Menuiserie (bibliothèque)']; vals = [menus.include?(prec[:menu]) ? prec[:menu] : menus[0]]; lst = [menus.join('|')]
+        if asl.any?
+          libs << (ty == 'Seuil' ? 'Seuil (bibliothèque)' : 'Appui (bibliothèque)')
+          vals << (asl.include?(prec[:as]) ? prec[:as] : asl[0]); lst << asl.join('|')
+        end
+        rep2 = UI.inputbox(libs, vals, lst, "#{ts} #{l.round} × #{h.round} cm")
+        return nil unless rep2
+        choix_menu = rep2[0]; choix_as = rep2[1]
+        @r[ts] = { menu: choix_menu, as: choix_as }
+      elsif asl.size == 1
+        choix_as = asl[0]                                   # une seule gamme : prise d'office (appui ou seuil demandé « Oui »)
+      end
+      obj = choix_menu == VIDE ? nil : objs[menus.index(choix_menu)]
+      tag = obj ? obj['balise'] : (ts == 'Porte' ? 'A2M_PORTE_ENTREE' : (haute ? 'A2M_PORTE_FENETRE' : 'A2M_FENETRE'))
       type = TYPES.find { |x| x[1] == tag }
-      pose = ![TROU, LIBRE].include?(rep2[0])
       opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
-      # Choix du configurateur : ceux rangés avec l'objet ; demandés seulement si le réglage le dit
-      me = pose && r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
-      as_obj = rep2[1] == AUCUN_AS || tag.nil? ? nil : aps[asl.index(rep2[1])]
-      lin = [r['lin'].to_f, h].max
-      { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: pose && tag, obj: obj, opts: opts,
-        appui: tag.nil? ? 0 : (porte ? r['res_porte'].to_f : r['res_fen'].to_f), piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
+      me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
+      as_obj = choix_as ? aps[asl.index(choix_as)] : nil
+      { type: type, l: l, h: h, lin: [r['lin'].to_f, h].max, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
+        appui: ts == 'Porte' || haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
     end
 
     def self.lancer

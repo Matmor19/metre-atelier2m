@@ -40,6 +40,7 @@ unless file_loaded?(__FILE__)
     menu.add_item(titre + '…') { action.call }
     menu.add_separator if sep
   end
+  menu.add_item('Poser une menuiserie de la bibliothèque sur l\'ouverture sélectionnée…') { A2M::Suivi.poser_sur }
   menu.add_item('Réglages de l\'outil Ouverture…') { A2M::Ouvertures.regler }
   menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
   menu.add_separator
@@ -56,6 +57,7 @@ unless file_loaded?(__FILE__)
     sm.add_item('Baliser et nommer comme pièce(s)…') { A2M::Balises.nommer_pieces }
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
     sm.add_item('Paramétrer pour la bibliothèque…') { A2M::Bibliotheque.parametrer }
+    sm.add_item('Poser une menuiserie de la bibliothèque sur l\'ouverture…') { A2M::Suivi.poser_sur }
     sm.add_item('Recaler l\'ouverture sur la menuiserie') { A2M::Suivi.recaler }
     sm.add_item('Créer la toiture sur ces murs…') { A2M::Toiture.lancer }
     sm.add_item('Créer les semelles sous ces murs…') { A2M::Fondations.lancer }
