@@ -11,7 +11,7 @@ module A2M
       ['Préparer',            %w[balises baliser pieces pieces_auto controle]],
       ['Dessiner',            %w[mur compose sol planelle toiture fondation hachures]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
-      ['Bibliothèque',        %w[objet biblio]],
+      ['Bibliothèque',        %w[objet biblio profils]],
       ['Métré',               %w[extraire envoi aide]]
     ]
 

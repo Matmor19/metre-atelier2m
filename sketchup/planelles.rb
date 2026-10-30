@@ -89,8 +89,9 @@ module A2M
       grp
     end
 
+    # Tous les profils de la bibliothèque de profils, les planelles en premier
     def self.bibliotheque
-      (A2M::Bibliotheque.objets.select { |o| o['balise'] == 'A2M_PLANELLE' && (o['profils'] || o['profil']) } rescue [])
+      (A2M::Profils.tous('Planelle') rescue [])
     end
 
     def self.lancer
@@ -105,7 +106,7 @@ module A2M
       _, z0, z1 = contour(dalles[0])
       ep_dalle = ((z1 - z0) * 2.54).round(1)
       bib = bibliotheque
-      noms = (faces.any? ? [PROFIL_DESSINE] : []) + bib.map { |o| o['nom'] } + [RECTANGLE]
+      noms = (faces.any? ? [PROFIL_DESSINE] : []) + bib.map { |o| A2M::Profils.libelle(o) } + [RECTANGLE]
       prec = noms.include?(@r[:profil]) ? @r[:profil] : noms[0]
       rep = UI.inputbox(['Profil', 'Nu extérieur du profil dessiné', 'Position', 'Décalage vertical depuis le dessous de la dalle (cm)',
                          'Rectangle : hauteur (cm)', 'Rectangle : épaisseur (cm)', 'Rectangle : isolant derrière (cm, 0 = aucun)',
@@ -120,8 +121,8 @@ module A2M
                 when PROFIL_DESSINE then profils_depuis(faces, rep[1] == EXT_LONG)
                 when RECTANGLE then (h > 0 && e > 0 ? rectangle(h, e, iso) : nil)
                 else
-                  o = bib.find { |x| x['nom'] == rep[0] }
-                  o['profils'] ? o['profils'].map { |t, pts| [t == 'A2M_ISOLANT_PLANELLE' ? TYPE_ISO : TYPE_PL, pts] } : [[TYPE_PL, o['profil']]]
+                  o = bib.find { |x| A2M::Profils.libelle(x) == rep[0] }
+                  A2M::Profils.parties(o).map { |role, pts| [role == 'isolant' ? TYPE_ISO : TYPE_PL, pts] }
                 end
       return UI.messagebox('Profil introuvable : dessinez une face verticale (le profil), ou choisissez le rectangle.') unless profils && profils.any?
       ranger(rep[7].to_s.strip, profils) if rep[0] == PROFIL_DESSINE && !rep[7].to_s.strip.empty?
@@ -165,10 +166,7 @@ module A2M
 
     # Profil dessiné rangé dans la bibliothèque (réutilisable sans le redessiner)
     def self.ranger(nom, profils)
-      liste = A2M::Bibliotheque.objets.reject { |o| o['nom'] == nom }
-      liste << { 'nom' => nom, 'type' => 'Planelle (profil)', 'balise' => 'A2M_PLANELLE',
-                 'profils' => profils.map { |t, pts| [t[1], pts.map { |w, hh| [w.to_f, hh.to_f] }] }, 'version' => 1 }
-      A2M::Bibliotheque.sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
+      A2M::Profils.enregistrer(nom, 'Planelle', profils.map { |t, pts| [t[1] =~ /ISOLANT/ ? 'isolant' : 'principal', pts] })
     rescue StandardError => ex
       UI.messagebox("Profil non rangé dans la bibliothèque (#{ex.message}).")
     end

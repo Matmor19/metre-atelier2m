@@ -1,4 +1,5 @@
 [
-  "Planelles : votre propre profil dessiné (en L ou autre, avec son isolant dans le même plan), décalage vertical, nu extérieur au choix, profil rangé dans la bibliothèque pour le réutiliser",
-  "Bibliothèque : nouveau type « Planelle (profil) »"
+  "Bibliothèque de profils (nouveau bouton) : plinthes, planelles, couvertines, appuis, bandeaux, rives… rangés depuis un dessin ou créés par leurs cotes (rectangle, L, U, T, avec isolant)",
+  "Un profil se balaye seul le long d'un tracé (lignes, contour d'une face, dessus d'un groupe), avec balise et hachure",
+  "Les outils Plinthes et Planelles proposent tous les profils de la bibliothèque"
 ]
