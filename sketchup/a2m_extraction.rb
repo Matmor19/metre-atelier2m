@@ -252,7 +252,7 @@ module A2M
               'toiture' => {}, 'toituresSup' => [], 'plat' => {}, 'pieces' => [], 'alertes' => [] }
       surf = Hash.new(0.0); perim = Hash.new(0.0); lin = Hash.new(0.0)
       toits = Hash.new { |h, k| h[k] = { vraie: 0.0, sol: 0.0, pente: 0.0 } }
-      pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []
+      pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []; planelles = 0.0
       sem = { l: 0.0, aire: 0.0, h: 0.0 }; elecs = []; piscines = []
       doub = { plaque: { l: 0.0, aire: 0.0, h: 0.0 }, isolant: { l: 0.0, aire: 0.0, h: 0.0 } }
 
@@ -277,6 +277,10 @@ module A2M
             bp = (JSON.parse(e.get_attribute('a2m', 'bp', 'null')) rescue nil)
             l = bp && bp['dim'] ? bp['dim'].to_i : (b[:l] * 100).round
             portes << { 'l' => l, 'dim' => bp && bp['dim'], 'choix' => bp ? bp.reject { |k, _| k == 'dim' } : {}, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
+          elsif tag == 'A2M_PLANELLE'
+            # Planelle : linéaire mesuré comme un mur (sur son dessus)
+            mp = murs_de(e, tr, 'planelle', nom)
+            planelles += mp.empty? ? b[:l] : mp.sum { |x| x['longueur'] }
           elsif tag == CLOISON
             # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte
             mc = murs_de(e, tr, 'cloison', nom)
@@ -380,6 +384,7 @@ module A2M
       res['infos'] = {}
       res['infos']['isolant_sol'] = r2(surf['A2M_ISOLANT_SOL']) if surf['A2M_ISOLANT_SOL'] > 0
       res['infos']['chape'] = r2(surf['A2M_CHAPE']) if surf['A2M_CHAPE'] > 0
+      res['infos']['planelles'] = r2(planelles) if planelles > 0
       res['infos']['allees'] = r2(surf['A2M_ALLEE']) if surf['A2M_ALLEE'] > 0
       unless piscines.empty?
         res['equip'] = { 'piscine' => 'oui' }

@@ -35,6 +35,8 @@ module A2M
       ['A2M_RESEAU_EU',        'Réseau eaux usées (lignes)',                       [120, 80, 40]],
       ['A2M_RESEAU_EP',        'Réseau eaux pluviales (lignes)',                   [60, 180, 200]],
       ['A2M_RESEAU_ELEC',      'Réseau électricité (lignes)',                      [230, 200, 40]],
+      ['A2M_PLANELLE',         'Planelles en rive de dalle (groupe, linéaire rappelé à l\'import)', [200, 120, 90]],
+      ['A2M_ISOLANT_PLANELLE', 'Isolant derrière les planelles (groupe, dessin)', [250, 225, 110]],
       ['A2M_PLINTHE',          'Plinthes (dessin seulement, non lues par le métré)', [255, 255, 255]],
       ['A2M_TOITURE',          'Toiture 1 : pans (groupe)',                        [180, 60, 40]],
       ['A2M_TOITURE_2',        'Toiture 2 : pans (groupe)',                        [190, 80, 60]],

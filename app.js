@@ -7807,6 +7807,7 @@ function skpEtat(c, d) {
   const inf = d.infos || {};
   if (num(inf.isolant_sol) > 0) rap.verifier.push(`Isolation au sol : ${fmt(num(inf.isolant_sol))} m² (pas de case dans le configurateur, à reporter au métré)`);
   if (num(inf.chape) > 0) rap.verifier.push(`Chape : ${fmt(num(inf.chape))} m² (pas de case dans le configurateur, à reporter au métré)`);
+  if (num(inf.planelles) > 0) rap.verifier.push(`Planelles en rive de dalle : ${fmt(num(inf.planelles))} ml (pas de case dans le configurateur, à reporter au métré)`);
   if (num(inf.allees) > 0) rap.verifier.push(`Allées et accès : ${fmt(num(inf.allees))} m² (pas de case dans le configurateur, à reporter au métré)`);
   if (inf.piscine) rap.verifier.push(`Piscine : ${inf.piscine} (à détailler au métré)`);
   return { P, pieces, pl, rap };

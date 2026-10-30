@@ -11,7 +11,7 @@ module A2M
     AUCUNE = '(aucune hachure)'
     # Balises qui donnent des volumes coupés
     BALISES = %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_CLOISON
-                 A2M_ISOLANT_SOL A2M_CHAPE A2M_SEMELLE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
+                 A2M_ISOLANT_SOL A2M_CHAPE A2M_PLANELLE A2M_ISOLANT_PLANELLE A2M_SEMELLE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
 
     def self.disponible?(model = Sketchup.active_model)
       model.respond_to?(:hatch_patterns) && Sketchup::Group.method_defined?(:hatch_pattern=)

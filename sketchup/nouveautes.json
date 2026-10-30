@@ -1,3 +1,4 @@
 [
-  "Correction outil Mur : un point cliqué dans le prolongement d'un tronçon (milieu d'un côté, alignement) ne fait plus « partir » le mur à des kilomètres"
+  "Nouvel outil Planelles : planelles (et isolant derrière) sur tout le pourtour de la dalle sélectionnée, dans l'épaisseur (dalle recoupée) ou à l'extérieur ; hachures de coupe réglables",
+  "Le linéaire de planelles est rappelé à l'import dans le configurateur, à reporter au métré"
 ]

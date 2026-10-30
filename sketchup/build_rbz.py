@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises hachures pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises hachures planelles pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -20,6 +20,7 @@ unless file_loaded?(__FILE__)
     ['compose',     'Dessiner un mur composé',             'Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise', -> { A2M::DessinMurs.lancer_compose }, false],
     ['sol',         'Dessiner un sol ou un plafond',       'Dalle, plancher, isolant de sol, chape, revêtement, terrasse, allée ou plafond', -> { A2M::DessinSols.lancer }, false],
     ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente, débord et épaisseur', -> { A2M::Toiture.lancer }, false],
+    ['planelle',    'Poser les planelles en rive de dalle', 'Planelles (et isolant) sur tout le pourtour de la dalle sélectionnée : dans son épaisseur (dalle recoupée) ou à l\'extérieur', -> { A2M::Planelles.lancer }, false],
     ['hachures',    'Hachures de coupe par couche',        'Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l\'appliquer au modèle déjà dessiné', -> { A2M::Hachures.regler }, false],
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
     ['ouverture',   'Créer une ouverture',                 'Perce le mur et ses doublages, pose la menuiserie au nu intérieur, à la taille exacte de l\'ouverture, recoupe les plinthes ; l\'ouverture suit la menuiserie déplacée, le mur est rebouché si elle est supprimée', -> { A2M::Ouvertures.lancer }, false],
@@ -91,7 +92,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
-    for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures'):
+    for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'planelles'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
