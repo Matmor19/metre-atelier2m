@@ -1,8 +1,6 @@
 {
- "version": "2.9.0",
+ "version": "2.9.1",
  "notes": [
-  "Bibliothèque de profils (nouveau bouton) : plinthes, planelles, couvertines, appuis, bandeaux, rives… rangés depuis un dessin ou créés par leurs cotes (rectangle, L, U, T, avec isolant)",
-  "Un profil se balaye seul le long d'un tracé (lignes, contour d'une face, dessus d'un groupe), avec balise et hachure",
-  "Les outils Plinthes et Planelles proposent tous les profils de la bibliothèque"
+  "Correction (SketchUp 2027) : un objet de la bibliothèque avec des arrondis (nez d'appui, moulures) ne se déforme plus quand on le pose à une autre dimension"
  ]
 }

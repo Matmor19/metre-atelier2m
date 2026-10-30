@@ -677,7 +677,7 @@ module A2M
     def self.definition_etiree(obj, l_cm, h_cm, model = Sketchup.active_model)
       chemin = File.join(dossier, obj['fichier'])
       l = pouces(l_cm); h = pouces(h_cm)
-      cle = "#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
+      cle = "v2|#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
       deja = model.definitions.find { |d| d.get_attribute(DICO, 'cle') == cle }
       return deja if deja
       base = charger(obj, model)
@@ -705,6 +705,9 @@ module A2M
         g.make_unique
         etirer(g.entities, tr * g.transformation, lx, dx, lz, dz)
       end
+      # Arcs et courbes décomposés en simples arêtes : SketchUp (2027) recalcule une courbe dont on déplace les points
+      # et la déforme ; décomposée, la géométrie glisse proprement
+      ents.grep(Sketchup::Edge).each { |e| e.explode_curve if e.valid? && e.curve }
       ents.grep(Sketchup::ComponentInstance).each do |ci|
         c = tr * ci.bounds.center
         v = vec.call(c).transform(tr.inverse)
