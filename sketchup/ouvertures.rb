@@ -90,8 +90,11 @@ module A2M
       res0 = { 'Oui' => RES_SIMPLE, 'Non' => RES_AUCUNE }[@r[:res]] || @r[:res]
       res0 = RES_SIMPLE unless menus.include?(res0)
       # Appuis et seuils de la bibliothèque (types « Appui de fenêtre » et « Seuil »)
-      aps = (A2M::Bibliotheque.objets.select { |o| o['fichier'] && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
-      asl = [AUCUN_AS] + aps.map { |o| "#{o['nom']} (#{o['type']})" }
+      # Gammes (un objet par longueur) puis objets étirés
+      gms = (A2M::Bibliotheque.gammes rescue {})
+      aps = gms.map { |(g, ty), ms| { 'gamme' => g, 'type' => ty, 'membres' => ms } } +
+            (A2M::Bibliotheque.objets.select { |o| o['fichier'] && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
+      asl = [AUCUN_AS] + aps.map { |o| o['membres'] ? "Gamme #{o['gamme']} (#{o['type']}, #{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : "#{o['nom']} (#{o['type']})" }
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
                          'Nombre de couches à percer (mur + doublages)', 'Menuiserie posée dans l\'ouverture',
                          'Réservation appui / seuil (cm) : allège abaissée sur les 2 premières couches (fenêtre 5, porte 7)',
@@ -334,8 +337,16 @@ module A2M
 
     def self.poser_appuis(ents, o, p, model)
       obj = p[:as_obj]
-      k, lg = A2M::Etirement.decoupe(p[:l], obj['longueurs'] || A2M::Bibliotheque::LONGUEURS[obj['type']] || [p[:l]])
-      return [] unless k
+      if obj['membres']
+        # Gamme : l'objet de la longueur trouvée, posé à sa taille réelle
+        k, lg = A2M::Etirement.decoupe(p[:l], obj['membres'].map { |m| m['longueur'] })
+        return [] unless k
+        obj = obj['membres'].find { |m| (m['longueur'].to_f - lg).abs < 0.01 }
+        lg = obj['l0'].to_f * 2.54
+      else
+        k, lg = A2M::Etirement.decoupe(p[:l], obj['longueurs'] || A2M::Bibliotheque::LONGUEURS[obj['type']] || [p[:l]])
+        return [] unless k
+      end
       n = o[:n]; u = o[:u]; b = o[:bas]
       ur = Z_AXIS.cross(n).normalize
       l = (p[:l] / 100.0).m
@@ -345,7 +356,7 @@ module A2M
       (0...k).map do |i|
         org = depart.offset(ur, i * (lg / 100.0).m)
         a = A2M::Bibliotheque.instance_pour(ents, obj, lg, h0 * 2.54, org, ur, n.reverse, ->(_e) { -(p[:debord].to_f / 100.0).m }, model, {}, false)
-        a.name = "#{obj['nom']} #{lg.round} cm#{k > 1 ? " (#{i + 1}/#{k})" : ''}"
+        a.name = "#{obj['gamme'] || obj['nom']} #{(obj['longueur'] || lg).to_f.round} cm#{k > 1 ? " (#{i + 1}/#{k})" : ''}"
         a.set_attribute('a2m', 'appui_de', p[:type][0])
         a
       end

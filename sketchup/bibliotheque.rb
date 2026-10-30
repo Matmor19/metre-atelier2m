@@ -102,7 +102,35 @@ module A2M
     LONGUEURS = { 'Appui de fenêtre' => [40, 50, 60, 70, 80, 90, 100, 105, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 280, 300, 360],
                   'Seuil' => [90, 110, 130, 150, 190, 220, 250] }
 
-    def self.appui_ou_seuil?(o) LONGUEURS.key?(o['type'].to_s) || o['longueurs'] end
+    def self.appui_ou_seuil?(o) (LONGUEURS.key?(o['type'].to_s) || o['longueurs']) && !o['gamme'] end
+
+    GAMME = 'Fait partie d\'une gamme (un objet par longueur, posé tel quel)'
+    ETIRE = 'Un seul objet, étiré à toutes les longueurs de la liste'
+
+    # Appui ou seuil : sa gamme et sa longueur, ou la liste des longueurs s'il s'étire
+    def self.fiche_appui(f, l0)
+      @gam ||= {}
+      rep = UI.inputbox(['Cet objet', 'Nom de la gamme (le même pour toutes ses longueurs)', 'Longueur de cet objet (cm)'],
+                        [@gam[:mode] || GAMME, @gam[f[:type][0]] || f[:nom].sub(/\s*\d+([.,]\d+)?\s*(cm)?\s*\z/i, ''), cm(l0).round.to_s],
+                        [[GAMME, ETIRE].join('|'), '', ''], "#{f[:nom]} : #{f[:type][0].downcase}")
+      return nil unless rep
+      @gam[:mode] = rep[0]
+      if rep[0] == GAMME
+        g = rep[1].to_s.strip
+        return nil if g.empty?
+        @gam[f[:type][0]] = g
+        { 'gamme' => g, 'longueur' => rep[2].to_s.tr(',', '.').to_f }
+      else
+        ls = fiche_longueurs(f[:type][0])
+        ls ? { 'longueurs' => ls } : nil
+      end
+    end
+
+    # Gammes d'appuis et de seuils : { [nom, type] => objets triés par longueur }
+    def self.gammes
+      objets.select { |o| o['fichier'] && o['gamme'] && o['longueur'].to_f > 0 }.group_by { |o| [o['gamme'], o['type']] }
+            .transform_values { |l| l.sort_by { |o| o['longueur'].to_f } }
+    end
 
     def self.fiche_longueurs(o_type, prec = nil)
       def_l = (prec || LONGUEURS[o_type] || []).map { |x| x.to_f % 1 == 0 ? x.to_i : x }.join(' ; ')
@@ -376,8 +404,12 @@ module A2M
         xs = pts.map(&:x); zs = pts.map(&:z)
         lx = A2M::Etirement.lignes_auto(xs, f[:vantaux] > 0 ? f[:vantaux] : nil)
         lz = A2M::Etirement.lignes_auto(zs, nil)
+        # Appui ou seuil : objet d'une gamme (une longueur fixe, pas d'étirement) ou objet étiré à toutes les longueurs
+        fa = LONGUEURS.key?(f[:type][0]) ? fiche_appui(f, l0) : nil
+        raise Interrupt if LONGUEURS.key?(f[:type][0]) && fa.nil?
+        lx, lz = [], [] if fa && fa['gamme']
         # Lignes montrées en guides rouges, modifiables
-        loop do
+        (fa && fa['gamme'] ? 0 : 1).times { loop do
           guides = lx.map { |s, _| d.entities.add_cline(Geom::Point3d.new(s, -2, -4), Geom::Point3d.new(s, -2, h0 + 4)) } +
                    lz.map { |s, _| d.entities.add_cline(Geom::Point3d.new(-4, -2, s), Geom::Point3d.new(l0 + 4, -2, s)) }
           view.refresh rescue view.invalidate
@@ -398,7 +430,7 @@ module A2M
           end
           lx, lz = nx, nz
           break
-        end
+        end }
         balise = f[:type][1]
         info = { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => balise, 'vantaux' => f[:vantaux], 'choix' => f[:choix],
                  'l0' => l0.to_f, 'h0' => h0.to_f, 'p0' => p0.to_f, 'lx' => lx, 'lz' => lz, 'version' => 1 }
@@ -407,11 +439,7 @@ module A2M
           raise Interrupt unless fp
           info.merge!(fp)
         end
-        if LONGUEURS.key?(f[:type][0])
-          ls = fiche_longueurs(f[:type][0])
-          raise Interrupt unless ls
-          info['longueurs'] = ls
-        end
+        info.merge!(fa) if fa
         info.each { |k, v| d.set_attribute(DICO, k, v.is_a?(Hash) || v.is_a?(Array) ? JSON.generate(v) : v) }
         d.name = model.definitions.unique_name(f[:nom])
         inst.name = f[:nom]
