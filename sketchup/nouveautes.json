@@ -1,4 +1,3 @@
 [
-  "Mise à jour par fichier : à l'ouverture de SketchUp, un a2m_metre.rbz plus récent posé dans votre dossier (ou dans Téléchargements) vous est proposé à l'installation",
-  "Menu Extensions > Métré Atelier 2M > Dossier du fichier .rbz pour les mises à jour"
+  "Correction outil Mur : un point cliqué dans le prolongement d'un tronçon (milieu d'un côté, alignement) ne fait plus « partir » le mur à des kilomètres"
 ]

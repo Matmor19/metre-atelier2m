@@ -43,7 +43,30 @@ module A2M
     end
 
     # ---- Géométrie 2D (plan horizontal), en pouces (unité interne de SketchUp) ----
+    # Points en double et points intermédiaires alignés (tronçons dans le prolongement l'un de l'autre) retirés :
+    # sans cela, l'angle entre deux tronçons alignés « part à l'infini » et le mur devient immense
+    def self.nettoyer(pts, ferme)
+      res = []
+      pts.each { |q| res << q if res.empty? || Math.hypot(q.x - res[-1].x, q.y - res[-1].y) > 0.04 }
+      res.pop if ferme && res.size > 1 && Math.hypot(res[0].x - res[-1].x, res[0].y - res[-1].y) <= 0.04
+      loop do
+        n = res.size
+        break if n < 3
+        idx = (0...n).find do |i|
+          next false if !ferme && (i == 0 || i == n - 1)
+          a = res[i - 1]; b = res[i]; c = res[(i + 1) % n]
+          ux, uy = b.x - a.x, b.y - a.y; vx, vy = c.x - b.x, c.y - b.y
+          lu = Math.hypot(ux, uy); lv = Math.hypot(vx, vy)
+          (ux * vy - uy * vx).abs / (lu * lv) < 1e-3 && (ux * vx + uy * vy) > 0
+        end
+        break unless idx
+        res.delete_at(idx)
+      end
+      res
+    end
+
     def self.decale(pts, d, ferme)
+      pts = nettoyer(pts, ferme)
       n = pts.size
       seg = (0...(ferme ? n : n - 1)).map do |i|
         a = pts[i]; b = pts[(i + 1) % n]
@@ -56,7 +79,7 @@ module A2M
         (p1x, p1y), (u1x, u1y) = s1
         (p2x, p2y), (u2x, u2y) = s2
         cr = u1x * u2y - u1y * u2x
-        return [p2x, p2y] if cr.abs < 1e-9
+        return [p2x, p2y] if cr.abs < 1e-3   # tronçons alignés (ou presque) : pas d'angle à calculer
         t = ((p2x - p1x) * u2y - (p2y - p1y) * u2x) / cr
         [p1x + t * u1x, p1y + t * u1y]
       end
