@@ -117,6 +117,7 @@ module A2M
         epaissir(grp.entities, polys, ep, pente / 100.0) if ep > 0
         lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
         grp.layer = lb
+        A2M::Hachures.poser(grp, model)
         grp.name = "Toiture #{num} – #{type} #{pente.round}%#{ep > 0 ? ", ép. #{ep.round(1)} cm" : ''}"
         model.commit_operation
         Sketchup.status_text = "#{grp.name} créée sur #{l.round(2)} × #{w.round(2)} m, débord #{d} m, balise #{tag}"

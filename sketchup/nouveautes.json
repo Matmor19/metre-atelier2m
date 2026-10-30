@@ -1,6 +1,4 @@
 [
-  "Nouvel outil Porte intérieure : bloc-porte choisi par son vantail (63 à 103 × 204), réservation avec le jeu d'huisserie, toute l'épaisseur de la cloison percée, porte centrée, sens d'ouverture au Tab (dessiné au sol), choix du configurateur repris à l'import",
-  "L'outil Ouverture est réservé aux menuiseries extérieures et aux passages libres",
-  "Mesure des objets sur leurs seules parties visibles (les composants dynamiques gardent des pièces cachées) : fin des tailles fausses",
-  "Paramétrage d'une porte intérieure : dimension du vantail et côté des paumelles demandés"
+  "Hachures de coupe (SketchUp 2027) : une hachure par type de couche (mur, isolant, plaque, cloison, chape, semelle, toiture…), posée automatiquement par les outils de dessin",
+  "Menu Extensions > Métré Atelier 2M > Hachures de coupe par couche, et Appliquer les hachures au modèle (pour les modèles déjà dessinés)"
 ]

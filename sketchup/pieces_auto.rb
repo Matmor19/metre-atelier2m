@@ -81,6 +81,7 @@ module A2M
           f.reverse! if f.normal.z < 0
           f.pushpull((ep / 100.0).m) if ep > 0
           g.layer = lb
+          A2M::Hachures.poser(g, model)
           model.selection.clear; model.selection.add(g)
           rp = UI.inputbox(['Nom de la pièce (vide = « Pièce n »)'], [''], "Pièce #{i + 1} / #{contours.size} : #{aire.round(2)} m² (en surbrillance)")
           g.name = rp && !rp[0].to_s.strip.empty? ? rp[0].to_s.strip : "Pièce #{i + 1}"

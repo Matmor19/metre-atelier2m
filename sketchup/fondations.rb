@@ -60,6 +60,7 @@ module A2M
         te.grep(Sketchup::Face).to_a.each { |f| f.pushpull((hc / 100.0).m) if f.valid? && f.normal.z < -0.99 }
         lb, _ = A2M::Balises.balise(model, 'A2M_SEMELLE', [130, 130, 130])
         grp.layer = lb
+        A2M::Hachures.poser(grp, model)
         grp.name = "Semelles filantes #{lc.round} × #{hc.round}"
         model.commit_operation
         msg = "#{grp.name} créées sous #{murs.size - manque.size} mur(s), balise A2M_SEMELLE."

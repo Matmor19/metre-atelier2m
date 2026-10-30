@@ -65,6 +65,7 @@ module A2M
         tag = p[:etage] ? type[2] : type[1]
         l, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
         grp.layer = l
+        A2M::Hachures.poser(grp, model)
         if p[:nom]
           grp.name = p[:nom]
         else

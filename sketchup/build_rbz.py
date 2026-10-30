@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises hachures pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -38,6 +38,9 @@ unless file_loaded?(__FILE__)
     menu.add_separator if sep
   end
   menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
+  menu.add_separator
+  menu.add_item('Hachures de coupe par couche…') { A2M::Hachures.regler }
+  menu.add_item('Appliquer les hachures au modèle') { A2M::Hachures.appliquer }
   menu.add_separator
   menu.add_item('Rechercher une mise à jour…') { A2M::MiseAJour.verifier(true) }
   UI.add_context_menu_handler do |cm|
@@ -86,7 +89,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'dessin_sols.rb'), 'a2m_metre/dessin_sols.rb')
     z.write(os.path.join(ici, 'ouvertures.rb'), 'a2m_metre/ouvertures.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
-    for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int'):
+    for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')

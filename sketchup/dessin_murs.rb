@@ -116,6 +116,7 @@ module A2M
       f.pushpull(hm.m)
       l, _ = A2M::Balises.balise(model, type[1], (A2M::Balises::LISTE.find { |n, _, _| n == type[1] } || [])[2])
       grp.layer = l
+      A2M::Hachures.poser(grp, model)
       num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(type[4]) }
       grp.name = "#{type[4]} #{num}"
       grp
