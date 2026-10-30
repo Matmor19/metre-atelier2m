@@ -21,6 +21,11 @@ module A2M
     CHOIX_ME = { 'mat' => [['pvc', "PVC"], ['alu', "Aluminium"], ['bois', "Bois"], ['mixte', "Mixte bois/aluminium"], ['acier', "Acier"]], 'vantaux' => [['1', "1 vantail"], ['2', "2 vantaux"], ['3', "3 vantaux"], ['4', "4 vantaux"]], 'ouvrant' => [['francaise', "Ouvrant à la française"], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', "Oscillo-battant"], ['abattant', "Abattant"], ['coulissante', "Coulissante"], ['galandage', "Coulissante à galandage"], ['translation', "Coulissante à translation"], ['fixe', "Châssis fixe"], ['guillotine', "Ouvrant à guillotine"], ['basculant', "Ouvrant basculant"], ['pivotant', "Ouvrant pivotant"]], 'vitrage' => [['simple', "Simple vitrage"], ['double', "Double vitrage standard"], ['vir', "Double vitrage VIR"], ['triple', "Triple vitrage"]], 'ferm' => [['vr-manuel', "Volet roulant manuel"], ['vr-motor', "Volet roulant motorisé"], ['vr-solaire', "Volet roulant solaire"], ['vb-pvc', "Volet battant ou coulissant PVC"], ['vb-alu', "Volet battant ou coulissant alu"], ['vb-bois', "Volet battant ou coulissant bois"], ['brise', "Brise-soleil orientable"], ['screen', "Store screen extérieur"], ['banne', "Store banne"]] }
 
     AUCUN_AS = 'Aucun'
+    # Réservation sous l'ouverture (allège abaissée) par défaut : appui sous les fenêtres 5 cm,
+    # seuil sous les portes d'entrée et portes-fenêtres 7 cm, rien pour un passage libre
+    def self.reservation(tag)
+      { 'A2M_FENETRE' => 5, 'A2M_PORTE_FENETRE' => 7, 'A2M_PORTE_ENTREE' => 7 }[tag] || 0
+    end
     RES_SIMPLE = 'Réservation simple (panneau balisé)'
     RES_AUCUNE = 'Aucune'
     BIB = 'Bibliothèque : '
@@ -89,9 +94,9 @@ module A2M
       asl = [AUCUN_AS] + aps.map { |o| "#{o['nom']} (#{o['type']})" }
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm), depuis le bas du mur cliqué',
                          'Nombre de couches à percer (mur + doublages)', 'Menuiserie posée dans l\'ouverture',
-                         'Appui / seuil : allège abaissée de (cm) sur les 2 premières couches',
+                         'Réservation appui / seuil (cm) : allège abaissée sur les 2 premières couches (fenêtre 5, porte 7)',
                          'Pièce de rattachement', 'Appui ou seuil posé sous l\'ouverture', 'Appui ou seuil : débord sur la façade (cm)'],
-                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || (t[1] == 'A2M_PORTE_INT' ? 0 : 5)).to_s, @r[:piece] || AUTO,
+                        [t[0], (g[:l] || t[2]).to_s, (g[:h] || t[3]).to_s, (g[:lin] || t[4]).to_s, (g[:n] || @r[:n] || 1).to_s, res0, (g[:appui] || reservation(t[1])).to_s, @r[:piece] || AUTO,
                          asl.include?(g[:as]) ? g[:as] : AUCUN_AS, (g[:debord] || 4).to_s],
                         [TYPES.map(&:first).join('|'), '', '', '', '1|2|3|4', menus.join('|'), '', ([AUTO] + (pcs = pieces_du_modele)).join('|'), asl.join('|'), ''], 'Créer une ouverture (Métré Atelier 2M)')
       return nil unless rep
@@ -105,7 +110,7 @@ module A2M
       # Type changé dans la liste : ses propres valeurs par défaut (porte intérieure : pas d'appui, 1 couche)
       if rep[0] != t[0] && !@r[type[0]]
         l, h, lin = type[2].to_f, type[3].to_f, type[4].to_f if rep[1].to_f == t[2] && rep[2].to_f == t[3] && rep[3].to_f == t[4]
-        appui = 0 if type[1] == 'A2M_PORTE_INT' && appui == 5
+        appui = reservation(type[1]) if appui == reservation(t[1])
       end
       @r[:type] = type[0]; @r[:n] = rep[4].to_i; @r[:res] = rep[5]; @r[type[0]] = { l: l, h: h, lin: lin, n: rep[4].to_i, appui: appui }
       piece = rep[7].to_s == AUTO ? nil : rep[7].to_s
