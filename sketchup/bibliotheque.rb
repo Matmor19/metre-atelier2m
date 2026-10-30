@@ -779,7 +779,8 @@ module A2M
     # ---- Commande : la bibliothèque (poser un objet hors d'un mur, ouvrir ou changer le dossier) ----
     def self.gerer
       liste = objets
-      actions = ['Poser un objet à la taille voulue', 'Longueurs d\'un appui ou d\'un seuil (gamme)', 'Ouvrir le dossier de la bibliothèque', 'Changer de dossier']
+      actions = ['Poser un objet à la taille voulue', 'Longueurs d\'un appui ou d\'un seuil (gamme)', 'Ouvrir le dossier de la bibliothèque', 'Changer de dossier',
+                 'Corriger le type d\'objets déjà rangés', 'Retirer un objet de la bibliothèque', 'Voir la liste des objets']
       rep = UI.inputbox(['Que faire ?'], [actions[0]], [actions.join('|')], "Bibliothèque d'objets : #{liste.size} objet(s)")
       return unless rep
       case rep[0]
@@ -794,9 +795,60 @@ module A2M
           Sketchup.write_default('A2M_Metre', 'dossier_biblio', d)
           UI.messagebox("Bibliothèque : #{d}\n#{objets.size} objet(s) trouvé(s).")
         end
+      when actions[4] then corriger_type(liste)
+      when actions[5] then retirer(liste)
+      when actions[6]
+        UI.messagebox(liste.empty? ? 'Bibliothèque vide.' : liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] }
+          .map { |o| "#{o['type']} : #{o['nom']}#{o['gamme'] ? " — gamme #{o['gamme']}, #{o['longueur'].to_f.round} cm" : ''}" }.join("\n"))
       else
         poser_libre(liste)
       end
+    end
+
+    # Type corrigé pour un ou plusieurs objets (ceux dont le nom commence par…) ; appuis et seuils : gamme et longueur
+    def self.corriger_type(liste)
+      return UI.messagebox('Bibliothèque vide.') if liste.empty?
+      types_l = types.map(&:first)
+      rep = UI.inputbox(['Objets dont le nom commence par (ex. : Appuis)', 'Nouveau type', 'Appui ou seuil : nom de la gamme'],
+                        ['', types_l[0], ''], ['', types_l.join('|'), ''], 'Corriger le type d\'objets rangés')
+      return unless rep && !rep[0].to_s.strip.empty?
+      debut = rep[0].to_s.strip.downcase
+      cibles = liste.select { |o| o['nom'].to_s.downcase.start_with?(debut) }
+      return UI.messagebox("Aucun objet dont le nom commence par « #{rep[0]} ».") if cibles.empty?
+      t = types.find { |x| x[0] == rep[1] }
+      gamme = rep[2].to_s.strip
+      return unless UI.messagebox("#{cibles.size} objet(s) passeront en « #{t[0]} »#{gamme.empty? ? '' : ", gamme « #{gamme} »"} :\n" + cibles.map { |o| "  • #{o['nom']}" }.join("\n") + "\n\nContinuer ?", MB_YESNO) == IDYES
+      noms = cibles.map { |o| o['nom'] }
+      l2 = objets.map do |o|
+        next o unless noms.include?(o['nom'])
+        o = o.merge('type' => t[0], 'balise' => t[1])
+        if LONGUEURS.key?(t[0]) && !gamme.empty?
+          # Longueur : le nombre du nom (« Appuis 100 »), sinon la longueur mesurée
+          m = o['nom'].to_s.match(/(\d+([.,]\d+)?)\s*(cm)?\s*\z/i)
+          o = o.merge('gamme' => gamme, 'longueur' => m ? m[1].tr(',', '.').to_f : (o['l0'].to_f * 2.54).round, 'lx' => [], 'lz' => [])
+          o.delete('longueurs')
+        end
+        o
+      end
+      sauver_index(l2)
+      UI.messagebox("#{cibles.size} objet(s) corrigé(s).")
+    end
+
+    # Retire un objet de la liste ; son fichier va dans le sous-dossier « Retirés » (rien n'est effacé)
+    def self.retirer(liste)
+      return UI.messagebox('Bibliothèque vide.') if liste.empty?
+      noms = liste.map { |o| "#{o['nom']} (#{o['type']})" }
+      rep = UI.inputbox(['Objet à retirer'], [noms[0]], [noms.join('|')], 'Retirer un objet de la bibliothèque')
+      return unless rep
+      o = liste[noms.index(rep[0])]
+      return unless UI.messagebox("Retirer « #{o['nom']} » de la bibliothèque ?\nSon fichier est rangé dans le dossier « Retirés », rien n'est effacé.", MB_YESNO) == IDYES
+      if o['fichier'] && File.exist?(File.join(dossier, o['fichier']))
+        dest = File.join(dossier, 'Retirés', File.basename(o['fichier']))
+        FileUtils.mkdir_p(File.dirname(dest))
+        FileUtils.mv(File.join(dossier, o['fichier']), dest) rescue nil
+      end
+      sauver_index(objets.reject { |x| x['nom'] == o['nom'] })
+      UI.messagebox("« #{o['nom']} » retiré.")
     end
 
     # Gamme de longueurs d'un appui ou d'un seuil déjà rangé

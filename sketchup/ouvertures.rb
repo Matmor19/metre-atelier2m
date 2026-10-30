@@ -291,12 +291,20 @@ module A2M
         echecs = dec[:echecs]; prof = dec[:prof]; nb = dec[:nb]
         # Menuiserie de la bibliothèque : étirée à la taille percée (profils inchangés), posée à 5 cm du nu extérieur
         # (porte intérieure : au milieu de l'épaisseur percée)
+        r = nil
         if p[:res] && p[:obj]
           ur = Z_AXIS.cross(n).normalize            # de gauche à droite, vu de l'extérieur
           org = u.dot(ur) > 0 ? b : b.offset(u, l)
-          r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse, ->(_ep) { 0 }, model, p[:opts])
-          alerte = A2M::Bibliotheque.alerte!
-        elsif p[:res]
+          begin
+            r = A2M::Bibliotheque.instance_pour(ents, p[:obj], p[:l], p[:h], org, ur, n.reverse, ->(_ep) { 0 }, model, p[:opts])
+            alerte = A2M::Bibliotheque.alerte!
+          rescue StandardError => ex
+            # Objet impossible à mettre à cette taille : l'ouverture est quand même créée, avec une réservation
+            alerte = "#{ex.message}\nUne réservation a été posée à la place : clic droit › Poser une menuiserie de la bibliothèque sur l'ouverture."
+            r = nil
+          end
+        end
+        if p[:res] && r.nil?
           # Menuiserie de réservation : un panneau fin balisé, à la taille de l'ouverture, pour l'extraction du métré
           r = ents.add_group
           c1 = b.offset(n.reverse, 5.cm)
