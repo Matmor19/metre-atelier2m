@@ -116,10 +116,30 @@ module A2M
       File.write(marque, Time.now.to_s)
     end
 
+    # Hachures des logiciels de DAO installés sur ce poste (ZWCAD, AutoCAD) : fichiers métriques et motifs personnels
+    def self.sources_cao
+      res = []
+      app = ENV['APPDATA'].to_s.tr('\\', '/')
+      pf = [ENV['ProgramFiles'], ENV['ProgramW6432'], 'C:/Program Files'].compact.map { |x| x.tr('\\', '/') }.uniq
+      cherche = lambda do |logiciel, motifs, fichiers, programmes|
+        trouves = Dir.glob(motifs.map { |m| File.join(app, m) } + (programmes ? pf.flat_map { |x| motifs.map { |m| File.join(x, m) } } : []))
+        fichiers.each do |nom, groupe|
+          f = trouves.select { |t| File.basename(t).casecmp?(nom) }
+                     .min_by { |t| [t.include?('/fr-FR/') ? 0 : 1, t.start_with?(app) ? 0 : 1, t] }
+          res << ["#{logiciel} · #{groupe}", f] if f
+        end
+      end
+      cherche.call('ZWCAD', ['ZWSOFT/**/*.pat'], [['ZWCADISO.pat', 'motifs'], ['zwcadusr.pat', 'mes motifs']], true)
+      cherche.call('AutoCAD', ['Autodesk/**/*.pat'], [['acadiso.pat', 'motifs']], false)
+      res
+    rescue StandardError
+      []
+    end
+
     # Catalogue : { id => motif } ; id = « groupe|fichier|nom »
     def self.catalogue(recharger = false)
       return @cat if @cat && !recharger
-      sources = [['Atelier 2M', File.join(ICI, 'hachures')], ['SketchUp', File.join(dossier, 'SketchUp')]]
+      sources = [['Atelier 2M', File.join(ICI, 'hachures')], ['SketchUp', File.join(dossier, 'SketchUp')]] + sources_cao
       motifs = File.join(dossier, 'Motifs').tr('\\', '/')
       Dir.glob(File.join(motifs, '**', '*.pat')).map { |f| File.dirname(f) }.uniq.sort.each do |d|
         # (Windows : majuscules et minuscules indifférentes dans les chemins)
@@ -135,7 +155,7 @@ module A2M
       end
       @cat = {}
       sources.each do |groupe, d, ajout|
-        Dir.glob(File.join(d, '*.pat')).sort.each do |f|
+        (File.file?(d) ? [d] : Dir.glob(File.join(d, '*.pat')).sort).each do |f|
           begin
             A2M::MotifPat.lire(A2M::MotifPat.texte_fichier(f), File.basename(f, '.*')).each do |m|
               id = "#{groupe}|#{File.basename(f)}|#{m['nom']}"

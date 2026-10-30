@@ -1,7 +1,3 @@
 [
- "Hachures : bouton « Appliquer la hachure » ; le choix du motif et les réglages sont d'abord un aperçu",
- "Hachures : bouton « Ajouter un dossier de hachures… » pour mettre vos propres dossiers de fichiers .pat dans la galerie (et « Retirer ce dossier »)",
- "Hachures : les 83 hachures de SketchUp apparaissent dans la galerie ; une hachure posée autrement est montrée sur sa couche",
- "Hachures : correction, les réglages n'étaient pas retrouvés (enregistrés maintenant dans Documents\\Atelier 2M\\Hachures\\reglages.json)",
- "Hachures : les motifs téléchargés sur internet sont bien rangés sous « Internet - draftsperson.net »"
+  "Hachures : les motifs de ZWCAD installés sur votre poste (ZWCADISO et vos motifs personnels zwcadusr) apparaissent automatiquement dans la galerie ; idem pour AutoCAD s'il est installé"
 ]
