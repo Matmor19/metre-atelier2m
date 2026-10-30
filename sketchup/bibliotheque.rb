@@ -700,6 +700,9 @@ module A2M
     # Inscrit la largeur et la hauteur dans les réglages du composant puis le fait se redessiner (comme dans « Options du composant »)
     def self.regler_dc(inst, obj, l_cm, h_cm)
       h = attributs_dc(inst)
+      voulu = {}   # lenx / lenz visés (pouces), pour le secours par mise à l'échelle
+      b0 = inst.definition.bounds
+      avant = [b0.width.to_f, b0.depth.to_f]
       [['attr_l', 'f_l', 'u_l', l_cm, 'lenx'], ['attr_h', 'f_h', 'u_h', h_cm, 'lenz']].each do |ka, kf, ku, v, len|
         k = obj[ka]; next unless k
         # Objet rangé avec un réglage de profil (ex. « dormant, largeur ») : la vraie taille est lenx / lenz si modifiable
@@ -710,14 +713,29 @@ module A2M
         val = pouces(v) * (obj[kf] || 1.0).to_f
         val = val.round if obj[ku] == 'INTEGER'
         val = val.round(2).to_s if obj[ku] == 'STRING'
+        voulu[len] = val.to_f if k == len
         inst.set_attribute(DC, k, val)
       end
       return false unless defined?($dc_observers) && $dc_observers
       dc = $dc_observers.get_latest_class
-      begin
-        dc.redraw(inst, false)
-      rescue ArgumentError, NoMethodError
-        dc.redraw_with_undo(inst)
+      redessiner = lambda do
+        begin
+          dc.redraw(inst, false)
+        rescue ArgumentError, NoMethodError
+          dc.redraw_with_undo(inst)
+        end
+      end
+      redessiner.call
+      # Certains composants ignorent lenx / lenz inscrits : on fait alors comme l'outil Échelle,
+      # le composant absorbe la mise à l'échelle et redessine ses profils sans les déformer
+      b = inst.definition.bounds
+      sx = voulu['lenx'] && b.width > 0 ? voulu['lenx'] / b.width.to_f : 1.0
+      sz = voulu['lenz'] && b.depth > 0 ? voulu['lenz'] / b.depth.to_f : 1.0
+      inchange = (b.width.to_f - avant[0]).abs < 0.01 && (b.depth.to_f - avant[1]).abs < 0.01
+      if inchange && ((sx - 1).abs > 0.002 || (sz - 1).abs > 0.002)
+        t = inst.transformation
+        inst.transformation = t * Geom::Transformation.scaling(ORIGIN, sx, 1, sz)
+        redessiner.call
       end
       true
     rescue StandardError

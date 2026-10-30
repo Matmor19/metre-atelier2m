@@ -182,7 +182,7 @@ module A2M
     # contigu : on s'arrête dès qu'un vide de plus de 2 cm sépare deux couches (porte intérieure : la cloison seule)
     def self.couches(depart, dir, n, contigu = false)
       model = Sketchup.active_model
-      vus = []; pt = depart; parcours = 0.0; fin = 0.0; bornes = {}
+      vus = []; pt = depart; parcours = 0.0; fin = 0.0; bornes = {}; dedans = false
       40.times do
         hit = model.raytest([pt, dir])
         break unless hit
@@ -204,7 +204,13 @@ module A2M
           sortie = face.normal.transform(t).dot(dir) > 0
         end
         nouvelle = !vus.include?(g)
-        entree = nouvelle && sortie && vus.any? ? fin : parcours
+        # Entrée dans une nouvelle couche alors qu'on n'est pas encore sorti de la précédente : SketchUp a rendu la face
+        # d'entrée de la nouvelle couche au lieu de la face de sortie, confondue, de la précédente. Elle se termine ici.
+        if nouvelle && dedans && vus.any?
+          fin = parcours
+          bornes[vus.last][1] = parcours if bornes[vus.last]
+        end
+        entree = nouvelle && (sortie || dedans) && vus.any? ? fin : parcours
         if vus.size >= n
           break unless g == vus.last
           fin = parcours
@@ -214,6 +220,7 @@ module A2M
           fin = parcours if g == vus.last
         end
         (bornes[g] ||= [entree, parcours])[1] = parcours if vus.include?(g)
+        dedans = g == vus.last && !sortie
         pt = hit[0].offset(dir, 0.02)
       end
       [vus, fin, vus.map { |g| bornes[g] }]
@@ -575,6 +582,8 @@ module A2M
           n = (@ip.transformation * face.normal).normalize
           return UI.messagebox('Cliquez sur une face verticale du mur.') if n.z.abs > 0.2
           n = Geom::Vector3d.new(n.x, n.y, 0).normalize
+          # Face retournée : la normale est remise du côté d'où l'on regarde (le côté cliqué est l'extérieur)
+          n.reverse! if (view.camera.eye - @ip.position).dot(n) < 0
           mur = A2M::Ouvertures.haut_de(chemin)
           zbas = mur ? mur.bounds.min.z : @ip.position.z
           @ref = { pt: @ip.position, n: n, u: Z_AXIS.cross(n).normalize, zbas: zbas }

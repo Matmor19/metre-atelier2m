@@ -1,6 +1,8 @@
 {
- "version": "2.13.5",
+ "version": "2.13.6",
  "notes": [
-  "Mise à jour : la nouvelle version est trouvée dès sa publication (plus d'attente du cache de GitHub)"
+  "Ouverture : toutes les couches collées sont percées (mur, isolant, plaque), même quand SketchUp confond leurs faces",
+  "Menuiseries dynamiques : elles prennent la taille de l'ouverture même si le composant ignore la largeur et la hauteur inscrites",
+  "Ouverture : une face de mur retournée ne fait plus poser la menuiserie du mauvais côté"
  ]
 }
