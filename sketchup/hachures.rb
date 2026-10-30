@@ -31,17 +31,49 @@ module A2M
     end
 
     def self.dossier
-      d = File.join(File.dirname(A2M::Bibliotheque.dossier), 'Hachures')
+      d = File.join(File.dirname(A2M::Bibliotheque.dossier), 'Hachures').tr('\\', '/')
       %w[Motifs SketchUp textures].each { |s| FileUtils.mkdir_p(File.join(d, s)) }
       d
     end
 
+    # Réglages gardés dans un fichier (Documents\Atelier 2M\Hachures\reglages.json) :
+    # { 'couches' => { balise => réglage }, 'dossiers' => [dossiers de motifs ajoutés] }
+    def self.fichier_reglages() File.join(dossier, 'reglages.json') end
+
+    def self.tout
+      JSON.parse(File.read(fichier_reglages, encoding: 'UTF-8'))
+    rescue StandardError
+      { 'couches' => {}, 'dossiers' => [] }
+    end
+
+    def self.ecrire_tout(t)
+      File.write(fichier_reglages, JSON.pretty_generate(t), encoding: 'UTF-8')
+    end
+
     def self.reglages
-      JSON.parse(Sketchup.read_default(CLE, 'hachures', '{}').to_s) rescue {}
+      tout['couches'] || {}
     end
 
     def self.enregistrer(r)
-      Sketchup.write_default(CLE, 'hachures', JSON.generate(r))
+      t = tout
+      t['couches'] = r
+      ecrire_tout(t)
+    end
+
+    def self.dossiers_ajoutes
+      (tout['dossiers'] || []).select { |d| File.directory?(d) }
+    end
+
+    def self.ajouter_dossier(d)
+      t = tout
+      t['dossiers'] = ((t['dossiers'] || []) + [d.tr('\\', '/')]).uniq
+      ecrire_tout(t)
+    end
+
+    def self.retirer_dossier(d)
+      t = tout
+      t['dossiers'] = (t['dossiers'] || []) - [d]
+      ecrire_tout(t)
     end
 
     def self.libelle(b)
@@ -73,7 +105,8 @@ module A2M
           m = hp.add("A2M export #{i}", f)
           m.save_fill_pattern_to_file(sortie)
           t = A2M::MotifPat.texte_fichier(sortie)
-          File.write(sortie, t.sub(/^\*[^,\n]*/, "*#{nom}"), encoding: 'UTF-8')
+          t = t =~ /^\s*\*/ ? t.sub(/^\s*\*[^,\n]*/, "*#{nom}") : "*#{nom}, #{nom}\n#{t}"
+          File.write(sortie, t, encoding: 'UTF-8')
         rescue StandardError
           File.delete(sortie) if File.exist?(sortie) && File.size(sortie).zero?
         ensure
@@ -92,13 +125,18 @@ module A2M
         rel = d == motifs ? 'Mes motifs' : d.sub(motifs + '/', '').split('/').first
         sources << [rel, d]
       end
+      dossiers_ajoutes.each do |d|
+        Dir.glob(File.join(d, '**', '*.pat')).map { |f| File.dirname(f) }.uniq.sort.each do |s|
+          sources << [File.basename(d) + (s == d ? '' : ' › ' + s.sub(d + '/', '')), s, d]
+        end
+      end
       @cat = {}
-      sources.each do |groupe, d|
+      sources.each do |groupe, d, ajout|
         Dir.glob(File.join(d, '*.pat')).sort.each do |f|
           begin
-            A2M::MotifPat.lire(A2M::MotifPat.texte_fichier(f)).each do |m|
+            A2M::MotifPat.lire(A2M::MotifPat.texte_fichier(f), File.basename(f, '.*')).each do |m|
               id = "#{groupe}|#{File.basename(f)}|#{m['nom']}"
-              @cat[id] = m.merge('groupe' => groupe, 'id' => id)
+              @cat[id] = m.merge('groupe' => groupe, 'id' => id, 'ajout' => ajout)
             end
           rescue StandardError
             next
@@ -232,13 +270,29 @@ module A2M
       r = reglages
       couches = BALISES.map do |b|
         x = r[b].is_a?(Hash) && r[b]['motif'] ? DEFAUT.merge(r[b]) : nil
-        { 'balise' => b, 'libelle' => libelle(b), 'nb' => objets(model, b).size, 'r' => x }
+        objs = objets(model, b)
+        d = { 'balise' => b, 'libelle' => libelle(b), 'nb' => objs.size, 'r' => x }
+        unless x
+          # Hachure posée autrement (panneau de SketchUp, version précédente) : elle est montrée
+          h = objs.map { |e| e.hatch_pattern rescue nil }.compact.first
+          d.merge!('existante' => h.name, 'img' => vignette(h)) if h
+        end
+        d
       end
-      { 'couches' => couches, 'style' => (model.rendering_options['SectionCutFilled'] ? true : false) }
+      { 'couches' => couches, 'style' => (model.rendering_options['SectionCutFilled'] ? true : false), 'dossiers' => dossiers_ajoutes }
+    end
+
+    def self.vignette(h)
+      f = File.join(dossier, 'textures', 'vignette.png')
+      img = h.thumbnail_image or return nil
+      img.save_file(f)
+      'data:image/png;base64,' + [File.binread(f)].pack('m0')
+    rescue StandardError
+      nil
     end
 
     def self.motifs_pour_page
-      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'] } }
+      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'] } }
     end
 
     def self.regler
@@ -294,6 +348,22 @@ module A2M
             envoyer.call('progres', { 'fin' => true, 'ok' => ok, 'nb' => nb })
           end
         )
+      end
+      @dlg.add_action_callback('ajouter_dossier') do |_c|
+        d = UI.select_directory(title: 'Dossier de hachures (fichiers .pat) à ajouter à la galerie')
+        if d
+          ajouter_dossier(d)
+          catalogue(true)
+          envoyer.call('motifs', motifs_pour_page)
+          envoyer.call('etat', etat(Sketchup.active_model))
+          envoyer.call('groupe', File.basename(d.tr('\\', '/')))
+        end
+      end
+      @dlg.add_action_callback('retirer_dossier') do |_c, d|
+        retirer_dossier(d)
+        catalogue(true)
+        envoyer.call('motifs', motifs_pour_page)
+        envoyer.call('etat', etat(Sketchup.active_model))
       end
       @dlg.add_action_callback('fermer') { |_c| @dlg.close }
       @dlg.show

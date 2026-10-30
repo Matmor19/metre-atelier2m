@@ -15,7 +15,8 @@ module A2M
       u.valid_encoding? ? u : t.force_encoding('Windows-1252').encode('UTF-8', invalid: :replace, undef: :replace)
     end
 
-    def self.lire(texte)
+    # nom_defaut : nom donné au motif quand le fichier commence directement par les traits (sans ligne *NOM)
+    def self.lire(texte, nom_defaut = nil)
       motifs = []
       cour = nil
       texte.to_s.encode('UTF-8', invalid: :replace, undef: :replace).each_line do |l|
@@ -25,9 +26,14 @@ module A2M
           nom, desc = l[1..-1].split(',', 2).map { |x| x.to_s.strip }
           cour = { 'nom' => nom, 'description' => desc.to_s.empty? ? nom : desc, 'familles' => [] }
           motifs << cour
-        elsif cour
+        else
           v = l.split(',').map { |x| Float(x.strip) rescue nil }
           next if v.size < 5 || v.compact.size != v.size
+          unless cour
+            next unless nom_defaut
+            cour = { 'nom' => nom_defaut, 'description' => nom_defaut, 'familles' => [] }
+            motifs << cour
+          end
           cour['familles'] << [v[0], v[1], v[2], v[3], v[4], v[5..-1] || []]
         end
       end

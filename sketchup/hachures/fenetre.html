@@ -18,6 +18,7 @@ main{flex:1;display:flex;min-height:0}
 .c .t span{font-size:11.5px;color:var(--t)}
 #droite{flex:1;display:flex;flex-direction:column;min-width:0}
 #reglage{padding:12px 14px;border-bottom:1px solid var(--l);display:flex;gap:16px;min-height:150px}
+#note{font-size:12px}
 #grand{width:200px;height:150px;border:1px solid var(--l);border-radius:8px;flex:none;background:#fff}
 #ctrl{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-content:start;align-items:center}
 #ctrl h3{grid-column:1/3;margin:0 0 2px;font-size:14px}
@@ -56,13 +57,15 @@ button:disabled{opacity:.5;cursor:default}
       <input id="filtre" placeholder="Chercher un motif…">
       <span id="prog"></span>
       <span style="flex:1"></span>
-      <button id="btnNet">Télécharger des hachures sur internet</button>
-      <button id="btnDos">Dossier des motifs</button>
+      <button id="btnRet" style="display:none">Retirer ce dossier</button>
+      <button id="btnAjout">Ajouter un dossier de hachures…</button>
+      <button id="btnNet">Télécharger sur internet</button>
+      <button id="btnDos" title="Ouvre le dossier où déposer vos fichiers .pat">Dossier des motifs</button>
     </div>
     <div id="gal"><div class="vide">Chargement des motifs…</div></div>
   </div>
 </main>
-<footer><span>Chaque changement s'applique tout de suite à toutes les couches de ce type et à tout ce que vous dessinerez ensuite, dans tous vos modèles. Ctrl+Z annule.</span><button class="p" onclick="sketchup.fermer()">Fermer</button></footer>
+<footer><span>1. Cliquez sur une couche · 2. choisissez un motif et réglez-le (aperçu) · 3. « Appliquer la hachure » : elle est posée sur toutes les couches de ce type et sur tout ce que vous dessinerez ensuite, dans tous vos modèles. Ctrl+Z annule.</span><button class="p" onclick="sketchup.fermer()">Fermer</button></footer>
 <script>
 var DEF={trait:'#1e1e1e',trait_op:100,fond:'#ffffff',fond_op:0,ep:4,taille:10,angle:0};
 var E={couches:[],style:true}, M=[], MI={}, sel=null, cours=null;
@@ -110,46 +113,73 @@ function dessiner(cv,m,r,pas){
 }
 
 // ---- Fenêtre ----
+// cours : réglage affiché (aperçu) ; il n'est posé dans SketchUp qu'avec le bouton « Appliquer »
 function couche(){for(var i=0;i<E.couches.length;i++) if(E.couches[i].balise===sel) return E.couches[i]; return null}
+function pareil(a,b){return JSON.stringify(a||null)===JSON.stringify(b||null)}
+function enAttente(){var c=couche(); return !!(c&&cours&&!pareil(cours,c.r))}
+function vignette(cv,img){var x=cv.getContext('2d'),i=new Image();i.onload=function(){cv.width=cv.clientWidth;cv.height=cv.clientHeight;x.drawImage(i,0,0,cv.width,cv.height)};i.src=img}
+function etiquette(c){
+  if(c.r){var m=MI[c.r.motif]; return m?esc(m.desc):'motif introuvable';}
+  return c.existante?'posée hors fenêtre : '+esc(c.existante):'aucune hachure';
+}
 function liste(){
   document.getElementById('alerte').style.display=E.style?'none':'block';
   var el=document.getElementById('couches');
   el.innerHTML=E.couches.map(function(c){
-    var m=c.r&&MI[c.r.motif];
     return '<div class="c'+(c.balise===sel?' sel':'')+'" data-b="'+c.balise+'"><canvas></canvas><div class="t"><b>'+esc(c.libelle)+'</b><span>'+
-      (c.r?(m?esc(m.desc):'motif introuvable'):'aucune hachure')+(c.nb?' · '+c.nb+' objet(s)':'')+'</span></div></div>';
+      etiquette(c)+(c.nb?' · '+c.nb+' objet(s)':'')+'</span></div></div>';
   }).join('');
   el.querySelectorAll('.c').forEach(function(d,i){
-    var c=E.couches[i]; dessiner(d.querySelector('canvas'),c.r&&MI[c.r.motif],c.r,9);
-    d.onclick=function(){sel=d.dataset.b; cours=c.r?Object.assign({},c.r):null; liste(); reglage(); galerie();};
+    var c=E.couches[i], cv=d.querySelector('canvas');
+    if(c.r) dessiner(cv,MI[c.r.motif],c.r,9); else if(c.img){dessiner(cv,null);vignette(cv,c.img);} else dessiner(cv,null);
+    d.onclick=function(){
+      if(enAttente()&&!confirm('Les réglages de « '+couche().libelle+' » ne sont pas appliqués. Les abandonner ?')) return;
+      sel=d.dataset.b; cours=c.r?Object.assign({},c.r):null; liste(); reglage(); galerie();
+    };
   });
+}
+function boutons(){
+  var a=document.getElementById('appliquer'), n=document.getElementById('note');
+  if(!a) return;
+  var att=enAttente(); a.disabled=!att;
+  n.textContent=att?'Réglages pas encore appliqués':'Appliqué dans SketchUp';
+  n.style.color=att?'#E07838':'#8a7f75';
 }
 function reglage(){
   var c=couche(), el=document.getElementById('reglage');
   if(!c){el.innerHTML='<div class="vide">Cliquez sur une couche à gauche, puis choisissez son motif dans la galerie.</div>';return;}
-  if(!cours){el.innerHTML='<canvas id="grand"></canvas><div id="ctrl"><h3>'+esc(c.libelle)+'</h3><div class="vide" style="grid-column:1/3">Pas encore de hachure : cliquez sur un motif dans la galerie ci-dessous.</div></div>';dessiner(document.getElementById('grand'),null);return;}
+  if(!cours){
+    el.innerHTML='<canvas id="grand"></canvas><div id="ctrl"><h3>'+esc(c.libelle)+'</h3><div class="vide" style="grid-column:1/3">'+
+      (c.existante?'Cette couche a la hachure « '+esc(c.existante)+' », posée hors de cette fenêtre. Choisissez un motif dans la galerie pour la remplacer.':'Pas encore de hachure : cliquez sur un motif dans la galerie ci-dessous.')+'</div></div>';
+    var g=document.getElementById('grand'); dessiner(g,null); if(c.img) vignette(g,c.img); return;
+  }
   var m=MI[cours.motif];
   el.innerHTML='<canvas id="grand"></canvas><div id="ctrl"><h3>'+esc(c.libelle)+' <small>· '+esc(m?m.desc:'motif introuvable')+'</small></h3>'+
-   '<label>Trait</label><div class="lig"><input type="color" id="trait" value="'+cours.trait+'"> opacité <input type="range" id="trait_op" min="0" max="100" value="'+cours.trait_op+'"><output id="o_trait_op"></output>'+
-     '</div><label>Épaisseur</label><div class="lig"><input type="range" id="ep" min="1" max="20" step="0.5" value="'+cours.ep+'"><output id="o_ep"></output><span style="color:#a99;font-size:11.5px">en % de l\'écartement</span></div>'+
+   '<label>Trait</label><div class="lig"><input type="color" id="trait" value="'+cours.trait+'"> opacité <input type="range" id="trait_op" min="0" max="100" value="'+cours.trait_op+'"><output id="o_trait_op"></output></div>'+
+   '<label>Épaisseur</label><div class="lig"><input type="range" id="ep" min="1" max="20" step="0.5" value="'+cours.ep+'"><output id="o_ep"></output><span style="color:#a99;font-size:11.5px">en % de l\'écartement</span></div>'+
    '<label>Fond</label><div class="lig"><input type="color" id="fond" value="'+cours.fond+'"> opacité <input type="range" id="fond_op" min="0" max="100" value="'+cours.fond_op+'"><output id="o_fond_op"></output>'+
      '<span style="color:#a99;font-size:11.5px">0 % : on voit la couleur de la couche</span></div>'+
-   '<label>Taille</label><div class="lig">écartement <input type="number" id="taille" min="0.2" step="0.5" value="'+cours.taille+'"> cm &nbsp; angle <input type="number" id="angle" step="15" value="'+cours.angle+'"> °'+
-     '<span style="flex:1"></span><button id="retirer">Retirer la hachure</button></div></div>';
+   '<label>Taille</label><div class="lig">écartement <input type="number" id="taille" min="0.2" step="0.5" value="'+cours.taille+'"> cm &nbsp; angle <input type="number" id="angle" step="15" value="'+cours.angle+'"> °</div>'+
+   '<span></span><div class="lig"><button class="p" id="appliquer">Appliquer la hachure</button><span id="note"></span><span style="flex:1"></span><button id="retirer">Retirer la hachure</button></div></div>';
   var maj=function(){['trait_op','fond_op'].forEach(function(k){document.getElementById('o_'+k).textContent=cours[k]+' %'}); document.getElementById('o_ep').textContent=cours.ep+' %';
-    dessiner(document.getElementById('grand'),m,cours,18); galerie(true);};
+    dessiner(document.getElementById('grand'),m,cours,18); galerie(true); boutons();};
   ['trait','trait_op','ep','fond','fond_op','taille','angle'].forEach(function(k){
     var i=document.getElementById(k);
-    i.oninput=function(){cours[k]=i.type==='color'?i.value:parseFloat(i.value)||0; maj();};
-    i.onchange=function(){cours[k]=i.type==='color'?i.value:parseFloat(i.value)||0; maj(); envoyer();};
+    i.oninput=i.onchange=function(){cours[k]=i.type==='color'?i.value:parseFloat(i.value)||0; maj();};
   });
-  document.getElementById('retirer').onclick=function(){cours=null; sketchup.regler(sel,''); reglage(); galerie();};
+  document.getElementById('appliquer').onclick=function(){ if(sel&&cours){ sketchup.regler(sel, JSON.stringify(cours)); var a=document.getElementById('appliquer'); a.disabled=true; document.getElementById('note').textContent='Application…'; } };
+  document.getElementById('retirer').onclick=function(){ if(!c.r){cours=null;reglage();galerie();return;} if(confirm('Retirer la hachure de « '+c.libelle+' » ?')){cours=null; sketchup.regler(sel,''); reglage(); galerie();} };
   maj();
 }
-function envoyer(){ if(sel&&cours) sketchup.regler(sel, JSON.stringify(cours)); }
 var minuterie=null;
+function barre(){
+  var gr=document.getElementById('groupe').value, ret=document.getElementById('btnRet'), m=null;
+  for(var i=0;i<M.length;i++) if(M[i].groupe===gr&&M[i].ajout){m=M[i];break;}
+  ret.style.display=m?'':'none'; ret.dataset.d=m?m.ajout:'';
+}
 function galerie(seulementDessin){
   var g=document.getElementById('gal');
+  barre();
   if(!M.length) return;
   if(seulementDessin){clearTimeout(minuterie); minuterie=setTimeout(function(){g.querySelectorAll('.m').forEach(function(d){dessiner(d.querySelector('canvas'),MI[d.dataset.k],cours||DEF,11)})},60); return;}
   var gr=document.getElementById('groupe').value, f=document.getElementById('filtre').value.toLowerCase();
@@ -160,18 +190,20 @@ function galerie(seulementDessin){
   (function lot(){var n=0; while(i<ds.length&&n<40){var d=ds[i++]; dessiner(d.querySelector('canvas'),MI[d.dataset.k],cours||DEF,11); n++;} if(i<ds.length) requestAnimationFrame(lot);})();
   ds.forEach(function(d){d.onclick=function(){
     if(!sel){alert("Choisissez d'abord une couche à gauche.");return;}
-    cours=Object.assign({},cours||DEF,{motif:d.dataset.k}); envoyer(); reglage(); galerie();
+    cours=Object.assign({},cours||DEF,{motif:d.dataset.k}); reglage();
+    g.querySelectorAll('.m.sel').forEach(function(x){x.classList.remove('sel')}); d.classList.add('sel');
   }});
 }
 function recevoir(q,d){
-  if(q==='etat'){E=d; var c=couche(); if(c&&c.r&&!cours) cours=Object.assign({},c.r); liste(); if(!document.getElementById('grand')) reglage();}
+  if(q==='etat'){E=d; var c=couche(); if(c&&c.r&&(!cours||pareil(cours,c.r))) cours=Object.assign({},c.r); liste(); if(!document.getElementById('appliquer')) reglage(); else boutons();}
   else if(q==='motifs'){
     M=d; MI={}; M.forEach(function(m){MI[m.id]=m});
     var gs=[]; M.forEach(function(m){if(gs.indexOf(m.groupe)<0) gs.push(m.groupe)});
     var s=document.getElementById('groupe'), v=s.value;
     s.innerHTML='<option value="">Tous les motifs ('+M.length+')</option>'+gs.map(function(g){var n=M.filter(function(m){return m.groupe===g}).length;return '<option value="'+esc(g)+'">'+esc(g)+' ('+n+')</option>'}).join('');
-    s.value=v; liste(); reglage(); galerie();
+    s.value=gs.indexOf(v)>=0?v:''; liste(); reglage(); galerie();
   }
+  else if(q==='groupe'){var s=document.getElementById('groupe'); for(var i=0;i<s.options.length;i++) if(s.options[i].value===d){s.value=d;break;} galerie();}
   else if(q==='progres'){
     var p=document.getElementById('prog'), b=document.getElementById('btnNet');
     if(d.fin){p.textContent=d.nb+' motif(s) téléchargé(s) depuis '+d.ok+' archive(s).'; b.disabled=false;}
@@ -182,6 +214,8 @@ document.getElementById('filtre').oninput=function(){galerie()};
 document.getElementById('groupe').onchange=function(){galerie()};
 document.getElementById('btnStyle').onclick=function(){sketchup.style()};
 document.getElementById('btnDos').onclick=function(){sketchup.dossier()};
+document.getElementById('btnAjout').onclick=function(){sketchup.ajouter_dossier()};
+document.getElementById('btnRet').onclick=function(){var d=this.dataset.d; if(d&&confirm('Retirer ce dossier de la galerie ? (les fichiers restent sur votre ordinateur)')) sketchup.retirer_dossier(d)};
 document.getElementById('btnNet').onclick=function(){sketchup.internet()};
 window.onresize=function(){ if(cours) dessiner(document.getElementById('grand'),MI[cours.motif],cours,18); };
 sketchup.pret();
