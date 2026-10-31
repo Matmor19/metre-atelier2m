@@ -111,3 +111,52 @@ tuile_mecanique((70, 66, 64), 0.08, 'mecanique_noire')
 ardoise([(78, 82, 90), (96, 100, 108), (62, 66, 74), (110, 112, 116)], 'ardoise_panachee')
 ardoise([(60, 64, 72)], 'ardoise_naturelle')
 print('ok')
+
+# ---- RAL pour menuiseries : teinte unie, léger grain de poudrage (teintes approximatives à l'écran)
+RAL = [
+    ('ral_9010_blanc_pur', (241, 236, 225)),
+    ('ral_9016_blanc_signalisation', (246, 246, 246)),
+    ('ral_1013_blanc_perle', (234, 230, 202)),
+    ('ral_1015_ivoire_clair', (230, 210, 181)),
+    ('ral_1001_beige', (205, 179, 139)),
+    ('ral_7035_gris_clair', (197, 199, 196)),
+    ('ral_7001_gris_argent', (138, 149, 151)),
+    ('ral_7015_gris_ardoise', (81, 86, 92)),
+    ('ral_7016_gris_anthracite', (56, 62, 66)),
+    ('ral_7022_gris_ombre', (75, 77, 70)),
+    ('ral_9007_gris_aluminium', (143, 143, 138)),
+    ('ral_8017_brun_chocolat', (69, 50, 46)),
+    ('ral_8014_brun_sepia', (59, 47, 47)),
+    ('ral_6005_vert_mousse', (47, 69, 56)),
+    ('ral_6009_vert_sapin', (39, 53, 42)),
+    ('ral_5010_bleu_gentiane', (14, 65, 110)),
+    ('ral_3005_rouge_vin', (89, 25, 31)),
+    ('ral_3004_rouge_pourpre', (107, 30, 43)),
+    ('ral_9005_noir_fonce', (12, 12, 12)),
+]
+for nom, c in RAL:
+    base = np.ones((N, N, 3)) * rgb(c)
+    sauve(base + bruit(256, 5)[..., None], 'ral', nom)
+
+# ---- Vitrages : teinte de verre + reflet diagonal, motif propre à chaque type
+def vitrage(couleur, reflet, motif, nom):
+    x = np.arange(N)[None, :] * np.ones((N, 1))
+    y = np.arange(N)[:, None] * np.ones((1, N))
+    diag = ((x + y) % 256) / 256.0          # bande de reflet répétable
+    arr = np.ones((N, N, 3)) * rgb(couleur)
+    arr += (reflet * np.exp(-((diag - 0.5) ** 2) / 0.006))[..., None] * 255
+    if motif == 'sable':
+        arr += bruit(256, 40)[..., None]     # verre dépoli : grain fort, léger voile
+    if motif == 'feuillete':
+        arr -= ((y % 128) < 3)[..., None] * 25   # lignes de l'intercalaire
+    if motif == 'mat':
+        arr += bruit(64, 18)[..., None]
+    sauve(arr, 'vitrages', nom)
+
+vitrage((214, 232, 236), 0.10, 'clair', 'clair')
+vitrage((122, 138, 143), 0.14, 'clair', 'teinte_gris')
+vitrage((132, 104, 74), 0.12, 'clair', 'bronze')
+vitrage((120, 150, 178), 0.45, 'clair', 'reflechissant_bleu')
+vitrage((200, 214, 218), 0.20, 'sable', 'sable')
+vitrage((205, 225, 228), 0.12, 'feuillete', 'feuillete')
+print('ok RAL + vitrages')
