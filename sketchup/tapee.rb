@@ -30,6 +30,7 @@ module A2M
       d = n.reverse.normalize * prof.to_f          # de l'extérieur vers le nu intérieur
       g = ents.add_group
       g.name = 'Tapée d\'isolation'
+      g.set_attribute('a2m', 'tapee', true)   # reconnue par la texture RAL de la menuiserie
       haut = h.to_f - t
       boite(g.entities, o, ur * t, z * haut, d)                             # jambage gauche
       boite(g.entities, o + ur * (l.to_f - t), ur * t, z * haut, d)         # jambage droit

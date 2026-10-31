@@ -50,13 +50,13 @@ module A2M
     end
 
     # Éléments balisés du métré (groupes et composants), y compris dans d'autres groupes
-    def self.balises_trouves(ents, balises, trouves = [])
+    def self.balises_trouves(ents, balises, trouves = [], avec_tapees = false)
       ents.each do |e|
         next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
-        if balises.include?(e.layer.name)
+        if balises.include?(e.layer.name) || (avec_tapees && e.get_attribute('a2m', 'tapee'))
           trouves << e
         else
-          balises_trouves(e.entities, balises, trouves)
+          balises_trouves(e.entities, balises, trouves, avec_tapees)
         end
       end
       trouves
@@ -104,7 +104,8 @@ module A2M
       cat = CATEGORIES[index]
       return unless cat && cat[1].include?(dossier) && nom =~ /\A[a-z0-9_]+\z/
       sel = model.selection.to_a.select { |e| e.respond_to?(:material=) }
-      cibles = sel.empty? ? balises_trouves(model.entities, cat[2]) : sel
+      # Menuiseries : la couleur RAL reprend aussi les tapées d'isolation
+      cibles = sel.empty? ? balises_trouves(model.entities, cat[2], [], dossier == 'ral') : sel
       if cibles.empty?
         UI.messagebox('Rien à texturer. Sélectionnez les éléments (zinguerie, appuis, seuils…), ou balisez-les avec les balises du métré.')
         return

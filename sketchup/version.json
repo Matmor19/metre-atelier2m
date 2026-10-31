@@ -1,7 +1,7 @@
 {
- "version": "2.18.1",
+ "version": "2.18.2",
  "notes": [
-  "Ouverture : tapée d'isolation (habillage de tableau) posée sur les trois côtés de la baie, sans tapée en bas (seuil ou appui) ; épaisseur demandée à la pose (3 cm par défaut, 0 pour aucune), profondeur = épaisseur de l'isolant",
-  "La tapée n'a pas de balise : elle n'entre pas au métré"
+  "Textures : la couleur RAL des menuiseries s'applique aussi aux tapées d'isolation posées avec elles (sans sélection)",
+  "Les tapées posées avant cette version ne sont pas reconnues : les colorer à la main, ou les reposer"
  ]
 }
