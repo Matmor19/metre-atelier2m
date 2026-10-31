@@ -114,7 +114,8 @@ module A2M
     # Saisie : type (fenêtre ou porte), largeur, hauteur, appui ou seuil oui/non ; puis le choix dans la bibliothèque,
     # limité au type. Rien de ce type dans la bibliothèque : l'ouverture est créée vide (une réservation balisée),
     # l'objet se pose dessus plus tard (clic droit › Poser une menuiserie de la bibliothèque sur l'ouverture).
-    def self.demander
+    # Étape 1 : type, largeur, hauteur, linteau, appui ou seuil oui/non, et la liste des objets de ce type
+    def self.demander_dimensions
       r = reg
       rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm, depuis le bas du mur)', 'Appui ou seuil'],
                         [TYPES_SAISIE.include?(@r[:ts]) ? @r[:ts] : TYPES_SAISIE[0], (@r[:l] || 100).to_s, (@r[:h] || 125).to_s, (@r[:lin] || r['lin']).to_s, @r[:as_oui] || 'Oui'],
@@ -126,47 +127,99 @@ module A2M
       @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:lin] = lin; @r[:as_oui] = rep[4]
       haute = ts != 'Fenêtre'                             # porte-fenêtre ou porte d'entrée : seuil ; fenêtre : appui
       objs = (A2M::Bibliotheque.objets_de(balises_de(ts)) rescue [])
-      menus = objs.map { |o| "#{o['nom']} (#{o['type']})" } + [VIDE]
-      aps = []; asl = []
       ty = haute ? 'Seuil' : 'Appui de fenêtre'
+      aps = []; asl = []
       if rep[4] == 'Oui'
         gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
         aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
               (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
         asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] }
       end
-      prec = @r[ts] || {}
-      choix_menu = VIDE; choix_as = nil
-      # Deuxième fiche dès qu'il y a quelque chose dans la bibliothèque pour ce type
-      if objs.any? || asl.any?
-        libs = ['Menuiserie (bibliothèque)']; vals = [menus.include?(prec[:menu]) ? prec[:menu] : menus[0]]; lst = [menus.join('|')]
-        if asl.any?
-          libs << (ty == 'Seuil' ? 'Seuil (bibliothèque)' : 'Appui (bibliothèque)')
-          vals << (asl.include?(prec[:as]) ? prec[:as] : asl[0]); lst << asl.join('|')
-        end
-        rep2 = UI.inputbox(libs, vals, lst, "#{ts} #{l.round} × #{h.round} cm")
-        return nil unless rep2
-        choix_menu = rep2[0]; choix_as = rep2[1]
-        @r[ts] = { menu: choix_menu, as: choix_as }
+      { ts: ts, l: l, h: h, lin: lin, haute: haute, objs: objs, ty: ty, aps: aps, asl: asl, as_oui: rep[4], reg: r }
+    end
+
+    # Étape 2 : galerie de vignettes des menuiseries de la bibliothèque (une vignette par objet, plus « Aucune »).
+    # Le choix est transmis à suite, qui reçoit l'objet choisi, ou nil pour une ouverture vide.
+    def self.choisir_menuiserie(objs, titre, &suite)
+      require 'base64'
+      require 'cgi'
+      dossier = A2M::Bibliotheque.dossier
+      cartes = objs.each_with_index.map do |o, i|
+        png = File.join(dossier, o['fichier'].to_s.sub(/\.skp\z/, '.png'))
+        img = File.exist?(png) ? "<img src=\"data:image/png;base64,#{Base64.strict_encode64(File.binread(png))}\" alt=\"\">" : ''
+        "<button type=\"button\" data-i=\"#{i}\"><div class=\"vignette\">#{img}</div><span>#{CGI.escapeHTML(o['nom'].to_s)}</span></button>"
       end
+      cartes << '<button type="button" data-i="-1" class="vide"><div class="vignette"></div><span>Aucune : ouverture vide</span></button>'
+      html = <<~HTML
+        <!doctype html><html lang="fr"><head><meta charset="utf-8">
+        <style>
+          body { font-family: Segoe UI, Arial, sans-serif; margin: 0; padding: 12px; background: #f4f4f4; color: #222; }
+          h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 600; }
+          .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+          button { display: flex; flex-direction: column; align-items: stretch; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px; cursor: pointer; text-align: left; }
+          button:hover { border-color: #e07b24; box-shadow: 0 0 0 2px rgba(224,123,36,0.25); }
+          .vignette { height: 110px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 4px; overflow: hidden; }
+          .vignette img { max-width: 100%; max-height: 100%; object-fit: contain; }
+          span { margin-top: 6px; font-size: 12px; line-height: 1.25; }
+          .vide span { font-style: italic; color: #666; }
+        </style></head><body>
+        <h3>Choisissez la menuiserie</h3>
+        <div class="grille">#{cartes.join("\n")}</div>
+        <script>
+          document.querySelectorAll('button[data-i]').forEach(function (b) {
+            b.addEventListener('click', function () { sketchup.choisir(b.getAttribute('data-i')); });
+          });
+        </script>
+        </body></html>
+      HTML
+      dlg = UI::HtmlDialog.new(dialog_title: "Menuiserie : #{titre}", preferences_key: 'A2M_Galerie_Ouverture', scrollable: true,
+                               resizable: true, width: 720, height: 600, min_width: 420, min_height: 300,
+                               style: UI::HtmlDialog::STYLE_DIALOG)
+      dlg.set_html(html)
+      dlg.add_action_callback('choisir') do |_ctx, valeur|
+        i = valeur.to_s.to_i
+        dlg.close
+        UI.start_timer(0, false) { suite.call(i < 0 ? nil : objs[i]) }
+      end
+      dlg.show
+    end
+
+    # Étape 3 : appui ou seuil (si demandé), puis les options, puis la pose de l'outil Ouverture
+    def self.suite_ouverture(etat, obj)
+      ts, l, h, lin, haute, ty, aps, asl = etat.values_at(:ts, :l, :h, :lin, :haute, :ty, :aps, :asl)
+      r = etat[:reg]
+      prec = @r[ts] || {}
+      choix_as = nil
+      if asl.any?
+        rep2 = UI.inputbox([ty == 'Seuil' ? 'Seuil (bibliothèque)' : 'Appui (bibliothèque)'],
+                           [asl.include?(prec[:as]) ? prec[:as] : asl[0]], [asl.join('|')], "#{ts} #{l.round} × #{h.round} cm")
+        return nil unless rep2
+        choix_as = rep2[0]
+      end
+      @r[ts] = { menu: obj ? "#{obj['nom']} (#{obj['type']})" : VIDE, as: choix_as }
       manque = []
-      manque << "aucune #{ts.downcase} dans la bibliothèque : ouverture vide" if objs.empty?
-      manque << "aucun #{ty == 'Seuil' ? 'seuil' : 'appui'} dans la bibliothèque (type « #{ty} »)" if rep[4] == 'Oui' && asl.empty?
+      manque << "aucune #{ts.downcase} dans la bibliothèque : ouverture vide" if etat[:objs].empty?
+      manque << "aucun #{ty == 'Seuil' ? 'seuil' : 'appui'} dans la bibliothèque (type « #{ty} »)" if etat[:as_oui] == 'Oui' && asl.empty?
       Sketchup.status_text = manque.join(' ; ') if manque.any?
-      obj = choix_menu == VIDE ? nil : objs[menus.index(choix_menu)]
       tag = obj ? obj['balise'] : TAG_SAISIE[ts]
       type = TYPES.find { |x| x[1] == tag }
       opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
       me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
       as_obj = choix_as ? aps[asl.index(choix_as)] : nil
-      { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
-        appui: haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
+      p = { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
+            appui: haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
+      Sketchup.active_model.select_tool(Outil.new(p))
     end
 
     def self.lancer
-      p = demander
-      Sketchup.active_model.select_tool(Outil.new(p)) if p
+      etat = demander_dimensions
+      return unless etat
+      if etat[:objs].any?
+        choisir_menuiserie(etat[:objs], "#{etat[:ts]} #{etat[:l].round} × #{etat[:h].round} cm") { |obj| suite_ouverture(etat, obj) }
+      else
+        suite_ouverture(etat, nil)
+      end
     end
 
     # Groupe (ou composant) de premier niveau qui contient l'élément touché

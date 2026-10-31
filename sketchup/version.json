@@ -1,6 +1,7 @@
 {
- "version": "2.19.6",
+ "version": "2.20.0",
  "notes": [
-  "Tapée d'isolation : par défaut, elle s'arrête à la face extérieure du cadre de la menuiserie et ne descend plus jusqu'à la plaque de plâtre (profondeur 0 = jusqu'au cadre ; une valeur force la profondeur)"
+  "Créer une ouverture : le choix de la menuiserie se fait maintenant sur une galerie de vignettes (une par objet de la bibliothèque, plus « Aucune : ouverture vide ») au lieu d'une liste déroulante",
+  "Les autres réglages (type, dimensions, appui ou seuil, tapée) ne changent pas"
  ]
 }
