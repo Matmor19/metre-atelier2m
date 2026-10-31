@@ -65,12 +65,12 @@ module A2M
     MENUISERIES = %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE].freeze
 
     # Toutes les faces d'un élément, avec leur repère (groupes et composants imbriqués)
-    def self.faces_avec_repere(ents, tr, sortie = [])
+    def self.faces_avec_repere(ents, tr, sortie = [], nom = '')
       ents.each do |e|
         case e
-        when Sketchup::Face then sortie << [e, tr]
-        when Sketchup::Group then faces_avec_repere(e.entities, tr * e.transformation, sortie)
-        when Sketchup::ComponentInstance then faces_avec_repere(e.definition.entities, tr * e.transformation, sortie)
+        when Sketchup::Face then sortie << [e, tr, nom]
+        when Sketchup::Group then faces_avec_repere(e.entities, tr * e.transformation, sortie, e.name)
+        when Sketchup::ComponentInstance then faces_avec_repere(e.definition.entities, tr * e.transformation, sortie, e.name)
         end
       end
       sortie
@@ -88,7 +88,8 @@ module A2M
       prof = (0..2).min_by { |i| maxs[i] - mins[i] }   # épaisseur = plus petit côté
       autres = (0..2).to_a - [prof]
       marge = 0.5.cm
-      faces.select do |f, tr|
+      faces.select do |f, tr, groupe|
+        next false if %w[Soubassement Panneau].include?(groupe)   # panneaux pleins : pas du vitrage
         n = f.normal.transform(tr)
         next false if n.length.zero?
         next false unless (n.to_a[prof] / n.length).abs > 0.99
