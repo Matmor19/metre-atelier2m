@@ -14,8 +14,13 @@ def bruit(echelle, amp):
 def rgb(c): return np.array(c, dtype=float)
 
 def sauve(arr, dossier, nom):
+    """Écrit la texture en JPG 512 px et une miniature 160 px pour le panneau."""
+    img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
     os.makedirs(os.path.join(RACINE, dossier), exist_ok=True)
-    Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).save(os.path.join(RACINE, dossier, nom + '.png'))
+    img.save(os.path.join(RACINE, dossier, nom + '.jpg'), quality=90)
+    mini = os.path.join(RACINE, 'miniatures', dossier)
+    os.makedirs(mini, exist_ok=True)
+    img.resize((160, 160), Image.LANCZOS).save(os.path.join(mini, nom + '.jpg'), quality=85)
 
 # ---- Enduits : couleur de fond + grain selon la finition
 def enduit(couleur, finition):
@@ -78,13 +83,19 @@ def tuile_romane(couleur, nuance, nom):
     sauve(arr, 'tuiles', nom)
 
 def tuile_mecanique(couleur, nuance, nom):
-    im = Image.new('RGB', (N, N), (60, 28, 18))
+    im = Image.new('RGB', (N, N), (58, 26, 16))
     d = ImageDraw.Draw(im)
-    for y in range(0, N + 40, 40):
-        for x in range(-30, N + 60, 60):
+    for r, y in enumerate(range(0, N + 40, 40)):
+        dec = 0 if r % 2 == 0 else 30
+        for x in range(-30 + dec, N + 60, 60):
             t = 1 + rng.uniform(-nuance, nuance)
             c = tuple(int(min(255, v * t)) for v in couleur)
-            d.rounded_rectangle([x, y, x + 56, y + 36], radius=8, fill=c, outline=tuple(int(v * 0.6) for v in c), width=2)
+            ombre = tuple(int(v * 0.55) for v in c)
+            reflet = tuple(min(255, int(v * 1.18)) for v in c)
+            # tuile : corps, reflet haut, ombre basse (bord qui se recouvre)
+            d.rounded_rectangle([x, y, x + 56, y + 36], radius=10, fill=ombre)
+            d.rounded_rectangle([x + 1, y, x + 55, y + 31], radius=9, fill=c)
+            d.rounded_rectangle([x + 4, y + 2, x + 52, y + 9], radius=4, fill=reflet)
     im = im.filter(ImageFilter.GaussianBlur(0.5))
     arr = np.asarray(im).astype(float) + bruit(160, 12)[..., None]
     sauve(arr, 'tuiles', nom)

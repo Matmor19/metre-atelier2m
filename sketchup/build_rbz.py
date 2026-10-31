@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[balises hachures planelles profils pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[balises hachures planelles profils pointage palette suivi maj bibliotheque dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -46,6 +46,7 @@ unless file_loaded?(__FILE__)
   menu.add_separator
   menu.add_item('Recaler le NGF (altitude du modèle)…') { A2M::Ngf.recaler }
   menu.add_item('Poser une cote NGF au point cliqué…') { A2M::Ngf.poser_cotes }
+  menu.add_item('Textures extérieures (enduits, RAL, tuiles…)…') { A2M::Textures.ouvrir }
   menu.add_separator
   menu.add_item('Hachures de coupe par couche…') { A2M::Hachures.regler }
   menu.add_item('Appliquer les hachures au modèle') { A2M::Hachures.appliquer }
@@ -101,10 +102,18 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'hachures_moteur', 'hachures_fr', 'hachures_onde', 'planelles', 'profils'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
-    for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf'):
+    for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'textures'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in sorted(os.listdir(os.path.join(ici, 'hachures'))):
         z.write(os.path.join(ici, 'hachures', f), 'a2m_metre/hachures/' + f)
+    # Bibliothèque de textures extérieures (JPG + miniatures) pour le panneau
+    for racine, _dirs, fichiers in os.walk(os.path.join(ici, 'textures')):
+        if '__pycache__' in racine:
+            continue
+        for f in fichiers:
+            if f.endswith('.jpg'):
+                chemin = os.path.join(racine, f)
+                z.write(chemin, 'a2m_metre/textures/' + os.path.relpath(chemin, os.path.join(ici, 'textures')).replace(os.sep, '/'))
     dico = os.path.join(ici, 'icones')
     # Icônes de la barre d'outils avec une marge transparente autour de la tuile : boutons plus aérés
     import re, cairosvg

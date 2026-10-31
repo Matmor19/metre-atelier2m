@@ -1,7 +1,7 @@
 {
- "version": "2.16.0",
+ "version": "2.17.0",
  "notes": [
-  "NGF : menu Extensions > Métré Atelier 2M > « Recaler le NGF » : vous indiquez une seule fois l'altitude NGF de l'origine du modèle ; le modèle n'est pas déplacé",
-  "NGF : « Poser une cote NGF au point cliqué » écrit l'altitude NGF du point sur le plan (coupe ou plan de masse), à partir du recalage"
+  "Textures extérieures : menu Extensions > Métré Atelier 2M > « Textures extérieures… » : enduits, parements et bardages, RAL pour menuiseries, vitrages, tuiles, zinguerie, appuis et seuils, avec aperçus",
+  "Sans sélection, la texture s'applique aux éléments balisés de la catégorie (murs, menuiseries, toiture) ; avec une sélection, elle s'applique à la sélection (zinguerie, appuis, seuils). Aucune donnée n'entre au métré"
  ]
 }

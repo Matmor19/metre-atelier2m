@@ -1,6 +1,6 @@
 # Reprise du travail — extension SketchUp « Métré Atelier 2M »
 
-État au 31/10/2026 : version **2.16.0** publiée et installée chez Mathieu (SketchUp 2027, Windows).
+État au 31/10/2026 : version **2.17.0** publiée et installée chez Mathieu (SketchUp 2027, Windows).
 
 ## Méthode de travail (à respecter)
 - Répondre en français, ton pédagogique, niveau débutant. Une seule question à la fois.
@@ -34,6 +34,12 @@
 ## Session du 31/10/2026 (2.16.0)
 - **NGF** (`ngf.rb`) : menu Extensions > Métré Atelier 2M > « Recaler le NGF » (une saisie : altitude NGF de l'origine du modèle, stockée dans les attributs du modèle, géométrie non déplacée) ; « Poser une cote NGF au point cliqué » écrit la cote sur coupe ou plan de masse. Pas de bouton de barre d'outils : pas encore d'icône.
 - À tester chez Mathieu : recalage, cote sur une coupe réelle, et vérifier que l'origine correspond bien à 0,00 au modèle importé.
+
+## Textures extérieures (2.17.0)
+- Dossier `sketchup/textures/` : enduits, parements, bardages, RAL (menuiseries), vitrages, tuiles, zinguerie, appuis et seuils. Images JPG 512 px + miniatures 160 px (`textures/miniatures/`). Générées par `generer_textures.py` (pas de téléchargement).
+- Panneau : menu Extensions > Métré Atelier 2M > « Textures extérieures… » (`textures.rb`). Sans sélection : s'applique aux balises du métré (murs, menuiseries, toiture). Avec sélection : à la sélection (zinguerie, appuis, seuils).
+- En attente de Mathieu : équivalences RAL réelles (noms de fichiers à mettre à jour dans `ral/`), puis test d'affichage dans SketchUp 2027.
+- Pas encore fait : vitrage sur la seule partie vitrée d'une menuiserie (aujourd'hui, la menuiserie entière prend une couleur RAL ou un vitrage par sélection).
 
 ## En attente
 - Retour de Mathieu sur les cotes NGF (recalage, lisibilité de la cote sur la coupe).
