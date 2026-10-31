@@ -1,4 +1,4 @@
 [
-  "Textures : six nouvelles catégories : gros œuvre (brique, parpaing, béton de fondation, dalle, banché), isolants (laine de verre, laine de roche, PSE, PIR, fibre de bois, ouate), panneaux (BA13, OSB, particules), bois brut (épicéa, douglas, lamellé-collé), sols (carrelage, mosaïque, parquet, béton ciré, terrazzo), extérieurs (gravier, enrobé, pavés, dalle désactivée, gazon, terre)",
-  "Ces nouvelles catégories s'appliquent à la sélection (pas de balise du métré)"
+  "Ouverture : tapée d'isolation (habillage de tableau) posée sur les trois côtés de la baie, sans tapée en bas (seuil ou appui) ; épaisseur demandée à la pose (3 cm par défaut, 0 pour aucune), profondeur = épaisseur de l'isolant",
+  "La tapée n'a pas de balise : elle n'entre pas au métré"
 ]

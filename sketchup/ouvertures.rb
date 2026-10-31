@@ -294,6 +294,7 @@ module A2M
     # Perce : boîte de découpe (largeur × hauteur, 3 m de profondeur) soustraite de chaque couche ; nom et balise conservés
     def self.percer(o, p, essai = 0)
       model = Sketchup.active_model
+      p[:tapee] = A2M::Tapee.demander if p[:res]   # tapée d'isolation (0 = aucune)
       model.start_operation('Créer une ouverture (métré)', true)
       begin
         ents = model.active_entities
@@ -347,6 +348,12 @@ module A2M
           fond = (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(d).corner(i).transform(r.transformation)) - b).dot(n) }.max
           dep = prof - fond
           r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dep, -n.y * dep, 0))) if dep.abs > 0.01
+        end
+        # Tapée d'isolation : habillage des trois côtés (jambages et linteau), épaisseur de l'isolant
+        if p[:res] && prof > 0 && p[:tapee].to_f > 0
+          ur_t = Z_AXIS.cross(n).normalize
+          org_t = u.dot(ur_t) > 0 ? b : b.offset(u, l)
+          A2M::Tapee.poser(ents, org_t, ur_t, n, l, h, prof, p[:tapee])
         end
         # Appui ou seuil de la bibliothèque : 1 pièce, ou 2, 3… pièces égales, centrées sous l'ouverture, dessus au bas de la menuiserie
         annexes = p[:as_obj] ? poser_appuis(ents, o, p, model) : []
