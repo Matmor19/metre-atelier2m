@@ -126,27 +126,37 @@ module A2M
       ['Porte d\'entrée 2 vantaux PVC 140 × 215 vitrage haut', PE, 140, 215, 2, { 'mat' => 'pvc', 'vantaux' => '2' }, 120, 'Panneau']
     ].freeze
 
-    # Portes d'entrée à un vantail, d'après six styles courants : panneau plein ou lames, une ou plusieurs baies.
-    # vitres : zones vitrées en fractions de la surface intérieure (x0, x1, z0, z1), poignee : 'gauche', 'droite' ou 'centre'
+    # Portes d'entrée à un vantail, d'après des photos de styles courants.
+    # vitres : zones vitrées en fractions de la surface intérieure du vantail (x0, x1, z0, z1)
+    # poignee : 'gauche', 'droite' ou 'centre' ; fixe : largeur (cm) d'un fixe latéral à droite, 0 ou absent = aucun
     STYLES = [
       ['Porte d\'entrée 1 vantail bois, lames horizontales 90 × 215', 'bois', { lames: 12.0, vitres: [], poignee: 'gauche' }],
       ['Porte d\'entrée 1 vantail alu bleue, baie verticale à droite 90 × 215', 'alu', { lames: nil, vitres: [[0.55, 0.78, 0.25, 0.85]], poignee: 'droite' }],
       ['Porte d\'entrée 1 vantail alu grise, baie verticale à gauche 90 × 215', 'alu', { lames: nil, vitres: [[0.2, 0.42, 0.2, 0.9]], poignee: 'droite' }],
       ['Porte d\'entrée 1 vantail PVC vert, vitrage haut 90 × 215', 'pvc', { lames: nil, vitres: [[0.12, 0.88, 0.55, 0.92]], poignee: 'centre' }],
       ['Porte d\'entrée 1 vantail alu anthracite, lames fines 90 × 215', 'alu', { lames: 9.0, vitres: [], poignee: 'droite' }],
-      ['Porte d\'entrée 1 vantail alu gris clair, grande baie 90 × 215', 'alu', { lames: nil, vitres: [[0.15, 0.75, 0.08, 0.92]], poignee: 'droite' }]
+      ['Porte d\'entrée 1 vantail alu gris clair, grande baie 90 × 215', 'alu', { lames: nil, vitres: [[0.15, 0.75, 0.08, 0.92]], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail blanc, lames et fixe latéral 35 (ensemble 125 × 215)', 'pvc', { lames: 30.0, vitres: [[0.5, 0.9, 0.15, 0.85]], poignee: 'droite', fixe: 35.0 }],
+      ['Porte d\'entrée 1 vantail blanc, baie verticale centre-gauche 90 × 215', 'pvc', { lames: nil, vitres: [[0.3, 0.5, 0.1, 0.9]], poignee: 'gauche' }],
+      ['Porte d\'entrée 1 vantail gris, vitrage à croisillons en partie haute 90 × 215', 'alu', { lames: nil, vitres: [[0.1, 0.6, 0.55, 0.9]], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail bleu, baie courbe à droite 90 × 215', 'alu', { lames: 30.0, vitres: [[0.66, 0.86, 0.12, 0.9]], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail gris clair, petit vitrage triangulaire 90 × 215', 'alu', { lames: nil, vitres: [[0.55, 0.8, 0.4, 0.6]], poignee: 'gauche' }],
+      ['Porte d\'entrée 1 vantail blanc, baie inclinée 90 × 215', 'pvc', { lames: nil, vitres: [[0.45, 0.6, 0.3, 0.7]], poignee: 'gauche' }],
+      ['Porte d\'entrée 1 vantail gris, motifs en arcs sans vitrage 90 × 215', 'alu', { lames: 54.0, vitres: [], poignee: 'droite' }]
     ].freeze
 
-    # Une porte à un vantail, dessinée d'après un style de STYLES
+    # Une porte à un vantail, dessinée d'après un style de STYLES (avec fixe latéral à droite si cfg[:fixe])
     def self.porte_style(model, nom, mat, cfg)
       type = A2M::Bibliotheque::TYPES.find { |t| t[0] == PE }
-      l = 90.0
+      lv = 90.0                      # largeur du vantail
+      fx = cfg[:fixe] || 0.0         # largeur du fixe latéral
+      l = lv + fx                    # largeur totale de la menuiserie
       h = 215.0
       d = model.definitions.add(nom)
       ents = d.entities
       dormant(ents, l, h)
       xi = DORMANT + OUVRANT
-      xf = l - DORMANT - OUVRANT
+      xf = lv - DORMANT - OUVRANT
       zi = DORMANT + OUVRANT
       zs = h - DORMANT - OUVRANT
       y0 = VANTAIL_AV
@@ -154,10 +164,10 @@ module A2M
       vf = ents.add_group
       vf.name = 'Vantail'
       e = vf.entities
-      boite(e, DORMANT, l - DORMANT, y0, y1, DORMANT, DORMANT + OUVRANT)
-      boite(e, DORMANT, l - DORMANT, y0, y1, h - DORMANT - OUVRANT, h - DORMANT)
+      boite(e, DORMANT, lv - DORMANT, y0, y1, DORMANT, DORMANT + OUVRANT)
+      boite(e, DORMANT, lv - DORMANT, y0, y1, h - DORMANT - OUVRANT, h - DORMANT)
       boite(e, DORMANT, DORMANT + OUVRANT, y0, y1, DORMANT, h - DORMANT)
-      boite(e, l - DORMANT - OUVRANT, l - DORMANT, y0, y1, DORMANT, h - DORMANT)
+      boite(e, lv - DORMANT - OUVRANT, lv - DORMANT, y0, y1, DORMANT, h - DORMANT)
       # Panneau : plein, ou en lames horizontales séparées par un petit joint
       pan = e.add_group
       pan.name = 'Panneau'
@@ -178,8 +188,24 @@ module A2M
         boite(vit.entities, xi + fx0 * (xf - xi), xi + fx1 * (xf - xi), y0, y0 + VITRE_EP,
               zi + fz0 * (zs - zi), zi + fz1 * (zs - zi))
       end
+      # Fixe latéral à droite : meneau, cadre et vitrage plein
+      if fx > 0
+        men = ents.add_group
+        men.name = 'Meneau'
+        boite(men.entities, lv - DORMANT, lv, y0, y1, DORMANT, h - DORMANT)
+        fixe = ents.add_group
+        fixe.name = 'Fixe'
+        fe = fixe.entities
+        boite(fe, lv, l - DORMANT, y0, y1, DORMANT, DORMANT + OUVRANT)
+        boite(fe, lv, l - DORMANT, y0, y1, h - DORMANT - OUVRANT, h - DORMANT)
+        boite(fe, l - DORMANT - OUVRANT, l - DORMANT, y0, y1, DORMANT, h - DORMANT)
+        fv = fe.add_group
+        fv.name = 'Vitrage'
+        boite(fv.entities, lv, l - DORMANT - OUVRANT, y0, y0 + VITRE_EP,
+              DORMANT + OUVRANT, h - DORMANT - OUVRANT)
+      end
       # Poignée
-      px = { 'droite' => xf - 4.0, 'gauche' => xi + 4.0, 'centre' => l / 2.0 }[cfg[:poignee]]
+      px = { 'droite' => xf - 4.0, 'gauche' => xi + 4.0, 'centre' => lv / 2.0 }[cfg[:poignee]]
       pog = e.add_group
       pog.name = 'Poignée'
       boite(pog.entities, px - 1.5, px + 1.5, -3, y0, 95, 102)
