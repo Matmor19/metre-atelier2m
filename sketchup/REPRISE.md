@@ -1,6 +1,6 @@
 # Reprise du travail — extension SketchUp « Métré Atelier 2M »
 
-État au 31/10/2026 : version **2.15.0** publiée et installée chez Mathieu (SketchUp 2027, Windows).
+État au 31/10/2026 : version **2.16.0** publiée et installée chez Mathieu (SketchUp 2027, Windows).
 
 ## Méthode de travail (à respecter)
 - Répondre en français, ton pédagogique, niveau débutant. Une seule question à la fois.
@@ -31,7 +31,12 @@
   - noms traduits en français (dictionnaire + traduction mot à mot) ;
   - **Isolant ondulé centré** : ligne de laine en boucles au milieu de chaque couche en coupe verticale, largeur en % de l'épaisseur ; une hachure par groupe, pas choisi pour centrer tous les murs (écart ≈ 7 mm sur son doublage) ; à réappliquer après déplacement d'un mur.
 
+## Session du 31/10/2026 (2.16.0)
+- **NGF** (`ngf.rb`) : menu Extensions > Métré Atelier 2M > « Recaler le NGF » (une saisie : altitude NGF de l'origine du modèle, stockée dans les attributs du modèle, géométrie non déplacée) ; « Poser une cote NGF au point cliqué » écrit la cote sur coupe ou plan de masse. Pas de bouton de barre d'outils : pas encore d'icône.
+- À tester chez Mathieu : recalage, cote sur une coupe réelle, et vérifier que l'origine correspond bien à 0,00 au modèle importé.
+
 ## En attente
+- Retour de Mathieu sur les cotes NGF (recalage, lisibilité de la cote sur la coupe).
 - Retour de Mathieu sur l'isolant ondulé en vraie coupe (taille des boucles, épaisseur du trait).
 - Vérifier l'écartement réel en cm et le sens de l'angle des hachures ordinaires.
 - Anciennes propositions sans réponse : ligne de métré pour les planelles ; recul du sol quand une porte intérieure est déplacée.
