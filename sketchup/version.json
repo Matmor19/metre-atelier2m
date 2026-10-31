@@ -1,7 +1,7 @@
 {
- "version": "2.15.0",
+ "version": "2.16.0",
  "notes": [
-  "Hachures : nouveau motif « Isolant ondulé centré » : une seule ligne de laine en boucles, au milieu de la couche dans les coupes verticales, avec sa largeur réglable en % de l'épaisseur",
-  "L'onde est recalculée pour chaque groupe (murs parallèles aux axes rouge et vert) ; après avoir déplacé un mur, cliquez à nouveau sur « Appliquer la hachure »"
+  "NGF : menu Extensions > Métré Atelier 2M > « Recaler le NGF » : vous indiquez une seule fois l'altitude NGF de l'origine du modèle ; le modèle n'est pas déplacé",
+  "NGF : « Poser une cote NGF au point cliqué » écrit l'altitude NGF du point sur le plan (coupe ou plan de masse), à partir du recalage"
  ]
 }
