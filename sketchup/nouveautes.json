@@ -1,4 +1,4 @@
 [
-  "Tapée d'isolation : correction d'une erreur « Cannot convert argument to Geom::Vector3d » à la création d'une ouverture (multiplication de vecteurs remplacée)",
-  "Menuiseries types : treize portes d'entrée à un vantail, dont un modèle avec fixe latéral de 35 cm"
+  "Tapée d'isolation : on peut maintenant choisir sa profondeur, en plus de son épaisseur (0 = profondeur égale à l'isolant)",
+  "Tapée d'isolation : correction d'une erreur « Cannot convert argument to Geom::Vector3d » à la création d'une ouverture (version 2.19.4)"
 ]

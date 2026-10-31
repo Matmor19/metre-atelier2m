@@ -6,11 +6,14 @@ require 'sketchup.rb'
 
 module A2M
   module Tapee
-    # Épaisseur demandée à l'utilisateur, en cm (0 = pas de tapée)
+    # Épaisseur et profondeur demandées à l'utilisateur, en cm (épaisseur 0 = pas de tapée ; profondeur 0 = égale à l'isolant)
     def self.demander
-      rep = UI.inputbox(['Tapée d\'isolation : épaisseur (cm, 0 = aucune)'], ['3'], 'Tapée d\'isolation')
-      return 0.0 unless rep
-      (Float(rep[0].to_s.strip.tr(',', '.')) rescue 0.0)
+      rep = UI.inputbox(['Tapée d\'isolation : épaisseur (cm, 0 = aucune)', 'Profondeur de la tapée (cm, 0 = égale à l\'isolant)'],
+                        ['3', '0'], 'Tapée d\'isolation')
+      return [0.0, 0.0] unless rep
+      ep = (Float(rep[0].to_s.strip.tr(',', '.')) rescue 0.0)
+      pr = (Float(rep[1].to_s.strip.tr(',', '.')) rescue 0.0)
+      [ep, pr]
     end
 
     # Vecteur mis à l'échelle k. Écrit composante par composante : vecteur * nombre échoue dans SketchUp 2027.
@@ -28,11 +31,13 @@ module A2M
 
     # o : coin bas-gauche de la baie, côté extérieur ; ur : sens gauche-droite ; n : normale sortante du mur
     # l, h, prof : dimensions de la baie et profondeur du nu intérieur, en pouces (unités SketchUp)
-    def self.poser(ents, o, ur, n, l, h, prof, epaisseur_cm)
+    # profondeur_cm : 0 = tapée de la profondeur de l'isolant (prof)
+    def self.poser(ents, o, ur, n, l, h, prof, epaisseur_cm, profondeur_cm = 0)
       t = epaisseur_cm.to_f.cm.to_f
       return nil if epaisseur_cm.to_f <= 0 || prof.to_f <= 0.01
+      prof_tapee = profondeur_cm.to_f > 0 ? profondeur_cm.to_f.cm.to_f : prof.to_f
       z = Geom::Vector3d.new(0, 0, 1)
-      d = mise_a_l_echelle(n.reverse.normalize, prof.to_f)   # de l'extérieur vers le nu intérieur
+      d = mise_a_l_echelle(n.reverse.normalize, prof_tapee)   # de l'extérieur vers l'intérieur
       g = ents.add_group
       g.name = 'Tapée d\'isolation'
       g.set_attribute('a2m', 'tapee', true)   # reconnue par la texture RAL de la menuiserie
