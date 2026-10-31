@@ -275,3 +275,176 @@ lames((168, 120, 74), 0.08, 'bardage_meleze_vertical')
 lames((150, 110, 70), 0.10, 'bardage_douglas_vertical')
 lames((120, 80, 50), 0.12, 'lames_terrasse_horizontal', horizontal=True)
 print('ok zinguerie, appuis, parements, bardages')
+
+# ============ Gros œuvre, isolants, panneaux, bois, sols, extérieurs ============
+def bruit_etire(h, l, amp):
+    """Bruit étiré : fibres (veines de bois, fibres d'isolant) allongées en une direction."""
+    g = rng.random((h, l))
+    img = Image.fromarray((g * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC)
+    return (np.asarray(img).astype(float) / 255 - 0.5) * amp
+
+def appareil(couleurs, lit, joint, nom, dossier, trous=False, tailles=(96, 96), decal=True):
+    """Appareil de maçonnerie : briques ou blocs posés en lits, joints clairs, option alvéoles."""
+    im = Image.new('RGB', (N, N), joint)
+    d = ImageDraw.Draw(im)
+    lh, lw = tailles[1], tailles[0]
+    for r, y in enumerate(range(0, N, lh)):
+        dec = (lw // 2) if (decal and r % 2) else 0
+        for x in range(-lw + dec, N + lw, lw):
+            c0 = couleurs[int(rng.integers(len(couleurs)))]
+            t = rng.uniform(0.9, 1.08)
+            c = tuple(int(min(255, v * t)) for v in c0)
+            d.rectangle([x + 2, y + 2, x + lw - 3, y + lh - 3], fill=c)
+            if trous:
+                for dx in (lw * 0.3, lw * 0.6):
+                    d.rectangle([x + dx, y + lh * 0.3, x + dx + lw * 0.12, y + lh * 0.75], fill=tuple(int(v * 0.4) for v in c))
+    arr = np.asarray(im.filter(ImageFilter.GaussianBlur(0.4))).astype(float) + bruit(200, 12)[..., None]
+    sauve(arr, dossier, nom)
+
+# Gros œuvre
+appareil([(170, 88, 62), (160, 80, 56)], 0, (205, 200, 190), 'brique_pleine_rouge', 'gros_oeuvre', tailles=(96, 32))
+appareil([(176, 96, 70), (168, 90, 64)], 0, (205, 200, 190), 'brique_creuse_rouge', 'gros_oeuvre', trous=True, tailles=(96, 32))
+appareil([(232, 226, 216), (224, 218, 206)], 0, (200, 198, 190), 'brique_blanche', 'gros_oeuvre', tailles=(96, 32))
+appareil([(150, 150, 148), (140, 140, 138)], 0, (120, 120, 118), 'parpaing_gris', 'gros_oeuvre', trous=True, tailles=(128, 64))
+appareil([(218, 216, 210)], 0, (150, 150, 148), 'parpaing_blanc', 'gros_oeuvre', trous=True, tailles=(128, 64))
+
+def beton(couleur, grain, pores, nom, dossier, lignes=False):
+    arr = np.ones((N, N, 3)) * rgb(couleur)
+    arr += bruit(256, grain)[..., None] + bruit(32, grain * 0.5)[..., None]
+    if pores:
+        arr += ((rng.random((N, N)) > 0.985) * -45)[..., None]
+    if lignes:                                # banché : planches et veines du coffrage
+        for y in range(0, N, 128):
+            arr[y:y + 3] *= 0.85
+        arr += bruit_etire(512, 8, 16)[..., None]
+    sauve(arr, dossier, nom)
+
+beton((150, 150, 148), 22, True, 'beton_fondation_brut', 'gros_oeuvre')
+beton((178, 176, 170), 8, False, 'beton_dalle_lisse', 'gros_oeuvre')
+beton((160, 158, 152), 18, True, 'beton_banche', 'gros_oeuvre', lignes=True)
+
+# Isolants (fibres ou billes)
+def fibres(couleurs, densite, nom, dossier):
+    im = Image.new('RGB', (N, N), couleurs[0])
+    d = ImageDraw.Draw(im)
+    for _ in range(int(densite)):
+        x, y = rng.uniform(0, N, 2)
+        a = rng.uniform(0, np.pi)
+        L = rng.uniform(10, 30)
+        c = couleurs[int(rng.integers(len(couleurs)))]
+        d.line([x, y, x + L * np.cos(a), y + L * np.sin(a)], fill=c, width=2)
+    arr = np.asarray(im.filter(ImageFilter.GaussianBlur(0.3))).astype(float) + bruit(160, 10)[..., None]
+    sauve(arr, dossier, nom)
+
+fibres([(236, 200, 60), (226, 186, 52), (246, 214, 90)], 9000, 'laine_verre_jaune', 'isolants')
+fibres([(120, 130, 90), (108, 118, 80), (140, 146, 110)], 9000, 'laine_roche', 'isolants')
+fibres([(170, 120, 70), (160, 110, 62), (182, 132, 80)], 7000, 'fibre_bois', 'isolants')
+fibres([(150, 150, 150), (138, 138, 138), (165, 165, 165)], 9000, 'ouate_cellulose', 'isolants')
+
+def billes(couleur, nom, dossier, rayon):
+    im = Image.new('RGB', (N, N), couleur)
+    d = ImageDraw.Draw(im)
+    for _ in range(900):
+        x, y = rng.uniform(0, N, 2)
+        r = rng.uniform(rayon * 0.6, rayon)
+        t = rng.uniform(0.93, 1.04)
+        c = tuple(int(min(255, v * t)) for v in couleur)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=c, outline=tuple(int(v * 0.9) for v in c))
+    sauve(np.asarray(im).astype(float) + bruit(160, 6)[..., None], dossier, nom)
+
+billes((246, 246, 244), 'pse_blanc', 'isolants', 9)
+billes((232, 214, 130), 'pir_jaune', 'isolants', 9)  # PIR : panneau à parement
+arr = np.ones((N, N, 3)) * rgb((214, 180, 96))
+arr += bruit(256, 6)[..., None]
+sauve(arr, 'isolants', 'pir_panneau_parement')
+
+# Panneaux et doublages
+arr = np.ones((N, N, 3)) * rgb((236, 234, 228))
+arr += bruit(256, 5)[..., None]
+sauve(arr, 'panneaux', 'placo_ba13')
+arr = np.ones((N, N, 3)) * rgb((196, 160, 110))
+arr += bruit_etire(512, 4, 20)[..., None] + bruit(256, 8)[..., None]
+sauve(arr, 'panneaux', 'osb')
+im = Image.new('RGB', (N, N), (150, 120, 88))
+d = ImageDraw.Draw(im)
+for _ in range(6000):
+    x, y = rng.uniform(0, N, 2)
+    t = rng.uniform(0.7, 1.2)
+    c = tuple(int(min(255, v * t)) for v in (150, 120, 88))
+    d.ellipse([x, y, x + rng.uniform(1, 4), y + rng.uniform(1, 4)], fill=c)
+sauve(np.asarray(im).astype(float) + bruit(160, 10)[..., None], 'panneaux', 'panneau_particules')
+
+# Bois brut (veines étirées dans le sens de la pièce)
+def bois(couleur, veines, nom, dossier):
+    arr = np.ones((N, N, 3)) * rgb(couleur)
+    arr += bruit_etire(16, 512, veines)[..., None] + bruit_etire(64, 512, veines * 0.5)[..., None]
+    lames = np.zeros((N, N, 1))
+    lames[::128] = -25                         # joints de lames
+    sauve(arr + lames, dossier, nom)
+
+bois((222, 190, 140), 36, 'epicea_brut', 'bois')
+bois((186, 120, 76), 44, 'douglas_brut', 'bois')
+bois((210, 170, 116), 22, 'lamelle_colle', 'bois')
+
+# Sols intérieurs
+def carreaux(couleurs, taille, joint, nom, dossier):
+    im = Image.new('RGB', (N, N), joint)
+    d = ImageDraw.Draw(im)
+    for y in range(0, N, taille):
+        for x in range(0, N, taille):
+            c0 = couleurs[int(rng.integers(len(couleurs)))]
+            t = rng.uniform(0.96, 1.03)
+            c = tuple(int(min(255, v * t)) for v in c0)
+            d.rectangle([x + 2, y + 2, x + taille - 3, y + taille - 3], fill=c)
+    sauve(np.asarray(im).astype(float) + bruit(256, 6)[..., None], dossier, nom)
+
+carreaux([(214, 208, 196), (206, 200, 188)], 128, (150, 146, 140), 'carrelage_grand_format', 'sols')
+carreaux([(60, 110, 120), (230, 226, 216), (200, 150, 90)], 32, (120, 120, 118), 'mosaique', 'sols')
+
+# Parquet chêne : lames étroites, veines étirées
+arr = np.ones((N, N, 3)) * rgb((190, 140, 90))
+arr += bruit_etire(512, 10, 30)[..., None]
+for x in range(0, N, 64):
+    arr[:, x:x + 2] *= 0.6
+sauve(arr, 'sols', 'parquet_chene')
+arr = np.ones((N, N, 3)) * rgb((190, 188, 182))
+arr += bruit(512, 4)[..., None] + bruit(16, 10)[..., None]
+sauve(arr, 'sols', 'beton_cire')
+im = Image.new('RGB', (N, N), (220, 216, 208))
+d = ImageDraw.Draw(im)
+for _ in range(900):
+    x, y = rng.uniform(0, N, 2)
+    r = rng.uniform(3, 9)
+    c = tuple(int(v) for v in rng.integers(90, 230, 3))
+    d.polygon([(x, y), (x + r, y + r * 0.4), (x + r * 0.5, y + r)], fill=c)
+sauve(np.asarray(im).astype(float) + bruit(160, 8)[..., None], 'sols', 'terrazzo')
+
+# Extérieurs
+im = Image.new('RGB', (N, N), (150, 146, 140))
+d = ImageDraw.Draw(im)
+for _ in range(2200):
+    x, y = rng.uniform(0, N, 2)
+    r = rng.uniform(3, 7)
+    t = rng.uniform(0.75, 1.2)
+    c = tuple(int(min(255, v * t)) for v in (160, 156, 150))
+    d.ellipse([x - r, y - r, x + r, y + r], fill=c, outline=tuple(int(v * 0.7) for v in c))
+sauve(np.asarray(im).astype(float) + bruit(160, 10)[..., None], 'exterieurs', 'gravier')
+arr = np.ones((N, N, 3)) * rgb((58, 58, 60))
+arr += bruit(256, 14)[..., None]
+sauve(arr, 'exterieurs', 'enrobe')
+appareil([(128, 126, 122), (138, 134, 128)], 0, (90, 88, 84), 'paves_granit', 'exterieurs', tailles=(64, 64), decal=True)
+im = Image.new('RGB', (N, N), (200, 196, 186))
+d = ImageDraw.Draw(im)
+for _ in range(1500):
+    x, y = rng.uniform(0, N, 2)
+    r = rng.uniform(2, 5)
+    c = tuple(int(v) for v in rng.integers(150, 230, 3))
+    d.ellipse([x - r, y - r, x + r, y + r], fill=c)
+sauve(np.asarray(im).astype(float) + bruit(160, 8)[..., None], 'exterieurs', 'dalle_desactivee')
+arr = np.ones((N, N, 3)) * rgb((96, 140, 70))
+arr += bruit(256, 40)[..., None] + bruit(64, 20)[..., None]
+sauve(arr, 'exterieurs', 'gazon')
+arr = np.ones((N, N, 3)) * rgb((104, 74, 48))
+arr += bruit(128, 30)[..., None] + bruit(32, 14)[..., None]
+sauve(arr, 'exterieurs', 'terre_vegetale')
+print('ok nouvelles familles')

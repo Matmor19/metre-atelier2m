@@ -1,4 +1,4 @@
 [
-  "Textures : le vitrage s'applique maintenant à la partie vitrée des menuiseries (fenêtres, portes-fenêtres, portes d'entrée) ; le RAL reste sur le cadre",
-  "Textures : sans sélection, les catégories Vitrages et RAL cherchent elles-mêmes le vitrage et le cadre de chaque menuiserie balisée ; avec une sélection, la face sélectionnée prend la texture"
+  "Textures : six nouvelles catégories : gros œuvre (brique, parpaing, béton de fondation, dalle, banché), isolants (laine de verre, laine de roche, PSE, PIR, fibre de bois, ouate), panneaux (BA13, OSB, particules), bois brut (épicéa, douglas, lamellé-collé), sols (carrelage, mosaïque, parquet, béton ciré, terrazzo), extérieurs (gravier, enrobé, pavés, dalle désactivée, gazon, terre)",
+  "Ces nouvelles catégories s'appliquent à la sélection (pas de balise du métré)"
 ]

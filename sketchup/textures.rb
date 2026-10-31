@@ -17,7 +17,13 @@ module A2M
       ['Vitrages',            %w[vitrages],             %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE]],
       ['Toiture',             %w[tuiles],               %w[A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]],
       ['Zinguerie',           %w[zinguerie],            []],
-      ['Appuis et seuils',    %w[appuis_seuils],        []]
+      ['Appuis et seuils',    %w[appuis_seuils],        []],
+      ['Gros œuvre',          %w[gros_oeuvre],          []],
+      ['Isolants',            %w[isolants],             []],
+      ['Panneaux, doublages', %w[panneaux],             []],
+      ['Bois brut',           %w[bois],                 []],
+      ['Sols',                %w[sols],                 []],
+      ['Extérieurs',          %w[exterieurs],           []]
     ]
 
     # Nom affiché : « ral_9010_blanc_pur » -> « RAL 9010 blanc pur »
