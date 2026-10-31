@@ -14,7 +14,7 @@ module A2M
       ['Enduits',             %w[enduits],              %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_PIGNON]],
       ['Parements, bardages', %w[parements bardages],   %w[A2M_MUR_PERI A2M_MUR_PIGNON]],
       ['Menuiseries (RAL)',   %w[ral],                  %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE]],
-      ['Vitrages',            %w[vitrages],             []],
+      ['Vitrages',            %w[vitrages],             %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE]],
       ['Toiture',             %w[tuiles],               %w[A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]],
       ['Zinguerie',           %w[zinguerie],            []],
       ['Appuis et seuils',    %w[appuis_seuils],        []]
@@ -56,6 +56,43 @@ module A2M
       trouves
     end
 
+    MENUISERIES = %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE].freeze
+
+    # Toutes les faces d'un élément, avec leur repère (groupes et composants imbriqués)
+    def self.faces_avec_repere(ents, tr, sortie = [])
+      ents.each do |e|
+        case e
+        when Sketchup::Face then sortie << [e, tr]
+        when Sketchup::Group then faces_avec_repere(e.entities, tr * e.transformation, sortie)
+        when Sketchup::ComponentInstance then faces_avec_repere(e.definition.entities, tr * e.transformation, sortie)
+        end
+      end
+      sortie
+    end
+
+    # Vitrage d'une menuiserie : faces planes perpendiculaires à l'épaisseur (le plus petit côté),
+    # situées à l'intérieur du contour. Le cadre, lui, touche le contour extérieur.
+    def self.vitrages_de(elem)
+      ents = elem.is_a?(Sketchup::ComponentInstance) ? elem.definition.entities : elem.entities
+      faces = faces_avec_repere(ents, Geom::Transformation.new)
+      pts = faces.flat_map { |f, tr| f.vertices.map { |v| v.position.transform(tr).to_a } }
+      return [] if pts.empty?
+      mins = (0..2).map { |i| pts.map { |p| p[i] }.min }
+      maxs = (0..2).map { |i| pts.map { |p| p[i] }.max }
+      prof = (0..2).min_by { |i| maxs[i] - mins[i] }   # épaisseur = plus petit côté
+      autres = (0..2).to_a - [prof]
+      marge = 0.5.cm
+      faces.select do |f, tr|
+        n = f.normal.transform(tr)
+        next false if n.length.zero?
+        next false unless (n.to_a[prof] / n.length).abs > 0.99
+        fp = f.vertices.map { |v| v.position.transform(tr).to_a }
+        autres.all? do |a|
+          fp.map { |p| p[a] }.min > mins[a] + marge && fp.map { |p| p[a] }.max < maxs[a] - marge
+        end
+      end
+    end
+
     def self.appliquer(index, dossier, nom)
       model = Sketchup.active_model
       cat = CATEGORIES[index]
@@ -68,9 +105,33 @@ module A2M
       end
       mat = materiau(model, dossier, nom)
       model.start_operation('Appliquer une texture', true)
-      cibles.each { |e| e.material = mat }
+      nb = 0
+      cibles.each do |e|
+        if e.is_a?(Sketchup::Face)
+          e.material = mat
+          nb += 1
+        elsif MENUISERIES.include?(e.layer.name) && %w[ral vitrages].include?(dossier)
+          # Menuiserie : le vitrage ou le cadre (tout le reste) reçoit la texture, pas l'autre partie
+          vitres = vitrages_de(e)
+          if dossier == 'vitrages'
+            vitres.each { |f, _| f.material = mat; nb += 1 }
+          else
+            toutes = faces_avec_repere(e.is_a?(Sketchup::ComponentInstance) ? e.definition.entities : e.entities, Geom::Transformation.new)
+            cadre = toutes.map(&:first) - vitres.map(&:first)
+            cadre = toutes.map(&:first) if cadre.empty?
+            cadre.each { |f| f.material = mat; nb += 1 }
+          end
+        else
+          e.material = mat
+          nb += 1
+        end
+      end
       model.commit_operation
-      Sketchup.status_text = "#{cibles.size} élément(s) : #{nom_affiche(nom)}"
+      if dossier == 'vitrages' && nb.zero?
+        UI.messagebox('Aucun vitrage détecté sur ces menuiseries. Sélectionnez la face vitrée et cliquez à nouveau la texture.')
+        return
+      end
+      Sketchup.status_text = "#{nb} face(s) ou élément(s) : #{nom_affiche(nom)}"
     end
 
     def self.html
