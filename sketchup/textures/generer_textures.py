@@ -160,3 +160,107 @@ vitrage((120, 150, 178), 0.45, 'clair', 'reflechissant_bleu')
 vitrage((200, 214, 218), 0.20, 'sable', 'sable')
 vitrage((205, 225, 228), 0.12, 'feuillete', 'feuillete')
 print('ok RAL + vitrages')
+
+# ---- Zinguerie : métal avec grain et reflets propres à chaque matière
+def metal(couleur, grain, nom, motif=None):
+    arr = np.ones((N, N, 3)) * rgb(couleur)
+    arr += bruit(256, grain)[..., None]
+    if motif == 'stries':                      # zinc laminé : stries horizontales fines
+        arr += (bruit(512, 1) * 0 + rng.uniform(-6, 6, (N, 1)))[..., None] * np.ones((1, N, 1))
+    if motif == 'galva':                       # acier galvanisé : cristaux (spangles)
+        pts = rng.random((N, N)) > 0.93
+        arr += (pts * 40)[..., None] * np.array([1, 1, 1])
+    if motif == 'patine':                      # zinc prépatiné : taches bleutées
+        arr += bruit(40, 30)[..., None] * np.array([-0.2, 0.1, 0.6])
+    sauve(arr, 'zinguerie', nom)
+
+metal((150, 158, 162), 10, 'zinc_naturel', 'stries')
+metal((86, 94, 100), 14, 'zinc_prepatine', 'patine')
+metal((138, 140, 138), 8, 'aluminium_laque_gris', 'stries')
+metal((165, 170, 172), 12, 'acier_galvanise', 'galva')
+metal((242, 242, 238), 4, 'pvc_blanc')
+metal((118, 120, 116), 4, 'pvc_gris')
+metal((176, 96, 58), 22, 'cuivre', None)
+
+# ---- Appuis et seuils : pierre et béton
+def pierre_calcaire(nom):
+    arr = np.ones((N, N, 3)) * rgb((224, 210, 180))
+    arr += bruit(96, 16)[..., None]
+    for y in range(0, N, 42):                  # lits de pose horizontaux
+        arr[y:y + 2] *= 0.82
+    arr += (rng.random((N, N)) > 0.97)[..., None] * (-30)   # pores
+    sauve(arr, 'appuis_seuils', nom)
+
+def granit(nom):
+    arr = np.ones((N, N, 3)) * rgb((128, 128, 126))
+    arr += bruit(128, 18)[..., None]
+    sel = rng.random((N, N))
+    arr[sel > 0.90] = rgb((215, 215, 212))     # grains clairs
+    arr[sel < 0.06] = rgb((40, 40, 40))        # grains sombres
+    sauve(arr, 'appuis_seuils', nom)
+
+def beton(nom):
+    arr = np.ones((N, N, 3)) * rgb((190, 188, 182))
+    arr += bruit(256, 10)[..., None]
+    arr += (rng.random((N, N)) > 0.99)[..., None] * (-35)
+    sauve(arr, 'appuis_seuils', nom)
+
+pierre_calcaire('pierre_calcaire')
+granit('granit_gris')
+beton('beton_lisse')
+ar = np.ones((N, N, 3)) * rgb((214, 198, 168))
+ar += bruit(64, 12)[..., None]
+sauve(ar, 'appuis_seuils', 'pierre_reconstituee')
+
+# ---- Ajouts : parements (pierre, brique) et bardages bois
+def parement_pierre(nom):
+    im = Image.new('RGB', (N, N), (150, 140, 124))
+    d = ImageDraw.Draw(im)
+    y = 0
+    while y < N:
+        h = int(rng.integers(40, 80))
+        x = -int(rng.integers(0, 80))
+        while x < N:
+            w = int(rng.integers(70, 150))
+            t = rng.uniform(0.8, 1.15)
+            c = tuple(int(min(255, v * t)) for v in (196, 184, 160))
+            d.rectangle([x, y, x + w - 4, y + h - 4], fill=c)
+            x += w
+        y += h
+    arr = np.asarray(im.filter(ImageFilter.GaussianBlur(0.5))).astype(float) + bruit(160, 14)[..., None]
+    sauve(arr, 'parements', nom)
+
+def brique(nom):
+    im = Image.new('RGB', (N, N), (200, 196, 186))  # joint
+    d = ImageDraw.Draw(im)
+    for r, y in enumerate(range(0, N, 32)):
+        dec = 0 if r % 2 == 0 else 50
+        for x in range(-100 + dec, N + 100, 100):
+            t = rng.uniform(0.85, 1.1)
+            c = tuple(int(min(255, v * t)) for v in (168, 84, 60))
+            d.rectangle([x + 2, y + 2, x + 96, y + 28], fill=c)
+    arr = np.asarray(im.filter(ImageFilter.GaussianBlur(0.4))).astype(float) + bruit(160, 12)[..., None]
+    sauve(arr, 'parements', nom)
+
+def lames(couleur, nuance, nom, horizontal=False):
+    im = Image.new('RGB', (N, N), couleur)
+    d = ImageDraw.Draw(im)
+    pas = 64
+    for i in range(0, N, pas):
+        t = 1 + rng.uniform(-nuance, nuance)
+        c = tuple(int(min(255, v * t)) for v in couleur)
+        if horizontal:
+            d.rectangle([0, i, N, i + pas - 2], fill=c)
+            d.line([0, i + pas - 1, N, i + pas - 1], fill=tuple(int(v * 0.5) for v in c), width=2)
+        else:
+            d.rectangle([i, 0, i + pas - 2, N], fill=c)
+            d.line([i + pas - 1, 0, i + pas - 1, N], fill=tuple(int(v * 0.5) for v in c), width=2)
+    arr = np.asarray(im).astype(float) + bruit(256, 14)[..., None]
+    sauve(arr, 'bardages', nom)
+
+parement_pierre('parement_pierre_irreguliere')
+brique('brique_apparente')
+lames((168, 120, 74), 0.08, 'bardage_meleze_vertical')
+lames((150, 110, 70), 0.10, 'bardage_douglas_vertical')
+lames((120, 80, 50), 0.12, 'lames_terrasse_horizontal', horizontal=True)
+print('ok zinguerie, appuis, parements, bardages')
