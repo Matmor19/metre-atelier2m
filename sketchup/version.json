@@ -1,7 +1,6 @@
 {
- "version": "2.19.5",
+ "version": "2.19.6",
  "notes": [
-  "Tapée d'isolation : on peut maintenant choisir sa profondeur, en plus de son épaisseur (0 = profondeur égale à l'isolant)",
-  "Tapée d'isolation : correction d'une erreur « Cannot convert argument to Geom::Vector3d » à la création d'une ouverture (version 2.19.4)"
+  "Tapée d'isolation : par défaut, elle s'arrête à la face extérieure du cadre de la menuiserie et ne descend plus jusqu'à la plaque de plâtre (profondeur 0 = jusqu'au cadre ; une valeur force la profondeur)"
  ]
 }

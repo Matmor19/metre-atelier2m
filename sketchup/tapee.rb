@@ -8,7 +8,7 @@ module A2M
   module Tapee
     # Épaisseur et profondeur demandées à l'utilisateur, en cm (épaisseur 0 = pas de tapée ; profondeur 0 = égale à l'isolant)
     def self.demander
-      rep = UI.inputbox(['Tapée d\'isolation : épaisseur (cm, 0 = aucune)', 'Profondeur de la tapée (cm, 0 = égale à l\'isolant)'],
+      rep = UI.inputbox(['Tapée d\'isolation : épaisseur (cm, 0 = aucune)', 'Profondeur de la tapée (cm, 0 = jusqu\'au cadre)'],
                         ['3', '0'], 'Tapée d\'isolation')
       return [0.0, 0.0] unless rep
       ep = (Float(rep[0].to_s.strip.tr(',', '.')) rescue 0.0)
@@ -31,11 +31,15 @@ module A2M
 
     # o : coin bas-gauche de la baie, côté extérieur ; ur : sens gauche-droite ; n : normale sortante du mur
     # l, h, prof : dimensions de la baie et profondeur du nu intérieur, en pouces (unités SketchUp)
-    # profondeur_cm : 0 = tapée de la profondeur de l'isolant (prof)
+    # profondeur_cm : 0 = jusqu'au cadre de la menuiserie (prof moins la profondeur du cadre)
     def self.poser(ents, o, ur, n, l, h, prof, epaisseur_cm, profondeur_cm = 0)
       t = epaisseur_cm.to_f.cm.to_f
       return nil if epaisseur_cm.to_f <= 0 || prof.to_f <= 0.01
-      prof_tapee = profondeur_cm.to_f > 0 ? profondeur_cm.to_f.cm.to_f : prof.to_f
+      # Par défaut la tapée s'arrête à la face extérieure du cadre de la menuiserie (le cadre est posé contre le nu intérieur) :
+      # elle ne descend pas jusqu'à la plaque de plâtre
+      cadre = A2M::ObjetsMenuiseries::PROF.cm.to_f
+      prof_tapee = profondeur_cm.to_f > 0 ? profondeur_cm.to_f.cm.to_f : [prof.to_f - cadre, 0.0].max
+      return nil if prof_tapee <= 0.01
       z = Geom::Vector3d.new(0, 0, 1)
       d = mise_a_l_echelle(n.reverse.normalize, prof_tapee)   # de l'extérieur vers l'intérieur
       g = ents.add_group
