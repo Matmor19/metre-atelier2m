@@ -1,4 +1,4 @@
 [
-  "Menuiseries types : treize portes d'entrée à un vantail (six premiers styles, plus sept nouveaux d'après photos, dont un modèle avec fixe latéral de 35 cm)",
-  "Les styles sont à vérifier à la pose : proportions, côté de la poignée et formes des vitrages approximatifs (croisillons, triangles, courbe et diagonales non reproduits à l'identique)"
+  "Tapée d'isolation : correction d'une erreur « Cannot convert argument to Geom::Vector3d » à la création d'une ouverture (multiplication de vecteurs remplacée)",
+  "Menuiseries types : treize portes d'entrée à un vantail, dont un modèle avec fixe latéral de 35 cm"
 ]
