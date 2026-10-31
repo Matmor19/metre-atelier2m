@@ -1,7 +1,7 @@
 {
- "version": "2.19.1",
+ "version": "2.19.2",
  "notes": [
-  "Menuiseries types : porte-fenêtre 1 et 2 vantaux avec soubassement plein de 40 cm (vitrage au-dessus) ; porte d'entrée 1 et 2 vantaux, pleine ou avec vitrage en partie haute",
-  "Le panneau plein ou le soubassement ne prend pas la texture « Vitrages » : seul le vitrage la prend. Relancer « Créer les menuiseries types » pour ranger les nouveaux modèles"
+  "Menuiseries types : six portes d'entrée à un vantail, d'après les styles courants (bois à lames, alu bleue et grise à baie verticale, PVC vert à vitrage haut, alu anthracite à lames fines, alu gris clair à grande baie)",
+  "Les styles sont à vérifier à la pose : proportions et côté de la poignée approximatifs"
  ]
 }

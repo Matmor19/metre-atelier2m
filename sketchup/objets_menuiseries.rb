@@ -126,6 +126,72 @@ module A2M
       ['Porte d\'entrée 2 vantaux PVC 140 × 215 vitrage haut', PE, 140, 215, 2, { 'mat' => 'pvc', 'vantaux' => '2' }, 120, 'Panneau']
     ].freeze
 
+    # Portes d'entrée à un vantail, d'après six styles courants : panneau plein ou lames, une ou plusieurs baies.
+    # vitres : zones vitrées en fractions de la surface intérieure (x0, x1, z0, z1), poignee : 'gauche', 'droite' ou 'centre'
+    STYLES = [
+      ['Porte d\'entrée 1 vantail bois, lames horizontales 90 × 215', 'bois', { lames: 12.0, vitres: [], poignee: 'gauche' }],
+      ['Porte d\'entrée 1 vantail alu bleue, baie verticale à droite 90 × 215', 'alu', { lames: nil, vitres: [[0.55, 0.78, 0.25, 0.85]], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail alu grise, baie verticale à gauche 90 × 215', 'alu', { lames: nil, vitres: [[0.2, 0.42, 0.2, 0.9]], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail PVC vert, vitrage haut 90 × 215', 'pvc', { lames: nil, vitres: [[0.12, 0.88, 0.55, 0.92]], poignee: 'centre' }],
+      ['Porte d\'entrée 1 vantail alu anthracite, lames fines 90 × 215', 'alu', { lames: 9.0, vitres: [], poignee: 'droite' }],
+      ['Porte d\'entrée 1 vantail alu gris clair, grande baie 90 × 215', 'alu', { lames: nil, vitres: [[0.15, 0.75, 0.08, 0.92]], poignee: 'droite' }]
+    ].freeze
+
+    # Une porte à un vantail, dessinée d'après un style de STYLES
+    def self.porte_style(model, nom, mat, cfg)
+      type = A2M::Bibliotheque::TYPES.find { |t| t[0] == PE }
+      l = 90.0
+      h = 215.0
+      d = model.definitions.add(nom)
+      ents = d.entities
+      dormant(ents, l, h)
+      xi = DORMANT + OUVRANT
+      xf = l - DORMANT - OUVRANT
+      zi = DORMANT + OUVRANT
+      zs = h - DORMANT - OUVRANT
+      y0 = VANTAIL_AV
+      y1 = VANTAIL_AV + VANTAIL_AP
+      vf = ents.add_group
+      vf.name = 'Vantail'
+      e = vf.entities
+      boite(e, DORMANT, l - DORMANT, y0, y1, DORMANT, DORMANT + OUVRANT)
+      boite(e, DORMANT, l - DORMANT, y0, y1, h - DORMANT - OUVRANT, h - DORMANT)
+      boite(e, DORMANT, DORMANT + OUVRANT, y0, y1, DORMANT, h - DORMANT)
+      boite(e, l - DORMANT - OUVRANT, l - DORMANT, y0, y1, DORMANT, h - DORMANT)
+      # Panneau : plein, ou en lames horizontales séparées par un petit joint
+      pan = e.add_group
+      pan.name = 'Panneau'
+      if cfg[:lames]
+        bh = cfg[:lames]
+        z = zi
+        while z + bh <= zs + 0.01
+          boite(pan.entities, xi, xf, y0 + VITRE_EP, y1 - 1, z, z + bh - 0.6)
+          z += bh
+        end
+      else
+        boite(pan.entities, xi, xf, y0 + VITRE_EP, y1 - 1, zi, zs)
+      end
+      # Vitrages, devant le panneau
+      cfg[:vitres].each do |fx0, fx1, fz0, fz1|
+        vit = e.add_group
+        vit.name = 'Vitrage'
+        boite(vit.entities, xi + fx0 * (xf - xi), xi + fx1 * (xf - xi), y0, y0 + VITRE_EP,
+              zi + fz0 * (zs - zi), zi + fz1 * (zs - zi))
+      end
+      # Poignée
+      px = { 'droite' => xf - 4.0, 'gauche' => xi + 4.0, 'centre' => l / 2.0 }[cfg[:poignee]]
+      pog = e.add_group
+      pog.name = 'Poignée'
+      boite(pog.entities, px - 1.5, px + 1.5, -3, y0, 95, 102)
+      pts = sommets(ents, Geom::Transformation.new)
+      lx = A2M::Etirement.lignes_depuis([(l / 2.0).cm.to_f], pts.map(&:x))
+      lz = A2M::Etirement.lignes_depuis([(h / 2.0).cm.to_f], pts.map(&:z))
+      choix = { 'mat' => mat, 'vantaux' => '1' }
+      info = { 'nom' => nom, 'type' => type[0], 'balise' => type[1], 'vantaux' => 1, 'choix' => choix,
+               'l0' => l.cm.to_f, 'h0' => h.cm.to_f, 'p0' => PROF.cm.to_f, 'lx' => lx, 'lz' => lz, 'version' => 1 }
+      A2M::Bibliotheque.ranger(d, type, nom, info)
+    end
+
     def self.creer
       model = Sketchup.active_model
       resultats = []
@@ -134,6 +200,7 @@ module A2M
         MODELES.each do |nom, type, l, h, vant, choix, bas, nom_bas|
           resultats << construire(model, nom, type, l, h, vant, choix, bas, nom_bas)
         end
+        STYLES.each { |nom, mat, cfg| resultats << porte_style(model, nom, mat, cfg) }
         model.commit_operation
       rescue StandardError => ex
         model.abort_operation
