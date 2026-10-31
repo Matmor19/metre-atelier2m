@@ -1,7 +1,6 @@
 {
- "version": "2.20.0",
+ "version": "2.20.1",
  "notes": [
-  "Créer une ouverture : le choix de la menuiserie se fait maintenant sur une galerie de vignettes (une par objet de la bibliothèque, plus « Aucune : ouverture vide ») au lieu d'une liste déroulante",
-  "Les autres réglages (type, dimensions, appui ou seuil, tapée) ne changent pas"
+  "Bouton « Textures extérieures » ajouté à la barre d'outils Métré Atelier 2M et à la palette (dans la section Dessiner, à côté des hachures)"
  ]
 }
