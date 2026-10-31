@@ -1,7 +1,7 @@
 {
- "version": "2.18.2",
+ "version": "2.19.0",
  "notes": [
-  "Textures : la couleur RAL des menuiseries s'applique aussi aux tapées d'isolation posées avec elles (sans sélection)",
-  "Les tapées posées avant cette version ne sont pas reconnues : les colorer à la main, ou les reposer"
+  "Bibliothèque : menu Extensions > Métré Atelier 2M > « Créer les menuiseries types… » range trois objets : porte-fenêtre 1 vantail (90 × 215), porte-fenêtre 2 vantaux (140 × 215) et porte d'entrée 1 vantail (90 × 215), à la française, en PVC",
+  "Ces objets ont leurs lignes d'étirement au milieu des vitrages ou du panneau, et une poignée qui ne se met jamais sur une ligne d'étirement. À vérifier à la première pose"
  ]
 }
