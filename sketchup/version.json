@@ -1,8 +1,8 @@
 {
- "version": "2.35.0",
+ "version": "2.36.0",
  "notes": [
+  "Fenêtres Vues et Import : les émojis sont remplacés par des pictogrammes dessinés dans le style de l'extension (plan, façades S/N/E/O, perspective, styles, téléchargement, dossier)",
   "Créer une ouverture : la pose s'enchaîne déjà (une ouverture après l'autre) ; nouveau, la touche Tab rouvre la fenêtre pour changer de modèle ou de taille sans quitter la pose (rappel dans la barre d'état)",
-  "Nouveau : « Dossier de présentation client » — couverture aux couleurs d'Atelier 2M (nom du projet, client, coordonnées), vues du modèle à 2 par page, surfaces par pièce, menuiseries et synthèse ; un seul fichier à imprimer ou à enregistrer en PDF depuis le navigateur",
-  "Phases : à démolir en ROUGE, à construire en BLEU (existant conservé en gris)"
+  "Nouveau : « Dossier de présentation client » — couverture aux couleurs d'Atelier 2M (nom du projet, client, coordonnées), vues du modèle à 2 par page, surfaces par pièce, menuiseries et synthèse ; un seul fichier à imprimer ou à enregistrer en PDF depuis le navigateur"
  ]
 }

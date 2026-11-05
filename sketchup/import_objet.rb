@@ -19,8 +19,8 @@ module A2M
       <div class="petit">Le site s'ouvre dans votre navigateur : téléchargez le modèle en .skp (bouton « Télécharger »), puis revenez ici.</div>
       <h2>2. Récupérer le fichier</h2>
       <div class="grille">
-        <button type="button" class="carte" id="dernier"><div class="vignette" style="font-size:34px">⬇️</div><span id="dernier_txt">Dernier téléchargement</span></button>
-        <button type="button" class="carte" id="fichier"><div class="vignette" style="font-size:34px">📂</div><span>Choisir un fichier .skp</span></button>
+        <button type="button" class="carte" id="dernier"><div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"><path d="M24 4 V22 M17 15 L24 22 L31 15" stroke="#E07838" stroke-width="1.6"/><rect x="8" y="26" width="32" height="10" rx="2" fill="#fff"/><path d="M14 31 H34"/></svg></div><span id="dernier_txt">Dernier téléchargement</span></button>
+        <button type="button" class="carte" id="fichier"><div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-linejoin="round"><path d="M6 12 V32 H42 V16 H22 L18 10 H8 Q6 10 6 12 Z" fill="#E6C58F"/><path d="M6 20 H42"/></svg></div><span>Choisir un fichier .skp</span></button>
       </div>
       <h2>3. Nettoyage automatique</h2>
       <div class="puces" id="nett"></div>
