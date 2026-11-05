@@ -111,31 +111,221 @@ module A2M
       [TAG_SAISIE[type_saisie] || type_saisie]
     end
 
-    # Saisie : type (fenêtre ou porte), largeur, hauteur, appui ou seuil oui/non ; puis le choix dans la bibliothèque,
-    # limité au type. Rien de ce type dans la bibliothèque : l'ouverture est créée vide (une réservation balisée),
-    # l'objet se pose dessus plus tard (clic droit › Poser une menuiserie de la bibliothèque sur l'ouverture).
-    # Étape 1 : type, largeur, hauteur, linteau, appui ou seuil oui/non, et la liste des objets de ce type
-    def self.demander_dimensions
-      r = reg
-      rep = UI.inputbox(['Type', 'Largeur (cm)', 'Hauteur (cm)', 'Hauteur sous linteau (cm, depuis le bas du mur)', 'Appui ou seuil'],
-                        [TYPES_SAISIE.include?(@r[:ts]) ? @r[:ts] : TYPES_SAISIE[0], (@r[:l] || 100).to_s, (@r[:h] || 125).to_s, (@r[:lin] || r['lin']).to_s, @r[:as_oui] || 'Oui'],
-                        [TYPES_SAISIE.join('|'), '', '', '', 'Oui|Non'], 'Ouverture')
-      return nil unless rep
-      ts = rep[0]
-      l, h, lin = rep[1..3].map { |v| v.to_s.tr(',', '.').to_f }
-      return UI.messagebox('Largeur et hauteur supérieures à 0, linteau au moins à la hauteur de l\'ouverture.') && nil if l <= 0 || h <= 0 || lin < h
-      @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:lin] = lin; @r[:as_oui] = rep[4]
+    # ---- Étape 1 : panneau « Ouverture » (une seule fenêtre) ----
+    # Trois grandes vignettes (fenêtre, porte-fenêtre, porte d'entrée) ; le type est reconnu d'après largeur × hauteur
+    # (modifiable d'un clic) ; aperçu dessiné en direct ; appui ou seuil choisi en un clic parmi la bibliothèque.
+    # Codes couleur : jaune = rempli, blanc = à choisir, bleu pâle = « aucun ».
+
+    # Appuis ou seuils de la bibliothèque pour un type donné : [objets ou gammes, libellés]
+    def self.appuis_seuils(ty)
+      gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
+      aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
+            (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
+      asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] }
+      [aps, asl]
+    end
+
+    # État transmis à la suite (galerie de menuiseries, puis outil) ; choix_as : libellé choisi, ou nil pour « Aucun »
+    def self.construire_etat(ts, l, h, lin, choix_as)
       haute = ts != 'Fenêtre'                             # porte-fenêtre ou porte d'entrée : seuil ; fenêtre : appui
       objs = (A2M::Bibliotheque.objets_de(balises_de(ts)) rescue [])
       ty = haute ? 'Seuil' : 'Appui de fenêtre'
-      aps = []; asl = []
-      if rep[4] == 'Oui'
-        gms = (A2M::Bibliotheque.gammes rescue {}).select { |(_g, t), _| t == ty }
-        aps = gms.map { |(g, t), ms| { 'gamme' => g, 'type' => t, 'membres' => ms } } +
-              (A2M::Bibliotheque.objets.select { |o| o['fichier'] && o['type'] == ty && A2M::Bibliotheque.appui_ou_seuil?(o) } rescue [])
-        asl = aps.map { |o| o['membres'] ? "#{o['gamme']} (#{o['membres'].map { |m| m['longueur'].round }.join('-')} cm)" : o['nom'] }
+      aps, asl = choix_as ? appuis_seuils(ty) : [[], []]
+      choix_as = nil unless asl.include?(choix_as)
+      { ts: ts, l: l, h: h, lin: lin, haute: haute, objs: objs, ty: ty, aps: aps, asl: asl, as_oui: choix_as ? 'Oui' : 'Non', choix_as: choix_as, reg: reg }
+    end
+
+    def self.donnees_panneau
+      r = reg
+      { 'seuil_porte' => r['seuil_porte'].to_f, 'ts' => @r[:ts], 'l' => @r[:l] || 100, 'h' => @r[:h] || 125, 'lin' => @r[:lin] || r['lin'].to_f,
+        'dernier_as' => Hash[TYPES_SAISIE.map { |t| [t, (@r[t] || {})[:as_note]] }],
+        'listes' => { 'Appui de fenêtre' => appuis_seuils('Appui de fenêtre')[1], 'Seuil' => appuis_seuils('Seuil')[1] },
+        'recents' => @r[:recents] || [] }
+    end
+
+    HTML_PANNEAU = <<~'HTML'
+      <!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+      :root{--o:#E07838;--g:#3C3C3C;--f:#F6F3EF;--jaune:#FFE680;--bleu:#DCEBFA;--trait:#d8d0c6}
+      *{box-sizing:border-box}
+      body{margin:0;padding:14px 16px 0;font:13px "Segoe UI",Arial,sans-serif;background:var(--f);color:var(--g);user-select:none}
+      h1{font-size:15px;margin:0 0 2px;font-weight:600} .sous{color:#8a7f75;font-size:11.5px;margin-bottom:12px}
+      h2{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px;color:#8a7f75;font-weight:600}
+      .types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .type{border:2px solid var(--trait);background:#fff;border-radius:12px;padding:8px 4px 6px;cursor:pointer;text-align:center;font:inherit;color:inherit;transition:transform .16s cubic-bezier(.3,1.6,.5,1),box-shadow .16s}
+      .type:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 6px 12px rgba(224,120,56,.35)}
+      .type svg{width:62px;height:62px;display:block;margin:0 auto 2px}
+      .type span{font-size:11.5px;line-height:1.2;display:block}
+      .type.actif{border-color:var(--o);background:var(--jaune);box-shadow:0 0 0 3px rgba(224,120,56,.25)}
+      #origine{font-size:11px;color:#8a7f75;margin-top:6px;min-height:15px}
+      .dims{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+      .dims label{display:block;font-size:11px;color:#6f665e;margin-bottom:3px}
+      .dims .x{font-size:18px;padding-bottom:7px;color:#8a7f75}
+      input[type=text]{width:100%;font:600 17px "Segoe UI",Arial,sans-serif;padding:7px 10px;border:2px solid var(--trait);border-radius:9px;background:#fff;color:var(--g);outline:none;text-align:center}
+      input[type=text].ok{background:var(--jaune)} input[type=text]:focus{border-color:var(--o)}
+      .unite{font-size:11px;color:#8a7f75;text-align:center;margin-top:2px}
+      #apercu{background:#fff;border:1px solid var(--trait);border-radius:12px;margin-top:12px;padding:6px}
+      #apercu svg{display:block;width:100%;height:190px}
+      .puces{display:flex;flex-wrap:wrap;gap:7px}
+      .puce{border:2px solid var(--trait);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit;color:inherit;transition:transform .14s cubic-bezier(.3,1.6,.5,1)}
+      .puce:hover{transform:translateY(-2px);border-color:var(--o)}
+      .puce.rempli{background:var(--jaune);border-color:var(--o);font-weight:600}
+      .puce.aucun.rempli{background:var(--bleu);border-color:#7fb0e0;font-weight:600}
+      .petit{font-size:11px;color:#8a7f75;margin-top:5px}
+      details{margin-top:12px} summary{cursor:pointer;color:#6f665e;font-size:12px}
+      details .dims{margin-top:8px;grid-template-columns:1fr}
+      #bas{position:sticky;bottom:0;background:var(--f);border-top:1px solid #e2dbd3;margin:14px -16px 0;padding:10px 16px;display:flex;align-items:center;gap:12px}
+      #msg{flex:1;font-size:11.5px;color:#a8541f;min-height:15px}
+      #go{background:var(--o);color:#fff;border:0;border-radius:10px;padding:10px 20px;font:600 14px "Segoe UI",Arial,sans-serif;cursor:pointer;transition:transform .14s cubic-bezier(.3,1.6,.5,1),box-shadow .14s}
+      #go:hover:not(:disabled){transform:translateY(-2px) scale(1.04);box-shadow:0 6px 12px rgba(224,120,56,.45)}
+      #go:disabled{background:#cfc6bc;cursor:not-allowed}
+      </style></head><body>
+      <h1>Créer une ouverture</h1><div class="sous">Étape 1 sur 2 : type, taille et appui ou seuil</div>
+
+      <h2>Type</h2>
+      <div class="types" id="types"></div><div id="origine"></div>
+
+      <h2>Taille de l'ouverture</h2>
+      <div class="dims">
+        <div><label for="l">Largeur</label><input type="text" id="l" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+        <div class="x">×</div>
+        <div><label for="h">Hauteur</label><input type="text" id="h" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+      </div>
+      <div id="recents"></div>
+      <div id="apercu"></div>
+
+      <div id="bloc_as"><h2 id="titre_as"></h2><div class="puces" id="puces"></div><div class="petit" id="note_as"></div></div>
+
+      <details><summary>Réglages avancés</summary>
+        <div class="dims"><div><label for="lin">Hauteur sous linteau, depuis le bas du mur</label><input type="text" id="lin" inputmode="decimal" autocomplete="off"><div class="unite">cm (relevée d'office si l'ouverture est plus haute)</div></div></div>
+      </details>
+
+      <div id="bas"><div id="msg"></div><button id="go" type="button">Suivant : la menuiserie</button></div>
+
+      <script>
+      var D = __DONNEES__;
+      var TYPES = ["Fenêtre", "Porte-fenêtre / baie", "Porte d'entrée"];
+      var ICONES = {
+        "Fenêtre": '<svg viewBox="0 0 64 64"><rect x="9" y="8" width="46" height="40" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/><rect x="14" y="13" width="36" height="30" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.6"/><path d="M32 13V43M14 28H50" stroke="#3C3C3C" stroke-width="1.8"/><path d="M5 52H59" stroke="#E07838" stroke-width="4" stroke-linecap="round"/></svg>',
+        "Porte-fenêtre / baie": '<svg viewBox="0 0 64 64"><rect x="8" y="5" width="48" height="52" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/><rect x="12" y="9" width="40" height="45" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.6"/><path d="M32 9V54" stroke="#3C3C3C" stroke-width="1.8"/><circle cx="29" cy="33" r="1.5" fill="#3C3C3C"/><circle cx="35" cy="33" r="1.5" fill="#3C3C3C"/><path d="M5 59H59" stroke="#E07838" stroke-width="4" stroke-linecap="round"/></svg>',
+        "Porte d'entrée": '<svg viewBox="0 0 64 64"><rect x="15" y="5" width="34" height="52" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/><rect x="19" y="9" width="26" height="45" fill="#B98A5E" stroke="#3C3C3C" stroke-width="1.6"/><rect x="24" y="14" width="16" height="12" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.2"/><circle cx="40" cy="38" r="2" fill="#3C3C3C"/><path d="M11 59H53" stroke="#E07838" stroke-width="4" stroke-linecap="round"/></svg>'
+      };
+      var etat = { ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
+      TYPES.forEach(function (t) {
+        var d = D.dernier_as[t], liste = D.listes[t === TYPES[0] ? 'Appui de fenêtre' : 'Seuil'] || [];
+        if (d === '' || (d && liste.indexOf(d) >= 0)) etat.choix[t] = d;
+      });
+      function deduire(l, h) { if (!(h >= D.seuil_porte)) return TYPES[0]; return l <= 110 ? TYPES[2] : TYPES[1]; }
+      if (etat.ts && etat.ts !== deduire(etat.l, etat.h)) etat.manuel = true;
+      if (!etat.ts) etat.ts = deduire(etat.l, etat.h);
+      function nombre(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : 0; }
+      function el(id) { return document.getElementById(id); }
+      function haute() { return etat.ts !== TYPES[0]; }
+      function cleListe() { return haute() ? 'Seuil' : 'Appui de fenêtre'; }
+
+      var bt = el('types');
+      TYPES.forEach(function (t) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'type'; b.dataset.t = t;
+        b.innerHTML = ICONES[t] + '<span>' + t + '</span>';
+        b.addEventListener('click', function () { etat.ts = t; etat.manuel = (t !== deduire(etat.l, etat.h)); maj(); });
+        bt.appendChild(b);
+      });
+
+      function apercu() {
+        var l = etat.l, h = etat.h; if (!(l > 0 && h > 0)) { el('apercu').innerHTML = '<div class="petit" style="text-align:center;padding:60px 0">Tapez la largeur et la hauteur : l\'ouverture se dessine ici.</div>'; return; }
+        var lin = Math.max(etat.lin, h), W = Math.max(l + 140, 280), H = Math.max(lin + 50, 260), fs = Math.max(W, H) / 20;
+        var x0 = (W - l) / 2, yh = H - lin, yb = H - (lin - h), s = '';
+        s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#E4DCD2" stroke="#9c9186" stroke-width="1.5"/>';
+        s += '<rect x="' + x0 + '" y="' + yh + '" width="' + l + '" height="' + h + '" fill="#fff" stroke="#3C3C3C" stroke-width="3"/>';
+        var c = Math.min(8, l / 8);
+        if (etat.ts === TYPES[2]) {
+          s += '<rect x="' + (x0 + c) + '" y="' + (yh + c) + '" width="' + (l - 2 * c) + '" height="' + (h - 2 * c) + '" fill="#B98A5E" stroke="#3C3C3C" stroke-width="1.5"/>';
+          s += '<rect x="' + (x0 + l * .3) + '" y="' + (yh + h * .1) + '" width="' + (l * .4) + '" height="' + (h * .22) + '" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.2"/>';
+          s += '<circle cx="' + (x0 + l - c - 8) + '" cy="' + (yh + h * .55) + '" r="3" fill="#3C3C3C"/>';
+        } else {
+          s += '<rect x="' + (x0 + c) + '" y="' + (yh + c) + '" width="' + (l - 2 * c) + '" height="' + (h - 2 * c) + '" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.5"/>';
+          s += '<path d="M' + (x0 + l / 2) + ' ' + (yh + c) + 'V' + (yb - c) + '" stroke="#3C3C3C" stroke-width="1.8"/>';
+        }
+        s += '<path d="M' + (x0 - 8) + ' ' + yb + 'H' + (x0 + l + 8) + '" stroke="#E07838" stroke-width="5" stroke-linecap="round"/>';
+        if (lin - h > 1) s += '<path d="M' + (x0 + l + 20) + ' ' + H + 'V' + yb + '" stroke="#8a7f75" stroke-width="1" stroke-dasharray="4 3"/><text x="' + (x0 + l + 24) + '" y="' + (H - (lin - h) / 2) + '" font-size="' + fs * .8 + '" fill="#8a7f75">' + Math.round((lin - h) * 10) / 10 + ' cm du sol</text>';
+        s += '<text x="' + (W / 2) + '" y="' + (yh - fs * .4) + '" font-size="' + fs + '" font-weight="600" fill="#3C3C3C" text-anchor="middle">' + l + ' cm</text>';
+        s += '<text x="' + (x0 - fs * .5) + '" y="' + (yh + h / 2) + '" font-size="' + fs + '" font-weight="600" fill="#3C3C3C" text-anchor="end">' + h + '</text>';
+        el('apercu').innerHTML = '<svg viewBox="-4 -4 ' + (W + 8) + ' ' + (H + 14) + '" preserveAspectRatio="xMidYMid meet">' + s + '</svg>';
+      }
+
+      function puces() {
+        var cle = cleListe(), liste = D.listes[cle] || [], bloc = el('bloc_as'), conteneur = el('puces'), v = etat.choix[etat.ts];
+        el('titre_as').textContent = haute() ? 'Seuil' : 'Appui de fenêtre';
+        conteneur.innerHTML = '';
+        if (!liste.length) { el('note_as').textContent = 'Aucun ' + (haute() ? 'seuil' : 'appui') + ' dans la bibliothèque : l\'ouverture sera créée sans.'; return; }
+        var ajouter = function (texte, valeur, classe) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce ' + classe + (v === valeur ? ' rempli' : ''); b.textContent = texte;
+          b.addEventListener('click', function () { etat.choix[etat.ts] = valeur; maj(); }); conteneur.appendChild(b);
+        };
+        ajouter('Aucun', '', 'aucun');
+        liste.forEach(function (n) { ajouter(n, n, ''); });
+        el('note_as').textContent = v === undefined ? 'À choisir : un appui ou « Aucun » (rien ne se choisit tout seul).' : '';
+      }
+
+      function recents() {
+        var c = el('recents'); c.innerHTML = '';
+        if (!D.recents.length) return;
+        var t = document.createElement('div'); t.className = 'petit'; t.textContent = 'Tailles déjà posées :'; c.appendChild(t);
+        var p = document.createElement('div'); p.className = 'puces'; p.style.marginTop = '5px';
+        D.recents.forEach(function (r) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = r.l + ' × ' + r.h;
+          b.addEventListener('click', function () { etat.l = r.l; etat.h = r.h; etat.ts = r.ts; etat.manuel = (r.ts !== deduire(r.l, r.h)); el('l').value = r.l; el('h').value = r.h; maj(); });
+          p.appendChild(b);
+        });
+        c.appendChild(p);
+      }
+
+      function maj() {
+        if (etat.lin < etat.h) etat.lin = etat.h;
+        if (!etat.manuel && etat.l > 0 && etat.h > 0) etat.ts = deduire(etat.l, etat.h);
+        document.querySelectorAll('.type').forEach(function (b) { b.classList.toggle('actif', b.dataset.t === etat.ts); });
+        el('origine').textContent = etat.manuel ? 'Type choisi par vous.' : (etat.l > 0 && etat.h > 0 ? 'Type reconnu d\'après la taille : cliquez un autre type pour le changer.' : '');
+        el('l').classList.toggle('ok', etat.l > 0); el('h').classList.toggle('ok', etat.h > 0); el('lin').classList.toggle('ok', etat.lin > 0);
+        apercu(); puces();
+        var manque = [];
+        if (!(etat.l > 0 && etat.h > 0)) manque.push('largeur et hauteur');
+        if ((D.listes[cleListe()] || []).length && etat.choix[etat.ts] === undefined) manque.push(haute() ? 'le seuil (ou « Aucun »)' : 'l\'appui (ou « Aucun »)');
+        el('msg').textContent = manque.length ? 'Il reste à choisir : ' + manque.join(', ') + '.' : '';
+        el('go').disabled = manque.length > 0;
+      }
+
+      el('l').value = etat.l || ''; el('h').value = etat.h || ''; el('lin').value = etat.lin || '';
+      el('l').addEventListener('input', function () { etat.l = nombre(this.value); maj(); });
+      el('h').addEventListener('input', function () { etat.h = nombre(this.value); maj(); });
+      el('lin').addEventListener('input', function () { etat.lin = nombre(this.value); maj(); });
+      el('go').addEventListener('click', function () {
+        if (el('go').disabled) return;
+        sketchup.valider(JSON.stringify({ ts: etat.ts, l: etat.l, h: etat.h, lin: Math.max(etat.lin, etat.h), as: etat.choix[etat.ts] === undefined ? '' : etat.choix[etat.ts] }));
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Enter') el('go').click(); });
+      recents(); maj(); el('l').focus(); el('l').select();
+      </script></body></html>
+    HTML
+
+    def self.panneau(&suite)
+      html = HTML_PANNEAU.sub('__DONNEES__') { JSON.generate(donnees_panneau).gsub('</', '<\/') }
+      dlg = UI::HtmlDialog.new(dialog_title: 'Métré Atelier 2M : ouverture', preferences_key: 'A2M_Panneau_Ouverture', scrollable: true,
+                               resizable: true, width: 470, height: 760, min_width: 380, min_height: 480, style: UI::HtmlDialog::STYLE_DIALOG)
+      dlg.set_html(html)
+      dlg.add_action_callback('valider') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        next unless d.is_a?(Hash)
+        ts = TYPES_SAISIE.include?(d['ts']) ? d['ts'] : TYPES_SAISIE[0]
+        l, h, lin = d.values_at('l', 'h', 'lin').map { |v| v.to_s.tr(',', '.').to_f }
+        next if l <= 0 || h <= 0
+        lin = h if lin < h
+        as = d['as'].to_s.empty? ? nil : d['as'].to_s
+        @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:lin] = lin
+        @r[:recents] = ([{ 'ts' => ts, 'l' => l, 'h' => h }] + (@r[:recents] || []).reject { |x| x['ts'] == ts && x['l'] == l && x['h'] == h }).first(4)
+        (@r[ts] ||= {})[:as_note] = as || ''
+        dlg.close
+        UI.start_timer(0, false) { suite.call(construire_etat(ts, l, h, lin, as)) }
       end
-      { ts: ts, l: l, h: h, lin: lin, haute: haute, objs: objs, ty: ty, aps: aps, asl: asl, as_oui: rep[4], reg: r }
+      dlg.show
     end
 
     # Étape 2 : galerie de vignettes des menuiseries de la bibliothèque (une vignette par objet, plus « Aucune »).
@@ -153,17 +343,23 @@ module A2M
       html = <<~HTML
         <!doctype html><html lang="fr"><head><meta charset="utf-8">
         <style>
-          body { font-family: Segoe UI, Arial, sans-serif; margin: 0; padding: 12px; background: #f4f4f4; color: #222; }
-          h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 600; }
-          .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-          button { display: flex; flex-direction: column; align-items: stretch; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px; cursor: pointer; text-align: left; }
-          button:hover { border-color: #e07b24; box-shadow: 0 0 0 2px rgba(224,123,36,0.25); }
-          .vignette { height: 110px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 4px; overflow: hidden; }
+          :root { --o: #E07838; --g: #3C3C3C; --f: #F6F3EF; --trait: #d8d0c6; }
+          * { box-sizing: border-box; }
+          body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 14px 16px; background: var(--f); color: var(--g); user-select: none; }
+          h3 { margin: 0 0 2px 0; font-size: 15px; font-weight: 600; }
+          .sous { color: #8a7f75; font-size: 11.5px; margin-bottom: 12px; }
+          .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+          button { display: flex; flex-direction: column; align-items: stretch; background: #fff; border: 2px solid var(--trait); border-radius: 12px; padding: 6px; cursor: pointer; text-align: left; font: inherit; color: inherit;
+                   transition: transform .16s cubic-bezier(.3,1.6,.5,1), box-shadow .16s; }
+          button:hover { border-color: var(--o); transform: translateY(-3px) scale(1.03); box-shadow: 0 6px 12px rgba(224,120,56,.35); }
+          .vignette { height: 110px; display: flex; align-items: center; justify-content: center; background: #fafafa; border-radius: 8px; overflow: hidden; }
           .vignette img { max-width: 100%; max-height: 100%; object-fit: contain; }
           span { margin-top: 6px; font-size: 12px; line-height: 1.25; }
-          .vide span { font-style: italic; color: #666; }
+          .vide { background: #DCEBFA; }
+          .vide .vignette { background: #DCEBFA; }
+          .vide span { font-style: italic; color: #4a5f78; }
         </style></head><body>
-        <h3>Choisissez la menuiserie</h3>
+        <h3>Choisissez la menuiserie</h3><div class="sous">Étape 2 sur 2 : #{CGI.escapeHTML(titre.to_s)}</div>
         <div class="grille">#{cartes.join("\n")}</div>
         <script>
           document.querySelectorAll('button[data-i]').forEach(function (b) {
@@ -189,14 +385,8 @@ module A2M
       ts, l, h, lin, haute, ty, aps, asl = etat.values_at(:ts, :l, :h, :lin, :haute, :ty, :aps, :asl)
       r = etat[:reg]
       prec = @r[ts] || {}
-      choix_as = nil
-      if asl.any?
-        rep2 = UI.inputbox([ty == 'Seuil' ? 'Seuil (bibliothèque)' : 'Appui (bibliothèque)'],
-                           [asl.include?(prec[:as]) ? prec[:as] : asl[0]], [asl.join('|')], "#{ts} #{l.round} × #{h.round} cm")
-        return nil unless rep2
-        choix_as = rep2[0]
-      end
-      @r[ts] = { menu: obj ? "#{obj['nom']} (#{obj['type']})" : VIDE, as: choix_as }
+      choix_as = etat[:choix_as]
+      @r[ts] = (@r[ts] || {}).merge(menu: obj ? "#{obj['nom']} (#{obj['type']})" : VIDE, as: choix_as)
       manque = []
       manque << "aucune #{ts.downcase} dans la bibliothèque : ouverture vide" if etat[:objs].empty?
       manque << "aucun #{ty == 'Seuil' ? 'seuil' : 'appui'} dans la bibliothèque (type « #{ty} »)" if etat[:as_oui] == 'Oui' && asl.empty?
@@ -213,12 +403,12 @@ module A2M
     end
 
     def self.lancer
-      etat = demander_dimensions
-      return unless etat
-      if etat[:objs].any?
-        choisir_menuiserie(etat[:objs], "#{etat[:ts]} #{etat[:l].round} × #{etat[:h].round} cm") { |obj| suite_ouverture(etat, obj) }
-      else
-        suite_ouverture(etat, nil)
+      panneau do |etat|
+        if etat[:objs].any?
+          choisir_menuiserie(etat[:objs], "#{etat[:ts]} #{etat[:l].round} × #{etat[:h].round} cm") { |obj| suite_ouverture(etat, obj) }
+        else
+          suite_ouverture(etat, nil)
+        end
       end
     end
 

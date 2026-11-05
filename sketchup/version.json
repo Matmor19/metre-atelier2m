@@ -1,6 +1,8 @@
 {
- "version": "2.20.1",
+ "version": "2.21.0",
  "notes": [
-  "Bouton « Textures extérieures » ajouté à la barre d'outils Métré Atelier 2M et à la palette (dans la section Dessiner, à côté des hachures)"
+  "Créer une ouverture : une seule fenêtre à l'étape 1, avec trois grandes vignettes (fenêtre, porte-fenêtre, porte d'entrée), le type reconnu d'après largeur × hauteur (modifiable d'un clic), un aperçu dessiné en direct et l'appui ou le seuil choisi en un clic (jaune = choisi, bleu pâle = Aucun, blanc = à choisir)",
+  "Tailles déjà posées proposées en un clic ; hauteur sous linteau dans les réglages avancés",
+  "La galerie des menuiseries (étape 2) reprend les mêmes couleurs et le même style"
  ]
 }
