@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d coupes couverture zinguerie calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -42,6 +42,9 @@ unless file_loaded?(__FILE__)
     ['calage',      'Caler un plan existant',              'Importe l\'image d\'un plan (PNG, JPG), puis deux clics sur une longueur connue et sa vraie valeur : le plan est mis à l\'échelle, et si vous voulez d\'équerre', -> { A2M::Calage.importer }, false],
     ['reglementaire','Surfaces réglementaires',           'Emprise au sol, surface de plancher (estimation), hauteur au faîtage et à l\'égout, reculs par rapport aux limites de propriété : les chiffres du permis, calculés depuis le 3D', -> { A2M::Reglementaire.ouvrir }, false],
     ['export_cao',  'Exporter pour ZWCAD (DWG / DXF)',     'Exporte le modèle en DWG ou DXF dans Documents/Atelier 2M/Export CAO : chaque balise Métré A2M devient un calque pour ZWCAD', -> { A2M::ExportCAO.lancer }, false],
+    ['charpente',   'Charpente (chevrons, liteaux)',       'Chevrons à l\'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, faîtière et sablière sous chaque pan, avec les linéaires pour le métré', -> { A2M::Charpente.ouvrir }, false],
+    ['escalier',    'Escalier',                            'Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons, loi de Blondel, côté mur', -> { A2M::Escalier.ouvrir }, false],
+    ['gardecorps',  'Garde-corps',                         'Poteaux, main courante et remplissage (barreaux, câbles, verre, lisses, plein) le long d\'un tracé ou d\'un escalier', -> { A2M::GardeCorps.ouvrir }, false],
     ['releve',      'Relevé de côtes',                     'Tapez les mesures prises sur place (deux côtes, ou côté par côté avec les angles) : la pièce se dessine, nommée et balisée, avec sa surface', -> { A2M::Releve.ouvrir }, false],
     ['fiche',       'Fiche pièce',                         'Cliquez dans une pièce : surface, périmètre, murs à peindre, plinthes, menuiseries, portes et appareillage de la pièce, avec envoi au métré', -> { A2M::FichePiece.lancer }, false],
     ['variantes',   'Variantes client A / B / C',          'Trois versions du même projet dans un seul fichier : choisissez où chaque élément apparaît, puis un clic sur A, B ou C change tout ; une scène par variante pour présenter', -> { A2M::Variantes.ouvrir }, false],
@@ -129,6 +132,9 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'variantes.rb'), 'a2m_metre/variantes.rb')
     z.write(os.path.join(ici, 'releve.rb'), 'a2m_metre/releve.rb')
     z.write(os.path.join(ici, 'plan2d.rb'), 'a2m_metre/plan2d.rb')
+    z.write(os.path.join(ici, 'gardecorps.rb'), 'a2m_metre/gardecorps.rb')
+    z.write(os.path.join(ici, 'escalier.rb'), 'a2m_metre/escalier.rb')
+    z.write(os.path.join(ici, 'charpente.rb'), 'a2m_metre/charpente.rb')
     z.write(os.path.join(ici, 'export_cao.rb'), 'a2m_metre/export_cao.rb')
     z.write(os.path.join(ici, 'reglementaire.rb'), 'a2m_metre/reglementaire.rb')
     z.write(os.path.join(ici, 'calage.rb'), 'a2m_metre/calage.rb')
