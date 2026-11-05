@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -34,6 +34,7 @@ unless file_loaded?(__FILE__)
     ['vues',        'Vues prêtes à l\'emploi',             'Plan, façades Nord/Sud/Est/Ouest et perspective créés en scènes en un clic', -> { A2M::Vues.ouvrir }, false],
     ['nomenclature','Nomenclature des menuiseries',       'Tableau des fenêtres et portes (repères, dimensions, caractéristiques, pièces, quantités) : Excel ou page imprimable pour devis, DCE et commande', -> { A2M::Nomenclature.ouvrir }, false],
     ['phases',      'Phases : existant, démolition, construction', 'Marque les éléments à conserver (gris), à démolir (rouge) ou à construire (bleu), et affiche l\'état existant, la démolition ou le projet fini', -> { A2M::Phases.ouvrir }, false],
+    ['plan2d',      'Plan 2D automatique',                 'Le plan 2D se déduit du 3D : coupe à hauteur choisie, murs en poché, arc et battant des portes, nom et surface de chaque pièce, scène prête pour LayOut', -> { A2M::Plan2D.ouvrir }, false],
     ['releve',      'Relevé de côtes',                     'Tapez les mesures prises sur place (deux côtes, ou côté par côté avec les angles) : la pièce se dessine, nommée et balisée, avec sa surface', -> { A2M::Releve.ouvrir }, false],
     ['fiche',       'Fiche pièce',                         'Cliquez dans une pièce : surface, périmètre, murs à peindre, plinthes, menuiseries, portes et appareillage de la pièce, avec envoi au métré', -> { A2M::FichePiece.lancer }, false],
     ['variantes',   'Variantes client A / B / C',          'Trois versions du même projet dans un seul fichier : choisissez où chaque élément apparaît, puis un clic sur A, B ou C change tout ; une scène par variante pour présenter', -> { A2M::Variantes.ouvrir }, false],
@@ -120,6 +121,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'fiche_piece.rb'), 'a2m_metre/fiche_piece.rb')
     z.write(os.path.join(ici, 'variantes.rb'), 'a2m_metre/variantes.rb')
     z.write(os.path.join(ici, 'releve.rb'), 'a2m_metre/releve.rb')
+    z.write(os.path.join(ici, 'plan2d.rb'), 'a2m_metre/plan2d.rb')
     z.write(os.path.join(ici, 'cartouches.rb'), 'a2m_metre/cartouches.rb')
     z.write(os.path.join(ici, 'feuille.rb'), 'a2m_metre/feuille.rb')
     z.write(os.path.join(ici, 'dossier_client.rb'), 'a2m_metre/dossier_client.rb')

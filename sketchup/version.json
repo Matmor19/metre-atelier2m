@@ -1,6 +1,7 @@
 {
- "version": "2.42.0",
+ "version": "2.43.0",
  "notes": [
+  "Nouveau : « Plan 2D automatique » — dessinez en 3D, le plan se déduit tout seul : coupe horizontale à la hauteur choisie, murs en poché noir, arc et battant des portes, nom et surface de chaque pièce, une scène par niveau prête pour LayOut",
   "Ludique : le tableau de bord a une jauge « Prêt à envoyer » (la chasse aux points à vérifier, avec des confettis quand tout est vert), et la fenêtre Phases un curseur Avant / Pendant / Après pour présenter les travaux au client",
   "Nouveau : « Relevé de côtes » — tapez les mesures prises sur place (pièce rectangulaire, ou côté par côté avec les angles) : la pièce se dessine, nommée, balisée A2M_PIECE, avec sa surface et un aperçu qui dit si elle se ferme",
   "Nouveau : « Variantes client A / B / C » — trois versions du même projet dans un seul fichier : cochez où chaque élément apparaît, un clic sur A, B ou C change tout, une scène par variante",
