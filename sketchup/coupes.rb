@@ -251,6 +251,20 @@ module A2M
       model.pages.selected_page = page rescue nil
     end
 
+    # Mise à jour silencieuse des cotes et repères de toutes les coupes
+    def self.rafraichir
+      model = Sketchup.active_model
+      model.entities.grep(Sketchup::SectionPlane).each do |sp|
+        next unless sp.name.start_with?(PREFIXE)
+        d = lire(sp) or next
+        nom = sp.name.sub(PREFIXE, '')
+        dir = Geom::Vector3d.new(*d['dir'])
+        a = Geom::Point3d.new(*d['a']); b = Geom::Point3d.new(*d['b'])
+        u = b - a; u.z = 0; u.normalize!
+        habiller(model, nom, a, b, dir, u, {})
+      end
+    end
+
     def self.lire(sp) JSON.parse(sp.get_attribute('a2m', 'coupe').to_s) rescue nil end
 
     # Coupe automatique au milieu du bâtiment

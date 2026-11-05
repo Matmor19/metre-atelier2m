@@ -20,6 +20,9 @@ module A2M
       <div class="puces" id="opts"></div>
       <h2>Échelle de présentation</h2>
       <div class="puces" id="ech"></div>
+      <h2>Mise à jour</h2>
+      <div class="puces" id="auto"></div>
+      <div class="petit">Activée : dès que vous arrêtez de modifier le 3D, les arcs de portes, noms et surfaces se remettent à jour tout seuls (les scènes ne bougent pas).</div>
       <div class="petit" id="info"></div>
       <div id="bas"><div id="msg"></div><button type="button" id="go">Créer le plan 2D</button></div>
     HTML
@@ -27,11 +30,11 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var o = { poche: true, arcs: true, noms: true, surfaces: true, ech: 100 };
+      var o = { poche: true, arcs: true, noms: true, surfaces: true, cotes: true, ech: 100 };
       el('sol').value = D.sol; el('niv').value = D.niveau;
       function rendre() {
         var p = el('opts'); p.innerHTML = '';
-        [['poche', 'Murs en poché noir'], ['arcs', 'Portes : arc et battant'], ['noms', 'Noms des pièces'], ['surfaces', 'Surfaces des pièces']].forEach(function (x) {
+        [['poche', 'Murs en poché noir'], ['arcs', 'Portes : arc et battant'], ['noms', 'Noms des pièces'], ['surfaces', 'Surfaces des pièces'], ['cotes', 'Cotes des pièces']].forEach(function (x) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (o[x[0]] ? ' rempli' : ''); b.textContent = x[1];
           b.addEventListener('click', function () { o[x[0]] = !o[x[0]]; rendre(); }); p.appendChild(b);
         });
@@ -41,10 +44,14 @@ module A2M
           b.addEventListener('click', function () { o.ech = v; rendre(); }); e.appendChild(b);
         });
         el('info').textContent = D.info;
+        var a = el('auto'); a.innerHTML = '';
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (D.auto ? ' rempli' : ''); b.textContent = 'Mise à jour automatique';
+        b.addEventListener('click', function () { sketchup.auto(''); }); a.appendChild(b);
       }
       el('go').addEventListener('click', function () {
         sketchup.creer(JSON.stringify({ niveau: el('niv').value, sol: el('sol').value, cut: el('cut').value, o: o }));
       });
+      function auto(v) { D.auto = v; rendre(); }
       rendre();
     JS
 
@@ -143,6 +150,99 @@ module A2M
       n
     end
 
+    # Reconstruit le groupe de symboles d'un niveau (arcs de portes, noms et surfaces)
+    def self.symboles(model, nom, sol, zcut, o, tag)
+      sans_ancien(model, nom)
+      g = model.entities.add_group
+      g.name = nom
+      g.layer = tag
+      zs = zcut - 1.cm
+      np = o['arcs'] ? symboles_portes(g.entities, zs, sol, zcut) : 0
+      nt = (o['noms'] || o['surfaces']) ? textes_pieces(g.entities, zs, sol, zcut, o['noms'], o['surfaces']) : 0
+      cotes_pieces(g.entities, zs, sol, zcut) if o['cotes']
+      g.entities.grep(Sketchup::Text).each { |t| t.layer = tag }
+      [np, nt]
+    end
+
+    # Mise à jour silencieuse de tous les niveaux déjà créés (sans toucher à la vue ni aux scènes)
+    def self.rafraichir
+      model = Sketchup.active_model
+      return unless model
+      (model.attribute_dictionary('a2m') || {}).each_pair do |k, v|
+        next unless k.to_s.start_with?('plan2d_')
+        r = (JSON.parse(v.to_s) rescue nil) or next
+        sol = nombre(r['sol'], 0).cm; cut = nombre(r['cut'], 120).cm
+        tag = model.layers[TAG] || model.layers.add(TAG)
+        symboles(model, "Symboles 2D – #{r['niveau'].to_s.strip}", sol, sol + cut, r['o'] || {}, tag)
+      end
+      A2M::Coupes.rafraichir rescue nil
+    end
+
+    # Observateur : après une pause de 2 s sans modification, les plans et coupes se remettent à jour
+    class ObsAuto < Sketchup::EntitiesObserver
+      def declencher
+        return if A2M::Plan2D.occupe?
+        UI.stop_timer(@t) if @t
+        @t = UI.start_timer(2.0, false) do
+          A2M::Plan2D.occupe!(true)
+          begin
+            m = Sketchup.active_model
+            m.start_operation('Mise à jour plan 2D', true, false, true)
+            A2M::Plan2D.rafraichir
+            m.commit_operation
+          rescue StandardError
+            m.abort_operation rescue nil
+          ensure
+            A2M::Plan2D.occupe!(false)
+          end
+        end
+      end
+      def onElementAdded(_e, _x) declencher end
+      def onElementModified(_e, _x) declencher end
+      def onElementRemoved(_e, _x) declencher end
+    end
+
+    def self.occupe?() @occupe end
+    def self.occupe!(v) @occupe = v end
+
+    def self.auto?() Sketchup.read_default('A2M_Metre', 'plan_auto', true) ? true : false end
+
+    def self.auto_basculer
+      v = !auto?
+      Sketchup.write_default('A2M_Metre', 'plan_auto', v)
+      brancher
+      Sketchup.status_text = v ? 'Plans 2D et coupes : mise à jour automatique activée.' : 'Plans 2D et coupes : mise à jour automatique coupée.'
+      v
+    end
+
+    def self.brancher
+      model = Sketchup.active_model
+      return unless model
+      (@obs_model.entities.remove_observer(@obs) rescue nil) if @obs && @obs_model
+      @obs = nil
+      return unless auto?
+      @obs = ObsAuto.new
+      @obs_model = model
+      model.entities.add_observer(@obs)
+    end
+
+    # Cotes automatiques : longueur et largeur de chaque pièce, tracées à l'intérieur le long de deux côtés
+    def self.cotes_pieces(ents, zs, zmin, zmax)
+      n = 0
+      parcourir(Sketchup.active_model.entities, Geom::Transformation.new) do |e, t|
+        next unless e.layer.name == 'A2M_PIECE'
+        cs = coins(e, t)
+        next if cs.map(&:z).max < zmin - 5 || cs.map(&:z).min > zmax
+        x0 = cs.map(&:x).min; x1 = cs.map(&:x).max; y0 = cs.map(&:y).min; y1 = cs.map(&:y).max
+        next if x1 - x0 < 30.cm || y1 - y0 < 30.cm
+        d = 25.cm
+        ents.add_dimension_linear(Geom::Point3d.new(x0, y0, zs), Geom::Point3d.new(x1, y0, zs), Geom::Vector3d.new(0, d, 0))
+        ents.add_dimension_linear(Geom::Point3d.new(x0, y0, zs), Geom::Point3d.new(x0, y1, zs), Geom::Vector3d.new(d, 0, 0))
+        n += 2
+      end
+      n
+    end
+
     def self.creer(r)
       model = Sketchup.active_model
       return UI.messagebox('Le modèle est vide.') if model.bounds.empty?
@@ -155,14 +255,8 @@ module A2M
       model.start_operation('Plan 2D Atelier 2M', true)
       begin
         tag = model.layers[TAG] || model.layers.add(TAG)
-        sans_ancien(model, nom)
-        g = model.entities.add_group
-        g.name = nom
-        g.layer = tag
-        zs = zcut - 1.cm
-        np = o['arcs'] ? symboles_portes(g.entities, zs, sol, zcut) : 0
-        nt = (o['noms'] || o['surfaces']) ? textes_pieces(g.entities, zs, sol, zcut, o['noms'], o['surfaces']) : 0
-        g.entities.grep(Sketchup::Text).each { |t| t.layer = tag }
+        np, nt = symboles(model, nom, sol, zcut, o, tag)
+        model.set_attribute('a2m', "plan2d_#{niveau}", JSON.generate(r))
         # plan de coupe horizontal : la partie au-dessus est masquée
         model.entities.grep(Sketchup::SectionPlane).each { |s| s.erase! if s.name == "A2M #{niveau}" }
         bb = model.bounds
@@ -205,9 +299,10 @@ module A2M
       model = Sketchup.active_model
       info = 'Le plan se déduit du 3D : rien à redessiner. Les murs coupés sont en poché, les portes ont leur arc de battant (sens choisi à la pose), chaque pièce son nom et sa surface.'
       html = A2M::Panneau.page('Plan 2D automatique', 'Le plan se tient à jour à partir du modèle 3D', CORPS, SCRIPT,
-                               'sol' => sol_auto(model), 'niveau' => 'RDC', 'info' => info)
+                               'sol' => sol_auto(model), 'niveau' => 'RDC', 'info' => info, 'auto' => auto?)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : plan 2D', 'A2M_Panneau_Plan2D', html, 440, 600)
       @fen = dlg
+      dlg.add_action_callback('auto') { |_c, _j| auto_basculer; dlg.execute_script("auto(#{auto?})") }
       dlg.add_action_callback('creer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
         UI.start_timer(0, false) { creer(r) } if r

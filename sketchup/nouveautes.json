@@ -1,4 +1,5 @@
 [
+  "Plan 2D et coupes : mise à jour automatique (dès que vous arrêtez de modifier le 3D, arcs de portes, noms, surfaces, cotes de pièces et cotes de coupes se remettent à jour) ; nouvelle option « Cotes des pièces »",
   "Tracé : les axes rouge et vert sont verrouillés par défaut pour les murs et les sols ; touche X ou clic droit pour tracer librement, et nouvelle commande « Axes verrouillés / tracé libre » dans la palette",
   "Nouveau : « Couverture » (ardoise, tuile mécanique, tuile plate, zinc à joints debout, bac acier posés sur les pans, rangs, joints décalés, teintes variées) et « Zinguerie » (gouttières demi-rondes ou nantaises sur tous les égouts, descentes jusqu'au sol, linéaires prêts pour le métré)",
   "Nouveau : « Coupes automatiques » — une coupe longitudinale ou transversale en un clic (ou tracée en 2 clics, avec le sens de vue au 3e), une scène par coupe, murs en poché, niveaux et cotes de hauteur automatiques, repère de coupe sur le plan 2D ; Actualiser, Inverser, Supprimer",

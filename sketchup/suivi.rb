@@ -73,6 +73,7 @@ module A2M
       @cache = {}; @registre = {}
       model.entities.add_observer(OBS_AJOUT)
       model.add_observer(OBS_MODELE)
+      (A2M::Plan2D.brancher rescue nil)
       fouiller = lambda do |ents, prof|
         ents.each do |e|
           next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
