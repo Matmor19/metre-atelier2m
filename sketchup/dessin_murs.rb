@@ -223,7 +223,7 @@ module A2M
       def maj_statut
         lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
         Sketchup.status_text = "#{lib}, #{A2M::DessinMurs.lib_cote(@p).downcase} (Tab pour changer). Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
-                               'X = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
+                               'Ctrl ou clic droit = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
 

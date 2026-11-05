@@ -13,7 +13,7 @@ module A2M
 
     attr_reader :pos, :ip
 
-    TOUCHE_AXES = 88    # X : verrouille ou libère les axes
+    TOUCHE_AXES = 0     # touche Ctrl (COPY_MODIFIER_KEY) : verrouille ou libère les axes ; X et N sont déjà pris par les raccourcis de l'utilisateur
 
     # Axes verrouillés par défaut : le tracé suit l'axe rouge ou l'axe vert (le plus proche de la direction visée) ;
     # X, ou la commande « Axes verrouillés », passe en tracé libre
@@ -25,7 +25,7 @@ module A2M
     def self.basculer
       @axes = !axes?
       Sketchup.write_default('A2M_Metre', 'axes_auto', @axes)
-      Sketchup.status_text = @axes ? 'Axes verrouillés : le tracé suit l\'axe rouge ou vert (X pour tracer librement).' : 'Tracé libre : plus d\'axes imposés (X pour reverrouiller).'
+      Sketchup.status_text = @axes ? 'Axes verrouillés : le tracé suit l\'axe rouge ou vert (Ctrl pour tracer librement).' : 'Tracé libre : plus d\'axes imposés (Ctrl pour reverrouiller).'
       @axes
     end
 
@@ -101,7 +101,7 @@ module A2M
               pts.each { |p| sp = view.screen_coords(Geom::Point3d.new(p.x, p0.y, z)); vx = p.x if Math.hypot(sp.x - x, sp.y - y) < ALIGNE }
             end
             q = Geom::Point3d.new(vx, p0.y, z)
-            @info = 'Axe rouge verrouillé (X pour tracer librement)'
+            @info = 'Axe rouge verrouillé (Ctrl pour tracer librement)'
           else
             vy = q.y
             if cible then vy = cible.y
@@ -109,7 +109,7 @@ module A2M
               pts.each { |p| sp = view.screen_coords(Geom::Point3d.new(p0.x, p.y, z)); vy = p.y if Math.hypot(sp.x - x, sp.y - y) < ALIGNE }
             end
             q = Geom::Point3d.new(p0.x, vy, z)
-            @info = 'Axe vert verrouillé (X pour tracer librement)'
+            @info = 'Axe vert verrouillé (Ctrl pour tracer librement)'
           end
           @axe_auto = horiz ? 'rouge' : 'vert'
         elsif @ip.degrees_of_freedom > 0
@@ -148,7 +148,7 @@ module A2M
         end
         return true
       end
-      if (key == TOUCHE_AXES || key == 120) && (@t_axes.nil? || Time.now - @t_axes > 0.3)
+      if (key == TOUCHE_AXES || key == COPY_MODIFIER_KEY) && (@t_axes.nil? || Time.now - @t_axes > 0.3)
         @t_axes = Time.now
         Pointeur.basculer
         view.invalidate
@@ -186,7 +186,7 @@ module A2M
       view.line_stipple = ''
       # Pastille de mode près du curseur
       sp = view.screen_coords(@pos)
-      view.draw_text(Geom::Point3d.new(sp.x + 18, sp.y - 8, 0), Pointeur.axes? ? "Axes verrouillés (X : libre)" : 'Tracé libre (X : axes)',
+      view.draw_text(Geom::Point3d.new(sp.x + 18, sp.y - 8, 0), Pointeur.axes? ? "Axes verrouillés (Ctrl : libre)" : 'Tracé libre (Ctrl : axes)',
                      color: Pointeur.axes? ? 'DarkOrange' : 'DimGray', size: 9) rescue nil
       view.draw_points([pts[0]], 12, 2, @ferme ? 'lime' : 'darkgreen') if pts.size >= 3
       view.draw_points([@pos], 8, 1, 'black') unless @guides.empty? && !@axe
