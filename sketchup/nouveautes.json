@@ -1,4 +1,5 @@
 [
-  "Nouveau : « Importer un objet (3D Warehouse) » — recherche sur la 3D Warehouse, récupération du dernier .skp téléchargé ou d'un fichier au choix, nettoyage automatique (balises, éléments masqués, cotes/guides, arêtes isolées, matières inutiles), puis axe, type et rangement dans la bibliothèque avec vignette aux couleurs d'origine",
-  "Bibliothèque d'objets : fenêtre à vignettes (recherche, types, taille avant pose, retrait)"
+  "Importer un objet : l'axe se place maintenant en 2 clics sur le bord bas de la face avant (coin gauche puis coin droit, vu de l'extérieur) ; Échap = détection automatique",
+  "Bibliothèque : les objets se rangent aussi par pièce (Entrée, Séjour, Cuisine, Chambre…) — choix dans la fiche de paramétrage, filtre en pastilles dans la fenêtre",
+  "Importer un objet (3D Warehouse / .skp) avec nettoyage automatique ; fenêtre bibliothèque à vignettes"
 ]

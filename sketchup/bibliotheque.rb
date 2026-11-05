@@ -286,12 +286,24 @@ module A2M
       cam = view.camera.direction
       y.reverse! if y.dot(Geom::Vector3d.new(cam.x, cam.y, 0)) < 0   # Y s'éloigne de celui qui regarde
       y.reverse! unless ext_vers_moi
-      x = y * Z_AXIS
+      repere_selon(inst, y * Z_AXIS)
+    end
+
+    # Axe imposé par l'utilisateur : X = direction (horizontale) du bord bas de la face avant, de gauche à droite vue de l'extérieur
+    # (Y s'éloigne alors de celui qui regarde, comme dans repere)
+    def self.repere_selon(inst, x)
+      x = Geom::Vector3d.new(x.x, x.y, 0)
+      return nil if x.length < 1e-6
+      x.normalize!
+      y = Z_AXIS * x
       t0 = Geom::Transformation.axes(ORIGIN, x, y, Z_AXIS)
       pts = points(inst.definition.entities, inst.transformation, []).map { |q| t0.inverse * q }
       o = Geom::Point3d.new(pts.map(&:x).min, pts.map(&:y).min, pts.map(&:z).min)
       Geom::Transformation.axes(o.transform(t0), x, y, Z_AXIS)
     end
+
+    # Direction X imposée pour le prochain paramétrage (posée par l'outil « Axe »), consommée une seule fois
+    def self.axe_impose=(v) @axe_impose = v end
 
     def self.cm(x) (x.to_f * 2.54).round(1) end
     def self.pouces(cm) cm.to_f / 2.54 end
@@ -365,17 +377,20 @@ module A2M
       nil
     end
 
+    PAS_DE_PIECE = '(toutes pièces)'
+    PIECES = ['Entrée', 'Séjour', 'Cuisine', 'Chambre', 'Salle de bain', 'WC', 'Cellier / buanderie', 'Garage', 'Extérieur'].freeze
+
     def self.fiche(defaut_nom)
       me = A2M::Ouvertures::CHOIX_ME
       ac = A2M::Ouvertures::A_CHOISIR
       prec = @fiche || {}
       libs = ['Nom de l\'objet', 'Type', 'Face extérieure (vue de la rue, côté pose)', 'Nombre de vantaux (menuiseries)',
-              'Matériau', 'Type d\'ouvrant', 'Vitrage', 'Fermeture (volet, store…)']
-      defs = [defaut_nom, type_d_apres(defaut_nom) || prec[1] || TYPES[0][0], prec[2] || EXT_VERS_MOI, prec[3] || ac, prec[4] || ac, prec[5] || ac, prec[6] || ac, prec[7] || ac]
+              'Matériau', 'Type d\'ouvrant', 'Vitrage', 'Fermeture (volet, store…)', 'Pièce (pour retrouver l\'objet)']
+      defs = [defaut_nom, type_d_apres(defaut_nom) || prec[1] || TYPES[0][0], prec[2] || EXT_VERS_MOI, prec[3] || ac, prec[4] || ac, prec[5] || ac, prec[6] || ac, prec[7] || ac, prec[8] || PAS_DE_PIECE]
       listes = ['', (types.map(&:first) + [NOUVEAU_TYPE]).join('|'), [EXT_VERS_MOI, EXT_OPPOSE].join('|'),
                 ([ac] + me['vantaux'].map(&:last)).join('|'), ([ac] + me['mat'].map(&:last)).join('|'),
                 ([ac] + me['ouvrant'].map(&:last)).join('|'), ([ac] + me['vitrage'].map(&:last)).join('|'),
-                ([ac, 'Aucune'] + me['ferm'].map(&:last)).join('|')]
+                ([ac, 'Aucune'] + me['ferm'].map(&:last)).join('|'), ([PAS_DE_PIECE] + PIECES).join('|')]
       rep = UI.inputbox(libs, defs, listes, 'Paramétrer l\'objet sélectionné (bibliothèque Atelier 2M)')
       return nil unless rep
       if rep[1] == NOUVEAU_TYPE
@@ -426,7 +441,8 @@ module A2M
         d = inst.definition
         d.attribute_dictionaries.delete('dynamic_attributes') if d.attribute_dictionaries
         inst.attribute_dictionaries.delete('dynamic_attributes') if inst.attribute_dictionaries
-        t = repere(inst, f[:ext], view)
+        imp, @axe_impose = @axe_impose, nil
+        t = (imp && repere_selon(inst, imp)) || repere(inst, f[:ext], view)
         raise 'objet sans face verticale (vitrage, panneau) : impossible de trouver sa face avant' unless t
         # Géométrie remise dans le repère de l'objet : origine en bas, à gauche, devant
         d.entities.transform_entities(t.inverse * inst.transformation, d.entities.to_a)
@@ -506,7 +522,8 @@ module A2M
       FileUtils.mkdir_p(File.dirname(chemin))
       d.save_as(chemin)
       d.save_thumbnail(chemin.sub(/\.skp\z/, '.png')) rescue nil
-      liste << info.merge('fichier' => rel)
+      pc = (@fiche || [])[8].to_s
+      liste << info.merge('fichier' => rel, 'piece' => (pc.empty? || pc == PAS_DE_PIECE ? nil : pc)).compact
       sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
       return "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, composant dynamique : #{info['attr_l'] ? 'largeur réglable' : 'largeur fixe'}, #{info['attr_h'] ? 'hauteur réglable' : 'hauteur fixe'})" if info['mode'] == 'dynamique'
       "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, #{info['lx'].size} ligne(s) en largeur, #{info['lz'].size} en hauteur)"
@@ -846,6 +863,7 @@ module A2M
         <input type="text" id="q" placeholder="Rechercher un objet…" autocomplete="off" style="flex:1;font:13px 'Segoe UI',Arial,sans-serif;text-align:left;padding:8px 12px">
       </div>
       <div class="puces" id="types"></div>
+      <div class="puces" id="pieces" style="margin-top:6px"></div>
       <div id="liste" style="margin-top:6px"></div>
       <details><summary>Gérer la bibliothèque</summary>
         <div class="puces" style="margin-top:8px">
@@ -871,11 +889,11 @@ module A2M
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
       function nombre(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : 0; }
-      var etat = { type: null, q: '', sel: null };
+      var etat = { type: null, piece: null, q: '', sel: null };
       function trouver(nom) { for (var i = 0; i < D.objets.length; i++) if (D.objets[i].nom === nom) return D.objets[i]; return null; }
       function visibles() {
         var q = etat.q.trim().toLowerCase();
-        return D.objets.filter(function (o) { return (!etat.type || o.type === etat.type) && (!q || (o.nom + ' ' + o.type).toLowerCase().indexOf(q) >= 0); });
+        return D.objets.filter(function (o) { return (!etat.type || o.type === etat.type) && (!etat.piece || o.piece === etat.piece) && (!q || (o.nom + ' ' + o.type + ' ' + o.piece).toLowerCase().indexOf(q) >= 0); });
       }
       function rendre() {
         var t = el('types'); t.innerHTML = '';
@@ -886,6 +904,15 @@ module A2M
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.type === ty ? ' rempli' : ''); b.textContent = (ty || 'Tous') + ' (' + n + ')';
           b.addEventListener('click', function () { etat.type = ty; rendre(); }); t.appendChild(b);
         });
+        var pc = el('pieces'); pc.innerHTML = '';
+        var util = D.pieces.filter(function (p) { return D.objets.some(function (o) { return o.piece === p; }); });
+        if (util.length) {
+          var tb = document.createElement('span'); tb.className = 'petit'; tb.style.alignSelf = 'center'; tb.textContent = 'Pièce :'; pc.appendChild(tb);
+          util.forEach(function (p) {
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.piece === p ? ' rempli' : ''); b.textContent = p;
+            b.addEventListener('click', function () { etat.piece = (etat.piece === p ? null : p); rendre(); }); pc.appendChild(b);
+          });
+        }
         var l = el('liste'); l.innerHTML = '';
         var vis = visibles();
         if (!vis.length) { l.innerHTML = '<div class="petit" style="padding:30px 0;text-align:center">' + (D.objets.length ? 'Aucun objet ne correspond.' : 'La bibliothèque est vide. Sélectionnez un objet, puis « Paramétrer un objet pour la bibliothèque ».') + '</div>'; }
@@ -920,8 +947,8 @@ module A2M
 
     def self.donnees_gerer
       liste = objets.select { |o| o['fichier'] }
-      { 'objets' => liste.map { |o| { 'nom' => o['nom'].to_s, 'type' => o['type'].to_s, 'img' => A2M::Panneau.vignette(o), 'l' => cm(o['l0']), 'h' => cm(o['h0']) } },
-        'types' => types.map(&:first), 'dossier' => dossier }
+      { 'objets' => liste.map { |o| { 'nom' => o['nom'].to_s, 'type' => o['type'].to_s, 'img' => A2M::Panneau.vignette(o), 'piece' => o['piece'].to_s, 'l' => cm(o['l0']), 'h' => cm(o['h0']) } },
+        'types' => types.map(&:first), 'pieces' => PIECES, 'dossier' => dossier }
     end
 
     def self.gerer

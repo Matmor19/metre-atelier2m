@@ -112,11 +112,72 @@ module A2M
         model.selection.clear
         model.selection.add(inst)
         Sketchup.active_model.active_view.zoom(inst)
-        UI.messagebox("« #{File.basename(chemin, '.skp')} » importé et nettoyé (#{n} élément(s) retiré(s)).\nPlacez maintenant l'axe et rangez-le dans la bibliothèque.")
-        A2M::Bibliotheque.parametrer
+        UI.messagebox("« #{File.basename(chemin, '.skp')} » importé et nettoyé (#{n} élément(s) retiré(s)).\nPlacez maintenant l'axe : deux clics sur le bord bas de la face avant, vue de l'extérieur (coin gauche, puis coin droit). Échap : détection automatique.")
+        model.select_tool(OutilAxe.new do |dir|
+          A2M::Bibliotheque.axe_impose = dir
+          A2M::Bibliotheque.parametrer
+        end)
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Import impossible : #{ex.message}")
+      end
+    end
+
+
+    # Outil « Axe » : deux clics sur le bord bas de la face avant (coin gauche, puis coin droit, vu de l'extérieur)
+    class OutilAxe
+      def initialize(&suite)
+        @suite = suite; @p1 = nil; @ip = Sketchup::InputPoint.new
+      end
+
+      def activate
+        message
+      end
+
+      def message
+        Sketchup.status_text = @p1 ? 'Axe : cliquez le coin BAS DROIT de la face avant (Échap : détection automatique)' :
+                                     'Axe : cliquez le coin BAS GAUCHE de la face avant, vue de l\'extérieur (Échap : détection automatique)'
+      end
+
+      def onMouseMove(_f, x, y, view)
+        @ip.pick(view, x, y)
+        view.tooltip = @ip.tooltip
+        view.invalidate
+      end
+
+      def onLButtonDown(_f, x, y, view)
+        @ip.pick(view, x, y)
+        return unless @ip.valid?
+        if @p1.nil?
+          @p1 = @ip.position
+          message
+        else
+          v = @ip.position - @p1
+          dir = Geom::Vector3d.new(v.x, v.y, 0)
+          return Sketchup.status_text = 'Choisissez un point plus à droite, au même niveau.' if dir.length < 0.4
+          terminer(dir)
+        end
+      end
+
+      def onCancel(_r, _v)
+        terminer(nil)
+      end
+
+      def draw(view)
+        pt = @ip.valid? ? @ip.position : nil
+        @ip.draw(view) if pt
+        return unless @p1 && pt
+        view.line_stipple = ''
+        view.line_width = 3
+        view.drawing_color = Sketchup::Color.new(224, 120, 56)
+        view.draw_lines(@p1, pt)
+      end
+
+      def terminer(dir)
+        return if @fini
+        @fini = true
+        Sketchup.active_model.select_tool(nil)
+        UI.start_timer(0, false) { @suite.call(dir) }
       end
     end
 
