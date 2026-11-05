@@ -817,7 +817,7 @@ module A2M
       def deactivate(view) view.invalidate end
       def statut
         Sketchup.status_text = @ref ? "Déplacez la souris dans le sens voulu le long du mur, tapez la distance depuis le point de référence jusqu'au bord de l'ouverture puis Entrée (ou cliquez). Échap pour recommencer." :
-                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm (linteau à #{@p[:lin].round} cm) : cliquez un point de référence sur la face extérieure du mur (un angle, un bord de baie…). Réglages : Extensions › Métré Atelier 2M › Réglages de l'outil Ouverture."
+                                      "#{@p[:type][0]} #{@p[:l].round} × #{@p[:h].round} cm (linteau à #{@p[:lin].round} cm) : cliquez un point de référence sur la face extérieure du mur (un angle, un bord de baie…). Réglages : Extensions › Métré Atelier 2M › Réglages de l'outil Ouverture. Tab : changer de modèle ou de taille."
         Sketchup.vcb_label = 'Distance'
       end
 
@@ -875,6 +875,13 @@ module A2M
         A2M::Ouvertures.percer(ouverture(d), @p)
         @ref = nil; @dist = nil
         statut
+      end
+
+      # Tab (sans point de référence en cours) : on rouvre la fenêtre pour changer de modèle ou de taille, sans quitter la pose
+      def onKeyDown(key, _rpt, _f, view)
+        return false unless key == 9 && @ref.nil?
+        UI.start_timer(0, false) { A2M::Ouvertures.lancer }
+        true
       end
 
       def onCancel(_r, view) @ref ? (@ref = nil; statut) : Sketchup.active_model.select_tool(nil); view.invalidate end

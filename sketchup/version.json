@@ -1,9 +1,8 @@
 {
- "version": "2.34.0",
+ "version": "2.35.0",
  "notes": [
+  "Créer une ouverture : la pose s'enchaîne déjà (une ouverture après l'autre) ; nouveau, la touche Tab rouvre la fenêtre pour changer de modèle ou de taille sans quitter la pose (rappel dans la barre d'état)",
   "Nouveau : « Dossier de présentation client » — couverture aux couleurs d'Atelier 2M (nom du projet, client, coordonnées), vues du modèle à 2 par page, surfaces par pièce, menuiseries et synthèse ; un seul fichier à imprimer ou à enregistrer en PDF depuis le navigateur",
-  "Phases : à démolir en ROUGE, à construire en BLEU (existant conservé en gris)",
-  "Nouveau : « Phases : existant, démolition, construction » — marquez les éléments sélectionnés à conserver (gris), à démolir (jaune) ou à construire (rouge), colorés ou non, puis affichez l'état existant, la démolition ou le projet fini ; la couleur est réversible et le métré n'est pas touché",
-  "Vues : trois styles prêts à l'emploi — Réaliste (couleurs, client), Plan technique (lignes cachées, contours francs : dossier, permis), Maquette blanche (volumes, esquisse) ; le style est enregistré dans chaque scène, qui porte son nom « A2M – Façade Sud (plan technique) »"
+  "Phases : à démolir en ROUGE, à construire en BLEU (existant conservé en gris)"
  ]
 }
