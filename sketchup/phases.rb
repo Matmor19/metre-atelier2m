@@ -10,8 +10,8 @@ module A2M
     # [clé, libellé, aide, couleur RVB, nom de la matière]
     LISTE = [
       ['existant',  'Existant conservé', 'Gris : ce qui reste tel quel',            [190, 190, 190], 'A2M phase existant'],
-      ['demolition', 'À démolir',        'Jaune : ce qui disparaît',                [255, 214, 0],   'A2M phase démolition'],
-      ['neuf',      'À construire',      'Rouge : ce qui est créé',                 [214, 40, 40],   'A2M phase construction']
+      ['demolition', 'À démolir',        'Rouge : ce qui disparaît',                [214, 40, 40],   'A2M phase démolition'],
+      ['neuf',      'À construire',      'Bleu : ce qui est créé',                  [40, 110, 210],  'A2M phase construction']
     ].freeze
     VUES = [
       ['tout',    'Tout afficher',      'Les trois phases ensemble'],
