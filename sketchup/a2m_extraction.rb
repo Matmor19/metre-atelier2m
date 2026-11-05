@@ -245,6 +245,9 @@ module A2M
       res
     end
 
+    # Contours des pièces de la dernière extraction (pour la fiche pièce)
+    def self.polys() @polys || [] end
+
     def self.extraire
       m = Sketchup.active_model
       res = { 'format' => 'metre2m-sketchup', 'version' => VERSION, 'modele' => (m.title.to_s.empty? ? 'Sans nom' : m.title),
@@ -436,6 +439,7 @@ module A2M
           res['alertes'] << "Appareillage (#{el['app']}) : aucune pièce à moins de #{DISTANCE_PIECE_MAX} m"
         end
       end
+      @polys = liste.map { |pc| [pc['nom'], pc[:poly]] }
       res['pieces'] = liste.map { |pc| pc.reject { |k, _| k == :poly } }
       res['alertes'] << 'Aucune balise A2M_ trouvée dans le modèle.' if res['murs'].empty? && liste.empty? && res['toiture'].empty?
       res

@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases fiche_piece dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -33,7 +33,8 @@ unless file_loaded?(__FILE__)
     ['importer',    'Importer un objet (3D Warehouse)',    'Cherche un objet sur la 3D Warehouse ou prend un fichier .skp, le nettoie puis le range dans la bibliothèque avec sa vignette', -> { A2M::ImportObjet.ouvrir }, false],
     ['vues',        'Vues prêtes à l\'emploi',             'Plan, façades Nord/Sud/Est/Ouest et perspective créés en scènes en un clic', -> { A2M::Vues.ouvrir }, false],
     ['nomenclature','Nomenclature des menuiseries',       'Tableau des fenêtres et portes (repères, dimensions, caractéristiques, pièces, quantités) : Excel ou page imprimable pour devis, DCE et commande', -> { A2M::Nomenclature.ouvrir }, false],
-    ['phases',      'Phases : existant, démolition, construction', 'Marque les éléments à conserver (gris), à démolir (jaune) ou à construire (rouge), et affiche l\'état existant, la démolition ou le projet fini', -> { A2M::Phases.ouvrir }, false],
+    ['phases',      'Phases : existant, démolition, construction', 'Marque les éléments à conserver (gris), à démolir (rouge) ou à construire (bleu), et affiche l\'état existant, la démolition ou le projet fini', -> { A2M::Phases.ouvrir }, false],
+    ['fiche',       'Fiche pièce',                         'Cliquez dans une pièce : surface, périmètre, murs à peindre, plinthes, menuiseries, portes et appareillage de la pièce, avec envoi au métré', -> { A2M::FichePiece.lancer }, false],
     ['dossier',     'Dossier de présentation client',      'Vues du modèle, surfaces par pièce, menuiseries et synthèse en un document aux couleurs d\'Atelier 2M, prêt à imprimer ou à enregistrer en PDF', -> { A2M::DossierClient.ouvrir }, false],
     ['biblio',      'Bibliothèque d\'objets',              'Poser un objet de la bibliothèque à la taille voulue (profils inchangés), ouvrir ou changer le dossier', -> { A2M::Bibliotheque.gerer }, false],
     ['elec',        'Poser l\'appareillage électrique',    'Prises, points lumineux, interrupteurs… posés au clic et comptés pièce par pièce', -> { A2M::Electricite.lancer }, true],
@@ -112,6 +113,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'vues.rb'), 'a2m_metre/vues.rb')
     z.write(os.path.join(ici, 'tableau.rb'), 'a2m_metre/tableau.rb')
     z.write(os.path.join(ici, 'phases.rb'), 'a2m_metre/phases.rb')
+    z.write(os.path.join(ici, 'fiche_piece.rb'), 'a2m_metre/fiche_piece.rb')
     z.write(os.path.join(ici, 'dossier_client.rb'), 'a2m_metre/dossier_client.rb')
     z.write(os.path.join(ici, 'nomenclature.rb'), 'a2m_metre/nomenclature.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
