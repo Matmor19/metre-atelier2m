@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d coupes fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d coupes couverture zinguerie fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -25,6 +25,7 @@ unless file_loaded?(__FILE__)
     ['hachures',    'Hachures de coupe par couche',        'Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l\'appliquer au modèle déjà dessiné', -> { A2M::Hachures.regler }, false],
     ['textures',    'Textures extérieures',                'Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d\'un élément pour la présentation client (hors métré)', -> { A2M::Textures.ouvrir }, false],
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
+    ['axes',        'Axes verrouillés / tracé libre',      'Par défaut les murs, sols et tracés suivent l\'axe rouge ou vert. Cette commande (ou la touche X pendant le tracé) passe en tracé libre et revient', -> { A2M::Pointeur.basculer }, false],
     ['ouverture',   'Créer une ouverture',                 'Largeur et hauteur suffisent : porte ou fenêtre reconnue, menuiserie et appui ou seuil proposés ; perce toutes les couches, suit la menuiserie déplacée', -> { A2M::Ouvertures.lancer }, false],
     ['porte',       'Poser une porte intérieure',          'Bloc-porte de passage (63 à 103 × 204) dans une cloison ou un refend : réservation, toute l\'épaisseur, centré, sens au Tab, choix du configurateur', -> { A2M::PortesInt.lancer }, false],
     ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
@@ -36,6 +37,8 @@ unless file_loaded?(__FILE__)
     ['phases',      'Phases : existant, démolition, construction', 'Marque les éléments à conserver (gris), à démolir (rouge) ou à construire (bleu), et affiche l\'état existant, la démolition ou le projet fini', -> { A2M::Phases.ouvrir }, false],
     ['plan2d',      'Plan 2D automatique',                 'Le plan 2D se déduit du 3D : coupe à hauteur choisie, murs en poché, arc et battant des portes, nom et surface de chaque pièce, scène prête pour LayOut', -> { A2M::Plan2D.ouvrir }, false],
     ['coupes',      'Coupes automatiques',                 'Coupe longitudinale ou transversale en un clic, ou tracée en 2 clics : scène prête, murs en poché, niveaux et cotes de hauteur automatiques, repère de coupe sur le plan 2D ; le plan de coupe se déplace ensuite avec l\'outil Déplacer', -> { A2M::Coupes.ouvrir }, false],
+    ['couverture',  'Couverture (ardoise, tuiles, zinc)', 'Pose ardoise, tuile mécanique ou plate, zinc à joints debout ou bac acier sur les pans de la toiture : rangs, joints décalés, nervures, teintes variées, surface au métré', -> { A2M::Couverture.ouvrir }, false],
+    ['zinguerie',   'Zinguerie (gouttières, descentes)',   'Gouttières demi-rondes ou nantaises sur tous les égouts de la toiture, descentes d\'eaux pluviales jusqu\'au sol, linéaires pour le métré', -> { A2M::Zinguerie.ouvrir }, false],
     ['releve',      'Relevé de côtes',                     'Tapez les mesures prises sur place (deux côtes, ou côté par côté avec les angles) : la pièce se dessine, nommée et balisée, avec sa surface', -> { A2M::Releve.ouvrir }, false],
     ['fiche',       'Fiche pièce',                         'Cliquez dans une pièce : surface, périmètre, murs à peindre, plinthes, menuiseries, portes et appareillage de la pièce, avec envoi au métré', -> { A2M::FichePiece.lancer }, false],
     ['variantes',   'Variantes client A / B / C',          'Trois versions du même projet dans un seul fichier : choisissez où chaque élément apparaît, puis un clic sur A, B ou C change tout ; une scène par variante pour présenter', -> { A2M::Variantes.ouvrir }, false],
@@ -123,6 +126,8 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'variantes.rb'), 'a2m_metre/variantes.rb')
     z.write(os.path.join(ici, 'releve.rb'), 'a2m_metre/releve.rb')
     z.write(os.path.join(ici, 'plan2d.rb'), 'a2m_metre/plan2d.rb')
+    z.write(os.path.join(ici, 'couverture.rb'), 'a2m_metre/couverture.rb')
+    z.write(os.path.join(ici, 'zinguerie.rb'), 'a2m_metre/zinguerie.rb')
     z.write(os.path.join(ici, 'coupes.rb'), 'a2m_metre/coupes.rb')
     z.write(os.path.join(ici, 'cartouches.rb'), 'a2m_metre/cartouches.rb')
     z.write(os.path.join(ici, 'feuille.rb'), 'a2m_metre/feuille.rb')

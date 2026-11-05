@@ -1,4 +1,6 @@
 [
+  "Tracé : les axes rouge et vert sont verrouillés par défaut pour les murs et les sols ; touche X ou clic droit pour tracer librement, et nouvelle commande « Axes verrouillés / tracé libre » dans la palette",
+  "Nouveau : « Couverture » (ardoise, tuile mécanique, tuile plate, zinc à joints debout, bac acier posés sur les pans, rangs, joints décalés, teintes variées) et « Zinguerie » (gouttières demi-rondes ou nantaises sur tous les égouts, descentes jusqu'au sol, linéaires prêts pour le métré)",
   "Nouveau : « Coupes automatiques » — une coupe longitudinale ou transversale en un clic (ou tracée en 2 clics, avec le sens de vue au 3e), une scène par coupe, murs en poché, niveaux et cotes de hauteur automatiques, repère de coupe sur le plan 2D ; Actualiser, Inverser, Supprimer",
   "Nouveau : « Plan 2D automatique » — dessinez en 3D, le plan se déduit tout seul : coupe horizontale à la hauteur choisie, murs en poché noir, arc et battant des portes, nom et surface de chaque pièce, une scène par niveau prête pour LayOut",
   "Ludique : le tableau de bord a une jauge « Prêt à envoyer » (la chasse aux points à vérifier, avec des confettis quand tout est vert), et la fenêtre Phases un curseur Avant / Pendant / Après pour présenter les travaux au client",

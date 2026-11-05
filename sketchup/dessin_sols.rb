@@ -89,7 +89,7 @@ module A2M
       def deactivate(view) view.invalidate end
       def statut
         Sketchup.status_text = "#{@p[:type][0]}#{@p[:nom] ? ' (' + @p[:nom] + ')' : ''} — ép. #{@p[:e]} cm#{(@p[:alt] || 0).to_f > 0 ? ", posé à #{@p[:alt]} m au-dessus du tracé" : ''}. Cliquez le contour (au sol, accrochages SketchUp) ; " \
-                               'tapez une longueur puis Entrée ; Maj = bloquer la direction, flèches droite/gauche = axes rouge/vert ; clic sur le 1er point (carré vert) ou Entrée pour fermer ; Échap pour annuler.'
+                               'tapez une longueur puis Entrée ; X = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèches droite/gauche = axes rouge/vert ; clic sur le 1er point (carré vert) ou Entrée pour fermer ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
       def sol(pt) Geom::Point3d.new(pt.x, pt.y, @pts.empty? ? pt.z : @pts[0].z) end
@@ -100,6 +100,7 @@ module A2M
       end
       def onKeyDown(key, rpt, _f, view) @pt.touche_bas(key, rpt, view, @pts) end
       def onKeyUp(key, _rpt, _f, view) @pt.touche_haut(key, view) end
+      def getMenu(menu) @pt.menu(menu) end
       def ajouter(pt, view, ferme = false)
         pt = sol(pt)
         if @pts.size >= 3 && (ferme || pt.distance(@pts[0]) < 0.4)
