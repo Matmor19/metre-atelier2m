@@ -1,7 +1,7 @@
 {
- "version": "2.23.0",
+ "version": "2.24.0",
  "notes": [
-  "Bibliothèque d'objets : nouvelle fenêtre à vignettes — objets rangés par type, recherche, taille réglée avant la pose (double-clic = taille d'origine), « Retirer » avec confirmation (le fichier est rangé dans « Retirés »)",
-  "La fenêtre reste ouverte pendant que vous dessinez ; gestion du dossier, des longueurs d'appui/seuil et du type dans un bloc repliable"
+  "Nouveau : « Importer un objet (3D Warehouse) » — recherche sur la 3D Warehouse, récupération du dernier .skp téléchargé ou d'un fichier au choix, nettoyage automatique (balises, éléments masqués, cotes/guides, arêtes isolées, matières inutiles), puis axe, type et rangement dans la bibliothèque avec vignette aux couleurs d'origine",
+  "Bibliothèque d'objets : fenêtre à vignettes (recherche, types, taille avant pose, retrait)"
  ]
 }
