@@ -1,4 +1,5 @@
 [
+  "Clic droit sur une porte : « Atelier 2M : porte » > Charnière gauche ↔ droite (la porte est retournée en miroir) ou Ouvrir de l'autre côté du mur ; l'arc d'ouverture du plan 2D se met à jour",
   "Coupes : un mini-plan fidèle dans le panneau — c'est la tranche réelle de votre modèle (murs, ouvertures, meubles tels que dessinés) ; ajoutez des coupes rouges ou vertes, glissez-les, changez le sens de vue d'une flèche, ou posez 4, 6 ou 10 coupes d'un coup",
   "Nouveau : « Charpente » (chevrons, contre-liteaux, liteaux, faîtière, sablière sous les pans, avec linéaires), « Escalier » (droit, quart tournant, demi-tournant, loi de Blondel, limons, côté mur) et « Garde-corps » (barreaux, câbles, verre, lisses, plein ; le long d'un tracé ou des escaliers)",
   "Nouveau : « Exporter pour ZWCAD » — le modèle part en DWG ou DXF (AutoCAD 2018 recommandé) dans Documents/Atelier 2M/Export CAO, chaque balise Métré A2M devenant un calque",
