@@ -1,8 +1,8 @@
 {
- "version": "2.30.0",
+ "version": "2.31.0",
  "notes": [
+  "Nouveau : « Nomenclature des menuiseries » — tableau des fenêtres, portes-fenêtres, portes d'entrée et portes intérieures avec repères (F1, PF1, PE1, P1…), dimensions, matériau, ouvrant, vitrage, fermeture, quantités et pièces ; export Excel (.csv) ou page imprimable / PDF pour devis, DCE et commande",
   "Nouveau : « Tableau de bord du modèle » — une seule fenêtre avec le contrôle avant métré (chaque point est cliquable : l'élément se sélectionne et le modèle zoome dessus) et le métré en direct (murs, pièces, menuiseries, plancher, couverture, cloisons, doublage, fouilles, tableau par pièce), mis à jour automatiquement pendant que vous dessinez ; boutons « Enregistrer le fichier » et « Envoyer au métré »",
-  "Les chiffres du tableau de bord viennent de la même extraction que l'envoi au métré : ce que vous voyez est ce qui partira",
-  "Pictogrammes redessinés un par un, chacun avec son sujet : mur en briques, mur composé en coupe (couches et isolant), ouverture dans le mur, porte avec son arc d'ouverture, fondation, planelle, plinthe, toiture, sol en volume, prise électrique, pièces, bibliothèque, import… — traits fins, orange doux"
+  "Les chiffres du tableau de bord viennent de la même extraction que l'envoi au métré : ce que vous voyez est ce qui partira"
  ]
 }

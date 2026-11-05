@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -32,6 +32,7 @@ unless file_loaded?(__FILE__)
     ['profils',     'Bibliothèque de profils',             'Vos profils (plinthe, planelle, couvertine, appui, bandeau…) : rangés depuis un dessin ou créés par leurs cotes, balayés le long d\'un tracé, utilisés par Plinthes et Planelles', -> { A2M::Profils.gerer }, false],
     ['importer',    'Importer un objet (3D Warehouse)',    'Cherche un objet sur la 3D Warehouse ou prend un fichier .skp, le nettoie puis le range dans la bibliothèque avec sa vignette', -> { A2M::ImportObjet.ouvrir }, false],
     ['vues',        'Vues prêtes à l\'emploi',             'Plan, façades Nord/Sud/Est/Ouest et perspective créés en scènes en un clic', -> { A2M::Vues.ouvrir }, false],
+    ['nomenclature','Nomenclature des menuiseries',       'Tableau des fenêtres et portes (repères, dimensions, caractéristiques, pièces, quantités) : Excel ou page imprimable pour devis, DCE et commande', -> { A2M::Nomenclature.ouvrir }, false],
     ['biblio',      'Bibliothèque d\'objets',              'Poser un objet de la bibliothèque à la taille voulue (profils inchangés), ouvrir ou changer le dossier', -> { A2M::Bibliotheque.gerer }, false],
     ['elec',        'Poser l\'appareillage électrique',    'Prises, points lumineux, interrupteurs… posés au clic et comptés pièce par pièce', -> { A2M::Electricite.lancer }, true],
     ['extraire',    'Extraire pour le configurateur',      'Enregistre le fichier .json à importer dans le configurateur du métré', -> { A2M::Extraction.lancer }, false],
@@ -108,6 +109,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'import_objet.rb'), 'a2m_metre/import_objet.rb')
     z.write(os.path.join(ici, 'vues.rb'), 'a2m_metre/vues.rb')
     z.write(os.path.join(ici, 'tableau.rb'), 'a2m_metre/tableau.rb')
+    z.write(os.path.join(ici, 'nomenclature.rb'), 'a2m_metre/nomenclature.rb')
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'hachures_moteur', 'hachures_fr', 'hachures_onde', 'planelles', 'profils'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
