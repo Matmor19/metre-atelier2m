@@ -917,7 +917,7 @@ module A2M
         var vis = visibles();
         if (!vis.length) { l.innerHTML = '<div class="petit" style="padding:30px 0;text-align:center">' + (D.objets.length ? 'Aucun objet ne correspond.' : 'La bibliothèque est vide. Sélectionnez un objet, puis « Paramétrer un objet pour la bibliothèque ».') + '</div>'; }
         var groupes = {}; vis.forEach(function (o) { (groupes[o.type] = groupes[o.type] || []).push(o); });
-        Object.keys(groupes).forEach(function (ty) {
+        D.types.filter(function (ty) { return groupes[ty]; }).forEach(function (ty) {
           var h = document.createElement('h2'); h.textContent = ty + ' (' + groupes[ty].length + ')'; l.appendChild(h);
           var g = document.createElement('div'); g.className = 'grille'; l.appendChild(g);
           groupes[ty].forEach(function (o) {
@@ -1087,7 +1087,8 @@ module A2M
         # L'objet est posé à l'origine et sélectionné : l'outil Déplacer le met où vous voulez
         model.selection.clear
         model.selection.add(inst)
-        Sketchup.send_action('selectMoveTool:')
+        model.select_tool(nil)
+        Sketchup.send_action(21048) rescue nil
       rescue Interrupt
         model.abort_operation
       rescue StandardError => ex

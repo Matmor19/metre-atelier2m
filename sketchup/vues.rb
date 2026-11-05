@@ -87,7 +87,7 @@ module A2M
           view.camera = cam
           view.zoom_extents
           nom = "A2M – #{lib.sub(/ \(.*\)/, '')}#{st[0] == 'reel' ? '' : ' (' + st[1].downcase + ')'}"
-          (model.pages[nom] || model.pages.add(nom)).tap { |p| p.update(Sketchup::Page::PAGE_ALL) }
+          (model.pages[nom] || model.pages.add(nom)).tap { |p| p.update }
         end
         model.commit_operation
         UI.messagebox("#{cles.size} vue(s) créée(s). Elles sont dans la barre des scènes, en haut de la fenêtre de dessin.")
