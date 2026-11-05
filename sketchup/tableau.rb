@@ -12,6 +12,7 @@ module A2M
         <button type="button" class="puce rempli" id="auto">Mise à jour automatique</button>
         <span class="petit" id="heure" style="margin:0 0 0 auto"></span>
       </div>
+      <div id="jauge"></div>
       <h2>Contrôle avant métré</h2>
       <div id="controle"></div>
       <h2>Métré en direct</h2>
@@ -29,15 +30,36 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var auto = true;
+      var auto = true, pbMax = 0, dejaVert = false;
+      function confettis() {
+        var c = document.createElement('canvas'); c.width = innerWidth; c.height = innerHeight; c.style.cssText = 'position:fixed;left:0;top:0;pointer-events:none;z-index:9';
+        document.body.appendChild(c); var g = c.getContext('2d'), cols = ['#E07838', '#FFE680', '#7fb0e0', '#9bd08a', '#d6a0d8'];
+        var ps = []; for (var i = 0; i < 90; i++) ps.push({ x: innerWidth / 2, y: innerHeight * 0.35, vx: (Math.random() - 0.5) * 11, vy: -Math.random() * 9 - 2, c: cols[i % 5], r: Math.random() * 5 + 3 });
+        var t = 0; (function f() { g.clearRect(0, 0, c.width, c.height); ps.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.35; g.fillStyle = p.c; g.fillRect(p.x, p.y, p.r, p.r * 0.6); }); if (++t < 110) requestAnimationFrame(f); else c.remove(); })();
+      }
+      function jauge() {
+        var n = D.problemes.length, total = Math.max(D.total || 0, 1);
+        pbMax = Math.max(pbMax, n);
+        var pct = Math.max(0, Math.round(100 * (1 - n / Math.max(total, n))));
+        if (!D.total) pct = 0;
+        var msg = !D.total ? 'Dessinez avec les outils Atelier 2M pour remplir la jauge' : n === 0 ? 'Tout est vert : prêt à partir au métré !' : pct >= 80 ? 'Presque ! Plus que ' + n + ' point(s) à chasser' : n + ' point(s) à chasser pour être prêt';
+        var fait = pbMax > 0 ? (pbMax - n) : 0;
+        var couleur = n === 0 && D.total ? '#7fc46a' : '#E07838';
+        el('jauge').innerHTML = '<div style="background:#fff;border:2px solid #d8d0c6;border-radius:12px;padding:10px 12px;margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-weight:600"><span>Prêt à envoyer</span><span style="color:' + couleur + '">' + (D.total ? pct + ' %' : '–') + '</span></div>' +
+          '<div style="height:12px;border-radius:7px;background:#eee8e0;margin:7px 0;overflow:hidden"><div style="height:100%;width:' + (D.total ? pct : 0) + '%;background:' + couleur + ';border-radius:7px;transition:width .6s cubic-bezier(.3,1.4,.5,1)"></div></div>' +
+          '<div class="petit" style="margin:0">' + msg + (pbMax > 0 && n > 0 ? ' · ' + fait + ' / ' + pbMax + ' déjà réglés' : '') + '</div></div>';
+        if (n === 0 && D.total && pbMax > 0 && !dejaVert) { dejaVert = true; confettis(); }
+        if (n > 0) dejaVert = false;
+      }
       function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
       function nb(x) { return (Math.round(x * 100) / 100).toLocaleString('fr-FR'); }
       function rendre() {
+        jauge();
         el('heure').textContent = D.heure ? 'à ' + D.heure : '';
         var c = el('controle');
         if (!D.problemes.length) c.innerHTML = '<div class="apercu" style="margin:0;padding:10px 12px;background:#f3faf0;border-color:#bcdcae">✔ Aucun point à vérifier : le modèle est prêt à partir au métré.</div>';
         else {
-          c.innerHTML = '<div class="petit" style="margin:0 0 6px">' + D.problemes.length + ' point(s) à vérifier — cliquez pour voir l\'élément dans le modèle</div>';
+          c.innerHTML = '<div class="petit" style="margin:0 0 6px">' + D.problemes.length + ' point(s) à chasser — cliquez pour voir l\'élément dans le modèle</div>';
           D.problemes.slice(0, 40).forEach(function (p, i) {
             var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.style.cssText = 'display:block;width:100%;text-align:left;border-radius:9px;margin-bottom:5px;background:#FFF4DC';
             b.textContent = '⚠ ' + p; b.addEventListener('click', function () { sketchup.voir(i); }); c.appendChild(b);
@@ -105,7 +127,7 @@ module A2M
         { 'nom' => p['nom'], 'surf' => p['surf'].to_f, 'fen' => p['menus'].sum { |x| x['nb'] }, 'portes' => p['portesInt'].sum { |x| x['nb'] }, 'elec' => (p['app'] || {}).values.sum }
       end
       infos = (res['infos'] || {}).map { |k, v| "#{k.tr('_', ' ')} : #{v}#{v.is_a?(Numeric) ? ' m²' : ''}" }
-      { 'cartes' => cartes, 'pieces' => lignes, 'infos' => infos + res['alertes'].map { |a| '⚠ ' + a },
+      { 'total' => murs.size + pieces.size + fen + portes, 'cartes' => cartes, 'pieces' => lignes, 'infos' => infos + res['alertes'].map { |a| '⚠ ' + a },
         'problemes' => pb.map { |m, _| m }, 'heure' => Time.now.strftime('%H:%M:%S') }
     end
 

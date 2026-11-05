@@ -26,6 +26,12 @@ module A2M
       <h2>2. Leur phase</h2>
       <div class="grille" id="phases"></div>
       <div class="puces" style="margin-top:10px"><button type="button" class="puce rempli" id="col">Colorier selon la phase</button><button type="button" class="puce" id="raz">Retirer la phase</button></div>
+      <h2>Le curseur Avant / Après</h2>
+      <div style="background:#fff;border:2px solid #d8d0c6;border-radius:12px;padding:12px 14px">
+        <input type="range" id="cur" min="0" max="2" step="1" value="1" style="width:100%;accent-color:#E07838">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-top:2px"><span style="color:#8a8a8a;font-weight:600">Avant</span><span style="color:#D62828;font-weight:600">Pendant</span><span style="color:#286ED2;font-weight:600">Après</span></div>
+        <div class="petit" id="curinfo" style="margin:6px 0 0;text-align:center">Faites glisser : l'existant, les travaux, puis le projet fini</div>
+      </div>
       <h2>3. Afficher</h2>
       <div class="grille" id="vues"></div>
       <div id="bas"><div id="msg"></div><button type="button" class="puce" id="actu">↻ Actualiser</button></div>
@@ -52,6 +58,11 @@ module A2M
         el('col').className = 'puce' + (colorier ? ' rempli' : '');
         el('msg').textContent = D.msg || '';
       }
+      var minut = null, CUR = ['etat', 'tout', 'projet'], INFO = ['État existant : ce qui reste et ce qui va disparaître', 'Pendant les travaux : tout est visible, démolition en rouge, neuf en bleu', 'Projet fini : l\'existant conservé et le neuf'];
+      el('cur').addEventListener('input', function () {
+        var v = parseInt(el('cur').value, 10); el('curinfo').textContent = INFO[v];
+        clearTimeout(minut); minut = setTimeout(function () { sketchup.afficher(CUR[v]); }, 120);
+      });
       el('col').addEventListener('click', function () { colorier = !colorier; rendre(); });
       el('raz').addEventListener('click', function () { sketchup.poser(JSON.stringify({ phase: '', colorier: true })); });
       el('actu').addEventListener('click', function () { sketchup.actualiser(); });

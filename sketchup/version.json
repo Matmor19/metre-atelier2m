@@ -1,6 +1,7 @@
 {
- "version": "2.41.0",
+ "version": "2.42.0",
  "notes": [
+  "Ludique : le tableau de bord a une jauge « Prêt à envoyer » (la chasse aux points à vérifier, avec des confettis quand tout est vert), et la fenêtre Phases un curseur Avant / Pendant / Après pour présenter les travaux au client",
   "Nouveau : « Relevé de côtes » — tapez les mesures prises sur place (pièce rectangulaire, ou côté par côté avec les angles) : la pièce se dessine, nommée, balisée A2M_PIECE, avec sa surface et un aperçu qui dit si elle se ferme",
   "Nouveau : « Variantes client A / B / C » — trois versions du même projet dans un seul fichier : cochez où chaque élément apparaît, un clic sur A, B ou C change tout, une scène par variante",
   "Nouveau : « Feuille de présentation LayOut » — crée une feuille LayOut (A4 à A1) avec les vues choisies et le cartouche de votre charte (logo, coordonnées, champs), à compléter dans LayOut",
