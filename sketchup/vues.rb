@@ -19,6 +19,8 @@ module A2M
       <h2>Vues à créer</h2>
       <div class="grille" id="vues"></div>
       <div class="petit">Chaque vue devient une scène nommée (« A2M – Plan », « A2M – Façade Sud »…). Si elle existe déjà, elle est mise à jour.</div>
+      <h2>Style d'affichage</h2>
+      <div class="grille" id="styles"></div>
       <h2>Réglages</h2>
       <div class="puces" id="regl"></div>
       <div id="bas"><div id="msg"></div><button id="go" type="button">Créer les vues</button></div>
@@ -28,13 +30,20 @@ module A2M
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
       var choix = {}; D.vues.forEach(function (v) { choix[v.cle] = true; });
-      var reg = { aretes: true, ombres: false };
+      var reg = { aretes: true, ombres: false, style: 'reel' };
       function rendre() {
         var g = el('vues'); g.innerHTML = '';
         D.vues.forEach(function (v) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (choix[v.cle] ? ' rempli' : '');
           b.innerHTML = '<div class="vignette" style="font-size:34px">' + v.icone + '</div><span></span>'; b.querySelector('span').textContent = v.libelle;
           b.addEventListener('click', function () { choix[v.cle] = !choix[v.cle]; rendre(); }); g.appendChild(b);
+        });
+        var st = el('styles'); st.innerHTML = '';
+        D.styles.forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (reg.style === x.cle ? ' rempli' : '');
+          b.innerHTML = '<div class="vignette" style="font-size:30px">' + x.icone + '</div><span></span><div class="petit" style="margin:2px 0 0"></div>';
+          b.querySelector('span').textContent = x.libelle; b.querySelector('.petit').textContent = x.aide;
+          b.addEventListener('click', function () { reg.style = x.cle; rendre(); }); st.appendChild(b);
         });
         var r = el('regl'); r.innerHTML = '';
         [['aretes', 'Arêtes visibles'], ['ombres', 'Ombres activées']].forEach(function (x) {
@@ -48,6 +57,13 @@ module A2M
       rendre();
     JS
 
+    # Styles prêts à l'emploi : [clé, libellé, icône, aide, RenderMode, silhouettes]
+    STYLES = [
+      ['reel',      'Réaliste',        '🎨', 'Couleurs et textures (client, 3D)', 3, false],
+      ['technique', 'Plan technique',  '📐', 'Lignes cachées, contours francs (dossier, permis)', 1, true],
+      ['maquette',  'Maquette blanche', '⬜', 'Monochrome, volumes lisibles (esquisse)', 4, true]
+    ].freeze
+
     def self.creer(cles, reg)
       model = Sketchup.active_model
       bb = model.bounds
@@ -59,6 +75,9 @@ module A2M
       begin
         ro = model.rendering_options
         ro['EdgeDisplayMode'] = reg['aretes'] ? true : false rescue nil
+        st = STYLES.find { |x| x[0] == reg['style'] } || STYLES[0]
+        ro['RenderMode'] = st[4] rescue nil
+        ro['DrawSilhouettes'] = st[5] rescue nil
         model.shadow_info['DisplayShadows'] = reg['ombres'] ? true : false rescue nil
         LISTE.select { |l| cles.include?(l[0]) }.each do |cle, lib, _i, dir, haut, para|
           v = Geom::Vector3d.new(*dir); v.normalize!
@@ -67,7 +86,7 @@ module A2M
           cam.perspective = !para
           view.camera = cam
           view.zoom_extents
-          nom = "A2M – #{lib.sub(/ \(.*\)/, '')}"
+          nom = "A2M – #{lib.sub(/ \(.*\)/, '')}#{st[0] == 'reel' ? '' : ' (' + st[1].downcase + ')'}"
           (model.pages[nom] || model.pages.add(nom)).tap { |p| p.update(Sketchup::Page::PAGE_ALL) }
         end
         model.commit_operation
@@ -84,8 +103,9 @@ module A2M
         return
       end
       html = A2M::Panneau.page('Vues prêtes à l\'emploi', 'Plan, façades et perspective en un clic', CORPS, SCRIPT,
-                               'vues' => LISTE.map { |k, l, i, *| { 'cle' => k, 'libelle' => l, 'icone' => i } })
-      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : vues', 'A2M_Panneau_Vues', html, 440, 560)
+                               'vues' => LISTE.map { |k, l, i, *| { 'cle' => k, 'libelle' => l, 'icone' => i } },
+                               'styles' => STYLES.map { |k, l, i, a, *| { 'cle' => k, 'libelle' => l, 'icone' => i, 'aide' => a } })
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : vues', 'A2M_Panneau_Vues', html, 460, 720)
       @fen = dlg
       dlg.add_action_callback('creer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
