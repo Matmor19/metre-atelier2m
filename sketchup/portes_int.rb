@@ -31,43 +31,144 @@ module A2M
       "Poussant #{s[1] == 'droite' ? 'droit' : 'gauche'}, #{s[0] == :ici ? 'depuis ce côté' : 'depuis l\'autre côté'}"
     end
 
-    def self.demander
-      objs = (A2M::Bibliotheque.objets_de(['A2M_PORTE_INT']) rescue [])
-      menus = [RES_SIMPLE, RES_AUCUNE] + objs.map { |o| "#{BIB}#{o['nom']}" }
+    # ---- Fenêtre « Porte intérieure » : vignettes, aperçu, choix en un clic (codes couleur : jaune = choisi, bleu pâle = aucun, blanc = à choisir) ----
+    CORPS_PANNEAU = <<~'HTML'
+      <h2>Bloc-porte (vantail)</h2>
+      <div class="puces" id="dims"></div>
+      <div class="dims" id="autre" style="margin-top:10px;display:none">
+        <div><label for="vl">Largeur du vantail</label><input type="text" id="vl" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+        <div class="x">×</div>
+        <div><label for="vh">Hauteur du vantail</label><input type="text" id="vh" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+      </div>
+      <div class="apercu" id="apercu"></div>
+      <h2>Menuiserie posée</h2>
+      <div class="grille" id="menus"></div><div class="petit" id="note_menu"></div>
+      <h2>Pièce de rattachement</h2>
+      <div class="puces" id="pieces"></div>
+      <details><summary>Choix pour le métré (facultatif : une case vide = rien au métré)</summary><div id="choix"></div></details>
+      <details><summary>Réservation autour du vantail</summary>
+        <div class="dims" style="margin-top:8px">
+          <div><label for="jl">Jeu total en largeur (huisserie comprise)</label><input type="text" id="jl" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+          <div class="x">+</div>
+          <div><label for="jh">Jeu en hauteur</label><input type="text" id="jh" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
+        </div>
+      </details>
+      <div id="bas"><div id="msg"></div><button id="go" type="button">Suivant : choisir l'emplacement</button></div>
+    HTML
+
+    SCRIPT_PANNEAU = <<~'JS'
+      var D = __DONNEES__;
+      function el(id) { return document.getElementById(id); }
+      function nombre(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : 0; }
+      var etat = { dim: D.dim, vl: D.vl, vh: D.vh, jl: D.jl, jh: D.jh, menu: D.menu, piece: D.piece, choix: D.choix || {} };
+
+      function puces(conteneur, valeurs, courant, clic, classe) {
+        conteneur.innerHTML = '';
+        valeurs.forEach(function (v) {
+          var b = document.createElement('button'); b.type = 'button';
+          b.className = 'puce ' + (v.classe || classe || '') + (courant === v.id ? ' rempli' : ''); b.textContent = v.texte;
+          b.addEventListener('click', function () { clic(v.id); }); conteneur.appendChild(b);
+        });
+      }
+
+      function apercu() {
+        var vl = etat.vl, vh = etat.vh, jl = etat.jl, jh = etat.jh;
+        if (!(vl > 0 && vh > 0)) { el('apercu').innerHTML = ''; return; }
+        var L = vl + jl, H = vh + jh, W = Math.max(L + 120, 220), HT = Math.max(H + 40, 250), fs = Math.max(W, HT) / 20, x0 = (W - L) / 2, xv = (W - vl) / 2, s = '';
+        s += '<rect x="0" y="0" width="' + W + '" height="' + HT + '" fill="#E4DCD2" stroke="#9c9186" stroke-width="1.5"/>';
+        s += '<rect x="' + x0 + '" y="' + (HT - H) + '" width="' + L + '" height="' + H + '" fill="#fff" stroke="#8a7f75" stroke-width="2" stroke-dasharray="6 4"/>';
+        s += '<rect x="' + xv + '" y="' + (HT - vh) + '" width="' + vl + '" height="' + vh + '" fill="#D9C3A5" stroke="#3C3C3C" stroke-width="2.5"/>';
+        s += '<rect x="' + (xv + vl * .2) + '" y="' + (HT - vh + vh * .12) + '" width="' + (vl * .6) + '" height="' + (vh * .34) + '" fill="none" stroke="#B49873" stroke-width="1.5"/>';
+        s += '<rect x="' + (xv + vl * .2) + '" y="' + (HT - vh + vh * .55) + '" width="' + (vl * .6) + '" height="' + (vh * .34) + '" fill="none" stroke="#B49873" stroke-width="1.5"/>';
+        s += '<circle cx="' + (xv + vl - 7) + '" cy="' + (HT - vh * .48) + '" r="3.2" fill="#3C3C3C"/>';
+        s += '<text x="' + (W / 2) + '" y="' + (HT - H - fs * .4) + '" font-size="' + fs + '" font-weight="600" fill="#3C3C3C" text-anchor="middle">vantail ' + vl + ' × ' + vh + '</text>';
+        s += '<text x="' + (W / 2) + '" y="' + (HT + 12) + '" font-size="' + fs * .75 + '" fill="#8a7f75" text-anchor="middle">réservation ' + Math.round(L * 10) / 10 + ' × ' + Math.round(H * 10) / 10 + ' cm (tirets)</text>';
+        el('apercu').innerHTML = '<svg viewBox="-4 -4 ' + (W + 8) + ' ' + (HT + 22) + '" preserveAspectRatio="xMidYMid meet">' + s + '</svg>';
+      }
+
+      function rendre() {
+        var dims = D.dims.map(function (d) { return { id: d, texte: d }; }).concat([{ id: 'autre', texte: 'Autre cote…' }]);
+        puces(el('dims'), dims, etat.dim, function (id) {
+          etat.dim = id;
+          if (id !== 'autre') { var p = id.split('×'); etat.vl = parseFloat(p[0]); etat.vh = parseFloat(p[1]); el('vl').value = etat.vl; el('vh').value = etat.vh; }
+          rendre();
+        });
+        el('autre').style.display = etat.dim === 'autre' ? 'grid' : 'none';
+        ['vl', 'vh', 'jl', 'jh'].forEach(function (k) { el(k).classList.toggle('ok', etat[k] > 0); });
+        apercu();
+        // Menuiserie posée : vignettes
+        var m = el('menus'); m.innerHTML = '';
+        var cartes = [{ id: 'simple', nom: 'Réservation simple (huisserie balisée)', img: '', classe: '' }, { id: 'aucune', nom: 'Aucune (seulement le passage)', img: '', classe: 'aucun' }].concat(D.objets.map(function (o) { return { id: 'obj:' + o.nom, nom: o.nom, img: o.img, classe: '' }; }));
+        cartes.forEach(function (c) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte ' + c.classe + (etat.menu === c.id ? ' rempli' : '');
+          b.innerHTML = '<div class="vignette">' + (c.img ? '<img alt="" src="' + c.img + '">' : '') + '</div><span></span>'; b.querySelector('span').textContent = c.nom;
+          b.addEventListener('click', function () { etat.menu = c.id; rendre(); }); m.appendChild(b);
+        });
+        el('note_menu').textContent = etat.menu === null ? 'À choisir : une menuiserie, une réservation simple ou « Aucune » (rien ne se choisit tout seul).' : '';
+        // Pièce
+        puces(el('pieces'), [{ id: '', texte: 'Automatique (pièce la plus proche)', classe: 'aucun' }].concat(D.pieces.map(function (p) { return { id: p, texte: p }; })), etat.piece, function (id) { etat.piece = id; rendre(); }, '');
+        // Choix du configurateur : cliquer une valeur déjà choisie la vide
+        var c = el('choix'); c.innerHTML = '';
+        D.groupes.forEach(function (g) {
+          var t = document.createElement('h3'); t.textContent = g.libelle; c.appendChild(t);
+          var p = document.createElement('div'); p.className = 'puces'; c.appendChild(p);
+          puces(p, g.valeurs.map(function (v) { return { id: v, texte: v }; }), etat.choix[g.cle], function (id) { if (etat.choix[g.cle] === id) delete etat.choix[g.cle]; else etat.choix[g.cle] = id; rendre(); }, '');
+        });
+        var manque = [];
+        if (!(etat.vl > 0 && etat.vh > 0)) manque.push('la taille du vantail');
+        if (etat.menu === null) manque.push('la menuiserie posée');
+        el('msg').textContent = manque.length ? 'Il reste à choisir : ' + manque.join(', ') + '.' : '';
+        el('go').disabled = manque.length > 0;
+      }
+
+      el('vl').value = etat.vl || ''; el('vh').value = etat.vh || ''; el('jl').value = etat.jl; el('jh').value = etat.jh;
+      el('vl').addEventListener('input', function () { etat.vl = nombre(this.value); rendre(); });
+      el('vh').addEventListener('input', function () { etat.vh = nombre(this.value); rendre(); });
+      el('jl').addEventListener('input', function () { etat.jl = nombre(this.value); rendre(); });
+      el('jh').addEventListener('input', function () { etat.jh = nombre(this.value); rendre(); });
+      el('go').addEventListener('click', function () { if (!el('go').disabled) sketchup.valider(JSON.stringify(etat)); });
+      rendre();
+    JS
+
+    def self.donnees_panneau(objs)
       pcs = A2M::Ouvertures.pieces_du_modele
-      auto = A2M::Ouvertures::AUTO
-      libs = ['Bloc-porte (vantail)', 'Vantail, largeur si autre (cm)', 'Vantail, hauteur si autre (cm)',
-              'Réservation : jeu total en largeur (cm), huisserie comprise', 'Réservation : jeu en hauteur (cm)',
-              'Menuiserie posée', 'Pièce de rattachement'] + CHOIX.map { |_, l, _| l }
-      defs = [@r[:dim] || '83×204', (@r[:vl] || 83).to_s, (@r[:vh] || 204).to_s, (@r[:jl] || 7).to_s, (@r[:jh] || 4).to_s,
-              menus.include?(@r[:menu]) ? @r[:menu] : (objs.any? ? menus[2] : RES_SIMPLE), pcs.include?(@r[:piece]) ? @r[:piece] : auto] +
-             CHOIX.map { |k, _, _| (@r[:choix] || {})[k] || AC }
-      listes = [(DIMS + [AUTRE]).join('|'), '', '', '', '', menus.join('|'), ([auto] + pcs).join('|')] +
-               CHOIX.map { |_, _, v| ([AC] + v).join('|') }
-      rep = UI.inputbox(libs, defs, listes, 'Porte intérieure (Métré Atelier 2M)')
-      return nil unless rep
-      if rep[0] == AUTRE
-        vl, vh = rep[1].tr(',', '.').to_f, rep[2].tr(',', '.').to_f
-      else
-        vl, vh = rep[0].split('×').map(&:to_f)
+      menu = @r[:menu]
+      ok = menu == 'simple' || menu == 'aucune' || objs.any? { |o| menu == "obj:#{o['nom']}" }
+      menu = objs.empty? ? 'simple' : nil unless ok
+      dim = DIMS.include?(@r[:dim]) || @r[:dim] == 'autre' ? @r[:dim] : '83×204'
+      { 'dims' => DIMS, 'dim' => dim, 'vl' => @r[:vl] || 83, 'vh' => @r[:vh] || 204, 'jl' => @r[:jl] || 7, 'jh' => @r[:jh] || 4, 'menu' => menu,
+        'piece' => pcs.include?(@r[:piece]) ? @r[:piece] : '', 'pieces' => pcs, 'choix' => @r[:choix] || {},
+        'groupes' => CHOIX.map { |k, l, v| { 'cle' => k, 'libelle' => l, 'valeurs' => v } },
+        'objets' => objs.map { |o| { 'nom' => o['nom'].to_s, 'img' => A2M::Panneau.vignette(o) } } }
+    end
+
+    def self.demander(&suite)
+      objs = (A2M::Bibliotheque.objets_de(['A2M_PORTE_INT']) rescue [])
+      html = A2M::Panneau.page('Poser une porte intérieure', 'Étape 1 sur 2 : la porte, puis l\'emplacement dans la cloison', CORPS_PANNEAU, SCRIPT_PANNEAU, donnees_panneau(objs))
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : porte intérieure', 'A2M_Panneau_PorteInt', html, 480, 800)
+      dlg.add_action_callback('valider') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        next unless d.is_a?(Hash)
+        vl, vh, jl, jh = %w[vl vh jl jh].map { |k| d[k].to_s.tr(',', '.').to_f }
+        next if vl <= 0 || vh <= 0 || d['menu'].nil?
+        choix = (d['choix'] || {}).select { |k, v| CHOIX.any? { |c, _, vals| c == k && vals.include?(v) } }
+        piece = d['piece'].to_s.empty? ? nil : d['piece'].to_s
+        @r = { dim: d['dim'], vl: vl, vh: vh, jl: jl, jh: jh, menu: d['menu'], piece: piece, choix: choix }
+        obj = d['menu'].to_s.start_with?('obj:') ? objs.find { |o| "obj:#{o['nom']}" == d['menu'] } : nil
+        dim = d['dim'] == 'autre' ? "#{vl.round}×#{vh.round}" : d['dim']
+        dlg.close
+        UI.start_timer(0, false) do
+          opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
+          next if opts.nil?
+          suite.call({ type: ['Porte intérieure', 'A2M_PORTE_INT'], l: vl + jl, h: vh + jh, lin: vh + jh, vl: vl, vh: vh, n: 6, contigu: true,
+                       appui: 0, res: d['menu'] != 'aucune' ? 'A2M_PORTE_INT' : nil, obj: obj, opts: opts, piece: piece, bp: choix.merge('dim' => dim) })
+        end
       end
-      jl, jh = rep[3].tr(',', '.').to_f, rep[4].tr(',', '.').to_f
-      return UI.messagebox('Le vantail doit avoir une largeur et une hauteur supérieures à 0.') && nil if vl <= 0 || vh <= 0
-      choix = {}
-      CHOIX.each_with_index { |(k, _, _), i| choix[k] = rep[7 + i] unless rep[7 + i] == AC }
-      @r = { dim: rep[0], vl: vl, vh: vh, jl: jl, jh: jh, menu: rep[5], piece: rep[6], choix: choix }
-      obj = rep[5].start_with?(BIB) ? objs[menus.index(rep[5]) - 2] : nil
-      opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
-      return nil if opts.nil?
-      dim = rep[0] == AUTRE ? "#{vl.round}×#{vh.round}" : rep[0]
-      { type: ['Porte intérieure', 'A2M_PORTE_INT'], l: vl + jl, h: vh + jh, lin: vh + jh, vl: vl, vh: vh, n: 6, contigu: true,
-        appui: 0, res: rep[5] != RES_AUCUNE ? 'A2M_PORTE_INT' : nil, obj: obj, opts: opts,
-        piece: rep[6] == auto ? nil : rep[6], bp: choix.merge('dim' => dim) }
+      dlg.show
     end
 
     def self.lancer
-      p = demander
-      Sketchup.active_model.select_tool(Outil.new(p)) if p
+      demander { |p| Sketchup.active_model.select_tool(Outil.new(p)) }
     end
 
     # Transformation de l'objet : centré sur le trou (largeur et épaisseur), posé au sol du trou,

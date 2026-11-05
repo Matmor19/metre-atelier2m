@@ -1,8 +1,8 @@
 {
- "version": "2.21.0",
+ "version": "2.22.0",
  "notes": [
-  "Créer une ouverture : une seule fenêtre à l'étape 1, avec trois grandes vignettes (fenêtre, porte-fenêtre, porte d'entrée), le type reconnu d'après largeur × hauteur (modifiable d'un clic), un aperçu dessiné en direct et l'appui ou le seuil choisi en un clic (jaune = choisi, bleu pâle = Aucun, blanc = à choisir)",
-  "Tailles déjà posées proposées en un clic ; hauteur sous linteau dans les réglages avancés",
-  "La galerie des menuiseries (étape 2) reprend les mêmes couleurs et le même style"
+  "Poser une porte intérieure : même fenêtre à vignettes que l'ouverture — taille du vantail en un clic (63 à 103 × 204, ou autre cote), aperçu dessiné avec la réservation, menuiserie posée choisie sur vignettes, pièce en un clic",
+  "Les choix pour le métré (destination, âme, type, finition, pose) restent facultatifs : un clic les choisit, un second clic les vide (rien au métré)",
+  "Nouveau fichier commun panneau.rb : couleurs et boutons animés partagés par les fenêtres à vignettes"
  ]
 }
