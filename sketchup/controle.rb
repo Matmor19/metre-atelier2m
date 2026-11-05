@@ -70,8 +70,8 @@ module A2M
       out.size >= 3 ? aire(out).abs : 0.0
     end
 
-    def self.lancer
-      model = Sketchup.active_model
+    # Points à vérifier : [[message, entité], …] et nombre de murs / pièces contrôlés
+    def self.problemes
       obs = objets
       pb = []   # [message, entité]
       # 1. Groupes et composants de premier niveau sans balise A2M_ (ni contenu balisé)
@@ -110,8 +110,14 @@ module A2M
         ents = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
         pb << ["Toiture sans pan lisible (aucune face tournée vers le haut) : « #{e.name} »", e] unless ents.grep(Sketchup::Face).any? { |f| (tr * f.normal).z > 0.05 }
       end
+      [pb, murs.size, pieces.size]
+    end
+
+    def self.lancer
+      model = Sketchup.active_model
+      pb, nm, np = problemes
       if pb.empty?
-        UI.messagebox("Contrôle du modèle : aucun problème trouvé.\n\n#{murs.size} mur(s) ou doublage(s), #{pieces.size} pièce(s). Vous pouvez extraire.")
+        UI.messagebox("Contrôle du modèle : aucun problème trouvé.\n\n#{nm} mur(s) ou doublage(s), #{np} pièce(s). Vous pouvez extraire.")
         return
       end
       txt = pb.first(40).map { |m, _| '- ' + m }.join("\n")

@@ -1,8 +1,8 @@
 {
- "version": "2.29.0",
+ "version": "2.30.0",
  "notes": [
-  "Pictogrammes redessinés un par un, chacun avec son sujet : mur en briques, mur composé en coupe (couches et isolant), ouverture dans le mur, porte avec son arc d'ouverture, fondation, planelle, plinthe, toiture, sol en volume, prise électrique, pièces, bibliothèque, import… — traits fins, orange doux",
-  "Pictogrammes refaits : tuile orange doux (au lieu de l'orange foncé), traits deux fois plus fins, détails en orange de la charte — plus sobres et plus professionnels, dans la barre d'outils comme dans la palette",
-  "Palette : en-tête Atelier 2M avec monogramme « M » gris et orange"
+  "Nouveau : « Tableau de bord du modèle » — une seule fenêtre avec le contrôle avant métré (chaque point est cliquable : l'élément se sélectionne et le modèle zoome dessus) et le métré en direct (murs, pièces, menuiseries, plancher, couverture, cloisons, doublage, fouilles, tableau par pièce), mis à jour automatiquement pendant que vous dessinez ; boutons « Enregistrer le fichier » et « Envoyer au métré »",
+  "Les chiffres du tableau de bord viennent de la même extraction que l'envoi au métré : ce que vous voyez est ce qui partira",
+  "Pictogrammes redessinés un par un, chacun avec son sujet : mur en briques, mur composé en coupe (couches et isolant), ouverture dans le mur, porte avec son arc d'ouverture, fondation, planelle, plinthe, toiture, sol en volume, prise électrique, pièces, bibliothèque, import… — traits fins, orange doux"
  ]
 }
