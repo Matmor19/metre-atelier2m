@@ -1,6 +1,7 @@
 {
- "version": "2.38.0",
+ "version": "2.39.0",
  "notes": [
+  "Nouveau : « Feuille de présentation LayOut » — crée une feuille LayOut (A4 à A1) avec les vues choisies et le cartouche de votre charte (logo, coordonnées, champs), à compléter dans LayOut",
   "Nouveau : « Cartouches et charte » — votre logo, vos coordonnées, vos couleurs et les champs de vos cartouches (projet, client, phase, plan, échelle, indice…), autant de modèles que voulu ; le dossier client prend le cartouche actif",
   "Nouveau : « Fiche pièce » — cliquez dans une pièce : surface, périmètre, murs à peindre, plafond, plinthes, volume, menuiseries, portes et appareillage de la pièce, avec envoi au métré",
   "Dossier client : chaque vue du dossier montre maintenant bien sa propre scène (plan, façades, perspective), cadrée sur le modèle, au lieu de la même image répétée",
