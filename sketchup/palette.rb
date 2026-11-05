@@ -39,9 +39,9 @@ module A2M
         button{position:relative;border:0;background:transparent;padding:0;cursor:pointer;height:46px;border-radius:9px;outline:none}
         .ic{display:block;width:40px;height:40px;margin:3px auto;transition:transform .16s cubic-bezier(.3,1.6,.5,1),filter .16s,box-shadow .16s;border-radius:8px}
         .ic svg{width:40px;height:40px;display:block}
-        button:hover .ic{transform:translateY(-3px) scale(1.14);filter:brightness(1.07);box-shadow:0 6px 12px rgba(224,120,56,.45)}
+        button:hover .ic{transform:translateY(-3px) scale(1.14);filter:brightness(1.07);box-shadow:0 5px 10px rgba(224,120,56,.3)}
         button:active .ic{transform:translateY(0) scale(.94);box-shadow:0 1px 3px rgba(0,0,0,.3)}
-        button.actif .ic{box-shadow:0 0 0 3px var(--g)}
+        button.actif .ic{box-shadow:0 0 0 2px #9C8F84}
         .lib,.bulle{display:none}
         #bulle{position:fixed;z-index:9;pointer-events:none;max-width:230px;background:var(--g);color:#fff;border-radius:7px;padding:7px 9px 8px;
           box-shadow:0 6px 16px rgba(0,0,0,.28);opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
@@ -51,6 +51,8 @@ module A2M
         #bulle:after{content:"";position:absolute;left:var(--fl,20px);border:6px solid transparent}
         #bulle.dessous:after{top:-12px;border-bottom-color:var(--g)}
         #bulle.dessus:after{bottom:-12px;border-top-color:var(--g)}
+        .marque{display:flex;align-items:center;gap:9px;margin:0 2px 10px;padding-bottom:8px;border-bottom:1px solid #e2dbd3}
+        .marque b{display:block;font-size:13px;letter-spacing:.02em}.marque span{font-size:10.5px;color:#8a7f75;letter-spacing:.08em;text-transform:uppercase}
         #stats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
         #stats .st{background:#fff;border:1px solid #e2dbd3;border-radius:999px;padding:3px 9px;font-size:11px;cursor:pointer}
         #stats .st b{color:var(--o)}
@@ -59,6 +61,7 @@ module A2M
         #info b{display:block;font-size:12.5px;margin-bottom:2px}
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         </style></head><body>
+        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div></div>
         <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>
