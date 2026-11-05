@@ -116,14 +116,22 @@ module A2M
       avant = model.pages.selected_page
       dossier = Dir.mktmpdir('a2m_dossier')
       res = []
+      # Pas de transition animée : sinon la photo est prise avant l'arrivée de la caméra
+      opt = (model.options['PageOptions'] rescue nil)
+      tps = opt ? opt['TransitionTime'] : nil
+      opt['TransitionTime'] = 0 if opt
       noms.each do |n|
         page = model.pages[n]
         next unless page
         model.pages.selected_page = page
+        view.camera = page.camera
+        view.zoom_extents
+        view.refresh
         f = File.join(dossier, "v#{res.size}.png")
         view.write_image(filename: f, width: 1600, height: 1000, antialias: true, transparent: false)
         res << [n, Base64.strict_encode64(File.binread(f))] if File.exist?(f)
       end
+      opt['TransitionTime'] = tps if opt && tps
       model.pages.selected_page = avant if avant
       res
     end

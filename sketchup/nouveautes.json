@@ -1,4 +1,5 @@
 [
+  "Dossier client : chaque vue du dossier montre maintenant bien sa propre scène (plan, façades, perspective), cadrée sur le modèle, au lieu de la même image répétée",
   "Corrections testées dans SketchUp : création des scènes de la fenêtre Vues, bibliothèque classée dans l'ordre des types, plus d'avertissement à la pose d'un objet",
   "Fenêtres Vues et Import : les émojis sont remplacés par des pictogrammes dessinés dans le style de l'extension (plan, façades S/N/E/O, perspective, styles, téléchargement, dossier)",
   "Créer une ouverture : la pose s'enchaîne déjà (une ouverture après l'autre) ; nouveau, la touche Tab rouvre la fenêtre pour changer de modèle ou de taille sans quitter la pose (rappel dans la barre d'état)",
