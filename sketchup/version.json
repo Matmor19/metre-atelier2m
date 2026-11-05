@@ -1,6 +1,7 @@
 {
- "version": "2.37.0",
+ "version": "2.38.0",
  "notes": [
+  "Nouveau : « Cartouches et charte » — votre logo, vos coordonnées, vos couleurs et les champs de vos cartouches (projet, client, phase, plan, échelle, indice…), autant de modèles que voulu ; le dossier client prend le cartouche actif",
   "Nouveau : « Fiche pièce » — cliquez dans une pièce : surface, périmètre, murs à peindre, plafond, plinthes, volume, menuiseries, portes et appareillage de la pièce, avec envoi au métré",
   "Dossier client : chaque vue du dossier montre maintenant bien sa propre scène (plan, façades, perspective), cadrée sur le modèle, au lieu de la même image répétée",
   "Corrections testées dans SketchUp : création des scènes de la fenêtre Vues, bibliothèque classée dans l'ordre des types, plus d'avertissement à la pose d'un objet",

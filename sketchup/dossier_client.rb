@@ -60,6 +60,8 @@ module A2M
     def self.page(projet, client, images, res, lignes, parts)
       pieces = res['pieces'] || []
       murs = res['murs'] || []
+      cart = (A2M::Cartouches.actif rescue nil) || { 'societe' => CONTACT, 'couleur' => '#E07838', 'fond' => '#F9DCC0', 'logo' => '' }
+      soc = (cart['societe'] || CONTACT).map(&:to_s)
       html = +"<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><title>#{esc(projet)} — Dossier de présentation</title><style>"
       html << "@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font:12.5px 'Segoe UI',Arial,sans-serif;color:#3C3C3C;margin:0;background:#fff}" \
               ".page{page-break-after:always;min-height:260mm;position:relative}.page:last-child{page-break-after:auto}" \
@@ -71,8 +73,10 @@ module A2M
               ".cartes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.k{border:1px solid #e5e0da;border-radius:8px;padding:10px}.k b{display:block;font-size:20px;color:#E07838}.k span{font-size:11px;color:#6f665e}" \
               ".pied{position:absolute;bottom:0;left:12mm;right:12mm;font-size:10px;color:#8a7f75;border-top:1px solid #ddd;padding-top:4px}</style></head><body>"
       logo = '<svg viewBox="0 0 28 24" width="34" height="29"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#E07838" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-      pied = "<div class=\"pied\">#{esc(CONTACT.join(' — '))}</div>"
-      html << "<div class=\"page\"><div class=\"marque\">#{logo}<div><b>#{esc(CONTACT[0])}</b><span>#{esc(CONTACT[1])}</span></div></div>" \
+      logo = '' if cart['id'] != 'atelier2m' && cart['logo'].to_s.empty?
+      logo = "<img alt=\"\" src=\"#{cart['logo']}\" style=\"height:34px;max-width:90px;object-fit:contain\">" unless cart['logo'].to_s.empty?
+      pied = "<div class=\"pied\">#{esc(soc.reject(&:empty?).join(' — '))}</div>"
+      html << "<div class=\"page\"><div class=\"marque\">#{logo}<div><b>#{esc(soc[0])}</b><span>#{esc(soc[1])}</span></div></div>" \
               "<div class=\"bandeau\"><h1>#{esc(projet)}</h1>#{client.to_s.strip.empty? ? '' : "<div class=\"c\">Client : #{esc(client)}</div>"}<div class=\"c\">Dossier de présentation — #{Time.now.strftime('%d/%m/%Y')}</div></div>#{pied}</div>"
       images.each_slice(2) do |duo|
         html << '<div class="page"><div class="contenu"><h2>Vues du projet</h2><div class="vues">'
@@ -107,6 +111,7 @@ module A2M
         end
       end
       html << '<script>if(location.search.indexOf("pdf")>=0)setTimeout(function(){window.print()},500)</script></body></html>'
+      html.gsub('#E07838', cart['couleur'].to_s.empty? ? '#E07838' : cart['couleur']).gsub('#F9DCC0', cart['fond'].to_s.empty? ? '#F9DCC0' : cart['fond'])
     end
 
     # Image de chaque scène demandée ; la scène active est rétablie ensuite
