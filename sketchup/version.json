@@ -1,6 +1,7 @@
 {
- "version": "2.48.0",
+ "version": "2.49.0",
  "notes": [
+  "Nouveau : « Exporter pour ZWCAD » — le modèle part en DWG ou DXF (AutoCAD 2018 recommandé) dans Documents/Atelier 2M/Export CAO, chaque balise Métré A2M devenant un calque",
   "Nouveau : « Surfaces réglementaires » — emprise au sol, surface de plancher (estimation à contrôler), hauteur au faîtage et à l'égout, et reculs par rapport aux limites de propriété, calculés depuis le 3D",
   "Nouveau : « Caler un plan existant » — importez l'image d'un plan (PNG, JPG), cliquez deux points sur une longueur connue, tapez sa vraie valeur : le plan est mis à l'échelle (et d'équerre si vous voulez) pour redessiner par-dessus",
   "Plan 2D et coupes : mise à jour automatique (dès que vous arrêtez de modifier le 3D, arcs de portes, noms, surfaces, cotes de pièces et cotes de coupes se remettent à jour) ; nouvelle option « Cotes des pièces »",

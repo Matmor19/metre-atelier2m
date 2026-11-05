@@ -12,7 +12,7 @@ module A2M
       ['Dessiner',            %w[axes mur compose sol planelle toiture couverture zinguerie fondation hachures textures phases]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
       ['Bibliothèque',        %w[importer objet biblio profils]],
-      ['Métré',               %w[cartouches feuille dossier nomenclature extraire envoi aide]]
+      ['Métré',               %w[cartouches feuille export_cao dossier nomenclature extraire envoi aide]]
     ]
 
     def self.actions() ::ACTIONS_A2M end
