@@ -1,8 +1,8 @@
 {
- "version": "2.32.0",
+ "version": "2.33.0",
  "notes": [
+  "Nouveau : « Phases : existant, démolition, construction » — marquez les éléments sélectionnés à conserver (gris), à démolir (jaune) ou à construire (rouge), colorés ou non, puis affichez l'état existant, la démolition ou le projet fini ; la couleur est réversible et le métré n'est pas touché",
   "Vues : trois styles prêts à l'emploi — Réaliste (couleurs, client), Plan technique (lignes cachées, contours francs : dossier, permis), Maquette blanche (volumes, esquisse) ; le style est enregistré dans chaque scène, qui porte son nom « A2M – Façade Sud (plan technique) »",
-  "Nouveau : « Nomenclature des menuiseries » — tableau des fenêtres, portes-fenêtres, portes d'entrée et portes intérieures avec repères (F1, PF1, PE1, P1…), dimensions, matériau, ouvrant, vitrage, fermeture, quantités et pièces ; export Excel (.csv) ou page imprimable / PDF pour devis, DCE et commande",
-  "Nouveau : « Tableau de bord du modèle » — une seule fenêtre avec le contrôle avant métré (chaque point est cliquable : l'élément se sélectionne et le modèle zoome dessus) et le métré en direct (murs, pièces, menuiseries, plancher, couverture, cloisons, doublage, fouilles, tableau par pièce), mis à jour automatiquement pendant que vous dessinez ; boutons « Enregistrer le fichier » et « Envoyer au métré »"
+  "Nouveau : « Nomenclature des menuiseries » — tableau des fenêtres, portes-fenêtres, portes d'entrée et portes intérieures avec repères (F1, PF1, PE1, P1…), dimensions, matériau, ouvrant, vitrage, fermeture, quantités et pièces ; export Excel (.csv) ou page imprimable / PDF pour devis, DCE et commande"
  ]
 }
