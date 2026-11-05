@@ -1,6 +1,7 @@
 {
- "version": "2.50.0",
+ "version": "2.51.0",
  "notes": [
+  "Coupes : un mini-plan fidèle dans le panneau — c'est la tranche réelle de votre modèle (murs, ouvertures, meubles tels que dessinés) ; ajoutez des coupes rouges ou vertes, glissez-les, changez le sens de vue d'une flèche, ou posez 4, 6 ou 10 coupes d'un coup",
   "Nouveau : « Charpente » (chevrons, contre-liteaux, liteaux, faîtière, sablière sous les pans, avec linéaires), « Escalier » (droit, quart tournant, demi-tournant, loi de Blondel, limons, côté mur) et « Garde-corps » (barreaux, câbles, verre, lisses, plein ; le long d'un tracé ou des escaliers)",
   "Nouveau : « Exporter pour ZWCAD » — le modèle part en DWG ou DXF (AutoCAD 2018 recommandé) dans Documents/Atelier 2M/Export CAO, chaque balise Métré A2M devenant un calque",
   "Nouveau : « Surfaces réglementaires » — emprise au sol, surface de plancher (estimation à contrôler), hauteur au faîtage et à l'égout, et reculs par rapport aux limites de propriété, calculés depuis le 3D",

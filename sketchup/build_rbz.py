@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -141,6 +141,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'couverture.rb'), 'a2m_metre/couverture.rb')
     z.write(os.path.join(ici, 'zinguerie.rb'), 'a2m_metre/zinguerie.rb')
     z.write(os.path.join(ici, 'coupes.rb'), 'a2m_metre/coupes.rb')
+    z.write(os.path.join(ici, 'miniplan.rb'), 'a2m_metre/miniplan.rb')
     z.write(os.path.join(ici, 'cartouches.rb'), 'a2m_metre/cartouches.rb')
     z.write(os.path.join(ici, 'feuille.rb'), 'a2m_metre/feuille.rb')
     z.write(os.path.join(ici, 'dossier_client.rb'), 'a2m_metre/dossier_client.rb')
