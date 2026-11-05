@@ -1,5 +1,5 @@
 [
-  "Importer un objet : l'axe se place maintenant en 2 clics sur le bord bas de la face avant (coin gauche puis coin droit, vu de l'extérieur) ; Échap = détection automatique",
-  "Bibliothèque : les objets se rangent aussi par pièce (Entrée, Séjour, Cuisine, Chambre…) — choix dans la fiche de paramétrage, filtre en pastilles dans la fenêtre",
-  "Importer un objet (3D Warehouse / .skp) avec nettoyage automatique ; fenêtre bibliothèque à vignettes"
+  "Palette : compteurs du modèle en pastilles (fenêtres, portes, pièces, murs), actualisés à chaque outil lancé — un clic sur une pastille actualise",
+  "Palette : nouveau bouton « Importer un objet (3D Warehouse) » dans Bibliothèque, avec son icône",
+  "Importer un objet : axe en 2 clics ; bibliothèque rangée par type et par pièce"
 ]

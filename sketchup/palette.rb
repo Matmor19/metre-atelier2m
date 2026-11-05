@@ -11,7 +11,7 @@ module A2M
       ['Préparer',            %w[balises baliser pieces pieces_auto controle]],
       ['Dessiner',            %w[mur compose sol planelle toiture fondation hachures textures]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
-      ['Bibliothèque',        %w[objet biblio profils]],
+      ['Bibliothèque',        %w[importer objet biblio profils]],
       ['Métré',               %w[extraire envoi aide]]
     ]
 
@@ -51,10 +51,15 @@ module A2M
         #bulle:after{content:"";position:absolute;left:var(--fl,20px);border:6px solid transparent}
         #bulle.dessous:after{top:-12px;border-bottom-color:var(--g)}
         #bulle.dessus:after{bottom:-12px;border-top-color:var(--g)}
+        #stats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+        #stats .st{background:#fff;border:1px solid #e2dbd3;border-radius:999px;padding:3px 9px;font-size:11px;cursor:pointer}
+        #stats .st b{color:var(--o)}
+        #stats .vide{color:#8a7f75;font-size:11px}
         #info{position:sticky;bottom:0;background:var(--f);border-top:1px solid #e2dbd3;padding:7px 2px 4px;min-height:52px}
         #info b{display:block;font-size:12.5px;margin-bottom:2px}
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         </style></head><body>
+        <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>
         <div id="info"><b>Métré Atelier 2M</b><span>Survolez un bouton pour voir à quoi il sert, cliquez pour le lancer.</span></div>
@@ -70,16 +75,41 @@ module A2M
           bulle.style.setProperty('--fl',Math.max(8,Math.min(w-20,r.left+r.width/2-x-6))+'px');
           bulle.className=(dessous?'dessous':'dessus')+' vue';
         }
+        // Compteurs du modèle (pastille cliquable = actualiser)
+        function maj(l){var s=document.getElementById('stats');s.innerHTML='';
+          if(!l.length){s.innerHTML='<span class="vide">Aucun élément Métré dans le modèle</span>';return;}
+          l.forEach(function(x){var e=document.createElement('span');e.className='st';e.innerHTML='<b>'+x[1]+'</b> '+x[0];e.title='Actualiser';e.onclick=function(){sketchup.stats()};s.appendChild(e);});}
         document.querySelectorAll('button').forEach(function(b){
           b.addEventListener('mouseenter',function(){clearTimeout(minu);minu=setTimeout(function(){montrer(b)},250);});
           b.addEventListener('mouseleave',function(){clearTimeout(minu);bulle.className='';});
           b.addEventListener('click',function(){
             document.querySelectorAll('button.actif').forEach(function(x){x.classList.remove('actif')});
-            b.classList.add('actif'); b.blur(); bulle.className=''; sketchup.lancer(b.dataset.n);
+            b.classList.add('actif'); b.blur(); bulle.className=''; sketchup.lancer(b.dataset.n); setTimeout(function(){sketchup.stats()},1500);
           });
         });
+        sketchup.stats();
         </script></body></html>
       HTML
+    end
+
+    COMPTEURS = [['fenêtre(s)', %w[A2M_FENETRE]], ['porte(s)-fenêtre', %w[A2M_PORTE_FENETRE]], ['porte(s) d\'entrée', %w[A2M_PORTE_ENTREE]],
+                 ['porte(s) int.', %w[A2M_PORTE_INT]], ['pièce(s)', %w[A2M_PIECE]], ['mur(s)', %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_CLOISON]]].freeze
+
+    # Nombre d'éléments par balise Métré : premier niveau du modèle et un niveau dans les groupes
+    def self.stats
+      model = Sketchup.active_model
+      cpt = Hash.new(0)
+      compte = lambda do |ents, niveau|
+        ents.each do |e|
+          next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          cpt[e.layer.name] += 1 if e.layer
+          compte.call(e.definition.entities, niveau + 1) if niveau < 1
+        end
+      end
+      compte.call(model.entities, 0)
+      COMPTEURS.map { |lib, bals| [lib, bals.sum { |b| cpt[b] }] }.reject { |_, n| n.zero? }
+    rescue StandardError
+      []
     end
 
     def self.ouvrir
@@ -97,6 +127,9 @@ module A2M
           Sketchup.focus if Sketchup.respond_to?(:focus)
           a[3].call if a
         end
+      end
+      @dlg.add_action_callback('stats') do |_ctx|
+        UI.start_timer(0, false) { @dlg.execute_script("maj(#{JSON.generate(stats).gsub('</', '<\\/')})") rescue nil }
       end
       @dlg.set_on_closed { Sketchup.write_default(CLE, 'ouverte', false) unless @quitte }
       @dlg.show
