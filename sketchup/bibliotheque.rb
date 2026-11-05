@@ -840,32 +840,132 @@ module A2M
     end
 
     # ---- Commande : la bibliothèque (poser un objet hors d'un mur, ouvrir ou changer le dossier) ----
+    # ---- Fenêtre « Bibliothèque d'objets » : vignettes rangées par type, recherche, pose à la taille voulue ----
+    CORPS_GERER = <<~'HTML'
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <input type="text" id="q" placeholder="Rechercher un objet…" autocomplete="off" style="flex:1;font:13px 'Segoe UI',Arial,sans-serif;text-align:left;padding:8px 12px">
+      </div>
+      <div class="puces" id="types"></div>
+      <div id="liste" style="margin-top:6px"></div>
+      <details><summary>Gérer la bibliothèque</summary>
+        <div class="puces" style="margin-top:8px">
+          <button type="button" class="puce" data-a="dossier">Ouvrir le dossier</button>
+          <button type="button" class="puce" data-a="changer">Changer de dossier</button>
+          <button type="button" class="puce" data-a="longueurs">Longueurs d'un appui ou seuil</button>
+          <button type="button" class="puce" data-a="corriger">Corriger le type d'objets</button>
+        </div>
+        <div class="petit" id="chemin"></div>
+      </details>
+      <div id="bas" style="flex-wrap:wrap">
+        <div id="msg" style="flex-basis:100%;color:#6f665e"></div>
+        <div class="dims" style="flex:1;min-width:210px;grid-template-columns:1fr auto 1fr">
+          <div><label for="l">Largeur</label><input type="text" id="l" inputmode="decimal" autocomplete="off"></div><div class="x">×</div>
+          <div><label for="h">Hauteur</label><input type="text" id="h" inputmode="decimal" autocomplete="off"></div>
+        </div>
+        <button id="retirer" type="button" class="puce" style="align-self:flex-end">Retirer</button>
+        <button id="go" type="button" style="align-self:flex-end">Poser</button>
+      </div>
+    HTML
+
+    SCRIPT_GERER = <<~'JS'
+      var D = __DONNEES__;
+      function el(id) { return document.getElementById(id); }
+      function nombre(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : 0; }
+      var etat = { type: null, q: '', sel: null };
+      function trouver(nom) { for (var i = 0; i < D.objets.length; i++) if (D.objets[i].nom === nom) return D.objets[i]; return null; }
+      function visibles() {
+        var q = etat.q.trim().toLowerCase();
+        return D.objets.filter(function (o) { return (!etat.type || o.type === etat.type) && (!q || (o.nom + ' ' + o.type).toLowerCase().indexOf(q) >= 0); });
+      }
+      function rendre() {
+        var t = el('types'); t.innerHTML = '';
+        var types = [null].concat(D.types);
+        types.forEach(function (ty) {
+          var n = ty ? D.objets.filter(function (o) { return o.type === ty; }).length : D.objets.length;
+          if (ty && !n) return;
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.type === ty ? ' rempli' : ''); b.textContent = (ty || 'Tous') + ' (' + n + ')';
+          b.addEventListener('click', function () { etat.type = ty; rendre(); }); t.appendChild(b);
+        });
+        var l = el('liste'); l.innerHTML = '';
+        var vis = visibles();
+        if (!vis.length) { l.innerHTML = '<div class="petit" style="padding:30px 0;text-align:center">' + (D.objets.length ? 'Aucun objet ne correspond.' : 'La bibliothèque est vide. Sélectionnez un objet, puis « Paramétrer un objet pour la bibliothèque ».') + '</div>'; }
+        var groupes = {}; vis.forEach(function (o) { (groupes[o.type] = groupes[o.type] || []).push(o); });
+        Object.keys(groupes).forEach(function (ty) {
+          var h = document.createElement('h2'); h.textContent = ty + ' (' + groupes[ty].length + ')'; l.appendChild(h);
+          var g = document.createElement('div'); g.className = 'grille'; l.appendChild(g);
+          groupes[ty].forEach(function (o) {
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (etat.sel === o.nom ? ' rempli' : '');
+            b.innerHTML = '<div class="vignette">' + (o.img ? '<img alt="" src="' + o.img + '">' : '') + '</div><span></span>'; b.querySelector('span').textContent = o.nom;
+            b.addEventListener('click', function () { etat.sel = o.nom; el('l').value = o.l; el('h').value = o.h; rendre(); });
+            b.addEventListener('dblclick', function () { etat.sel = o.nom; el('l').value = o.l; el('h').value = o.h; poser(); });
+            g.appendChild(b);
+          });
+        });
+        el('chemin').textContent = 'Dossier : ' + D.dossier;
+        var o = etat.sel ? trouver(etat.sel) : null, l1 = nombre(el('l').value), h1 = nombre(el('h').value);
+        el('l').classList.toggle('ok', l1 > 0); el('h').classList.toggle('ok', h1 > 0);
+        el('msg').textContent = o ? '« ' + o.nom + ' » sélectionné : posé à la taille indiquée, puis déplacé où vous voulez.' : 'Cliquez un objet pour le poser (ou double-cliquez : taille d\'origine).';
+        el('go').disabled = !(o && l1 > 0 && h1 > 0); el('retirer').disabled = !o;
+        el('retirer').style.opacity = o ? 1 : .5;
+      }
+      function poser() { var o = etat.sel ? trouver(etat.sel) : null; if (o && nombre(el('l').value) > 0 && nombre(el('h').value) > 0) sketchup.poser(JSON.stringify({ nom: o.nom, l: nombre(el('l').value), h: nombre(el('h').value) })); }
+      el('q').addEventListener('input', function () { etat.q = this.value; rendre(); });
+      el('l').addEventListener('input', rendre); el('h').addEventListener('input', rendre);
+      el('go').addEventListener('click', poser);
+      el('retirer').addEventListener('click', function () { if (etat.sel) sketchup.retirer(etat.sel); });
+      document.querySelectorAll('[data-a]').forEach(function (b) { b.addEventListener('click', function () { sketchup.action(b.getAttribute('data-a')); }); });
+      function maj(nouveau) { D = nouveau; if (etat.sel && !trouver(etat.sel)) etat.sel = null; rendre(); }
+      rendre();
+    JS
+
+    def self.donnees_gerer
+      liste = objets.select { |o| o['fichier'] }
+      { 'objets' => liste.map { |o| { 'nom' => o['nom'].to_s, 'type' => o['type'].to_s, 'img' => A2M::Panneau.vignette(o), 'l' => cm(o['l0']), 'h' => cm(o['h0']) } },
+        'types' => types.map(&:first), 'dossier' => dossier }
+    end
+
     def self.gerer
-      liste = objets
-      actions = ['Poser un objet à la taille voulue', 'Longueurs d\'un appui ou d\'un seuil (gamme)', 'Ouvrir le dossier de la bibliothèque', 'Changer de dossier',
-                 'Corriger le type d\'objets déjà rangés', 'Retirer un objet de la bibliothèque', 'Voir la liste des objets']
-      rep = UI.inputbox(['Que faire ?'], [actions[0]], [actions.join('|')], "Bibliothèque d'objets : #{liste.size} objet(s)")
-      return unless rep
-      case rep[0]
-      when actions[1]
-        regler_longueurs(liste)
-      when actions[2]
-        FileUtils.mkdir_p(dossier)
-        UI.openURL('file:///' + dossier.tr('\\', '/'))
-      when actions[3]
-        d = UI.select_directory(title: 'Dossier de la bibliothèque d\'objets', directory: File.directory?(dossier) ? dossier : nil)
-        if d
-          Sketchup.write_default('A2M_Metre', 'dossier_biblio', d)
-          UI.messagebox("Bibliothèque : #{d}\n#{objets.size} objet(s) trouvé(s).")
-        end
-      when actions[4] then corriger_type(liste)
-      when actions[5] then retirer(liste)
-      when actions[6]
-        UI.messagebox(liste.empty? ? 'Bibliothèque vide.' : liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] }
-          .map { |o| "#{o['type']} : #{o['nom']}#{o['gamme'] ? " — gamme #{o['gamme']}, #{o['longueur'].to_f.round} cm" : ''}" }.join("\n"))
-      else
-        poser_libre(liste)
+      if @fen_gerer && (@fen_gerer.visible? rescue false)
+        @fen_gerer.bring_to_front
+        return
       end
+      html = A2M::Panneau.page('Bibliothèque d\'objets', 'Cliquez un objet, réglez sa taille, puis « Poser »', CORPS_GERER, SCRIPT_GERER, donnees_gerer)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : bibliothèque d\'objets', 'A2M_Panneau_Biblio', html, 560, 780)
+      @fen_gerer = dlg
+      rafraichir = -> { dlg.execute_script("maj(#{JSON.generate(donnees_gerer).gsub('</', '<\/')})") }
+      dlg.add_action_callback('poser') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        obj = d && objets.find { |o| o['fichier'] && o['nom'] == d['nom'] }
+        UI.start_timer(0, false) { poser_objet(obj, d['l'].to_f, d['h'].to_f) } if obj && d['l'].to_f > 0 && d['h'].to_f > 0
+      end
+      dlg.add_action_callback('retirer') do |_ctx, nom|
+        UI.start_timer(0, false) do
+          o = objets.find { |x| x['nom'] == nom.to_s }
+          retirer_objet(o) if o
+          rafraichir.call
+        end
+      end
+      dlg.add_action_callback('action') do |_ctx, a|
+        UI.start_timer(0, false) do
+          liste = objets
+          case a.to_s
+          when 'dossier'
+            FileUtils.mkdir_p(dossier)
+            UI.openURL('file:///' + dossier.tr('\\', '/'))
+          when 'changer'
+            d = UI.select_directory(title: 'Dossier de la bibliothèque d\'objets', directory: File.directory?(dossier) ? dossier : nil)
+            if d
+              Sketchup.write_default('A2M_Metre', 'dossier_biblio', d)
+              UI.messagebox("Bibliothèque : #{d}\n#{objets.size} objet(s) trouvé(s).")
+            end
+          when 'longueurs' then regler_longueurs(liste)
+          when 'corriger' then corriger_type(liste)
+          end
+          rafraichir.call
+        end
+      end
+      dlg.set_on_closed { @fen_gerer = nil }
+      dlg.show
     end
 
     # Type corrigé pour un ou plusieurs objets (ceux dont le nom commence par…) ; appuis et seuils : gamme et longueur
@@ -903,7 +1003,10 @@ module A2M
       noms = liste.map { |o| "#{o['nom']} (#{o['type']})" }
       rep = UI.inputbox(['Objet à retirer'], [noms[0]], [noms.join('|')], 'Retirer un objet de la bibliothèque')
       return unless rep
-      o = liste[noms.index(rep[0])]
+      retirer_objet(liste[noms.index(rep[0])])
+    end
+
+    def self.retirer_objet(o)
       return unless UI.messagebox("Retirer « #{o['nom']} » de la bibliothèque ?\nSon fichier est rangé dans le dossier « Retirés », rien n'est effacé.", MB_YESNO) == IDYES
       if o['fichier'] && File.exist?(File.join(dossier, o['fichier']))
         dest = File.join(dossier, 'Retirés', File.basename(o['fichier']))
@@ -940,6 +1043,11 @@ module A2M
       l, h = rep[1].tr(',', '.').to_f, rep[2].tr(',', '.').to_f
       # Objet changé dans la liste sans toucher aux cotes : il garde sa propre taille
       l, h = cm(obj['l0']), cm(obj['h0']) if obj != o0 && l == cm(o0['l0']) && h == cm(o0['h0'])
+      poser_objet(obj, l, h)
+    end
+
+    # Pose l'objet à la taille voulue (cm) à l'origine du modèle, puis lance l'outil Déplacer
+    def self.poser_objet(obj, l, h)
       model = Sketchup.active_model
       model.start_operation('Poser un objet de la bibliothèque', true)
       begin

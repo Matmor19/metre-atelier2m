@@ -1,8 +1,7 @@
 {
- "version": "2.22.0",
+ "version": "2.23.0",
  "notes": [
-  "Poser une porte intérieure : même fenêtre à vignettes que l'ouverture — taille du vantail en un clic (63 à 103 × 204, ou autre cote), aperçu dessiné avec la réservation, menuiserie posée choisie sur vignettes, pièce en un clic",
-  "Les choix pour le métré (destination, âme, type, finition, pose) restent facultatifs : un clic les choisit, un second clic les vide (rien au métré)",
-  "Nouveau fichier commun panneau.rb : couleurs et boutons animés partagés par les fenêtres à vignettes"
+  "Bibliothèque d'objets : nouvelle fenêtre à vignettes — objets rangés par type, recherche, taille réglée avant la pose (double-clic = taille d'origine), « Retirer » avec confirmation (le fichier est rangé dans « Retirés »)",
+  "La fenêtre reste ouverte pendant que vous dessinez ; gestion du dossier, des longueurs d'appui/seuil et du type dans un bloc repliable"
  ]
 }
