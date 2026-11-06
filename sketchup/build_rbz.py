@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -43,6 +43,9 @@ unless file_loaded?(__FILE__)
     ['reglementaire','Surfaces réglementaires',           'Emprise au sol, surface de plancher (estimation), hauteur au faîtage et à l\'égout, reculs par rapport aux limites de propriété : les chiffres du permis, calculés depuis le 3D', -> { A2M::Reglementaire.ouvrir }, false],
     ['export_cao',  'Exporter pour ZWCAD (DWG / DXF)',     'Exporte le modèle en DWG ou DXF dans Documents/Atelier 2M/Export CAO : chaque balise Métré A2M devient un calque pour ZWCAD', -> { A2M::ExportCAO.lancer }, false],
     ['charpente',   'Charpente (chevrons, liteaux)',       'Chevrons à l\'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, faîtière et sablière sous chaque pan, avec les linéaires pour le métré', -> { A2M::Charpente.ouvrir }, false],
+    ['cotation',    'Cotation automatique',                'Cotes de chaque pièce côté par côté et cotes hors tout du bâtiment, posées en un clic sur leur propre balise (masquable)', -> { A2M::CotationAuto.ouvrir }, false],
+    ['styles',      'Styles de vue',                       'Intérieur, plan technique, coupe grise, construire et démolir, tracé sur plan : un clic change l\'aspect de la vue, avec vos favoris', -> { A2M::Styles.ouvrir }, false],
+    ['mes_elements','Mes éléments',                        'Votre bibliothèque personnelle (tuiles, zinc, menuiseries, mobilier) : ajoutez la sélection en un clic, posez-la au clic dans le modèle', -> { A2M::MesElements.ouvrir }, false],
     ['escalier',    'Escalier',                            'Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons, loi de Blondel, côté mur', -> { A2M::Escalier.ouvrir }, false],
     ['gardecorps',  'Garde-corps',                         'Poteaux, main courante et remplissage (barreaux, câbles, verre, lisses, plein) le long d\'un tracé ou d\'un escalier', -> { A2M::GardeCorps.ouvrir }, false],
     ['releve',      'Relevé de côtes',                     'Tapez les mesures prises sur place (deux côtes, ou côté par côté avec les angles) : la pièce se dessine, nommée et balisée, avec sa surface', -> { A2M::Releve.ouvrir }, false],
@@ -119,6 +122,9 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre.rb', chargeur)
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'menu_contextuel.rb'), 'a2m_metre/menu_contextuel.rb')
+    z.write(os.path.join(ici, 'cotation_auto.rb'), 'a2m_metre/cotation_auto.rb')
+    z.write(os.path.join(ici, 'styles.rb'), 'a2m_metre/styles.rb')
+    z.write(os.path.join(ici, 'mes_elements.rb'), 'a2m_metre/mes_elements.rb')
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
     z.write(os.path.join(ici, 'bibliotheque.rb'), 'a2m_metre/bibliotheque.rb')
     z.write(os.path.join(ici, 'dessin_murs.rb'), 'a2m_metre/dessin_murs.rb')
