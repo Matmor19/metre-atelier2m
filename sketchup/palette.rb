@@ -9,7 +9,7 @@ module A2M
     # Groupes de la palette : [titre, noms d'icônes]
     GROUPES = [
       ['Préparer',            %w[tableau balises baliser pieces piece_clic separateur separateur_voir pieces_auto calage reglementaire releve fiche controle vues plan2d coupes cotation styles variantes]],
-      ['Dessiner',            %w[axes mur compose compositions sol_murs sol planelle toiture charpente couverture zinguerie escalier gardecorps fondation hachures textures phases]],
+      ['Dessiner',            %w[axes mur compose compositions sol_murs sol planelle toiture charpente couverture zinguerie escalier gardecorps fondation hachures textures textures_auto phases]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
       ['Bibliothèque',        %w[importer vue_objet objet biblio mes_elements profils]],
       ['Métré',               %w[cartouches feuille export_cao dossier nomenclature extraire envoi aide]]

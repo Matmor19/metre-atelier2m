@@ -43,5 +43,6 @@
  "Coupes : la police par défaut est maintenant Montserrat",
  "Zinguerie : « Tous les égouts » reconnaît maintenant n'importe quelle toiture du modèle (même non générée par l'extension, ou faces retournées)",
  "Palette : boutons ◧ et ◨ pour l'ancrer à l'extérieur de la fenêtre SketchUp, à gauche ou à droite (à l'intérieur s'il n'y a pas de place sur l'écran) ; elle suit la fenêtre quand on la déplace, et se replace à chaque ouverture",
- "Mes éléments : catégorie « Textures » — bouton « Importer les textures A2M_ du modèle » (taille réelle du motif conservée, noms rétablis), un clic applique la texture à la sélection ou au pot de peinture"
+ "Mes éléments : catégorie « Textures » — bouton « Importer les textures A2M_ du modèle » (taille réelle du motif conservée, noms rétablis), un clic applique la texture à la sélection ou au pot de peinture",
+ "Textures A2M_ automatiques : un mur de soubassement ou des semelles dessinés prennent tout de suite leurs matières A2M_ (côtés, dessus, dessous) ; commande « Textures A2M_ automatiques » pour les éléments déjà dessinés"
 ]

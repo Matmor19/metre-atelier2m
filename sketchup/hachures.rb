@@ -259,6 +259,7 @@ module A2M
 
     # Pose la hachure réglée pour la balise de ce groupe (appelée par les outils de dessin)
     def self.poser(ent, model = Sketchup.active_model)
+      A2M::TexturesAuto.appliquer(ent, model) if defined?(A2M::TexturesAuto)
       return unless disponible?(model) && ent && ent.layer
       x = reglages[ent.layer.name]
       return onde_objet(model, ent, x) if onde?(x)
