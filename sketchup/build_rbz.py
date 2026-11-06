@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic sol_murs cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -20,6 +20,7 @@ unless file_loaded?(__FILE__)
     ['controle',    'Contrôle du modèle',                  'Vérifie balises, solides, chevauchements, pièces et menuiseries avant l\'extraction', -> { A2M::Controle.lancer }, true],
     ['mur',         'Dessiner un mur',                     'Mur, doublage ou cloison : hauteur, épaisseur et tracé (axe ou face), posé sur sa balise', -> { A2M::DessinMurs.lancer }, false],
     ['compose',     'Dessiner un mur composé',             'Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise', -> { A2M::DessinMurs.lancer_compose }, false],
+    ['sol_murs',    'Dalle, chape, plafond depuis les murs', 'Sélectionnez les murs : dalle béton sous l\'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d\'un coup avec leurs épaisseurs', -> { A2M::SolMurs.ouvrir }, false],
     ['sol',         'Dessiner un sol ou un plafond',       'Dalle, plancher, isolant de sol, chape, revêtement, terrasse, allée ou plafond', -> { A2M::DessinSols.lancer }, false],
     ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente, débord et épaisseur', -> { A2M::Toiture.lancer }, false],
     ['planelle',    'Poser les planelles en rive de dalle', 'Planelles sur tout le pourtour de la dalle : votre profil dessiné (en L…, avec isolant), un profil de la bibliothèque ou un rectangle ; dans l\'épaisseur (dalle recoupée) ou à l\'extérieur', -> { A2M::Planelles.lancer }, false],
@@ -125,6 +126,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'menu_contextuel.rb'), 'a2m_metre/menu_contextuel.rb')
     z.write(os.path.join(ici, 'cotation_auto.rb'), 'a2m_metre/cotation_auto.rb')
     z.write(os.path.join(ici, 'piece_clic.rb'), 'a2m_metre/piece_clic.rb')
+    z.write(os.path.join(ici, 'sol_murs.rb'), 'a2m_metre/sol_murs.rb')
     z.write(os.path.join(ici, 'styles.rb'), 'a2m_metre/styles.rb')
     z.write(os.path.join(ici, 'mes_elements.rb'), 'a2m_metre/mes_elements.rb')
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')

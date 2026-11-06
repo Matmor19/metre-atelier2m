@@ -1,6 +1,7 @@
 {
- "version": "2.59.0",
+ "version": "2.60.0",
  "notes": [
+  "Nouveau : « Dalle, chape, plafond depuis les murs » — sélectionnez les murs, cochez dalle béton, isolation au sol, chape et plafond avec leurs épaisseurs : la dalle suit l'emprise extérieure, les autres couches chaque pièce fermée, chacune sur sa balise du métré",
   "« Pièces automatiques » refait : toutes les pièces fermées sont trouvées, puis présentées une par une (« Pièce 2 sur 5 : 10,76 m² », pièce en surbrillance, vue centrée dessus) avec nom (liste ou précision libre), sol en texture, plinthes, plafond proposé ensuite et scènes 2D/3D créées à la fin",
   "« Pièce en un clic » : le revêtement de sol se choisit en texture (béton ciré, carrelage, mosaïque, parquet chêne, terrazzo, avec vignettes) ou en teinte unie",
   "Nouveau : « Pièce en un clic » — cliquez dans une pièce fermée : un panneau propose l'épaisseur du sol, le revêtement, le profil de plinthes, le nom (liste ou précision libre) et affiche la surface et le périmètre en ml ; la pièce, son sol et ses plinthes sont créés d'un coup, et l'outil reste actif pour la pièce suivante",
