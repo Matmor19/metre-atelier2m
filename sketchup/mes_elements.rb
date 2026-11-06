@@ -13,7 +13,7 @@ module A2M
     def self.dossier
       base = ENV['USERPROFILE'] || ENV['HOME'] || Dir.home
       doc = File.join(base, 'Documents')
-      File.join(File.directory?(doc) ? doc : base, 'Atelier 2M', 'Mes éléments')
+      File.join(File.directory?(doc) ? doc : base, 'Atelier 2M', 'Mes éléments').tr('\\', '/')
     end
 
     def self.nettoyer(nom) nom.to_s.strip.gsub(%r{[\\/:*?"<>|]}, '_') end

@@ -1,4 +1,5 @@
 [
+  "Correction : « Mes éléments » retrouve bien les éléments rangés (chemin du dossier sous Windows) ; testé : style, ajout avec vignette, cotation des pièces et hors tout",
   "Nouveau : « Cotation automatique » (cotes de chaque pièce et cotes hors tout du bâtiment, sur leur propre balise), « Styles de vue » (intérieur, plan technique, coupe grise, construire et démolir, tracé sur plan, avec favoris) et « Mes éléments » (votre bibliothèque personnelle : ajoutez la sélection, posez-la au clic)",
   "Clic droit sur une porte : « Atelier 2M : porte » > Charnière gauche ↔ droite (la porte est retournée en miroir) ou Ouvrir de l'autre côté du mur ; l'arc d'ouverture du plan 2D se met à jour",
   "Coupes : un mini-plan fidèle dans le panneau — c'est la tranche réelle de votre modèle (murs, ouvertures, meubles tels que dessinés) ; ajoutez des coupes rouges ou vertes, glissez-les, changez le sens de vue d'une flèche, ou posez 4, 6 ou 10 coupes d'un coup",
