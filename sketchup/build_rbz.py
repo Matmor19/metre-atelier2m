@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes coupe_brisee couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -130,6 +130,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'cotation_auto.rb'), 'a2m_metre/cotation_auto.rb')
     z.write(os.path.join(ici, 'piece_clic.rb'), 'a2m_metre/piece_clic.rb')
     z.write(os.path.join(ici, 'separateur.rb'), 'a2m_metre/separateur.rb')
+    z.write(os.path.join(ici, 'coupe_brisee.rb'), 'a2m_metre/coupe_brisee.rb')
     z.write(os.path.join(ici, 'sol_murs.rb'), 'a2m_metre/sol_murs.rb')
     z.write(os.path.join(ici, 'compositions.rb'), 'a2m_metre/compositions.rb')
     z.write(os.path.join(ici, 'styles.rb'), 'a2m_metre/styles.rb')

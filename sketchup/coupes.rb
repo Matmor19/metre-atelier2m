@@ -19,6 +19,8 @@ module A2M
       <div class="petit">Passe par le milieu du bâtiment. Vous pouvez ensuite déplacer le plan de coupe avec l'outil Déplacer de SketchUp, puis cliquer « Actualiser ».</div>
       <h2>Ou tracez votre coupe</h2>
       <button type="button" class="puce rempli" id="trace">Tracer une coupe (2 clics + 1 clic pour le sens de vue)</button>
+      <button type="button" class="puce rempli" id="tracebr">Tracer une coupe brisée (plusieurs clics, double-clic pour finir, puis le sens de vue)</button>
+      <div class="petit">La coupe brisée est fabriquée en géométrie : les ouvrages solides sont recoupés, les faces coupées sont en poché noir. Les ouvrages non solides restent entiers. Cliquez « Actualiser » après avoir modifié le modèle.</div>
       <h2>Réglages</h2>
       <div class="puces" id="regl"></div>
       <h2>Niveaux (N1, N2, N3…)</h2>
@@ -60,7 +62,7 @@ module A2M
             var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = x[1];
             b.addEventListener('click', function () { sketchup.action(JSON.stringify({ a: x[0], nom: c.nom, reg: reg })); }); d.appendChild(b);
           });
-          [['↺ 15°', -15], ['↻ 15°', 15], ['90°', 90]].forEach(function (x) {
+          if (!c.brisee) [['↺ 15°', -15], ['↻ 15°', 15], ['90°', 90]].forEach(function (x) {
             var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = x[0]; b.title = 'Tourner la ligne de coupe';
             b.addEventListener('click', function () { sketchup.action(JSON.stringify({ a: 'rot', ang: x[1], nom: c.nom, reg: reg })); }); d.appendChild(b);
           });
@@ -84,6 +86,7 @@ module A2M
       el('nivplus').addEventListener('click', function () { NIV.push({ nom: 'N' + (NIV.length + 1), cm: 270 * (NIV.length + 1) }); niveaux(); });
       niveaux();
       el('trace').addEventListener('click', function () { sketchup.tracer(JSON.stringify({ reg: reg })); });
+      el('tracebr').addEventListener('click', function () { sketchup.tracer(JSON.stringify({ reg: reg, brisee: true })); });
       rendre();
 
       var svg = el('svg'), NS = 'http://www.w3.org/2000/svg', L = [], ZONE = null, BB = D.plan.bb;
@@ -95,6 +98,7 @@ module A2M
       }
       function aPartirDe(c) {
         var h = Math.abs(c.dir[1]) >= Math.abs(c.dir[0]);
+        if (c.brisee) return { nom: c.nom, libre: true, brisee: true, pts: c.pts.map(function (p) { return [p[0], -p[1]]; }), a: [c.a[0], -c.a[1]], b: [c.b[0], -c.b[1]], dir: c.dir };
         if (Math.min(Math.abs(c.dir[0]), Math.abs(c.dir[1])) > 0.02) return { nom: c.nom, libre: true, a: [c.a[0], -c.a[1]], b: [c.b[0], -c.b[1]], dir: c.dir };
         return { nom: c.nom, t: h ? 'R' : 'V', pos: h ? -c.a[1] : c.a[0], dir: h ? (c.dir[1] > 0 ? 1 : -1) : (c.dir[0] > 0 ? 1 : -1) };
       }
@@ -115,10 +119,11 @@ module A2M
         L.forEach(function (l) {
           if (l.libre) {
             var cg = e('g', {}, svg), kk = ZONE[2] / 400;
-            e('line', { x1: l.a[0], y1: l.a[1], x2: l.b[0], y2: l.b[1], stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }, cg);
+            if (l.pts) e('path', { d: 'M' + l.pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L'), fill: 'none', stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke', 'stroke-linejoin': 'round' }, cg);
+            else e('line', { x1: l.a[0], y1: l.a[1], x2: l.b[0], y2: l.b[1], stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }, cg);
             var mx2 = (l.a[0] + l.b[0]) / 2, my2 = (l.a[1] + l.b[1]) / 2, vx2 = l.dir[0], vy2 = -l.dir[1];
             e('line', { x1: mx2, y1: my2, x2: mx2 + vx2 * 30 * kk, y2: my2 + vy2 * 30 * kk, stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }, cg);
-            var tl = e('text', { x: l.a[0], y: l.a[1] - 8 * kk, 'font-size': 13 * kk, fill: '#B3302F', 'font-weight': 700, 'font-family': 'Segoe UI,Arial' }, cg); tl.textContent = l.nom + ' (oblique)';
+            var tl = e('text', { x: l.a[0], y: l.a[1] - 8 * kk, 'font-size': 13 * kk, fill: '#B3302F', 'font-weight': 700, 'font-family': 'Segoe UI,Arial' }, cg); tl.textContent = l.nom + (l.brisee ? ' (brisée)' : ' (oblique)');
             return;
           }
           var col = l.t === 'R' ? '#B3302F' : '#2E8B6A', h = l.t === 'R';
@@ -183,16 +188,49 @@ module A2M
 
     # ---- Outil : 2 clics pour la ligne, 1 clic pour le côté d'où l'on regarde ----
     class Outil
-      def initialize(reg) @reg = reg; @pts = []; @ip = Sketchup::InputPoint.new; @souris = nil end
-      def activate; Sketchup.status_text = 'Coupe : cliquez le début de la ligne de coupe' end
+      def initialize(reg, brisee = false) @reg = reg; @brisee = brisee; @libre = false; @fini = false; @pts = []; @ip = Sketchup::InputPoint.new; @souris = nil end
+      def activate
+        Sketchup.status_text = @brisee ? 'Coupe brisée : cliquez chaque sommet de la ligne ; double-clic ou Entrée pour finir, puis un clic du côté d\'où vous voulez regarder. Axes verrouillés (Ctrl pour tracer librement).' : 'Coupe : cliquez le début de la ligne de coupe'
+      end
+      def onKeyDown(key, _r, _f, view)
+        if @brisee && key == 17 then @libre = !@libre; Sketchup.status_text = "Coupe brisée : axes #{@libre ? 'libres' : 'verrouillés'}"; view.invalidate end
+      end
+      def onLButtonDoubleClick(_f, _x, _y, view) terminer_brisee(view) end
+      def onReturn(view) terminer_brisee(view) end
+      def terminer_brisee(view)
+        return unless @brisee && !@fini && @pts.size >= 2
+        @fini = true
+        Sketchup.status_text = 'Coupe brisée : cliquez du côté d\'où vous voulez regarder'
+        view.invalidate
+      end
+      def verrou(p)
+        return p if !@brisee || @libre || @fini || @pts.empty?
+        d = @pts.last; q = p.clone
+        (q.x - d.x).abs >= (q.y - d.y).abs ? q.y = d.y : q.x = d.x
+        q
+      end
       def deactivate(view) view.invalidate end
       def onSetCursor() UI.set_cursor(632) end
       def onMouseMove(_f, x, y, view)
-        @ip.pick(view, x, y); @souris = @ip.position; view.invalidate
+        @ip.pick(view, x, y); @souris = verrou(@ip.position.clone.tap { |q| q.z = 0 }); view.invalidate
       end
       def onLButtonDown(_f, x, y, view)
         @ip.pick(view, x, y)
-        p = @ip.position.clone; p.z = 0
+        p = verrou(@ip.position.clone.tap { |q| q.z = 0 })
+        if @brisee
+          if @fini
+            a = @pts.first; b = @pts.last
+            n = Z_AXIS.cross(b - a); n.normalize!
+            n.reverse! if n.dot(p - a) < 0
+            pts = @pts.dup; reg = @reg
+            Sketchup.active_model.select_tool(nil)
+            UI.start_timer(0, false) { A2M::CoupeBrisee.creer(pts, n.reverse, reg) }
+          else
+            @pts << p unless @pts.last && @pts.last.distance(p) < 1.cm
+          end
+          view.invalidate
+          return
+        end
         @pts << p
         if @pts.size == 1 then Sketchup.status_text = 'Coupe : cliquez la fin de la ligne'
         elsif @pts.size == 2 then Sketchup.status_text = 'Coupe : cliquez du côté d\'où vous voulez regarder'
@@ -214,7 +252,10 @@ module A2M
         view.drawing_color = Sketchup::Color.new(224, 120, 56)
         view.line_width = 2
         view.line_stipple = '-'
-        if @pts.size == 1 then view.draw_lines(a, m)
+        if @brisee
+          lst = @fini ? @pts : @pts + [m]
+          view.draw_polyline(lst) if lst.size >= 2
+        elsif @pts.size == 1 then view.draw_lines(a, m)
         elsif @pts.size == 2 then view.draw_lines(@pts[0], @pts[1])
         end
       end
@@ -302,7 +343,7 @@ module A2M
     end
 
     # Cotes de hauteur, niveaux et repère sur le plan
-    def self.habiller(model, nom, a, b, dir, u, reg)
+    def self.habiller(model, nom, a, b, dir, u, reg, pts = nil)
       model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && g.name == "Cotes coupe #{nom}" }
       model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && g.name == "Repère coupe #{nom}" }
       bb = model.bounds
@@ -347,7 +388,13 @@ module A2M
         z = [bb.min.z, niveaux(model).first[1]].max + 119.cm
         a2 = a.offset(u, -40.cm); b2 = b.offset(u, 40.cm)
         a2.z = b2.z = z
-        r.entities.add_line(a2, b2)
+        if pts && pts.size > 2
+          pts.each_cons(2) { |p, q| r.entities.add_line(Geom::Point3d.new(p.x, p.y, z), Geom::Point3d.new(q.x, q.y, z)) }
+          r.entities.add_line(a2, pts.first.clone.tap { |q| q.z = z })
+          r.entities.add_line(b2, pts.last.clone.tap { |q| q.z = z })
+        else
+          r.entities.add_line(a2, b2)
+        end
         [a2, b2].each do |p|
           r.entities.add_line(p, p.offset(dir, 60.cm))
           r.entities.add_line(p.offset(dir, 60.cm), p.offset(dir, 45.cm).offset(u, p == a2 ? 12.cm : -12.cm))
@@ -455,6 +502,9 @@ module A2M
     def self.action(r)
       model = Sketchup.active_model
       nom = r['nom'].to_s
+      if defined?(A2M::CoupeBrisee) && (gb = A2M::CoupeBrisee.groupe(model, nom))
+        return A2M::CoupeBrisee.action(r, gb)
+      end
       sp = plan_de(model, nom)
       return UI.messagebox("La coupe #{nom} n'existe plus.") unless sp
       d = lire(sp) or return
@@ -514,7 +564,7 @@ module A2M
       model.entities.grep(Sketchup::SectionPlane).select { |s| s.name.start_with?(PREFIXE) }.map do |sp|
         d = lire(sp) or next
         { 'nom' => sp.name.sub(PREFIXE, ''), 'a' => d['a'][0, 2].map { |v| (v * 2.54).round(1) }, 'b' => d['b'][0, 2].map { |v| (v * 2.54).round(1) }, 'dir' => d['dir'][0, 2] }
-      end.compact
+      end.compact + (defined?(A2M::CoupeBrisee) ? A2M::CoupeBrisee.lignes(model) : [])
     end
 
     # Ligne venue du mini-plan (cm) : crée ou met à jour la coupe
@@ -546,7 +596,7 @@ module A2M
       end
       dlg.add_action_callback('tracer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil) || {}
-        UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(r['reg'] || {})) }
+        UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(r['reg'] || {}, r['brisee'] ? true : false)) }
       end
       dlg.add_action_callback('appliquer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
