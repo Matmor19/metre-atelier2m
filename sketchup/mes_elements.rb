@@ -60,12 +60,83 @@ module A2M
       true
     end
 
+    # Outil de pose : clic = poser, Tab = tourner de 90°, flèche gauche/droite = miroir, flèche haut/bas = coller au sol ou suivre le point visé
+    class Poser
+      def initialize(defn)
+        @d = defn; @angle = 0; @miroir = 1; @sol = true; @pos = nil
+      end
+
+      def activate
+        maj_statut
+      end
+
+      def maj_statut
+        Sketchup.status_text = "Mes éléments : clic = poser ; Tab = tourner de 90° (#{@angle}°) ; flèches gauche/droite = miroir ; flèches haut/bas = #{@sol ? 'collé au sol' : 'suit le point visé'} ; Échap = finir"
+      end
+
+      def deactivate(view) view.invalidate end
+      def resume(view) maj_statut; view.invalidate end
+
+      def transfo
+        return nil unless @pos
+        z = @sol ? A2M::Plan2D.sol_auto(Sketchup.active_model).cm : @pos.z
+        Geom::Transformation.new(Geom::Point3d.new(@pos.x, @pos.y, z)) * Geom::Transformation.rotation(ORIGIN, Z_AXIS, @angle.degrees) * Geom::Transformation.scaling(@miroir, 1, 1)
+      end
+
+      def onMouseMove(_flags, x, y, view)
+        ip = view.inputpoint(x, y)
+        @pos = ip.position
+        view.invalidate
+      end
+
+      def onKeyDown(key, rpt, _flags, view)
+        return false if rpt > 1
+        case key
+        when 9 then @angle = (@angle + 90) % 360
+        when 37, 39 then @miroir = -@miroir
+        when 38, 40 then @sol = !@sol
+        else return false
+        end
+        maj_statut; view.invalidate
+        true
+      end
+
+      def onLButtonDown(_flags, _x, _y, view)
+        t = transfo or return
+        model = Sketchup.active_model
+        model.start_operation('Poser un élément (Mes éléments)', true)
+        model.active_entities.add_instance(@d, t)
+        model.commit_operation
+        view.invalidate
+      end
+
+      def onCancel(_reason, _view) Sketchup.active_model.select_tool(nil) end
+
+      def draw(view)
+        t = transfo or return
+        bb = @d.bounds
+        pts = (0..7).map { |i| t * bb.corner(i) }
+        view.line_width = 2
+        view.drawing_color = 'orange'
+        [[0, 1], [1, 3], [3, 2], [2, 0], [4, 5], [5, 7], [7, 6], [6, 4], [0, 4], [1, 5], [2, 6], [3, 7]].each { |a, b| view.draw(GL_LINES, pts[a], pts[b]) }
+      end
+
+      def getExtents
+        bb = Geom::BoundingBox.new
+        if @pos
+          r = @d.bounds.diagonal
+          bb.add(@pos.offset(Geom::Vector3d.new(r, r, r))); bb.add(@pos.offset(Geom::Vector3d.new(-r, -r, -r)))
+        end
+        bb
+      end
+    end
+
     def self.poser(cat, nom)
       fic = File.join(dossier, nettoyer(cat), nettoyer(nom) + '.skp')
       return UI.messagebox('Fichier introuvable : ' + fic) unless File.exist?(fic)
       model = Sketchup.active_model
       d = model.definitions.load(fic)
-      model.place_component(d, true)    # pose au clic, répétable ; Échap pour finir
+      model.select_tool(Poser.new(d))    # pose au clic, répétable ; Échap pour finir
     end
 
     CORPS = <<~'HTML'
@@ -99,7 +170,7 @@ module A2M
           b.addEventListener('click', function () { sketchup.poser(JSON.stringify({ cat: t.cat, nom: t.nom })); });
           g.appendChild(b);
         });
-        el('vide').textContent = l.length ? 'Cliquez un élément pour le poser (clic dans le modèle, Échap pour finir).' : 'Rien ici pour l\'instant : ajoutez votre premier élément ci-dessous.';
+        el('vide').textContent = l.length ? 'Cliquez un élément, puis cliquez dans le modèle pour le poser : Tab tourne de 90°, flèches gauche/droite font le miroir, Échap termine.' : 'Rien ici pour l\'instant : ajoutez votre premier élément ci-dessous.';
       }
       el('go').addEventListener('click', function () { sketchup.ajouter(JSON.stringify({ nom: el('nom').value, cat: el('cat').value })); });
       el('dossier').addEventListener('click', function () { sketchup.dossier(''); });

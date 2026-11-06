@@ -1,6 +1,7 @@
 {
- "version": "2.55.0",
+ "version": "2.56.0",
  "notes": [
+  "« Mes éléments » : pose au clic avec aperçu orange, Tab pour tourner de 90°, flèches gauche/droite pour le miroir, flèches haut/bas pour coller au sol ou suivre le point visé ; l'outil reste actif pour poser plusieurs éléments",
   "« Dessiner un mur » : un panneau à cartes (mur, soubassement, refend, pignon, doublages, cloison) avec hauteur, épaisseur et côté du tracé réglés d'un coup d'œil, puis « Dessiner »",
   "Extraction pour le métré : les ouvrages posés par Couverture (m²), Zinguerie (ml), Charpente (ml de chevrons, liteaux, contre-liteaux), Garde-corps (ml) et Escalier (marches) sont maintenant relevés par type et envoyés au configurateur dans les informations",
   "Correction : « Mes éléments » retrouve bien les éléments rangés (chemin du dossier sous Windows) ; testé : style, ajout avec vignette, cotation des pièces et hors tout",
