@@ -522,6 +522,7 @@ module A2M
       FileUtils.mkdir_p(File.dirname(chemin))
       d.save_as(chemin)
       d.save_thumbnail(chemin.sub(/\.skp\z/, '.png')) rescue nil
+      (A2M::VueObjet.generer(d, chemin.sub(/\.skp\z/, '')) if defined?(A2M::VueObjet)) rescue nil   # vues 2D : dessus et face, couleurs d'origine
       pc = (@fiche || [])[8].to_s
       liste << info.merge('fichier' => rel, 'piece' => (pc.empty? || pc == PAS_DE_PIECE ? nil : pc)).compact
       sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
