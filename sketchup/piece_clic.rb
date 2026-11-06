@@ -48,6 +48,7 @@ module A2M
         te = tmp.entities
         te.add_face([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map { |a| Geom::Point3d.new(*a) })
         emp.each { |loops| loops.each { |lp| te.add_edges((lp + [lp[0]]).map { |x, y| Geom::Point3d.new(x, y, z) }) } }
+        A2M::Separateur.ajouter_a(te, z, model)
         te.intersect_with(false, Geom::Transformation.new, te, Geom::Transformation.new, true, te.to_a)
         te.grep(Sketchup::Edge).each { |e| e.find_faces if e.valid? }
         bord = ->(f) { f.vertices.any? { |v| p = v.position; (p.x - x0).abs < 0.1 || (p.x - x1).abs < 0.1 || (p.y - y0).abs < 0.1 || (p.y - y1).abs < 0.1 } }
@@ -301,6 +302,7 @@ module A2M
         te = tmp.entities
         te.add_face([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map { |a| Geom::Point3d.new(*a) })
         emp.each { |loops| loops.each { |lp| te.add_edges((lp + [lp[0]]).map { |x, y| Geom::Point3d.new(x, y, z) }) } }
+        A2M::Separateur.ajouter_a(te, z, model)
         te.intersect_with(false, Geom::Transformation.new, te, Geom::Transformation.new, true, te.to_a)
         te.grep(Sketchup::Edge).each { |e| e.find_faces if e.valid? }
         bord = ->(f) { f.vertices.any? { |v| q = v.position; (q.x - x0).abs < 0.1 || (q.x - x1).abs < 0.1 || (q.y - y0).abs < 0.1 || (q.y - y1).abs < 0.1 } }

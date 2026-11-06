@@ -1,6 +1,7 @@
 {
- "version": "2.63.0",
+ "version": "2.64.0",
  "notes": [
+  "Nouveau : « Séparateur de pièce » — tracez une ligne entre deux murs (axes verrouillés, Ctrl pour tracer librement, longueur au clavier) : « Pièce en un clic » et « Pièces automatiques » séparent la pièce ouverte en deux. Le séparateur est sur sa propre balise, masquée dès le tracé fini : invisible dans les scènes, à l'impression et à l'export. Le bouton « Afficher / masquer les séparateurs » permet de le retrouver ou de le supprimer",
   "Coupes : niveaux nommés N1, N2, N3… (altitude en cm depuis le sol fini, ajoutés aux cotes de chaque coupe) et rotation de la ligne de coupe par pas de 15° ou 90° (la coupe oblique s'affiche dans le mini-plan). Correction : « Actualiser » ne décale plus la ligne de coupe vers l'origine après un déplacement du plan",
   "Créer une ouverture : nouvelle rangée de cartes « Modèle » (simple, double, coulissante, fixe, oscillo-battant) — un clic pose le nombre de vantaux et le type d'ouvrant dans la fiche menuiserie, et l'aperçu se redessine",
   "Coupes : chaque coupe crée maintenant deux scènes jumelles (« A2M – Coupe R1 » en vue 2D orthogonale et « … 3D » de trois quarts, coupe active), avec marge réglable (0, 10, 20 %) et murs coupés en poché noir, également dans le mini-plan",

@@ -8,7 +8,7 @@ module A2M
     CLE = 'A2M_Metre_Palette'
     # Groupes de la palette : [titre, noms d'icônes]
     GROUPES = [
-      ['Préparer',            %w[tableau balises baliser pieces piece_clic pieces_auto calage reglementaire releve fiche controle vues plan2d coupes cotation styles variantes]],
+      ['Préparer',            %w[tableau balises baliser pieces piece_clic separateur separateur_voir pieces_auto calage reglementaire releve fiche controle vues plan2d coupes cotation styles variantes]],
       ['Dessiner',            %w[axes mur compose compositions sol_murs sol planelle toiture charpente couverture zinguerie escalier gardecorps fondation hachures textures phases]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
       ['Bibliothèque',        %w[importer objet biblio mes_elements profils]],
