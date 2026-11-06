@@ -102,7 +102,7 @@ module A2M
     end
 
     # Balaye un profil le long du contour fermé (départ au milieu du premier côté : angles propres)
-    def self.balayer(pts, profil, dz, type, model, ents_cible = nil, look = nil)
+    def self.balayer(pts, profil, dz, type, model, ents_cible = nil, look = nil, trous = nil)
       grp = (ents_cible || model.active_entities).add_group
       ents = grp.entities
       milieu = Geom::Point3d.new((pts[0].x + pts[1].x) / 2.0, (pts[0].y + pts[1].y) / 2.0, pts[0].z)
@@ -110,8 +110,15 @@ module A2M
       d = (pts[1] - pts[0]).normalize
       m = Z_AXIS.cross(d).normalize                     # vers l'intérieur de la dalle (contour trigonométrique)
       profil = sans_points_alignes(profil)
-      face = ents.add_face(profil.map { |w, h| milieu.offset(m, w).offset(Z_AXIS, h + dz) })
+      pt3 = ->(w, h) { milieu.offset(m, w).offset(Z_AXIS, h + dz) }
+      face = ents.add_face(profil.map { |w, h| pt3.call(w, h) })
       raise 'profil invalide' unless face
+      # Coque creuse : les cavités du profil sont des trous de la face (comme dans le dessin), sans recouvrement
+      (trous || []).each do |t|
+        hf = ents.add_face(sans_points_alignes(t).map { |w, h| pt3.call(w, h) })
+        hf.erase! if hf && hf.valid?
+      end
+      face = ents.grep(Sketchup::Face).find { |f| f.valid? && f.loops.size > 1 } || face if trous && !trous.empty?
       bord = ents.add_edges(chemin)
       face.followme(bord)
       ents.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.empty? }.each(&:erase!)
@@ -120,6 +127,20 @@ module A2M
       poser_aspect(grp, type[1], model, look)
       grp.set_attribute('a2m', 'planelle_part', true) unless type.equal?(TYPE_PL)    # le linéaire n'est compté que sur la planelle elle-même
       grp
+    end
+
+    # Le polygone p est-il entièrement dans le polygone q (ou sur son bord) ?
+    def self.contenu?(p, q)
+      dedans = lambda do |x, y|
+        d = false; j = q.size - 1
+        q.each_with_index do |(xi, yi), i|
+          xj, yj = q[j]
+          d = !d if ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi)
+          j = i
+        end
+        d
+      end
+      p.all? { |x, y| dedans.call(x, y) || q.any? { |a, b| (a - x).abs < 1e-4 && (b - y).abs < 1e-4 } }
     end
 
     # Points alignés (sommets qui ne changent pas la direction) : ils laissent un trait sur toute la longueur de la planelle
@@ -309,6 +330,21 @@ module A2M
                 g = res
               else
                 non_recoupees += 1
+              end
+            end
+          end
+          # Coque creuse : après la coupe de la dalle (faite avec la coque pleine), la coque visible est refaite avec ses cavités en trous
+          kc = profils.index { |t, _| t.equal?(TYPE_PL) }
+          if kc && groupes[kc] && groupes[kc].valid?
+            trous = profils.each_index.select { |i| i != kc && contenu?(profils[i][1], profils[kc][1]) }.map { |i| profils[i][1] }
+            unless trous.empty?
+              begin
+                neuf = balayer(pts, profils[kc][1], dz_long, TYPE_PL, model, g.parent.entities, aspects_pose[kc], trous)
+                groupes[kc].erase!
+                groupes[kc] = neuf
+                journal("coque creuse : #{trous.size} cavité(s), volume #{neuf.volume.round(0)}")
+              rescue StandardError => ex
+                journal("coque creuse impossible : #{ex.message}")
               end
             end
           end
