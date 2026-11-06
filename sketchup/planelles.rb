@@ -261,7 +261,7 @@ module A2M
           faits << "#{g.name.to_s.empty? ? 'Dalle' : g.name} : #{long.round(2)} ml"
         end
         model.commit_operation
-        UI.messagebox("Planelles posées (#{rep[0]}, version #{A2M::EXT.version}) :\n" + faits.join("\n") +
+        UI.messagebox("Planelles posées (#{rep[0]}, version #{(A2M::Metre::EXT.version rescue "?")}) :\n" + faits.join("\n") +
                       (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
                       (soub_trouve ? "\n\nSoubassement trouvé : la planelle est posée sur son dessus." : "\n\nAUCUN mur de soubassement (balise « Murs de soubassement ») trouvé sous la dalle : la planelle a été calée sur le haut de la dalle, sans la déplacer.") +
                       (dalles_deplacees > 0 ? "\n\nLa planelle est posée sur le mur de soubassement et la dalle a été #{remonte_max > 0 ? 'remontée' : 'descendue'} de #{remonte_max.abs.round(1)} cm pour que son haut affleure le haut de la planelle. Si l'isolant ou la chape sont déjà posés, refaites-les après." : '') +
