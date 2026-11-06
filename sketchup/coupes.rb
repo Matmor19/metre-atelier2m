@@ -396,9 +396,9 @@ module A2M
     end
 
     # ---- Réglages communs à toutes les coupes (rangés dans le modèle) ----
-    POLICES = ['Century Gothic', 'Montserrat', 'Arial', 'Arial Narrow', 'Calibri', 'Segoe UI', 'Verdana', 'Tahoma', 'Bahnschrift'].freeze
+    POLICES = ['Montserrat', 'Century Gothic', 'Arial', 'Arial Narrow', 'Calibri', 'Segoe UI', 'Verdana', 'Tahoma', 'Bahnschrift'].freeze
     DECAL_COTES = 3.cm
-    DEF_REG = { 'cotes' => true, 'niveaux' => true, 'poche' => true, 'repere' => true, 'paire' => true, 'marge' => 10, 'detail' => false, 'police' => 'Century Gothic', 'texte' => 12 }.freeze
+    DEF_REG = { 'cotes' => true, 'niveaux' => true, 'poche' => true, 'repere' => true, 'paire' => true, 'marge' => 10, 'detail' => false, 'police' => 'Montserrat', 'texte' => 12 }.freeze
 
     def self.reglages(model = Sketchup.active_model)
       st = (JSON.parse(model.get_attribute('a2m', 'reglages_coupes', '{}').to_s) rescue {})

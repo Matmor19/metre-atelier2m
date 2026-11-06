@@ -1,5 +1,5 @@
 {
- "version": "2.67.0",
+ "version": "2.67.1",
  "notes": [
   "Correction : la fenêtre de mise à jour n'affiche plus que les 6 dernières nouveautés, en une phrase chacune : le bouton « Oui »…",
   "Correction : le message « undefined method 'encode' for module URI » (extension BIMobject) à chaque ouverture de SketchUp est…",
@@ -7,6 +7,6 @@
   "Coupes : nouvelle « coupe brisée »",
   "Nouveau : « Séparateur de pièce »",
   "Coupes : niveaux nommés N1, N2, N3… (altitude en cm depuis le sol fini, ajoutés aux cotes de chaque coupe) et rotation de la…",
-  "… et 35 autres nouveautés plus anciennes."
+  "… et 36 autres nouveautés plus anciennes."
  ]
 }
