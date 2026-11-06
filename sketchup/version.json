@@ -1,6 +1,7 @@
 {
- "version": "2.53.1",
+ "version": "2.54.0",
  "notes": [
+  "Extraction pour le métré : les ouvrages posés par Couverture (m²), Zinguerie (ml), Charpente (ml de chevrons, liteaux, contre-liteaux), Garde-corps (ml) et Escalier (marches) sont maintenant relevés par type et envoyés au configurateur dans les informations",
   "Correction : « Mes éléments » retrouve bien les éléments rangés (chemin du dossier sous Windows) ; testé : style, ajout avec vignette, cotation des pièces et hors tout",
   "Nouveau : « Cotation automatique » (cotes de chaque pièce et cotes hors tout du bâtiment, sur leur propre balise), « Styles de vue » (intérieur, plan technique, coupe grise, construire et démolir, tracé sur plan, avec favoris) et « Mes éléments » (votre bibliothèque personnelle : ajoutez la sélection, posez-la au clic)",
   "Clic droit sur une porte : « Atelier 2M : porte » > Charnière gauche ↔ droite (la porte est retournée en miroir) ou Ouvrir de l'autre côté du mur ; l'arc d'ouverture du plan 2D se met à jour",

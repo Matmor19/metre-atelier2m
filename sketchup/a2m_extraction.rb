@@ -248,6 +248,44 @@ module A2M
     # Contours des pièces de la dernière extraction (pour la fiche pièce)
     def self.polys() @polys || [] end
 
+    # Parcourt les groupes et lit les attributs posés par les outils Couverture, Zinguerie, Charpente, Escalier et Garde-corps
+    def self.ouvrages_poses(ents, prof)
+      cumul = {}
+      ajouter = lambda do |lib, cle, val, unite|
+        k = [lib, cle]
+        cumul[k] ||= { 'libelle' => lib, 'type' => cle, 'valeur' => 0.0, 'unite' => unite, 'nb' => 0 }
+        cumul[k]['valeur'] += val.to_f; cumul[k]['nb'] += 1
+      end
+      lire = lambda do |e, nom|
+        (JSON.parse(e.get_attribute('a2m', nom).to_s) rescue nil)
+      end
+      parcours = lambda do |liste, p|
+        liste.each do |e|
+          next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          next if e.hidden?
+          if (c = lire.call(e, 'couverture')).is_a?(Hash) then ajouter.call('Couverture', c['type'].to_s, c['m2'], 'm²') end
+          if (z = lire.call(e, 'zinguerie')).is_a?(Hash) then ajouter.call('Zinguerie', z['type'].to_s, z['ml'], 'ml') end
+          if (h = lire.call(e, 'charpente')).is_a?(Hash)
+            ajouter.call('Charpente : chevrons', h['section'].to_s, h['ml_chevrons'], 'ml')
+            ajouter.call('Charpente : liteaux', 'liteaux', h['ml_liteaux'], 'ml')
+            ajouter.call('Charpente : contre-liteaux', 'contre-liteaux', h['ml_contre_liteaux'], 'ml') if h['ml_contre_liteaux'].to_f > 0
+          end
+          if (g = lire.call(e, 'garde_corps')).is_a?(Hash) then ajouter.call('Garde-corps', g['type'].to_s, g['ml'], 'ml') end
+          if (es = lire.call(e, 'escalier')).is_a?(Hash) then ajouter.call('Escalier', es['type'].to_s, es['marches'], 'marches') end
+          if p < 2
+            sous = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
+            parcours.call(sous, p + 1)
+          end
+        end
+      end
+      parcours.call(ents, prof)
+      cumul.values.map do |o|
+        v = o['unite'] == 'marches' ? o['valeur'].round : (o['valeur'] * 100).round / 100.0
+        txt = "#{o['type'].to_s.empty? ? '' : o['type'] + ' : '}#{v.to_s.sub(/\.0\z/, '')} #{o['unite']}"
+        { 'libelle' => o['libelle'] + (o['type'].to_s.empty? || o['libelle'].include?(':') ? '' : ' (' + o['type'] + ')'), 'type' => o['type'], 'valeur' => v, 'unite' => o['unite'], 'nb' => o['nb'], 'texte' => txt }
+      end
+    end
+
     def self.extraire
       m = Sketchup.active_model
       res = { 'format' => 'metre2m-sketchup', 'version' => VERSION, 'modele' => (m.title.to_s.empty? ? 'Sans nom' : m.title),
@@ -438,6 +476,12 @@ module A2M
         else
           res['alertes'] << "Appareillage (#{el['app']}) : aucune pièce à moins de #{DISTANCE_PIECE_MAX} m"
         end
+      end
+      # Ouvrages posés par les outils de l'extension (couverture, zinguerie, charpente, escalier, garde-corps) : donnés pour information
+      ouv = ouvrages_poses(m.entities, 0)
+      res['ouvrages'] = ouv unless ouv.empty?
+      ouv.each do |o|
+        res['infos'][o['libelle']] = o['texte']
       end
       @polys = liste.map { |pc| [pc['nom'], pc[:poly]] }
       res['pieces'] = liste.map { |pc| pc.reject { |k, _| k == :poly } }
