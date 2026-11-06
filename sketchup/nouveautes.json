@@ -42,5 +42,5 @@
  "Coupes : les réglages s'appliquent tout de suite à toutes les coupes (plus besoin de sélectionner ni d'actualiser) ; niveaux nommés RDC ±0,00 (sol fini intérieur), R+1, plafonds, égout, faîtage ; traits de niveau en pointillés ; cotes de hauteur redessinées dans la police de votre choix (Century Gothic par défaut, Montserrat, Arial…)",
  "Coupes : la police par défaut est maintenant Montserrat",
  "Zinguerie : « Tous les égouts » reconnaît maintenant n'importe quelle toiture du modèle (même non générée par l'extension, ou faces retournées)",
- "Palette : boutons ◧ et ◨ pour l'ancrer au bord gauche ou droit de la fenêtre SketchUp (quel que soit l'écran) ; elle suit la fenêtre quand on la déplace ou la redimensionne, et se replace à chaque ouverture"
+ "Palette : boutons ◧ et ◨ pour l'ancrer à l'extérieur de la fenêtre SketchUp, à gauche ou à droite (à l'intérieur s'il n'y a pas de place sur l'écran) ; elle suit la fenêtre quand on la déplace, et se replace à chaque ouverture"
 ]

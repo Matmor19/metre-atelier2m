@@ -62,7 +62,7 @@ module A2M
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         .marque{position:relative}.coller{position:absolute;right:0;top:0;display:flex;gap:3px}.coller button{border:1px solid #d8cfc5;background:#fff;color:#E07838;border-radius:6px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.coller button:hover{background:#FCE9DC}
         </style></head><body>
-        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette au bord gauche de la fenêtre SketchUp">◧</button><button type="button" id="cd" title="Coller la palette au bord droit de la fenêtre SketchUp">◨</button></span></div>
+        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette à gauche de la fenêtre SketchUp">◧</button><button type="button" id="cd" title="Coller la palette à droite de la fenêtre SketchUp">◨</button></span></div>
         <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>
@@ -208,11 +208,20 @@ module A2M
         m = principale or return nil
         p = palette or return nil
         g, h, d, b = m[2]
-        marge = 0
         larg = (LARG * dpi_echelle(m[0])).round
-        x = cote == 'd' ? d - larg - marge : g + marge
+        # à l'extérieur de la fenêtre SketchUp ; s'il n'y a pas de place sur un écran de ce côté, à l'intérieur
+        x = cote == 'd' ? d : g - larg
+        loin = cote == 'd' ? x + larg - 1 : x
+        x = cote == 'd' ? d - larg : g unless sur_ecran?(loin, (h + b) / 2)
         fn('SetWindowPos', [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_UINT]).call(p[0], 0, x, h, larg, b - h, 0x0014)
         m[2]
+      end
+
+      def sur_ecran?(x, y)
+        pt = ((y & 0xffffffff) << 32) | (x & 0xffffffff)
+        fn('MonitorFromPoint', [Fiddle::TYPE_LONG_LONG, Fiddle::TYPE_UINT], Fiddle::TYPE_UINTPTR_T).call(pt, 0) != 0
+      rescue StandardError
+        true
       end
 
       def dpi_echelle(hwnd)
