@@ -20,6 +20,10 @@ module A2M
     # Choix des menuiseries extérieures, mêmes codes que le configurateur (rien n'est choisi d'office)
     CHOIX_ME = { 'mat' => [['pvc', "PVC"], ['alu', "Aluminium"], ['bois', "Bois"], ['mixte', "Mixte bois/aluminium"], ['acier', "Acier"]], 'vantaux' => [['1', "1 vantail"], ['2', "2 vantaux"], ['3', "3 vantaux"], ['4', "4 vantaux"]], 'ouvrant' => [['francaise', "Ouvrant à la française"], ['anglaise', "Ouvrant à l'anglaise"], ['oscillo', "Oscillo-battant"], ['abattant', "Abattant"], ['coulissante', "Coulissante"], ['galandage', "Coulissante à galandage"], ['translation', "Coulissante à translation"], ['fixe', "Châssis fixe"], ['guillotine', "Ouvrant à guillotine"], ['basculant', "Ouvrant basculant"], ['pivotant', "Ouvrant pivotant"]], 'vitrage' => [['simple', "Simple vitrage"], ['double', "Double vitrage standard"], ['vir', "Double vitrage VIR"], ['triple', "Triple vitrage"]], 'ferm' => [['vr-manuel', "Volet roulant manuel"], ['vr-motor', "Volet roulant motorisé"], ['vr-solaire', "Volet roulant solaire"], ['vb-pvc', "Volet battant ou coulissant PVC"], ['vb-alu', "Volet battant ou coulissant alu"], ['vb-bois', "Volet battant ou coulissant bois"], ['brise', "Brise-soleil orientable"], ['screen', "Store screen extérieur"], ['banne', "Store banne"]] }
 
+    # Modèles de fenêtre en cartes : clic = nombre de vantaux et type d'ouvrant déjà posés dans la fiche menuiserie
+    MODELES = { 'simple' => ['1', 'francaise'], 'double' => ['2', 'francaise'], 'coulissante' => ['2', 'coulissante'],
+                'fixe' => ['1', 'fixe'], 'oscillo' => ['1', 'oscillo'] }.freeze
+
     AUCUN_AS = 'Aucun'
     # Réservation sous l'ouverture (allège abaissée) par défaut : appui sous les fenêtres 5 cm,
     # seuil sous les portes d'entrée et portes-fenêtres 7 cm, rien pour un passage libre
@@ -140,7 +144,7 @@ module A2M
       { 'seuil_porte' => r['seuil_porte'].to_f, 'ts' => @r[:ts], 'l' => @r[:l] || 100, 'h' => @r[:h] || 125, 'lin' => @r[:lin] || r['lin'].to_f,
         'dernier_as' => Hash[TYPES_SAISIE.map { |t| [t, (@r[t] || {})[:as_note]] }],
         'listes' => { 'Appui de fenêtre' => appuis_seuils('Appui de fenêtre')[1], 'Seuil' => appuis_seuils('Seuil')[1] },
-        'recents' => @r[:recents] || [] }
+        'recents' => @r[:recents] || [], 'modele' => @r[:modele] }
     end
 
     HTML_PANNEAU = <<~'HTML'
@@ -184,6 +188,8 @@ module A2M
       <h2>Type</h2>
       <div class="types" id="types"></div><div id="origine"></div>
 
+      <div id="bloc_mod"><h2>Modèle</h2><div class="types" id="modeles" style="grid-template-columns:repeat(5,1fr);gap:6px"></div></div>
+
       <h2>Taille de l'ouverture</h2>
       <div class="dims">
         <div><label for="l">Largeur</label><input type="text" id="l" inputmode="decimal" autocomplete="off"><div class="unite">cm</div></div>
@@ -209,7 +215,19 @@ module A2M
         "Porte-fenêtre / baie": '<svg viewBox="0 0 64 64"><rect x="8" y="5" width="48" height="52" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/><rect x="12" y="9" width="40" height="45" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.6"/><path d="M32 9V54" stroke="#3C3C3C" stroke-width="1.8"/><circle cx="29" cy="33" r="1.5" fill="#3C3C3C"/><circle cx="35" cy="33" r="1.5" fill="#3C3C3C"/><path d="M5 59H59" stroke="#E07838" stroke-width="4" stroke-linecap="round"/></svg>',
         "Porte d'entrée": '<svg viewBox="0 0 64 64"><rect x="15" y="5" width="34" height="52" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/><rect x="19" y="9" width="26" height="45" fill="#B98A5E" stroke="#3C3C3C" stroke-width="1.6"/><rect x="24" y="14" width="16" height="12" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.2"/><circle cx="40" cy="38" r="2" fill="#3C3C3C"/><path d="M11 59H53" stroke="#E07838" stroke-width="4" stroke-linecap="round"/></svg>'
       };
-      var etat = { ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
+      var MODELES = [['simple', 'Simple', 1, 0], ['double', 'Double', 2, 0], ['coulissante', 'Coulissante', 2, 1], ['fixe', 'Fixe', 1, 2], ['oscillo', 'Oscillo-battant', 1, 3]];
+      function mini(m) {
+        var n = m[2], k = m[3], s = '<rect x="6" y="6" width="52" height="46" rx="2" fill="#fff" stroke="#3C3C3C" stroke-width="2.4"/>', w = 44 / n;
+        for (var i = 0; i < n; i++) {
+          var x = 10 + i * w + (k === 1 && i === 1 ? -3 : 0);
+          s += '<rect x="' + x + '" y="10" width="' + w + '" height="38" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.5"/>';
+          if (k === 0) s += '<path d="M' + (i % 2 ? x + w : x) + ' 10 L' + (x + w / 2) + ' 29 L' + (i % 2 ? x + w : x) + ' 48" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
+        }
+        if (k === 1) s += '<path d="M14 29H30M26 25L30 29L26 33" fill="none" stroke="#E07838" stroke-width="2"/><path d="M50 29H34M38 25L34 29L38 33" fill="none" stroke="#E07838" stroke-width="2"/>';
+        if (k === 3) s += '<path d="M12 48 L32 12 L52 48" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
+        return '<svg viewBox="0 0 64 60" style="width:46px;height:44px;display:block;margin:0 auto">' + s + '<path d="M3 57H61" stroke="#E07838" stroke-width="3.5" stroke-linecap="round"/></svg>';
+      }
+      var etat = { modele: D.modele || '', ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
       TYPES.forEach(function (t) {
         var d = D.dernier_as[t], liste = D.listes[t === TYPES[0] ? 'Appui de fenêtre' : 'Seuil'] || [];
         if (d === '' || (d && liste.indexOf(d) >= 0)) etat.choix[t] = d;
@@ -230,6 +248,15 @@ module A2M
         bt.appendChild(b);
       });
 
+      var bm = el('modeles');
+      MODELES.forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'type'; b.dataset.m = m[0]; b.style.padding = '6px 2px 4px';
+        b.innerHTML = mini(m) + '<span style="font-size:10.5px">' + m[1] + '</span>';
+        b.addEventListener('click', function () { etat.modele = (etat.modele === m[0] ? '' : m[0]); maj(); });
+        bm.appendChild(b);
+      });
+      function modeleActif() { return etat.ts !== TYPES[2] ? MODELES.filter(function (m) { return m[0] === etat.modele; })[0] : null; }
+
       function apercu() {
         var l = etat.l, h = etat.h; if (!(l > 0 && h > 0)) { el('apercu').innerHTML = '<div class="petit" style="text-align:center;padding:60px 0">Tapez la largeur et la hauteur : l\'ouverture se dessine ici.</div>'; return; }
         var lin = Math.max(etat.lin, h), W = Math.max(l + 140, 280), H = Math.max(lin + 50, 260), fs = Math.max(W, H) / 20;
@@ -243,7 +270,10 @@ module A2M
           s += '<circle cx="' + (x0 + l - c - 8) + '" cy="' + (yh + h * .55) + '" r="3" fill="#3C3C3C"/>';
         } else {
           s += '<rect x="' + (x0 + c) + '" y="' + (yh + c) + '" width="' + (l - 2 * c) + '" height="' + (h - 2 * c) + '" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.5"/>';
-          s += '<path d="M' + (x0 + l / 2) + ' ' + (yh + c) + 'V' + (yb - c) + '" stroke="#3C3C3C" stroke-width="1.8"/>';
+          var mo = modeleActif(), nv = mo ? mo[2] : 2, iw = (l - 2 * c) / nv;
+          for (var q = 1; q < nv; q++) s += '<path d="M' + (x0 + c + q * iw) + ' ' + (yh + c) + 'V' + (yb - c) + '" stroke="#3C3C3C" stroke-width="1.8"/>';
+          if (mo && mo[3] === 1) s += '<path d="M' + (x0 + l * .2) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .4) + 'M' + (x0 + l * .8) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .6) + '" stroke="#E07838" stroke-width="3" marker-end="none"/>';
+          if (mo && mo[3] === 0) for (var q2 = 0; q2 < nv; q2++) s += '<path d="M' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yh + c) + 'L' + (x0 + c + (q2 + .5) * iw) + ' ' + (yh + h / 2) + 'L' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yb - c) + '" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="6 4"/>';
         }
         s += '<path d="M' + (x0 - 8) + ' ' + yb + 'H' + (x0 + l + 8) + '" stroke="#E07838" stroke-width="5" stroke-linecap="round"/>';
         if (lin - h > 1) s += '<path d="M' + (x0 + l + 20) + ' ' + H + 'V' + yb + '" stroke="#8a7f75" stroke-width="1" stroke-dasharray="4 3"/><text x="' + (x0 + l + 24) + '" y="' + (H - (lin - h) / 2) + '" font-size="' + fs * .8 + '" fill="#8a7f75">' + Math.round((lin - h) * 10) / 10 + ' cm du sol</text>';
@@ -282,7 +312,8 @@ module A2M
       function maj() {
         if (etat.lin < etat.h) etat.lin = etat.h;
         if (!etat.manuel && etat.l > 0 && etat.h > 0) etat.ts = deduire(etat.l, etat.h);
-        document.querySelectorAll('.type').forEach(function (b) { b.classList.toggle('actif', b.dataset.t === etat.ts); });
+        document.querySelectorAll('.type').forEach(function (b) { b.classList.toggle('actif', b.dataset.t ? b.dataset.t === etat.ts : b.dataset.m === etat.modele); });
+        el('bloc_mod').style.display = etat.ts === TYPES[2] ? 'none' : '';
         el('origine').textContent = etat.manuel ? 'Type choisi par vous.' : (etat.l > 0 && etat.h > 0 ? 'Type reconnu d\'après la taille : cliquez un autre type pour le changer.' : '');
         el('l').classList.toggle('ok', etat.l > 0); el('h').classList.toggle('ok', etat.h > 0); el('lin').classList.toggle('ok', etat.lin > 0);
         apercu(); puces();
@@ -299,7 +330,7 @@ module A2M
       el('lin').addEventListener('input', function () { etat.lin = nombre(this.value); maj(); });
       el('go').addEventListener('click', function () {
         if (el('go').disabled) return;
-        sketchup.valider(JSON.stringify({ ts: etat.ts, l: etat.l, h: etat.h, lin: Math.max(etat.lin, etat.h), as: etat.choix[etat.ts] === undefined ? '' : etat.choix[etat.ts] }));
+        sketchup.valider(JSON.stringify({ modele: etat.ts === TYPES[2] ? '' : etat.modele, ts: etat.ts, l: etat.l, h: etat.h, lin: Math.max(etat.lin, etat.h), as: etat.choix[etat.ts] === undefined ? '' : etat.choix[etat.ts] }));
       });
       document.addEventListener('keydown', function (e) { if (e.key === 'Enter') el('go').click(); });
       recents(); maj(); el('l').focus(); el('l').select();
@@ -322,6 +353,8 @@ module A2M
         @r[:ts] = ts; @r[:l] = l; @r[:h] = h; @r[:lin] = lin
         @r[:recents] = ([{ 'ts' => ts, 'l' => l, 'h' => h }] + (@r[:recents] || []).reject { |x| x['ts'] == ts && x['l'] == l && x['h'] == h }).first(4)
         (@r[ts] ||= {})[:as_note] = as || ''
+        modele = MODELES.key?(d['modele']) ? d['modele'] : nil
+        @r[:modele] = modele
         dlg.close
         UI.start_timer(0, false) { suite.call(construire_etat(ts, l, h, lin, as)) }
       end
@@ -395,7 +428,12 @@ module A2M
       type = TYPES.find { |x| x[1] == tag }
       opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
-      me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix']) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : nil)
+      modele = (ts != 'Porte d\'entrée' && ts != 'Ouverture libre (passage sans porte)') ? MODELES[@r[:modele]] : nil
+      if modele
+        base = (obj && obj['choix'] ? obj['choix'].dup : {}).merge('vantaux' => modele[0], 'ouvrant' => modele[1])
+        obj = obj ? obj.merge('choix' => base) : obj
+      end
+      me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix'] || (modele ? { 'vantaux' => modele[0], 'ouvrant' => modele[1] } : nil)) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : (modele ? { 'vantaux' => modele[0], 'ouvrant' => modele[1] } : nil))
       as_obj = choix_as ? aps[asl.index(choix_as)] : nil
       p = { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
             appui: haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }

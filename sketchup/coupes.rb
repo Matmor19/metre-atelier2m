@@ -29,7 +29,7 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var reg = { cotes: true, niveaux: true, poche: true, repere: true };
+      var reg = { cotes: true, niveaux: true, poche: true, repere: true, paire: true, marge: 10 };
       function rendre() {
         var a = el('auto'); a.innerHTML = '';
         [['long', 'Coupe longitudinale', 'dans le sens de la plus grande longueur'], ['trans', 'Coupe transversale', 'dans le sens de la plus petite largeur']].forEach(function (x) {
@@ -39,9 +39,13 @@ module A2M
           b.addEventListener('click', function () { sketchup.auto(JSON.stringify({ sens: x[0], reg: reg })); }); a.appendChild(b);
         });
         var r = el('regl'); r.innerHTML = '';
-        [['cotes', 'Cotes de hauteur'], ['niveaux', 'Niveaux et altitudes'], ['poche', 'Murs coupés en poché'], ['repere', 'Repère sur le plan']].forEach(function (x) {
+        [['cotes', 'Cotes de hauteur'], ['niveaux', 'Niveaux et altitudes'], ['poche', 'Murs coupés en poché noir'], ['repere', 'Repère sur le plan'], ['paire', 'Scène 2D + scène 3D jumelle']].forEach(function (x) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg[x[0]] ? ' rempli' : ''); b.textContent = x[1];
-          b.addEventListener('click', function () { reg[x[0]] = !reg[x[0]]; rendre(); }); r.appendChild(b);
+          b.addEventListener('click', function () { reg[x[0]] = !reg[x[0]]; rendre(); if (ZONE) dessiner(); }); r.appendChild(b);
+        });
+        [0, 10, 20].forEach(function (m) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg.marge === m ? ' rempli' : ''); b.textContent = 'Marge ' + m + ' %';
+          b.addEventListener('click', function () { reg.marge = m; rendre(); }); r.appendChild(b);
         });
         var l = el('liste'); l.innerHTML = '';
         if (!D.coupes.length) { l.innerHTML = '<div class="petit">Aucune coupe pour le moment.</div>'; }
@@ -81,7 +85,7 @@ module A2M
         var g = e('g', {}, svg);
         D.plan.pieces.forEach(function (d) { e('path', { d: d, fill: '#F4EFE8', stroke: 'none' }, g); });
         D.plan.autres.forEach(function (o) { trace(o.d, o.f, 0, { fill: '#E6E6E6', stroke: '#777', w: 1 }, g); });
-        D.plan.murs.forEach(function (o) { trace(o.d, o.f, 0, { fill: '#5B5B5B', stroke: '#222', w: 1 }, g); });
+        D.plan.murs.forEach(function (o) { trace(o.d, o.f, 0, { fill: reg.poche ? '#141414' : '#BDBDBD', stroke: '#000', w: 1 }, g); });
         D.plan.ouv.forEach(function (o) { trace(o.d, o.f, 0, { fill: '#FFFFFF', stroke: '#333', w: 1 }, g); });
         var k = ZONE[2] / 400;
         L.forEach(function (l) {
@@ -328,11 +332,37 @@ module A2M
       cam.perspective = false
       view.camera = cam
       view.zoom_extents
+      marge = reg['marge'].to_f
+      if marge > 0
+        c2 = view.camera
+        c2.height = c2.height * (1 + marge / 100.0) rescue nil
+        view.camera = c2
+      end
       nomp = "A2M – Coupe #{nom}"
       page = model.pages[nomp] || model.pages.add(nomp)
       page.update
+      page3 = nil
+      if reg['paire'] != false
+        # scène jumelle en 3D : même coupe vue de trois quarts, en perspective
+        side = Z_AXIS.cross(dir); side.normalize!
+        v = Geom::Vector3d.new(dir.x * 0.8 + side.x * 0.6, dir.y * 0.8 + side.y * 0.6, -0.55)
+        v.normalize!
+        eye3 = c.offset(v, -(bb.diagonal * 1.6 + 500))
+        cam3 = Sketchup::Camera.new(eye3, c, Z_AXIS)
+        cam3.perspective = true
+        view.camera = cam3
+        view.zoom_extents
+        page3 = model.pages["#{nomp} 3D"] || model.pages.add("#{nomp} 3D")
+        page3.update
+        view.camera = cam
+        c2 = view.camera
+        view.zoom_extents
+        if marge > 0 then c2 = view.camera; c2.height = c2.height * (1 + marge / 100.0) rescue nil; view.camera = c2 end
+      else
+        model.pages.erase(model.pages["#{nomp} 3D"]) if model.pages["#{nomp} 3D"]
+      end
       model.pages.each do |p|
-        if p == page then p.set_visibility(tag, true) rescue nil
+        if p == page || p == page3 then p.set_visibility(tag, true) rescue nil
         elsif p.name =~ /Plan 2D/ then p.set_visibility(tag, false) rescue nil
         else p.set_visibility(tag, false) rescue nil
         end
@@ -387,8 +417,7 @@ module A2M
         model.start_operation('Supprimer la coupe', true)
         sp.erase!
         model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && ["Cotes coupe #{nom}", "Repère coupe #{nom}"].include?(g.name) }
-        pg = model.pages["A2M – Coupe #{nom}"]
-        model.pages.erase(pg) if pg
+        ["A2M – Coupe #{nom}", "A2M – Coupe #{nom} 3D"].each { |np| pg = model.pages[np]; model.pages.erase(pg) if pg }
         model.commit_operation
       when 'inv'
         dir = Geom::Vector3d.new(*d['dir']).reverse
