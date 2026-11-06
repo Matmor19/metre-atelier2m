@@ -23,6 +23,9 @@ module A2M
       <div class="petit">La coupe brisée est fabriquée en géométrie : les ouvrages solides sont recoupés, les faces coupées sont en poché noir. Les ouvrages non solides restent entiers. Cliquez « Actualiser » après avoir modifié le modèle.</div>
       <h2>Réglages</h2>
       <div class="puces" id="regl"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0">Police <select id="police" style="padding:5px;font-size:14px"></select> Texte <input id="taille" type="text" style="width:44px;padding:5px;text-align:center"> cm
+        <button type="button" class="puce rempli" id="toutes">Actualiser toutes les coupes</button></div>
+      <div class="petit">Chaque réglage s'applique tout de suite à toutes les coupes. Niveaux relevés : RDC ±0,00 (sol fini intérieur), étages R+1…, plafonds, égout, faîtage.</div>
       <h2>Niveaux (N1, N2, N3…)</h2>
       <div class="petit">Altitudes nommées, en cm depuis le sol fini : elles s'ajoutent aux niveaux relevés (sol, plancher, plafond, point haut) sur chaque coupe.</div>
       <div id="niv"></div>
@@ -35,7 +38,8 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var reg = { cotes: true, niveaux: true, poche: true, repere: true, paire: true, marge: 10 };
+      var reg = D.reglages;
+      function envoyer() { sketchup.reglages(JSON.stringify(reg)); }
       function rendre() {
         var a = el('auto'); a.innerHTML = '';
         [['long', 'Coupe longitudinale', 'dans le sens de la plus grande longueur'], ['trans', 'Coupe transversale', 'dans le sens de la plus petite largeur']].forEach(function (x) {
@@ -45,14 +49,21 @@ module A2M
           b.addEventListener('click', function () { sketchup.auto(JSON.stringify({ sens: x[0], reg: reg })); }); a.appendChild(b);
         });
         var r = el('regl'); r.innerHTML = '';
-        [['cotes', 'Cotes de hauteur'], ['niveaux', 'Niveaux et altitudes'], ['poche', 'Murs coupés en poché noir'], ['repere', 'Repère sur le plan'], ['paire', 'Scène 2D + scène 3D jumelle']].forEach(function (x) {
+        [['cotes', 'Cotes de hauteur'], ['niveaux', 'Niveaux et altitudes'], ['detail', 'Haut de mur et semelle'], ['poche', 'Murs coupés en poché noir'], ['repere', 'Repère sur le plan'], ['paire', 'Scène 2D + scène 3D jumelle']].forEach(function (x) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg[x[0]] ? ' rempli' : ''); b.textContent = x[1];
-          b.addEventListener('click', function () { reg[x[0]] = !reg[x[0]]; rendre(); if (ZONE) dessiner(); }); r.appendChild(b);
+          b.addEventListener('click', function () { reg[x[0]] = !reg[x[0]]; rendre(); if (ZONE) dessiner(); envoyer(); }); r.appendChild(b);
         });
         [0, 10, 20].forEach(function (m) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg.marge === m ? ' rempli' : ''); b.textContent = 'Marge ' + m + ' %';
-          b.addEventListener('click', function () { reg.marge = m; rendre(); }); r.appendChild(b);
+          b.addEventListener('click', function () { reg.marge = m; rendre(); envoyer(); }); r.appendChild(b);
         });
+        var pf = el('police'); if (!pf.options.length) {
+          D.polices.forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; o.style.fontFamily = n; pf.appendChild(o); });
+          pf.onchange = function () { reg.police = pf.value; pf.style.fontFamily = pf.value; envoyer(); };
+          var tx = el('taille'); tx.onchange = function () { reg.texte = parseFloat(String(tx.value).replace(',', '.')) || 12; envoyer(); };
+          el('toutes').onclick = function () { sketchup.tout(''); };
+        }
+        pf.value = reg.police; pf.style.fontFamily = reg.police; el('taille').value = reg.texte;
         var l = el('liste'); l.innerHTML = '';
         if (!D.coupes.length) { l.innerHTML = '<div class="petit">Aucune coupe pour le moment.</div>'; }
         D.coupes.forEach(function (c) {
@@ -273,26 +284,64 @@ module A2M
 
     def self.plan_de(model, nom) model.entities.grep(Sketchup::SectionPlane).find { |s| s.name == PREFIXE + nom } end
 
-    # Niveaux utiles lus dans le modèle (altitudes en pouces) : sol, planchers, plafonds, point haut
-    def self.niveaux(model)
-      zs = {}
-      sol = nil
+    # Lecture du modèle : sol fini (RDC), planchers d'étage, plafonds, haut de mur, égout, faîtage (altitudes en pouces)
+    ROUTE = /toit|couvert|tuile|zinc|zingu|ardoise/i
+
+    def self.analyser(model)
+      pieces = []; chapes = []; dall = []; plancher = []; plafond = []; mur_h = []; mur_b = []; toit = []; toit_sec = []
       A2M::Plan2D.parcourir(model.entities, Geom::Transformation.new) do |e, t|
         cs = A2M::Plan2D.coins(e, t)
-        case e.layer.name
-        when 'A2M_PIECE' then z = cs.map(&:z).min; sol = sol ? [sol, z].min : z
-        when 'A2M_PLANCHER_ETAGE' then zs["Plancher étage"] = cs.map(&:z).max
-        when 'A2M_PLAFOND' then zs["Plafond"] = cs.map(&:z).min
+        zmin = cs.map(&:z).min; zmax = cs.map(&:z).max
+        n = e.layer.name
+        case n
+        when 'A2M_PIECE' then pieces << zmax
+        when 'A2M_CHAPE' then chapes << zmax
+        when 'A2M_DALLAGE' then dall << zmax
+        when 'A2M_PLANCHER_ETAGE' then plancher << zmax
+        when 'A2M_PLAFOND' then plafond << zmin
+        when /\AA2M_MUR/ then mur_b << zmin; mur_h << zmax
+        when 'A2M_FAITAGE', 'A2M_EGOUT' then toit_sec << [zmin, zmax]
+        else toit << [zmin, zmax] if n =~ ROUTE || n == 'A2M_COUVERTURE'
         end
       end
-      sol ||= model.bounds.min.z
-      haut = model.bounds.max.z
-      liste = [['Sol fini', sol]]
-      zs.each { |k, z| liste << [k, z] }
-      liste << ['Point haut', haut]
-      niveaux_perso(model).each { |nom, cm| liste << [nom, sol + cm.cm] }
-      liste.sort_by { |_, z| z }.uniq { |_, z| z.round(2) }
+      { pieces: pieces, chapes: chapes, dall: dall, plancher: plancher, plafond: plafond, mur_h: mur_h, mur_b: mur_b, toit: toit, toit_sec: toit_sec }
     end
+
+    def self.grouper(zs, tol = 10.cm)
+      zs.sort.each_with_object([]) { |z, l| l << z if l.empty? || (z - l.last).abs > tol }
+    end
+
+    def self.niveaux(model, detail = false)
+      an = analyser(model)
+      bb = model.bounds
+      base = [an[:pieces], an[:chapes], an[:dall]].find { |l| !l.empty? } || []
+      sol = grouper(base).first || an[:mur_b].min || bb.min.z
+      liste = [['RDC', sol]]
+      etages = grouper((base + an[:plancher]).select { |z| z > sol + 100.cm })
+      etages.each_with_index { |z, i| liste << ["R+#{i + 1}", z] }
+      planchers = [sol] + etages
+      an[:plafond].each do |z|
+        i = planchers.rindex { |pz| pz <= z + 1.cm } || 0
+        liste << [i.zero? ? 'Plafond RDC' : "Plafond R+#{i}", z]
+      end
+      couv = an[:toit].empty? ? an[:toit_sec] : an[:toit]
+      unless couv.empty?
+        liste << ['Égout', couv.map(&:first).min]
+        liste << ['Faîtage', (an[:toit] + an[:toit_sec]).map(&:last).max]
+      end
+      if liste.none? { |l, _| l == 'Faîtage' }
+        liste << ['Point haut', bb.max.z]
+      end
+      if detail
+        liste << ['Haut de mur', an[:mur_h].max] unless an[:mur_h].empty?
+        liste << ['Dessous de semelle', bb.min.z] if bb.min.z < sol - 10.cm
+      end
+      niveaux_perso(model).each { |nom, cm| liste << [nom, sol + cm.cm] }
+      tries = liste.each_with_index.sort_by { |(_, z), i| [z.round(2), i] }.map(&:first)
+      tries.each_with_object([]) { |l, r| r << l unless r.any? { |_, z| (z - l[1]).abs < 2.cm } }
+    end
+
+    def self.sol_fini(model) niveaux(model).find { |l, _| l == 'RDC' }&.last || model.bounds.min.z end
 
     # Niveaux nommés par l'utilisateur (N1, N2…) : altitude en cm depuis le sol fini, rangés dans le modèle
     def self.niveaux_perso(model)
@@ -308,7 +357,11 @@ module A2M
       majliste
     end
 
-    def self.cm_txt(z, sol) format('%+.2f m', (z - sol).to_f * 0.0254).tr('.', ',') end
+    def self.cm_txt(z, sol)
+      v = (z - sol).to_f * 0.0254
+      return '±0,00' if v.abs < 0.005
+      format('%+.2f', v).tr('.', ',')
+    end
 
     def self.tag_prive(model, nom)
       model.layers["#{TAG_COTES}_#{nom}"] || model.layers.add("#{TAG_COTES}_#{nom}")
@@ -317,7 +370,7 @@ module A2M
     def self.creer(a, b, dir, reg, nom = nil)
       model = Sketchup.active_model
       return UI.messagebox('Le modèle est vide.') if model.bounds.empty?
-      reg ||= {}
+      reg = reglages(model)
       nom ||= nom_suivant(model)
       dir = dir.clone; dir.z = 0; dir.normalize!
       model.start_operation("Coupe #{nom}", true)
@@ -342,39 +395,95 @@ module A2M
       end
     end
 
-    # Cotes de hauteur, niveaux et repère sur le plan
+    # ---- Réglages communs à toutes les coupes (rangés dans le modèle) ----
+    POLICES = ['Century Gothic', 'Montserrat', 'Arial', 'Arial Narrow', 'Calibri', 'Segoe UI', 'Verdana', 'Tahoma', 'Bahnschrift'].freeze
+    DECAL_COTES = 3.cm
+    DEF_REG = { 'cotes' => true, 'niveaux' => true, 'poche' => true, 'repere' => true, 'paire' => true, 'marge' => 10, 'detail' => false, 'police' => 'Century Gothic', 'texte' => 12 }.freeze
+
+    def self.reglages(model = Sketchup.active_model)
+      st = (JSON.parse(model.get_attribute('a2m', 'reglages_coupes', '{}').to_s) rescue {})
+      DEF_REG.merge(st.is_a?(Hash) ? st.select { |k, _| DEF_REG.key?(k) } : {})
+    end
+
+    def self.enregistrer_reglages(r)
+      return unless r.is_a?(Hash)
+      model = Sketchup.active_model
+      nv = reglages(model).merge(r.select { |k, _| DEF_REG.key?(k) })
+      nv['texte'] = [[nv['texte'].to_f, 5].max, 40].min
+      model.set_attribute('a2m', 'reglages_coupes', JSON.generate(nv))
+      tout_actualiser
+    end
+
+    # Texte dans la police choisie, à taille de dessin (cm dans le modèle) pour suivre le zoom de la scène
+    def self.texte(ents, str, pt, reg)
+      t = ents.add_text(str, pt)
+      begin
+        f = t.font.is_a?(Hash) ? t.font : {}
+        t.font = f.merge(name: reg['police'].to_s, size: f[:size] || 12, bold: false, italic: false)
+      rescue StandardError
+        nil
+      end
+      (t.height = reg['texte'].to_f.cm) rescue nil
+      t
+    end
+
+    # Trait en pointillés (tirets de 30 cm, vides de 14 cm) entre deux points
+    def self.tirets(ents, p, q)
+      v = q - p
+      long = v.length
+      return if long < 1.cm
+      v.normalize!
+      pos = 0.0
+      n = 0
+      while pos < long && n < 400
+        fin = [pos + 30.cm, long].min
+        ents.add_line(p.offset(v, pos), p.offset(v, fin))
+        pos = fin + 14.cm
+        n += 1
+      end
+    end
+
+    # Cotes de hauteur, niveaux nommés (RDC, étages, égout, faîtage…) et repère sur le plan
     def self.habiller(model, nom, a, b, dir, u, reg, pts = nil)
+      reg = reglages(model)
       model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && g.name == "Cotes coupe #{nom}" }
       model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && g.name == "Repère coupe #{nom}" }
       bb = model.bounds
       tag = tag_prive(model, nom)
-      niv = niveaux(model)
-      sol = niv.first[1]
+      niv = niveaux(model, reg['detail'])
+      sol = niv.find { |l, _| l == 'RDC' }&.last || niv.first[1]
       g = model.entities.add_group
       g.name = "Cotes coupe #{nom}"
       g.layer = tag
       ents = g.entities
-      # Cotes placées à gauche du bâtiment dans la vue : à gauche = -(u) vu depuis le regard dir
+      # gauche = la gauche du regard ; k mesure la position le long de la vue (k croît vers la gauche de l'écran)
       gauche = Z_AXIS.cross(dir); gauche.normalize!
-      etendue = [a, b].map { |p| p.to_a }.flatten
-      coin = [bb.min, bb.max].map { |p| (p - a).dot(gauche) }.max
-      x0 = a.offset(gauche, coin + 80.cm)
-      pts_cote = niv.map { |_, z| Geom::Point3d.new(x0.x, x0.y, z) }
-      if reg['cotes'] != false
-        (0...pts_cote.size - 1).each do |i|
-          next if (pts_cote[i + 1].z - pts_cote[i].z).abs < 2.cm
-          d = ents.add_dimension_linear(pts_cote[i], pts_cote[i + 1], gauche.clone.tap { |v| v.length = 25.cm })
-          d.layer = tag rescue nil
-        end
-        if pts_cote.size > 2
-          d = ents.add_dimension_linear(pts_cote.first, pts_cote.last, gauche.clone.tap { |v| v.length = 60.cm })
-        end
-      end
+      ks = (0..7).map { |i| (bb.corner(i) - a).dot(gauche) }
+      lo = ks.min; hi = ks.max
+      # léger décalage vers l'arrière du plan : les traits posés exactement sur le plan seraient coupés
+      decal = DECAL_COTES
+      pk = ->(k, z) { Geom::Point3d.new(a.x + gauche.x * k + dir.x * decal, a.y + gauche.y * k + dir.y * decal, z) }
+      zbas = niv.first[1]; zhaut = niv.last[1]
       if reg['niveaux'] != false
         niv.each do |lib, z|
-          p0 = Geom::Point3d.new(x0.x, x0.y, z)
-          ents.add_line(p0.offset(gauche, -30.cm), p0.offset(gauche, 70.cm))
-          ents.add_text("#{lib} #{cm_txt(z, sol)}", p0.offset(gauche, 95.cm))
+          tirets(ents, pk.call(hi + 320.cm, z), pk.call(lo - 90.cm, z))
+          txt = lib == 'RDC' ? "#{lib}  #{cm_txt(z, sol)}  (sol fini intérieur)" : "#{lib}  #{cm_txt(z, sol)}"
+          texte(ents, txt, pk.call(lo - 100.cm, z + 3.cm), reg)
+        end
+      end
+      if reg['cotes'] != false && niv.size > 1
+        k1 = hi + 120.cm
+        ents.add_line(pk.call(k1, zbas), pk.call(k1, zhaut))
+        niv.each { |_, z| ents.add_line(pk.call(k1 - 8.cm, z), pk.call(k1 + 8.cm, z)) }
+        niv.each_cons(2) do |(_, z1), (_, z2)|
+          next if (z2 - z1) < 2.cm
+          texte(ents, format('%.2f', (z2 - z1) * 0.0254).tr('.', ','), pk.call(k1 - 12.cm, (z1 + z2) / 2.0), reg)
+        end
+        if niv.size > 2
+          k2 = hi + 210.cm
+          ents.add_line(pk.call(k2, zbas), pk.call(k2, zhaut))
+          [zbas, zhaut].each { |z| ents.add_line(pk.call(k2 - 8.cm, z), pk.call(k2 + 8.cm, z)) }
+          texte(ents, format('%.2f', (zhaut - zbas) * 0.0254).tr('.', ','), pk.call(k2 - 12.cm, (zbas + zhaut) / 2.0), reg)
         end
       end
       ents.grep(Sketchup::Text).each { |t| t.layer = tag }
@@ -385,7 +494,7 @@ module A2M
         r = model.entities.add_group
         r.name = "Repère coupe #{nom}"
         r.layer = tp
-        z = [bb.min.z, niveaux(model).first[1]].max + 119.cm
+        z = [bb.min.z, sol].max + 119.cm
         a2 = a.offset(u, -40.cm); b2 = b.offset(u, 40.cm)
         a2.z = b2.z = z
         if pts && pts.size > 2
@@ -399,7 +508,7 @@ module A2M
           r.entities.add_line(p, p.offset(dir, 60.cm))
           r.entities.add_line(p.offset(dir, 60.cm), p.offset(dir, 45.cm).offset(u, p == a2 ? 12.cm : -12.cm))
           r.entities.add_line(p.offset(dir, 60.cm), p.offset(dir, 45.cm).offset(u, p == a2 ? -12.cm : 12.cm))
-          r.entities.add_text(nom, p.offset(dir, 90.cm))
+          texte(r.entities, nom, p.offset(dir, 90.cm), reg)
         end
         r.entities.grep(Sketchup::Text).each { |t| t.layer = tp }
       end
@@ -407,6 +516,7 @@ module A2M
 
     # Caméra parallèle face à la coupe + scène ; les cotes de cette coupe ne sont visibles que dans sa scène
     def self.mettre_a_jour_scene(model, nom, sp, dir, reg)
+      reg = reglages(model)
       bb = model.bounds
       c = bb.center
       tag = tag_prive(model, nom)
@@ -465,19 +575,22 @@ module A2M
       model.pages.selected_page = page rescue nil
     end
 
-    # Mise à jour silencieuse des cotes et repères de toutes les coupes
-    def self.rafraichir
+    # Toutes les coupes (droites et brisées) sont refaites avec les réglages courants, sans changer la vue de l'utilisateur
+    def self.tout_actualiser
       model = Sketchup.active_model
-      model.entities.grep(Sketchup::SectionPlane).each do |sp|
-        next unless sp.name.start_with?(PREFIXE)
-        d = lire(sp) or next
-        nom = sp.name.sub(PREFIXE, '')
-        dir = Geom::Vector3d.new(*d['dir'])
-        a = Geom::Point3d.new(*d['a']); b = Geom::Point3d.new(*d['b'])
-        u = b - a; u.z = 0; u.normalize!
-        habiller(model, nom, a, b, dir, u, {})
+      noms = lignes(model).map { |l| l['nom'] }
+      return majliste if noms.empty?
+      prec = model.pages.selected_page
+      noms.each { |n| action('a' => 'maj', 'nom' => n) }
+      if prec && prec.valid?
+        model.pages.selected_page = prec
+      else
+        model.entities.active_section_plane = nil rescue nil
       end
+      majliste
     end
+
+    def self.rafraichir() tout_actualiser end
 
     def self.lire(sp) JSON.parse(sp.get_attribute('a2m', 'coupe').to_s) rescue nil end
 
@@ -587,7 +700,7 @@ module A2M
         return
       end
       html = A2M::Panneau.page('Coupes automatiques', 'Une ligne de coupe, une scène, les niveaux et les cotes de hauteur',
-                               CORPS, SCRIPT, 'coupes' => lignes(Sketchup.active_model), 'niveaux' => niveaux_perso(Sketchup.active_model).map { |n, c| { 'nom' => n, 'cm' => c } }, 'plan' => A2M::MiniPlan.donnees(120.0))
+                               CORPS, SCRIPT, 'reglages' => reglages(Sketchup.active_model), 'polices' => POLICES, 'coupes' => lignes(Sketchup.active_model), 'niveaux' => niveaux_perso(Sketchup.active_model).map { |n, c| { 'nom' => n, 'cm' => c } }, 'plan' => A2M::MiniPlan.donnees(120.0))
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : coupes', 'A2M_Panneau_Coupes', html, 470, 820)
       @fen = dlg
       dlg.add_action_callback('auto') do |_c, json|
@@ -601,6 +714,13 @@ module A2M
       dlg.add_action_callback('appliquer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
         UI.start_timer(0, false) { appliquer(r) } if r
+      end
+      dlg.add_action_callback('reglages') do |_c, json|
+        r = (JSON.parse(json.to_s) rescue nil)
+        UI.start_timer(0, false) { enregistrer_reglages(r) } if r.is_a?(Hash)
+      end
+      dlg.add_action_callback('tout') do |_c, _j|
+        UI.start_timer(0, false) { tout_actualiser }
       end
       dlg.add_action_callback('niveaux') do |_c, json|
         l = (JSON.parse(json.to_s) rescue nil)

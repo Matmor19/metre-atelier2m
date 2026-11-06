@@ -106,7 +106,7 @@ module A2M
     def self.creer(pts, dir, reg, nom = nil)
       model = Sketchup.active_model
       return UI.messagebox('Le modèle est vide.') if model.bounds.empty?
-      reg ||= {}
+      reg = A2M::Coupes.reglages(Sketchup.active_model)
       nom ||= nom_suivant(model)
       pts = pts.map { |p| Geom::Point3d.new(p.x, p.y, 0) }
       dir = dir.clone; dir.z = 0; dir.normalize!
@@ -164,6 +164,7 @@ module A2M
     end
 
     def self.scene(model, nom, g, src, dir, reg)
+      reg = A2M::Coupes.reglages(model)
       model.entities.active_section_plane = nil rescue nil
       ro = model.rendering_options
       ro['DisplaySectionPlanes'] = false rescue nil
