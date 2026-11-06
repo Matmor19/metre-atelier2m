@@ -1,4 +1,5 @@
 [
+ "Correction : planelles — retrait du nettoyage d'arêtes (pouvait vider la planelle) ; en cas d'erreur, le message indique l'endroit précis",
  "Planelles : la coque est refaite creuse, comme ton dessin — les cavités du profil sont des trous de l'anneau au lieu d'être posées sur une coque pleine (plus de traits en trop ni de faces superposées) ; la dalle est coupée avec la coque pleine puis la coque creuse la remplace",
  "Planelles : la planelle est maintenant UN SEUL objet (groupe A2M_PLANELLE contenant la coque et l'isolant, chacun avec sa texture) ; les traits inutiles du profil (points alignés, arêtes dans le même plan) sont supprimés à la pose sans modifier la forme ; les textures et hachures de chaque rôle sont posées sans recréer le tag « Isolant de planelle »",
  "Correction : « Dessiner un sol » sur les murs sélectionnés — les murs de soubassement sont maintenant reconnus (message « Aucun mur balisé trouvé ») ; avec « Au-dessus du tracé », la dalle repose sur le dessus des murs sélectionnés",

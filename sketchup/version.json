@@ -1,12 +1,12 @@
 {
- "version": "2.75.1",
+ "version": "2.75.2",
  "notes": [
+  "Correction : planelles",
   "Planelles : la coque est refaite creuse, comme ton dessin",
   "Planelles : la planelle est maintenant UN SEUL objet (groupe A2M_PLANELLE contenant la coque et l'isolant, chacun avec sa…",
   "Correction : « Dessiner un sol » sur les murs sélectionnés",
   "Planelles : un seul tag A2M_PLANELLE pour toute la planelle (plus de tag « Isolant de planelle ») ; les deux aspects (planelle,…",
   "Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la…",
-  "Planelles : l'aspect de ton dessin est repris",
-  "… et 57 autres nouveautés plus anciennes."
+  "… et 58 autres nouveautés plus anciennes."
  ]
 }

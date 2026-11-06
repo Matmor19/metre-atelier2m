@@ -122,7 +122,6 @@ module A2M
       bord = ents.add_edges(chemin)
       face.followme(bord)
       ents.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.empty? }.each(&:erase!)
-      effacer_traits_inutiles(ents)
       grp.name = "#{type[4]} #{model.active_entities.grep(Sketchup::Group).count { |g| g.name.to_s.start_with?(type[4]) }}"
       poser_aspect(grp, type[1], model, look)
       grp.set_attribute('a2m', 'planelle_part', true) unless type.equal?(TYPE_PL)    # le linéaire n'est compté que sur la planelle elle-même
@@ -367,7 +366,8 @@ module A2M
                       "\n\nLe linéaire sera rappelé à l'import dans le configurateur (pas de case planelle au métré pour l'instant).")
       rescue StandardError => ex
         model.abort_operation
-        UI.messagebox("Planelles non posées (#{ex.message}).")
+        journal("ERREUR : #{ex.message} | #{ex.backtrace.first(4).join(' | ')}")
+        UI.messagebox("Planelles non posées (#{ex.message}).\n#{ex.backtrace.first(3).map { |l| l.sub(/.*a2m_metre\//, '') }.join("\n")}")
       end
     end
 
