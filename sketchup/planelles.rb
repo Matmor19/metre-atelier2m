@@ -120,7 +120,7 @@ module A2M
       bib = bibliotheque
       noms = (faces.any? ? [PROFIL_DESSINE] : []) + bib.map { |o| A2M::Profils.libelle(o) } + [RECTANGLE]
       prec = noms.include?(@r[:profil]) ? @r[:profil] : noms[0]
-      rep = UI.inputbox(['Profil', 'Nu extérieur du profil dessiné', 'Position', 'Décalage vertical (cm) — 0 : le haut de la planelle au niveau du haut de la dalle',
+      rep = UI.inputbox(['Profil', 'Nu extérieur du profil dessiné', 'Position', 'Décalage vertical (cm) — 0 : la planelle posée sur le soubassement, la dalle au niveau de son haut',
                          'Rectangle : hauteur (cm)', 'Rectangle : épaisseur (cm)', 'Rectangle : isolant derrière (cm, 0 = aucun)',
                          'Ranger le profil dessiné dans la bibliothèque sous le nom (vide = non)'],
                         [prec, @r[:ext] || EXT_LONG, @r[:pos] || DANS, (@r[:dz] || 0).to_s, (@r[:h] || ep_dalle).to_s, (@r[:e] || 5).to_s, (@r[:iso] || 0).to_s, ''],
@@ -150,23 +150,41 @@ module A2M
         non_recoupees = 0
         sans_descente = 0
         murs_abaisses = 0
+        dalles_deplacees = 0
+        remonte_max = 0.0
         hmax_cm = 0.0; ep_cm = 0.0
         dalles.each do |g|
           pts, = contour(g)
           vol0 = g.volume rescue 0
           journal("dalle #{g.name} : volume #{vol0.round(0)}, valide #{g.valid?}")
-          # Le haut de la planelle se cale sur le haut de la dalle (la planelle descend si elle est plus haute que la dalle)
+          # La planelle se pose sur le mur de soubassement ; la dalle se cale ensuite sur le haut de la planelle
           _, zb, zh = contour(g)
           hmax = profils.flat_map { |_, pr| pr.map(&:last) }.max
           hmax_cm = hmax * 2.54; ep_cm = (zh - zb) * 2.54
-          dz_long = (zh - zb) - hmax + (dz / 100.0).m
+          zs = dans ? dessus_soubassement(g, zb) : nil
+          remonte_cm = 0.0
+          if zs
+            dm = (zs + (dz / 100.0).m + hmax) - zh               # la dalle monte (ou descend) pour que son haut = haut de la planelle
+            if dm.abs > 0.01
+              g.transform!(Geom::Transformation.translation(Geom::Vector3d.new(0, 0, dm)))
+              remonte_cm = dm * 2.54
+              pts, = contour(g)
+              _, zb, zh = contour(g)
+            end
+            dz_long = (zs + (dz / 100.0).m) - zb                 # dessous de la planelle = dessus du soubassement
+            journal("soubassement trouvé : dessus z=#{(zs * 2.54).round(1)} cm, dalle déplacée de #{remonte_cm.round(1)} cm")
+          else
+            dz_long = (zh - zb) - hmax + (dz / 100.0).m
+          end
+          dalles_deplacees += 1 if remonte_cm.abs > 0.05
+          remonte_max = remonte_cm if remonte_cm.abs > remonte_max.abs
           groupes = profils.map { |t, pr| balayer(pts, pr, dz_long, t, model, g.parent.entities) }
           specs = profils.map { |_, pr| spec_rect(pr) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
             # Si la planelle descend sous la dalle : la dalle redescend, au droit du mur de soubassement, jusqu'au dessus de ce mur
             if hmax > (zh - zb) + 0.01
-              murs_abaisses += abaisser_soubassement(g, zb, dz_long)
+              murs_abaisses += abaisser_soubassement(g, zb, dz_long) unless zs
               pleins = remplissages_soubassement(g, zb, dz_long)
               fus = pleins.empty? ? nil : fusionner(g, pleins)
               journal("descente : murs abaissés #{murs_abaisses}, remplissages #{pleins.size}, fusion #{fus ? 'OK volume ' + fus.volume.round(0).to_s : 'refusée'}")
@@ -207,6 +225,7 @@ module A2M
         model.commit_operation
         UI.messagebox("Planelles posées (#{rep[0]}) :\n" + faits.join("\n") +
                       (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
+                      (dalles_deplacees > 0 ? "\n\nLa planelle est posée sur le mur de soubassement et la dalle a été #{remonte_max > 0 ? 'remontée' : 'descendue'} de #{remonte_max.abs.round(1)} cm pour que son haut affleure le haut de la planelle. Si l'isolant ou la chape sont déjà posés, refaites-les après." : '') +
                       (murs_abaisses > 0 ? "\n\nLe dessus du mur de soubassement a été abaissé de #{((hmax_cm || 0) - (ep_cm || 0)).round(1)} cm : la planelle prend sa place sous la dalle." : '') +
                       (sans_descente > 0 ? "\n\nLa dalle n'a pas pu être prolongée jusqu'au mur de soubassement (mur balisé « Murs de soubassement » introuvable au droit de la planelle, ou calcul refusé)." : '') +
                       "\n\nLe linéaire sera rappelé à l'import dans le configurateur (pas de case planelle au métré pour l'instant).")
@@ -214,6 +233,16 @@ module A2M
         model.abort_operation
         UI.messagebox("Planelles non posées (#{ex.message}).")
       end
+    end
+
+    # Dessus du mur de soubassement (balise A2M_MUR_SOUB) situé sous la dalle, au droit de son emprise ; nil si aucun.
+    def self.dessus_soubassement(g, zb)
+      bb = g.bounds
+      hauts = g.parent.entities.grep(Sketchup::Group).select do |w|
+        w.valid? && w.layer.name == 'A2M_MUR_SOUB' && w.bounds.max.z <= zb + 0.8 && w.bounds.max.z > zb - 40.cm &&
+          w.bounds.min.x < bb.max.x && w.bounds.max.x > bb.min.x && w.bounds.min.y < bb.max.y && w.bounds.max.y > bb.min.y
+      end.map { |w| w.bounds.max.z }
+      hauts.empty? ? nil : hauts.max
     end
 
     # Murs de soubassement dont le dessus affleure le dessous de la dalle : la planelle (plus haute que la dalle) descend
