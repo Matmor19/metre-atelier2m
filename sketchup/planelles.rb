@@ -136,11 +136,14 @@ module A2M
         faits = []
         non_recoupees = 0
         sans_descente = 0
+        murs_abaisses = 0
+        hmax_cm = 0.0; ep_cm = 0.0
         dalles.each do |g|
           pts, = contour(g)
           # Le haut de la planelle se cale sur le haut de la dalle (la planelle descend si elle est plus haute que la dalle)
           _, zb, zh = contour(g)
           hmax = profils.flat_map { |_, pr| pr.map(&:last) }.max
+          hmax_cm = hmax * 2.54; ep_cm = (zh - zb) * 2.54
           dz_long = (zh - zb) - hmax + (dz / 100.0).m
           groupes = profils.map { |t, pr| balayer(pts, pr, dz_long, t, model, g.parent.entities) }
           specs = profils.map { |_, pr| spec_rect(pr) }
@@ -148,6 +151,7 @@ module A2M
           if dans
             # Si la planelle descend sous la dalle : la dalle redescend, au droit du mur de soubassement, jusqu'au dessus de ce mur
             if hmax > (zh - zb) + 0.01
+              murs_abaisses += abaisser_soubassement(g, zb, dz_long)
               pleins = remplissages_soubassement(g, zb, dz_long)
               fus = pleins.empty? ? nil : fusionner(g, pleins)
               if fus
@@ -180,12 +184,33 @@ module A2M
         model.commit_operation
         UI.messagebox("Planelles posées (#{rep[0]}) :\n" + faits.join("\n") +
                       (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
+                      (murs_abaisses > 0 ? "\n\nLe dessus du mur de soubassement a été abaissé de #{((hmax_cm || 0) - (ep_cm || 0)).round(1)} cm : la planelle prend sa place sous la dalle." : '') +
                       (sans_descente > 0 ? "\n\nLa dalle n'a pas pu être prolongée jusqu'au mur de soubassement (mur balisé « Murs de soubassement » introuvable au droit de la planelle, ou calcul refusé)." : '') +
                       "\n\nLe linéaire sera rappelé à l'import dans le configurateur (pas de case planelle au métré pour l'instant).")
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Planelles non posées (#{ex.message}).")
       end
+    end
+
+    # Murs de soubassement dont le dessus affleure le dessous de la dalle : la planelle (plus haute que la dalle) descend
+    # à leur place, donc leur dessus est abaissé de l'excédent (le béton de la dalle comble ensuite l'emprise du mur).
+    # Renvoie le nombre de murs abaissés.
+    def self.abaisser_soubassement(g, zb, dz_long)
+      delta = -dz_long
+      return 0 unless delta > 0.2.cm && delta < 30.cm
+      bb = g.bounds
+      n = 0
+      g.parent.entities.grep(Sketchup::Group).each do |w|
+        next unless w.valid? && w.layer.name == 'A2M_MUR_SOUB' && (w.bounds.max.z - zb).abs < 0.8
+        next unless w.bounds.min.x < bb.max.x && w.bounds.max.x > bb.min.x && w.bounds.min.y < bb.max.y && w.bounds.max.y > bb.min.y
+        t = w.transformation
+        zt = w.bounds.max.z
+        hauts = w.entities.grep(Sketchup::Face).select { |f| f.normal.transform(t).z > 0.99 && (f.vertices.first.position.transform(t).z - zt).abs < 0.05 }
+        hauts.each { |f| f.pushpull(-delta) if f.valid? }
+        n += 1 unless hauts.empty?
+      end
+      n
     end
 
     # Volumes qui comblent, entre le dessous de la dalle et le dessus du mur de soubassement, l'emprise de ce mur
