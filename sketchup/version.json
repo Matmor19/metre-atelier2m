@@ -1,12 +1,12 @@
 {
- "version": "2.73.2",
+ "version": "2.74.0",
  "notes": [
+  "Planelles : un seul tag A2M_PLANELLE pour toute la planelle (plus de tag « Isolant de planelle ») ; les deux aspects (planelle,…",
   "Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la…",
   "Planelles : l'aspect de ton dessin est repris",
   "Correction : planelles",
   "Correction : planelles",
   "Planelles : garde-fou",
-  "Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un…",
-  "… et 53 autres nouveautés plus anciennes."
+  "… et 54 autres nouveautés plus anciennes."
  ]
 }

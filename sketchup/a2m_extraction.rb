@@ -321,6 +321,7 @@ module A2M
             l = bp && bp['dim'] ? bp['dim'].to_i : (b[:l] * 100).round
             portes << { 'l' => l, 'dim' => bp && bp['dim'], 'choix' => bp ? bp.reject { |k, _| k == 'dim' } : {}, 'x' => b[:cx], 'y' => b[:cy], 'piece' => e.get_attribute('a2m', 'piece') }
           elsif tag == 'A2M_PLANELLE'
+            next if e.get_attribute('a2m', 'planelle_part')   # isolant de planelle : même pièce, déjà comptée
             # Planelle : linéaire mesuré comme un mur (sur son dessus)
             mp = murs_de(e, tr, 'planelle', nom)
             planelles += mp.empty? ? b[:l] : mp.sum { |x| x['longueur'] }

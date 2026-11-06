@@ -153,9 +153,12 @@ module A2M
         raise 'profil invalide (face non créée)' unless face
         face.followme(ents.add_edges(chemin))
         ents.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.empty? }.each(&:erase!)
-        tag = role == 'isolant' && balise == 'A2M_PLANELLE' ? 'A2M_ISOLANT_PLANELLE' : balise
-        if tag
-          l, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |x, _, _| x == tag } || [])[2])
+        if balise == 'A2M_PLANELLE'
+          rtag = role == 'isolant' ? 'A2M_ISOLANT_PLANELLE' : balise
+          A2M::Planelles.poser_aspect(grp, rtag, model)
+          grp.set_attribute('a2m', 'planelle_part', true) if rtag != balise
+        elsif balise
+          l, _ = A2M::Balises.balise(model, balise, (A2M::Balises::LISTE.find { |x, _, _| x == balise } || [])[2])
           grp.layer = l
           A2M::Hachures.poser(grp, model)
         end

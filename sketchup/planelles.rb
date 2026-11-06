@@ -114,12 +114,19 @@ module A2M
       bord = ents.add_edges(chemin)
       face.followme(bord)
       ents.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.empty? }.each(&:erase!)
-      tag, _ = A2M::Balises.balise(model, type[1], (A2M::Balises::LISTE.find { |x, _, _| x == type[1] } || [])[2])
-      grp.layer = tag
       grp.name = "#{type[4]} #{model.active_entities.grep(Sketchup::Group).count { |g| g.name.to_s.start_with?(type[4]) }}"
+      poser_aspect(grp, type[1], model, look)
+      grp.set_attribute('a2m', 'planelle_part', true) unless type.equal?(TYPE_PL)    # le linéaire n'est compté que sur la planelle elle-même
+      grp
+    end
+
+    # Un seul tag pour la planelle (A2M_PLANELLE). Ses deux aspects (planelle, isolant de planelle) ne sont que des
+    # textures : matière 3D et hachure de coupe du rôle sont posées, puis le groupe est rangé dans le tag unique.
+    def self.poser_aspect(grp, role_tag, model, look = nil)
+      grp.layer = A2M::Balises.balise(model, role_tag, (A2M::Balises::LISTE.find { |x, _, _| x == role_tag } || [])[2])[0]
       A2M::Hachures.poser(grp, model)
       habiller(grp, look, model)
-      grp
+      grp.layer = A2M::Balises.balise(model, TYPE_PL[1], (A2M::Balises::LISTE.find { |x, _, _| x == TYPE_PL[1] } || [])[2])[0]
     end
 
     # Tous les profils de la bibliothèque de profils, les planelles en premier
@@ -172,6 +179,9 @@ module A2M
                   A2M::Profils.parties(o).map { |role, pts| [role == 'isolant' ? TYPE_ISO : TYPE_PL, pts] }
                 end
       aspects_pose = aspects.dup
+      aire = ->(pts) { (0...pts.size).sum { |i| a = pts[i]; b = pts[(i + 1) % pts.size]; a[0] * b[1] - b[0] * a[1] }.abs / 2.0 }
+      kmax = profils.each_index.max_by { |i| aire.call(profils[i][1]) }
+      profils = profils.each_with_index.map { |(t, pts), i| [i == kmax ? TYPE_PL : TYPE_ISO, pts] }
       return UI.messagebox('Profil introuvable : dessinez une face verticale (le profil), ou choisissez le rectangle.') unless profils && profils.any?
       ranger(rep[7].to_s.strip, profils, aspects_pose) if rep[0] == PROFIL_DESSINE && !rep[7].to_s.strip.empty?
       dans = rep[2] == DANS
