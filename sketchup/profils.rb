@@ -41,7 +41,7 @@ module A2M
 
     def self.trouver(lib) tous.find { |o| libelle(o) == lib || o['nom'] == lib } end
 
-    def self.enregistrer(nom, cat, parts)
+    def self.enregistrer(nom, cat, parts, aspects = nil)
       liste = A2M::Bibliotheque.objets
       if liste.any? { |o| o['nom'] == nom }
         return false unless UI.messagebox("« #{nom} » existe déjà dans la bibliothèque. Le remplacer ?", MB_YESNO) == IDYES
@@ -51,6 +51,7 @@ module A2M
       w = parts.flat_map { |_, p| p.map(&:first) }.max.to_f
       liste << { 'nom' => nom, 'type' => "#{cat} (profil)", 'categorie' => cat, 'balise' => BALISE[cat],
                  'profils' => parts.map { |r, p| [r, p.map { |a, b| [a.to_f, b.to_f] }] }, 'h0' => h, 'l0' => w, 'version' => 2 }
+      liste.last['aspects'] = aspects if aspects && aspects.any?
       A2M::Bibliotheque.sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
       true
     end
@@ -190,8 +191,9 @@ module A2M
       return unless rep && !rep[0].to_s.strip.empty?
       @r[:cat] = rep[1]
       parts = depuis_dessin(faces, rep[2] == 'Le plus long bord vertical')
+      aspects = A2M::Planelles.aspects
       return UI.messagebox('Profil illisible : dessinez des faces verticales dans un même plan.') unless parts
-      UI.messagebox("Profil « #{rep[0].strip} » rangé (#{rep[1]}#{parts.size > 1 ? ', avec isolant' : ''}).") if enregistrer(rep[0].strip, rep[1], parts)
+      UI.messagebox("Profil « #{rep[0].strip} » rangé (#{rep[1]}#{parts.size > 1 ? ', avec isolant' : ''}).") if enregistrer(rep[0].strip, rep[1], parts, aspects)
     end
 
     def self.creer

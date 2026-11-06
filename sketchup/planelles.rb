@@ -43,12 +43,12 @@ module A2M
       hx = Z_AXIS.cross(n).normalize
       o = t0 * f0.outer_loop.vertices[0].position
       proj = ->(q) { d = q - o; [d.dot(hx), d.dot(Z_AXIS)] }
-      polys = faces_tr.map { |f, t| [f.outer_loop.vertices.map { |v| proj.call(t * v.position) }, f.area] }
+      polys = faces_tr.map { |f, t| [f.outer_loop.vertices.map { |v| proj.call(t * v.position) }, f.area, aspect_face(f)] }
       tous = polys.flat_map(&:first)
       wmin = tous.map(&:first).min; wmax = tous.map(&:first).max; hmin = tous.map(&:last).min
       # Plus long bord vertical, toutes faces confondues
       dos = nil; long = 0
-      polys.each do |pts, _|
+      polys.each do |pts, _, _|
         pts.each_with_index do |(w1, h1), k|
           w2, h2 = pts[(k + 1) % pts.size]
           next unless (w1 - w2).abs < 0.04
@@ -57,9 +57,41 @@ module A2M
       end
       inverser = dos && (dos - wmax).abs < (dos - wmin).abs
       inverser = !inverser unless ext_long
-      polys.sort_by { |_, a| -a }.each_with_index.map do |(pts, _), k|
+      tries = polys.sort_by { |_, a, _| -a }
+      @aspects = tries.map { |_, _, l| l }
+      tries.each_with_index.map do |(pts, _, _), k|
         [k.zero? ? TYPE_PL : TYPE_ISO, pts.map { |w, h| [inverser ? wmax - w : w - wmin, h - hmin] }]
       end
+    end
+
+    # Aspects retenus (dans l'ordre des parties) par le dernier profil dessiné lu, ou par le profil de bibliothèque choisi
+    def self.aspects() @aspects || [] end
+
+    # Aspect d'une face dessinée : matière 3D (nom) et hachure de coupe (celle de son groupe), si elles existent
+    def self.aspect_face(f)
+      m = f.material || f.back_material
+      inst = (f.parent.respond_to?(:instances) ? f.parent.instances.first : nil)
+      h = (inst && inst.respond_to?(:hatch_pattern) ? inst.hatch_pattern : nil)
+      l = {}
+      l['mat'] = m.name if m && !m.name.to_s.empty?
+      l['hach'] = h.name if h && !h.name.to_s.empty?
+      l.empty? ? nil : l
+    rescue StandardError
+      nil
+    end
+
+    # Pose l'aspect d'un profil sur le volume balayé : matière en 3D, hachure en coupe (2D)
+    def self.habiller(grp, look, model)
+      return unless look.is_a?(Hash)
+      if (mn = look['mat'])
+        m = model.materials[mn] || (A2M::TexturesAuto.matiere(model, mn) rescue nil)
+        grp.entities.grep(Sketchup::Face).each { |f| f.material = m; f.back_material = m } if m
+      end
+      if (hn = look['hach']) && (h = (model.hatch_patterns[hn] rescue nil))
+        grp.hatch_pattern = h
+      end
+    rescue StandardError
+      nil
     end
 
     def self.rectangle(h, e, iso)
@@ -70,7 +102,7 @@ module A2M
     end
 
     # Balaye un profil le long du contour fermé (départ au milieu du premier côté : angles propres)
-    def self.balayer(pts, profil, dz, type, model, ents_cible = nil)
+    def self.balayer(pts, profil, dz, type, model, ents_cible = nil, look = nil)
       grp = (ents_cible || model.active_entities).add_group
       ents = grp.entities
       milieu = Geom::Point3d.new((pts[0].x + pts[1].x) / 2.0, (pts[0].y + pts[1].y) / 2.0, pts[0].z)
@@ -86,6 +118,7 @@ module A2M
       grp.layer = tag
       grp.name = "#{type[4]} #{model.active_entities.grep(Sketchup::Group).count { |g| g.name.to_s.start_with?(type[4]) }}"
       A2M::Hachures.poser(grp, model)
+      habiller(grp, look, model)
       grp
     end
 
@@ -129,15 +162,18 @@ module A2M
       return unless rep
       dz, h, e, iso = rep[3..6].map { |v| v.to_s.tr(',', '.').to_f }
       @r = { profil: rep[0], ext: rep[1], pos: rep[2], dz: dz, h: h, e: e, iso: iso }
+      @aspects = []
       profils = case rep[0]
                 when PROFIL_DESSINE then profils_depuis(faces, rep[1] == EXT_LONG)
                 when RECTANGLE then (h > 0 && e > 0 ? rectangle(h, e, iso) : nil)
                 else
                   o = bib.find { |x| A2M::Profils.libelle(x) == rep[0] }
+                  @aspects = (o['aspects'] || [])
                   A2M::Profils.parties(o).map { |role, pts| [role == 'isolant' ? TYPE_ISO : TYPE_PL, pts] }
                 end
+      aspects_pose = aspects.dup
       return UI.messagebox('Profil introuvable : dessinez une face verticale (le profil), ou choisissez le rectangle.') unless profils && profils.any?
-      ranger(rep[7].to_s.strip, profils) if rep[0] == PROFIL_DESSINE && !rep[7].to_s.strip.empty?
+      ranger(rep[7].to_s.strip, profils, aspects_pose) if rep[0] == PROFIL_DESSINE && !rep[7].to_s.strip.empty?
       dans = rep[2] == DANS
       unless dans
         wmax = profils.flat_map { |_, pts| pts.map(&:first) }.max
@@ -178,7 +214,7 @@ module A2M
           end
           dalles_deplacees += 1 if remonte_cm.abs > 0.05
           remonte_max = remonte_cm if remonte_cm.abs > remonte_max.abs
-          groupes = profils.map { |t, pr| balayer(pts, pr, dz_long, t, model, g.parent.entities) }
+          groupes = profils.each_with_index.map { |(t, pr), k| balayer(pts, pr, dz_long, t, model, g.parent.entities, aspects_pose[k]) }
           specs = profils.map { |_, pr| spec_rect(pr) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
@@ -412,8 +448,8 @@ module A2M
     end
 
     # Profil dessiné rangé dans la bibliothèque (réutilisable sans le redessiner)
-    def self.ranger(nom, profils)
-      A2M::Profils.enregistrer(nom, 'Planelle', profils.map { |t, pts| [t[1] =~ /ISOLANT/ ? 'isolant' : 'principal', pts] })
+    def self.ranger(nom, profils, aspects = nil)
+      A2M::Profils.enregistrer(nom, 'Planelle', profils.map { |t, pts| [t[1] =~ /ISOLANT/ ? 'isolant' : 'principal', pts] }, aspects)
     rescue StandardError => ex
       UI.messagebox("Profil non rangé dans la bibliothèque (#{ex.message}).")
     end

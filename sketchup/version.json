@@ -1,12 +1,12 @@
 {
- "version": "2.73.0",
+ "version": "2.73.1",
  "notes": [
+  "Planelles : l'aspect de ton dessin est repris",
   "Correction : planelles",
   "Correction : planelles",
   "Planelles : garde-fou",
   "Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un…",
   "Planelles : quand la planelle (16 cm) est plus haute que la dalle (12 cm), le dessus du mur de soubassement est abaissé de la…",
-  "Planelles : la dalle épouse le contour de la planelle et redescend, au droit du mur de soubassement, jusqu'au dessus de ce mur…",
-  "… et 51 autres nouveautés plus anciennes."
+  "… et 52 autres nouveautés plus anciennes."
  ]
 }

@@ -1,4 +1,5 @@
 [
+ "Planelles : l'aspect de ton dessin est repris — matière 3D de ses faces et hachure de coupe de son groupe sont rangées avec le profil (« Ranger le profil dessiné ») et reposées sur chaque planelle",
  "Correction : planelles — la planelle se pose maintenant SUR le mur de soubassement (qui n'est plus abaissé) ; la dalle se cale ensuite sur le haut de la planelle (elle monte ou descend de la différence) puis épouse le profil de la planelle jusqu'au dessus du soubassement",
  "Correction : planelles — après avoir abaissé le mur de soubassement, sa hachure de coupe et ses textures A2M_ sont reposées (il apparaissait en noir en coupe)",
  "Planelles : garde-fou — si la dalle devait disparaître ou perdre l'essentiel de son volume, toute la pose est annulée avec un message ; un journal de la dernière pose est écrit dans Documents/Atelier 2M/planelles_journal.txt",
