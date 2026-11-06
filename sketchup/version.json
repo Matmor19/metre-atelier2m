@@ -1,12 +1,12 @@
 {
- "version": "2.73.1",
+ "version": "2.73.2",
  "notes": [
+  "Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la…",
   "Planelles : l'aspect de ton dessin est repris",
   "Correction : planelles",
   "Correction : planelles",
   "Planelles : garde-fou",
   "Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un…",
-  "Planelles : quand la planelle (16 cm) est plus haute que la dalle (12 cm), le dessus du mur de soubassement est abaissé de la…",
-  "… et 52 autres nouveautés plus anciennes."
+  "… et 53 autres nouveautés plus anciennes."
  ]
 }

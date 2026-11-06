@@ -187,6 +187,7 @@ module A2M
         sans_descente = 0
         murs_abaisses = 0
         dalles_deplacees = 0
+        soub_trouve = false
         remonte_max = 0.0
         hmax_cm = 0.0; ep_cm = 0.0
         dalles.each do |g|
@@ -213,6 +214,7 @@ module A2M
             dz_long = (zh - zb) - hmax + (dz / 100.0).m
           end
           dalles_deplacees += 1 if remonte_cm.abs > 0.05
+          soub_trouve = true if zs
           remonte_max = remonte_cm if remonte_cm.abs > remonte_max.abs
           groupes = profils.each_with_index.map { |(t, pr), k| balayer(pts, pr, dz_long, t, model, g.parent.entities, aspects_pose[k]) }
           specs = profils.map { |_, pr| spec_rect(pr) }
@@ -259,8 +261,9 @@ module A2M
           faits << "#{g.name.to_s.empty? ? 'Dalle' : g.name} : #{long.round(2)} ml"
         end
         model.commit_operation
-        UI.messagebox("Planelles posées (#{rep[0]}) :\n" + faits.join("\n") +
+        UI.messagebox("Planelles posées (#{rep[0]}, version #{A2M::EXT.version}) :\n" + faits.join("\n") +
                       (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
+                      (soub_trouve ? "\n\nSoubassement trouvé : la planelle est posée sur son dessus." : "\n\nAUCUN mur de soubassement (balise « Murs de soubassement ») trouvé sous la dalle : la planelle a été calée sur le haut de la dalle, sans la déplacer.") +
                       (dalles_deplacees > 0 ? "\n\nLa planelle est posée sur le mur de soubassement et la dalle a été #{remonte_max > 0 ? 'remontée' : 'descendue'} de #{remonte_max.abs.round(1)} cm pour que son haut affleure le haut de la planelle. Si l'isolant ou la chape sont déjà posés, refaites-les après." : '') +
                       (murs_abaisses > 0 ? "\n\nLe dessus du mur de soubassement a été abaissé de #{((hmax_cm || 0) - (ep_cm || 0)).round(1)} cm : la planelle prend sa place sous la dalle." : '') +
                       (sans_descente > 0 ? "\n\nLa dalle n'a pas pu être prolongée jusqu'au mur de soubassement (mur balisé « Murs de soubassement » introuvable au droit de la planelle, ou calcul refusé)." : '') +
@@ -272,12 +275,28 @@ module A2M
     end
 
     # Dessus du mur de soubassement (balise A2M_MUR_SOUB) situé sous la dalle, au droit de son emprise ; nil si aucun.
+    # Cherche aussi dans les groupes et composants imbriqués ; consigne dans le journal tout ce qui a été vu.
     def self.dessus_soubassement(g, zb)
       bb = g.bounds
-      hauts = g.parent.entities.grep(Sketchup::Group).select do |w|
-        w.valid? && w.layer.name == 'A2M_MUR_SOUB' && w.bounds.max.z <= zb + 0.8 && w.bounds.max.z > zb - 40.cm &&
-          w.bounds.min.x < bb.max.x && w.bounds.max.x > bb.min.x && w.bounds.min.y < bb.max.y && w.bounds.max.y > bb.min.y
-      end.map { |w| w.bounds.max.z }
+      tous = []
+      cherche = lambda do |ents, tr, prof|
+        ents.each do |w|
+          next unless w.valid? && (w.is_a?(Sketchup::Group) || w.is_a?(Sketchup::ComponentInstance))
+          next if w.equal?(g)
+          if w.layer && w.layer.name == 'A2M_MUR_SOUB'
+            b = w.bounds
+            pts = [b.min, b.max].map { |q| tr * q }
+            tous << [pts.map(&:z).max, pts.map(&:x).min, pts.map(&:x).max, pts.map(&:y).min, pts.map(&:y).max]
+          elsif prof < 2
+            cherche.call(w.is_a?(Sketchup::Group) ? w.entities : w.definition.entities, tr * w.transformation, prof + 1)
+          end
+        end
+      end
+      cherche.call(g.parent.entities, Geom::Transformation.new, 0)
+      journal("murs de soubassement vus : #{tous.size} ; dessus (cm) : #{tous.map { |t| (t[0] * 2.54).round(1) }.uniq.sort.inspect} ; dessous de la dalle : #{(zb * 2.54).round(1)} cm")
+      hauts = tous.select do |zt, x0, x1, y0, y1|
+        zt <= zb + 2.cm && zt > zb - 40.cm && x0 < bb.max.x && x1 > bb.min.x && y0 < bb.max.y && y1 > bb.min.y
+      end.map(&:first)
       hauts.empty? ? nil : hauts.max
     end
 
