@@ -1,4 +1,5 @@
 [
+  "« Dessiner un mur » : un panneau à cartes (mur, soubassement, refend, pignon, doublages, cloison) avec hauteur, épaisseur et côté du tracé réglés d'un coup d'œil, puis « Dessiner »",
   "Extraction pour le métré : les ouvrages posés par Couverture (m²), Zinguerie (ml), Charpente (ml de chevrons, liteaux, contre-liteaux), Garde-corps (ml) et Escalier (marches) sont maintenant relevés par type et envoyés au configurateur dans les informations",
   "Correction : « Mes éléments » retrouve bien les éléments rangés (chemin du dossier sous Windows) ; testé : style, ajout avec vignette, cotation des pièces et hors tout",
   "Nouveau : « Cotation automatique » (cotes de chaque pièce et cotes hors tout du bâtiment, sur leur propre balise), « Styles de vue » (intérieur, plan technique, coupe grise, construire et démolir, tracé sur plan, avec favoris) et « Mes éléments » (votre bibliothèque personnelle : ajoutez la sélection, posez-la au clic)",

@@ -1,6 +1,7 @@
 # encoding: UTF-8
 # Métré Atelier 2M : outil de dessin des murs, doublages et cloisons, directement sur la bonne balise
 require 'sketchup.rb'
+require 'json'
 
 module A2M
   module DessinMurs
@@ -37,9 +38,72 @@ module A2M
       { type: type, h: h, e: e, trace: TRACES.index(rep[3]) || 0 }
     end
 
+    # Panneau à cartes : un clic sur le type, la hauteur et l'épaisseur se règlent d'un coup d'œil, puis « Dessiner »
+    CORPS = <<~'HTML'
+      <h2>Que dessiner</h2>
+      <div class="grille" id="types"></div>
+      <h2>Réglages</h2>
+      <div class="dims"><div><label>Hauteur (m)</label><input type="text" id="h"></div><div class="x">×</div><div><label>Épaisseur (cm)</label><input type="text" id="e"></div></div>
+      <h2>Le tracé suit</h2>
+      <div class="puces" id="trace"></div>
+      <div class="petit">Pendant le tracé : Tab change le côté, tapez une longueur puis Entrée, clic droit ou Ctrl pour libérer les axes.</div>
+      <div id="bas"><div id="msg"></div><button type="button" id="go">Dessiner</button></div>
+    HTML
+    SCRIPT = <<~'JS'
+      var D = __DONNEES__;
+      function el(i) { return document.getElementById(i); }
+      var s = D.etat;
+      function num(v) { return parseFloat(String(v).replace(',', '.')); }
+      function rendre() {
+        var g = el('types'); g.innerHTML = '';
+        D.types.forEach(function (t, i) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (s.type === i ? ' rempli' : '');
+          b.innerHTML = '<div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50"><rect x="4" y="' + (20 - Math.min(t.e, 30) / 2) + '" width="40" height="' + Math.max(Math.min(t.e, 30), 3) + '" fill="' + t.couleur + '" stroke="#3C3C3C"/></svg></div><span></span><div class="petit" style="margin:2px 0 0"></div>';
+          b.querySelector('span').textContent = t.libelle; b.querySelector('.petit').textContent = t.h + ' m × ' + t.e + ' cm';
+          b.addEventListener('click', function () { s.type = i; s.h = t.h; s.e = t.e; el('h').value = t.h; el('e').value = t.e; rendre(); });
+          g.appendChild(b);
+        });
+        var c = el('trace'); c.innerHTML = '';
+        D.traces.forEach(function (x, i) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (s.trace === i ? ' rempli' : ''); b.textContent = x;
+          b.addEventListener('click', function () { s.trace = i; rendre(); }); c.appendChild(b);
+        });
+        var h = num(el('h').value), e = num(el('e').value);
+        el('h').className = h > 0 ? 'ok' : ''; el('e').className = e > 0 ? 'ok' : '';
+        el('go').disabled = !(h > 0 && e > 0);
+        el('msg').textContent = (h > 20) ? 'Hauteur en mètres : ' + h + ' m ?' : '';
+      }
+      el('h').value = s.h; el('e').value = s.e;
+      el('h').addEventListener('input', rendre); el('e').addEventListener('input', rendre);
+      el('go').addEventListener('click', function () { sketchup.dessiner(JSON.stringify({ type: s.type, h: num(el('h').value), e: num(el('e').value), trace: s.trace })); });
+      rendre();
+    JS
+    COULEURS = ['#D9D2C8', '#C9C9C9', '#D9D2C8', '#D9D2C8', '#FFFFFF', '#FAE08C', '#F0E6D8'].freeze
+    LIBELLES = ['Mur', 'Soubassement', 'Refend', 'Pignon', 'Doublage plaque', 'Doublage isolant', 'Cloison'].freeze
+
     def self.lancer
-      p = demander
-      Sketchup.active_model.select_tool(Outil.new(p)) if p
+      if @fen && (@fen.visible? rescue false)
+        @fen.bring_to_front
+        return
+      end
+      idx = TYPES.index { |x| x[0] == @reglages[:type] } || 0
+      r = @reglages[TYPES[idx][0]] || {}
+      d = { 'types' => TYPES.each_with_index.map { |t, i| { 'libelle' => LIBELLES[i], 'h' => (@reglages[t[0]] || {})[:h] || t[2], 'e' => (@reglages[t[0]] || {})[:e] || t[3], 'couleur' => COULEURS[i] } },
+            'traces' => ['Axe du mur', 'Face gauche', 'Face droite'],
+            'etat' => { 'type' => idx, 'h' => r[:h] || TYPES[idx][2], 'e' => r[:e] || TYPES[idx][3], 'trace' => TRACES.index(@reglages[:trace]) || 0 } }
+      html = A2M::Panneau.page('Dessiner un mur', 'Choisissez le type, réglez si besoin, puis tracez', CORPS, SCRIPT, d)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : mur', 'A2M_Panneau_Mur', html, 440, 600)
+      @fen = dlg
+      dlg.add_action_callback('dessiner') do |_c, json|
+        x = (JSON.parse(json.to_s) rescue nil)
+        next unless x
+        t = TYPES[x['type'].to_i] || TYPES[0]
+        @reglages[:type] = t[0]; @reglages[:trace] = TRACES[x['trace'].to_i] || TRACES[0]; @reglages[t[0]] = { h: x['h'].to_f, e: x['e'].to_f }
+        dlg.close
+        UI.start_timer(0.1, false) { Sketchup.active_model.select_tool(Outil.new({ type: t, h: x['h'].to_f, e: x['e'].to_f, trace: x['trace'].to_i })) }
+      end
+      dlg.set_on_closed { @fen = nil }
+      dlg.show
     end
 
     # ---- Géométrie 2D (plan horizontal), en pouces (unité interne de SketchUp) ----
