@@ -15,7 +15,7 @@ unless file_loaded?(__FILE__)
     ['baliser',     'Baliser la sélection',                'Met la balise choisie sur les groupes, composants, faces ou lignes sélectionnés', -> { A2M::Balises.baliser_selection }, false],
     ['pieces',      'Baliser et nommer les pièces',        'Met A2M_PIECE sur les groupes de sol sélectionnés et demande le nom de chaque pièce', -> { A2M::Balises.nommer_pieces }, false],
     ['piece_clic',  'Pièce en un clic',                    'Cliquez dans une pièce fermée : sol (épaisseur, revêtement), plinthes, nom (liste et précision libre), surface et périmètre en ml, en une seule fois', -> { A2M::PieceClic.lancer }, false],
-    ['pieces_auto', 'Pièces automatiques',                 'Trouve les pièces fermées entre murs et cloisons, crée leur revêtement et demande leur nom', -> { A2M::PiecesAuto.lancer }, false],
+    ['pieces_auto', 'Pièces automatiques',                 'Trouve toutes les pièces fermées entre murs et cloisons et vous les présente une par une (en surbrillance) : nom, sol en texture, plinthes, plafond, surface et ml ; scènes 2D et 3D à la fin', -> { A2M::PieceClic.toutes }, false],
     ['tableau',     'Tableau de bord du modèle',           'Contrôle du modèle et métré en direct dans une seule fenêtre : points à vérifier cliquables, surfaces, linéaires et menuiseries par pièce, envoi au métré', -> { A2M::Tableau.ouvrir }, false],
     ['controle',    'Contrôle du modèle',                  'Vérifie balises, solides, chevauchements, pièces et menuiseries avant l\'extraction', -> { A2M::Controle.lancer }, true],
     ['mur',         'Dessiner un mur',                     'Mur, doublage ou cloison : hauteur, épaisseur et tracé (axe ou face), posé sur sa balise', -> { A2M::DessinMurs.lancer }, false],

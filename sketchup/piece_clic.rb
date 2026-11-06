@@ -116,6 +116,17 @@ module A2M
           ml_pl = A2M::Plinthes.generer(g, Geom::Transformation.new, profil, model)
           g.set_attribute('a2m', 'plinthe_nom', r['plinthe'])
         end
+        if r['plafond']
+          h = r['hauteur'].to_s.tr(',', '.').to_f
+          h = 250.0 if h <= 0
+          lp, _ = A2M::Balises.balise(model, 'A2M_PLAFOND', [230, 230, 235])
+          pl = model.active_entities.add_group
+          pts = ext.map { |q| Geom::Point3d.new(q.x, q.y, q.z + (ep / 2.54).to_f + h.cm) }
+          fp = pl.entities.add_face(pts)
+          fp.reverse! if fp && fp.normal.z > 0          # face vue d'en dessous
+          pl.layer = lp
+          pl.name = "Plafond – #{nom_final}"
+        end
         model.commit_operation
         Sketchup.status_text = "#{nom_final} : #{aire.round(2)} m², périmètre #{perimetre(ext).round(2)} ml#{ml_pl ? ", plinthes #{(ml_pl * 100).round / 100.0} ml" : ''}"
         g
@@ -139,7 +150,10 @@ module A2M
       <div class="grille" id="rev" style="margin-top:8px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))"></div>
       <h2>Plinthes</h2>
       <div class="puces" id="pl"></div>
-      <div id="bas"><div id="msg"></div><button type="button" id="go">Créer la pièce</button></div>
+      <h2>Ensuite</h2>
+      <div class="puces" id="opts"></div>
+      <div class="dims" id="hbloc" style="margin-top:8px;grid-template-columns:1fr"><div><label>Hauteur sous plafond (cm)</label><input type="text" id="hsp"></div></div>
+      <div id="bas"><div id="msg"></div><button type="button" id="passer" style="display:none;background:#fff;color:#3C3C3C;border:2px solid #d8d0c6;border-radius:10px;padding:8px 14px;cursor:pointer">Passer</button><button type="button" id="go">Créer la pièce</button></div>
     HTML
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
@@ -165,6 +179,13 @@ module A2M
           b.addEventListener('click', function () { s.revetement = t.nom; rendre(); }); rv.appendChild(b);
         });
         puces(el('pl'), D.plinthes, s.plinthe, function (t) { s.plinthe = t; rendre(); });
+        var oc = el('opts'); oc.innerHTML = '';
+        var ol = [['plafond', 'Proposer le plafond ensuite']]; if (D.total > 0) ol.push(['scenes', 'Créer les scènes 2D et 3D à la fin']);
+        ol.forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (s[x[0]] ? ' rempli' : ''); b.textContent = x[1];
+          b.addEventListener('click', function () { s[x[0]] = !s[x[0]]; rendre(); }); oc.appendChild(b);
+        });
+        el('hbloc').style.display = s.plafond ? '' : 'none';
         var e = parseFloat(String(el('ep').value).replace(',', '.'));
         el('ep').className = e >= 0 ? 'ok' : '';
         el('go').disabled = !(e >= 0) || !s.nom;
@@ -175,7 +196,9 @@ module A2M
       l.value = s.nom || '';
       l.addEventListener('change', function () { s.nom = l.value; rendre(); });
       el('ep').value = s.ep; el('ep').addEventListener('input', rendre);
-      el('go').addEventListener('click', function () { sketchup.creer(JSON.stringify({ nom: s.nom, precision: el('prec').value, ep: el('ep').value, revetement: s.revetement, plinthe: s.plinthe })); });
+      el('hsp').value = s.hauteur; el('hsp').addEventListener('input', rendre);
+      if (D.total > 0) { el('passer').style.display = ''; el('passer').addEventListener('click', function () { sketchup.passer(''); }); }
+      el('go').addEventListener('click', function () { sketchup.creer(JSON.stringify({ nom: s.nom, precision: el('prec').value, ep: el('ep').value, revetement: s.revetement, plinthe: s.plinthe, plafond: !!s.plafond, hauteur: el('hsp').value, scenes: !!s.scenes })); });
       rendre();
     JS
 
@@ -205,27 +228,118 @@ module A2M
       nil
     end
 
-    def self.panneau(ctr)
+    def self.panneau(ctr, rang = 0, total = 0, &suite)
       @fen.close if @fen && (@fen.visible? rescue false)
       model = Sketchup.active_model
+      model.select_tool(Visite.new(ctr[0]))
+      begin
+        bbv = Geom::BoundingBox.new; ctr[0].each { |q| bbv.add(q) }
+        c = bbv.center; r = [bbv.diagonal * 1.1, 200].max
+        model.active_view.camera = Sketchup::Camera.new(Geom::Point3d.new(c.x, c.y - r * 0.55, c.z + r * 1.25), c, Y_AXIS)
+      rescue StandardError
+        nil
+      end
       existants = model.active_entities.select { |g| (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.layer && g.layer.name == 'A2M_PIECE' }.map { |g| g.get_attribute('a2m', 'nom_liste').to_s }.reject(&:empty?)
       noms = (NOMS + existants).uniq
-      @etat ||= { 'nom' => '', 'ep' => '1', 'revetement' => (textures_sols.first || ['Sol brut (sans revêtement)']).first, 'plinthe' => RECT }
+      @etat ||= { 'ep' => '1', 'revetement' => (textures_sols.first || ['Sol brut (sans revêtement)']).first, 'plinthe' => RECT, 'plafond' => false, 'hauteur' => '250', 'scenes' => false }
       pls = [SANS_PLINTHE, RECT] + profils.map { |o| A2M::Profils.libelle(o) }
       pl = pls.include?(@etat['plinthe']) ? @etat['plinthe'] : RECT
-      d = { 'noms' => noms, 'revetements' => revetements, 'plinthes' => pls, 'surface' => ctr[2], 'perimetre' => perimetre(ctr[0]),
-            'etat' => { 'nom' => '', 'ep' => @etat['ep'], 'revetement' => @etat['revetement'], 'plinthe' => pl } }
-      html = A2M::Panneau.page('Pièce en un clic', 'Sol, plinthes et nom en une fois', CORPS, SCRIPT, d)
-      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : pièce', 'A2M_Panneau_PieceClic', html, 480, 760)
+      d = { 'noms' => noms, 'revetements' => revetements, 'plinthes' => pls, 'surface' => ctr[2], 'perimetre' => perimetre(ctr[0]), 'total' => total,
+            'etat' => { 'nom' => '', 'ep' => @etat['ep'], 'revetement' => @etat['revetement'], 'plinthe' => pl, 'plafond' => @etat['plafond'], 'hauteur' => @etat['hauteur'], 'scenes' => @etat['scenes'] } }
+      titre = total > 0 ? "Pièce #{rang} sur #{total} : #{ctr[2].round(2).to_s.tr('.', ',')} m²" : 'Pièce en un clic'
+      html = A2M::Panneau.page(titre, total > 0 ? 'La pièce en surbrillance dans le modèle : donnez-lui son nom' : 'Sol, plinthes et nom en une fois', CORPS, SCRIPT, d)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : pièce', 'A2M_Panneau_PieceClic', html, 480, 800)
       @fen = dlg
       dlg.add_action_callback('creer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
         next unless r
-        @etat = { 'ep' => r['ep'], 'revetement' => r['revetement'], 'plinthe' => r['plinthe'] }
+        @etat = { 'ep' => r['ep'], 'revetement' => r['revetement'], 'plinthe' => r['plinthe'], 'plafond' => r['plafond'], 'hauteur' => r['hauteur'], 'scenes' => r['scenes'] }
         dlg.close
-        UI.start_timer(0.1, false) { creer(ctr, r) }
+        UI.start_timer(0.1, false) do
+          creer(ctr, r)
+          suite ? suite.call : Sketchup.active_model.select_tool(Outil.new)
+        end
+      end
+      dlg.add_action_callback('passer') do |_c, _x|
+        dlg.close
+        UI.start_timer(0.1, false) { suite.call if suite }
       end
       dlg.show
+    end
+
+    # Surbrillance de la pièce en cours pendant que le panneau est ouvert
+    class Visite
+      def initialize(pts) @pts = pts end
+      def draw(view)
+        view.drawing_color = Sketchup::Color.new(224, 120, 56, 110)
+        view.draw(GL_POLYGON, @pts)
+        view.line_width = 3
+        view.drawing_color = 'orange'
+        view.draw(GL_LINE_LOOP, @pts)
+      end
+      def getExtents
+        bb = Geom::BoundingBox.new
+        @pts.each { |q| bb.add(q) }
+        bb
+      end
+      def onCancel(_r, _v) Sketchup.active_model.select_tool(nil) end
+    end
+
+    # Toutes les pièces fermées du modèle (ou des murs sélectionnés), une par une : nom, sol, plinthes, plafond
+    def self.detecter_toutes(model, smin = 1.0)
+      ms = A2M::PiecesAuto.murs(model)
+      return [] if ms.empty?
+      emp = A2M::PiecesAuto.empreintes(ms)
+      z = ms.map { |g| g.bounds.min.z }.min
+      bb = Geom::BoundingBox.new; ms.each { |g| bb.add(g.bounds) }
+      marge = 1.m
+      x0, y0, x1, y1 = bb.min.x - marge, bb.min.y - marge, bb.max.x + marge, bb.max.y + marge
+      res = []
+      model.start_operation('Détection des pièces', true)
+      begin
+        tmp = model.active_entities.add_group
+        te = tmp.entities
+        te.add_face([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map { |a| Geom::Point3d.new(*a) })
+        emp.each { |loops| loops.each { |lp| te.add_edges((lp + [lp[0]]).map { |x, y| Geom::Point3d.new(x, y, z) }) } }
+        te.intersect_with(false, Geom::Transformation.new, te, Geom::Transformation.new, true, te.to_a)
+        te.grep(Sketchup::Edge).each { |e| e.find_faces if e.valid? }
+        bord = ->(f) { f.vertices.any? { |v| q = v.position; (q.x - x0).abs < 0.1 || (q.x - x1).abs < 0.1 || (q.y - y0).abs < 0.1 || (q.y - y1).abs < 0.1 } }
+        te.grep(Sketchup::Face).each do |f|
+          next if bord.call(f)
+          m = f.mesh; pts = m.polygon_points_at(1) rescue nil
+          next unless pts
+          cx = pts.sum(&:x) / 3.0; cy = pts.sum(&:y) / 3.0
+          next if A2M::PiecesAuto.dans_un_mur(cx, cy, emp) || f.area * 0.00064516 < smin
+          res << [f.outer_loop.vertices.map(&:position), f.loops.reject(&:outer?).map { |lp| lp.vertices.map(&:position) }, f.area * 0.00064516]
+        end
+        tmp.erase!
+      ensure
+        model.abort_operation
+      end
+      # ordre de lecture : de haut en bas, de gauche à droite
+      res.sort_by { |c| [-(c[0].map(&:y).sum / c[0].size).round(-1), c[0].map(&:x).sum / c[0].size] }
+    end
+
+    def self.toutes
+      model = Sketchup.active_model
+      liste = detecter_toutes(model)
+      if liste.empty?
+        return UI.messagebox('Aucune pièce fermée trouvée. Vérifiez que les murs et cloisons se touchent, ou sélectionnez les murs de l\'étage.')
+      end
+      i = -1
+      avancer = nil
+      avancer = lambda do
+        i += 1
+        if i >= liste.size
+          model.select_tool(nil)
+          if @etat && @etat['scenes']
+            A2M::Vues.creer(%w[plan persp], { 'aretes' => true, 'ombres' => false, 'style' => 'reel' }) rescue nil
+          end
+          next
+        end
+        panneau(liste[i], i + 1, liste.size, &avancer)
+      end
+      avancer.call
     end
 
     def self.lancer

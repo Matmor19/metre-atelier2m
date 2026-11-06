@@ -1,6 +1,7 @@
 {
- "version": "2.58.0",
+ "version": "2.59.0",
  "notes": [
+  "« Pièces automatiques » refait : toutes les pièces fermées sont trouvées, puis présentées une par une (« Pièce 2 sur 5 : 10,76 m² », pièce en surbrillance, vue centrée dessus) avec nom (liste ou précision libre), sol en texture, plinthes, plafond proposé ensuite et scènes 2D/3D créées à la fin",
   "« Pièce en un clic » : le revêtement de sol se choisit en texture (béton ciré, carrelage, mosaïque, parquet chêne, terrazzo, avec vignettes) ou en teinte unie",
   "Nouveau : « Pièce en un clic » — cliquez dans une pièce fermée : un panneau propose l'épaisseur du sol, le revêtement, le profil de plinthes, le nom (liste ou précision libre) et affiche la surface et le périmètre en ml ; la pièce, son sol et ses plinthes sont créés d'un coup, et l'outil reste actif pour la pièce suivante",
   "« Mes éléments » : pose au clic avec aperçu orange, Tab pour tourner de 90°, flèches gauche/droite pour le miroir, flèches haut/bas pour coller au sol ou suivre le point visé ; l'outil reste actif pour poser plusieurs éléments",
