@@ -323,7 +323,8 @@ module A2M
           elsif tag == 'A2M_PLANELLE'
             next if e.get_attribute('a2m', 'planelle_part')   # isolant de planelle : même pièce, déjà comptée
             # Planelle : linéaire mesuré comme un mur (sur son dessus)
-            mp = murs_de(e, tr, 'planelle', nom)
+            coque = (e.is_a?(Sketchup::Group) ? e.entities.grep(Sketchup::Group).find { |c| c.get_attribute('a2m', 'planelle_coque') } : nil)
+            mp = coque ? murs_de(coque, tr * coque.transformation, 'planelle', nom) : murs_de(e, tr, 'planelle', nom)
             planelles += mp.empty? ? b[:l] : mp.sum { |x| x['longueur'] }
           elsif tag == CLOISON
             # Cloison : mesurée comme un mur (dessus), même si le groupe contient plusieurs pans ; sinon par sa boîte

@@ -38,9 +38,9 @@ module A2M
     end
 
     # Pose les matières sur les faces du groupe ou du composant selon la table de son type
-    def self.appliquer(ent, model = Sketchup.active_model, ecraser = false)
-      return 0 unless ent && ent.valid? && ent.layer
-      t = table[ent.layer.name]
+    def self.appliquer(ent, model = Sketchup.active_model, ecraser = false, cle_type = nil)
+      return 0 unless ent && ent.valid? && (ent.layer || cle_type)
+      t = table[cle_type || ent.layer.name]
       return 0 unless t
       ents = ent.is_a?(Sketchup::ComponentInstance) ? ent.definition.entities : ent.entities
       tr = ent.transformation

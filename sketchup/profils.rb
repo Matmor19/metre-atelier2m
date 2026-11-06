@@ -165,6 +165,7 @@ module A2M
         grp.name = role == 'isolant' ? "#{nom} – isolant" : nom
         res << grp
       end
+      res = [A2M::Planelles.assembler(model, res, model.active_entities)] if balise == 'A2M_PLANELLE' && res.size > 1
       res
     end
 

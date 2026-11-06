@@ -258,12 +258,13 @@ module A2M
     end
 
     # Pose la hachure réglée pour la balise de ce groupe (appelée par les outils de dessin)
-    def self.poser(ent, model = Sketchup.active_model)
-      A2M::TexturesAuto.appliquer(ent, model) if defined?(A2M::TexturesAuto)
-      return unless disponible?(model) && ent && ent.layer
-      x = reglages[ent.layer.name]
+    def self.poser(ent, model = Sketchup.active_model, cle_type = nil)
+      A2M::TexturesAuto.appliquer(ent, model, false, cle_type) if defined?(A2M::TexturesAuto)
+      return unless disponible?(model) && ent && (ent.layer || cle_type)
+      nom = cle_type || ent.layer.name
+      x = reglages[nom]
       return onde_objet(model, ent, x) if onde?(x)
-      m = motif_couche(model, ent.layer.name)
+      m = motif_couche(model, nom)
       ent.hatch_pattern = m if m
     rescue StandardError
       nil

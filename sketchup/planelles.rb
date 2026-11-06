@@ -109,22 +109,72 @@ module A2M
       chemin = [milieu] + pts[1..-1] + [pts[0], milieu]
       d = (pts[1] - pts[0]).normalize
       m = Z_AXIS.cross(d).normalize                     # vers l'intérieur de la dalle (contour trigonométrique)
+      profil = sans_points_alignes(profil)
       face = ents.add_face(profil.map { |w, h| milieu.offset(m, w).offset(Z_AXIS, h + dz) })
       raise 'profil invalide' unless face
       bord = ents.add_edges(chemin)
       face.followme(bord)
       ents.grep(Sketchup::Edge).select { |e| e.valid? && e.faces.empty? }.each(&:erase!)
+      effacer_traits_inutiles(ents)
       grp.name = "#{type[4]} #{model.active_entities.grep(Sketchup::Group).count { |g| g.name.to_s.start_with?(type[4]) }}"
       poser_aspect(grp, type[1], model, look)
       grp.set_attribute('a2m', 'planelle_part', true) unless type.equal?(TYPE_PL)    # le linéaire n'est compté que sur la planelle elle-même
       grp
     end
 
+    # Points alignés (sommets qui ne changent pas la direction) : ils laissent un trait sur toute la longueur de la planelle
+    def self.sans_points_alignes(pts)
+      r = pts.dup
+      changed = true
+      while changed && r.size > 3
+        changed = false
+        r.each_index do |i|
+          a = r[i - 1]; b = r[i]; c = r[(i + 1) % r.size]
+          v1 = [b[0] - a[0], b[1] - a[1]]; v2 = [c[0] - b[0], c[1] - b[1]]
+          cr = v1[0] * v2[1] - v1[1] * v2[0]
+          dt = v1[0] * v2[0] + v1[1] * v2[1]
+          if cr.abs < 1e-6 * [v1.map(&:abs).max, v2.map(&:abs).max].max.to_f.clamp(1e-9, 1e9) && dt > 0
+            r.delete_at(i); changed = true; break
+          end
+        end
+      end
+      r
+    end
+
+    # Arêtes entre deux faces dans le même plan : traits inutiles
+    def self.effacer_traits_inutiles(ents)
+      ents.grep(Sketchup::Edge).each do |e|
+        next unless e.valid? && e.faces.size == 2
+        n1, n2 = e.faces.map(&:normal)
+        e.erase! if n1.dot(n2) > 0.99999 && e.faces[0].material == e.faces[1].material
+      end
+    end
+
+    # Planelle = un seul objet : la coque (partie principale) et l'isolant sont regroupés dans un groupe unique, tag A2M_PLANELLE.
+    # Les parties gardent leur texture propre (matière 3D, hachure de coupe) ; seul le groupe porte le tag.
+    def self.assembler(model, parts, ents)
+      parts = parts.select(&:valid?)
+      return parts.first if parts.size <= 1
+      coque = parts.find { |x| !x.get_attribute('a2m', 'planelle_part') } || parts.first
+      nom = coque.name
+      tag = A2M::Balises.balise(model, TYPE_PL[1], (A2M::Balises::LISTE.find { |x, _, _| x == TYPE_PL[1] } || [])[2])[0]
+      parts.each { |x| x.layer = model.layers[0] }
+      coque.set_attribute('a2m', 'planelle_coque', true)
+      coque.name = "#{nom} – planelle"
+      parts.each_with_index { |x, i| x.name = "#{nom} – isolant #{i}" unless x.equal?(coque) }
+      ens = ents.add_group(parts)
+      ens.name = nom
+      ens.layer = tag
+      ens
+    rescue StandardError => ex
+      journal("assemblage : #{ex.message}")
+      parts.first
+    end
+
     # Un seul tag pour la planelle (A2M_PLANELLE). Ses deux aspects (planelle, isolant de planelle) ne sont que des
     # textures : matière 3D et hachure de coupe du rôle sont posées, puis le groupe est rangé dans le tag unique.
     def self.poser_aspect(grp, role_tag, model, look = nil)
-      grp.layer = A2M::Balises.balise(model, role_tag, (A2M::Balises::LISTE.find { |x, _, _| x == role_tag } || [])[2])[0]
-      A2M::Hachures.poser(grp, model)
+      A2M::Hachures.poser(grp, model, role_tag)        # réglages de textures et de hachure du rôle, sans créer de tag
       habiller(grp, look, model)
       grp.layer = A2M::Balises.balise(model, TYPE_PL[1], (A2M::Balises::LISTE.find { |x, _, _| x == TYPE_PL[1] } || [])[2])[0]
     end
@@ -262,6 +312,7 @@ module A2M
               end
             end
           end
+          assembler(model, groupes, g.parent.entities)
           # Garde-fou : la dalle ne doit jamais disparaître ni perdre l'essentiel de son volume
           unless g.valid? && (g.volume rescue 0) > vol0 * 0.4 && g.visible?
             journal("ANNULÉ : dalle perdue (valide #{g.valid?})")
