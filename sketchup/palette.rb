@@ -60,13 +60,16 @@ module A2M
         #info{position:sticky;bottom:0;background:var(--f);border-top:1px solid #e2dbd3;padding:7px 2px 4px;min-height:52px}
         #info b{display:block;font-size:12.5px;margin-bottom:2px}
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
+        .marque{position:relative}.coller{position:absolute;right:0;top:0;display:flex;gap:3px}.coller button{border:1px solid #d8cfc5;background:#fff;color:#E07838;border-radius:6px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.coller button:hover{background:#FCE9DC}
         </style></head><body>
-        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div></div>
+        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette au bord gauche de l'écran">◧</button><button type="button" id="cd" title="Coller la palette au bord droit de l'écran">◨</button></span></div>
         <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>
         <div id="info"><b>Métré Atelier 2M</b><span>Survolez un bouton pour voir à quoi il sert, cliquez pour le lancer.</span></div>
         <script>
+        function coller(c){ sketchup.coller(JSON.stringify({cote:c,x:screen.availLeft||0,y:screen.availTop||0,w:screen.availWidth,h:screen.availHeight,d:window.devicePixelRatio||1})); }
+        document.getElementById('cg').onclick=function(){coller('g')}; document.getElementById('cd').onclick=function(){coller('d')};
         var info=document.getElementById('info'), bulle=document.getElementById('bulle'), minu=null;
         // Bulle d'aide à côté du bouton survolé : sous le bouton, ou au-dessus s'il n'y a pas la place
         function montrer(b){
@@ -134,9 +137,31 @@ module A2M
       @dlg.add_action_callback('stats') do |_ctx|
         UI.start_timer(0, false) { @dlg.execute_script("maj(#{JSON.generate(stats).gsub('</', '<\\/')})") rescue nil }
       end
+      @dlg.add_action_callback('mesure') { |_c, j| File.write(@mesure, j.to_s) if @mesure }
+      @dlg.add_action_callback('coller') do |_ctx, json|
+        r = (JSON.parse(json.to_s) rescue nil)
+        UI.start_timer(0, false) { coller(r) } if r.is_a?(Hash)
+      end
       @dlg.set_on_closed { Sketchup.write_default(CLE, 'ouverte', false) unless @quitte }
       @dlg.show
       Sketchup.write_default(CLE, 'ouverte', true)
+      # côté mémorisé : la palette se replace contre le bord à chaque ouverture
+      d = (JSON.parse(Sketchup.read_default(CLE, 'ecran', '').to_s) rescue nil)
+      UI.start_timer(0.6, false) { coller(d) } if d.is_a?(Hash)
+    end
+
+    # Plaque la palette contre le bord gauche ou droit de l'écran, sur toute la hauteur (coordonnées reçues du navigateur, en pixels logiques)
+    def self.mesure=(f) @mesure = f end
+
+    def self.coller(r)
+      return unless @dlg && (@dlg.visible? rescue false)
+      d = r['d'].to_f; d = 1.0 if d <= 0
+      larg = 300
+      x = r['cote'] == 'd' ? r['x'].to_f + r['w'].to_f - larg : r['x'].to_f
+      @dlg.set_size(larg, r['h'].to_f.to_i)
+      @dlg.set_position(x.to_i, r['y'].to_f.to_i)
+      Sketchup.write_default(CLE, 'ecran', JSON.generate(r))
+      @dlg.execute_script("sketchup.mesure(JSON.stringify({sx:window.screenX,sy:window.screenY,ow:window.outerWidth,oh:window.outerHeight,iw:innerWidth,ih:innerHeight}))") if @mesure
     end
 
     # Rouverte au démarrage si elle l'était à la fermeture de SketchUp
