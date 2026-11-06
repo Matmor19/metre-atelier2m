@@ -135,6 +135,7 @@ module A2M
       begin
         faits = []
         non_recoupees = 0
+        sans_descente = 0
         dalles.each do |g|
           pts, = contour(g)
           # Le haut de la planelle se cale sur le haut de la dalle (la planelle descend si elle est plus haute que la dalle)
@@ -145,6 +146,20 @@ module A2M
           specs = profils.map { |_, pr| spec_rect(pr) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
+            # Si la planelle descend sous la dalle : la dalle redescend, au droit du mur de soubassement, jusqu'au dessus de ce mur
+            if hmax > (zh - zb) + 0.01
+              pleins = remplissages_soubassement(g, zb, dz_long)
+              fus = pleins.empty? ? nil : fusionner(g, pleins)
+              if fus
+                nom, tag, mat = g.name, g.layer, g.material
+                g.erase!
+                fus.name = nom; fus.layer = tag; fus.material = mat if mat
+                g = fus
+              else
+                sans_descente += 1
+              end
+              pleins.each { |x| x.erase! if x.valid? }
+            end
             groupes.each_with_index do |gb, k|
               next unless gb.valid? && g.valid?
               res = soustraire(g, gb, specs[k], dz_long)
@@ -165,11 +180,73 @@ module A2M
         model.commit_operation
         UI.messagebox("Planelles posées (#{rep[0]}) :\n" + faits.join("\n") +
                       (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
+                      (sans_descente > 0 ? "\n\nLa dalle n'a pas pu être prolongée jusqu'au mur de soubassement (mur balisé « Murs de soubassement » introuvable au droit de la planelle, ou calcul refusé)." : '') +
                       "\n\nLe linéaire sera rappelé à l'import dans le configurateur (pas de case planelle au métré pour l'instant).")
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Planelles non posées (#{ex.message}).")
       end
+    end
+
+    # Volumes qui comblent, entre le dessous de la dalle et le dessus du mur de soubassement, l'emprise de ce mur
+    # (la dalle « descend » au droit du mur, comme la planelle). Un groupe par face supérieure de mur ; [] si aucun mur ne convient.
+    def self.remplissages_soubassement(g, zb, dz_long)
+      ents = g.parent.entities
+      z_planelle = zb + dz_long                       # dessous de la planelle = dessus du mur de soubassement
+      bb = g.bounds
+      murs = ents.grep(Sketchup::Group).select do |w|
+        w.valid? && w.layer.name == 'A2M_MUR_SOUB' && (w.bounds.max.z - z_planelle).abs < 0.8 &&
+          w.bounds.min.x < bb.max.x && w.bounds.max.x > bb.min.x && w.bounds.min.y < bb.max.y && w.bounds.max.y > bb.min.y
+      end
+      haut = (zb - z_planelle) + 1.cm                # remonte de 1 cm dans la dalle pour que les volumes se recouvrent
+      res = []
+      murs.each do |w|
+        t = w.transformation
+        zt = w.bounds.max.z
+        w.entities.grep(Sketchup::Face).select { |f| f.normal.transform(t).z > 0.99 && (f.vertices.first.position.transform(t).z - zt).abs < 0.05 }.each do |f|
+          fg = ents.add_group
+          ext = f.outer_loop.vertices.map { |v| q = v.position.transform(t); Geom::Point3d.new(q.x, q.y, zt) }
+          fg.entities.add_face(ext)
+          f.loops.reject(&:outer?).each do |l|
+            h = fg.entities.add_face(l.vertices.map { |v| q = v.position.transform(t); Geom::Point3d.new(q.x, q.y, zt) })
+            h.erase! if h && h.valid?
+          end
+          nf = fg.entities.grep(Sketchup::Face).first
+          if nf
+            nf.reverse! if nf.normal.z < 0
+            nf.pushpull(haut)
+            res << fg
+          else
+            fg.erase!
+          end
+        end
+      end
+      res
+    rescue StandardError
+      res.each { |x| x.erase! if x.valid? } if res
+      []
+    end
+
+    # Dalle + volumes de remplissage : copies indépendantes, chaque fusion est acceptée si le résultat est plus volumineux
+    def self.fusionner(g, pleins)
+      cur = g
+      ok = false
+      pleins.each do |plein|
+        next unless plein.valid? && cur.valid?
+        vol = cur.volume rescue -1
+        next unless vol > 0
+        a = cur.copy; a.make_unique
+        b = plein.copy; b.make_unique
+        res = (a.union(b) rescue nil)
+        if res && res.valid? && (res.volume rescue 0) > vol + 0.5
+          cur.erase! unless cur.equal?(g)
+          cur = res; ok = true
+        else
+          res.erase! if res && res.valid?
+          [a, b].each { |x| x.erase! if x && x.valid? }
+        end
+      end
+      ok ? cur : nil
     end
 
     # Pour recouper la dalle, le volume balayé ne convient pas (Group#subtract le refuse, bruit de calcul du balayage).
