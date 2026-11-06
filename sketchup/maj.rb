@@ -45,7 +45,7 @@ module A2M
           d = JSON.parse(rep.body)
           v = d['version'].to_s
           if plus_recente?(v, installee)
-            notes = Array(d['notes']).map { |x| "  • #{x}" }.join("\n")
+            notes = Array(d['notes']).first(8).map { |x| "  • #{x.to_s[0, 160]}" }.join("\n")   # la boîte Windows ne défile pas : liste courte
             q = UI.messagebox("Métré Atelier 2M : une nouvelle version est disponible.\n\n" \
                               "Version installée : #{installee}\nNouvelle version : #{v}\n\n" \
                               "Nouveautés :\n#{notes}\n\nMettre à jour maintenant ?", MB_YESNO)

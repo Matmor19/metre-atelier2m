@@ -199,5 +199,12 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
 import json, re as _re
 ver = _re.search(r"EXT.version = '([^']+)'", chargeur).group(1)
 notes = json.load(open(os.path.join(ici, 'nouveautes.json'), encoding='utf-8'))
-json.dump({'version': ver, 'notes': notes}, open(os.path.join(ici, 'version.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+# La fenêtre de mise à jour est une boîte Windows qui ne défile pas : on n'y met que les 6 dernières nouveautés, en une phrase chacune
+def court(t, n=130):
+    t = t.split(' — ')[0] if len(t) > n and ' — ' in t else t
+    return t if len(t) <= n else t[:n].rsplit(' ', 1)[0] + '…'
+resume = [court(x) for x in notes[:6]]
+if len(notes) > 6:
+    resume.append('… et %d autres nouveautés plus anciennes.' % (len(notes) - 6))
+json.dump({'version': ver, 'notes': resume}, open(os.path.join(ici, 'version.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('ok', dest, ver)
