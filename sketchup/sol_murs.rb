@@ -71,33 +71,51 @@ module A2M
       grp
     end
 
+    # Couches du panneau « Dalle, chape, plafond » : mêmes données que les compositions
+    def self.couches_depuis(r)
+      COUCHES.map do |cle, lib, _a, _e0, t_rdc, t_et, _z|
+        c = (r['couches'] || {})[cle]
+        next unless c && c['actif']
+        { 'nom' => lib, 'balise' => (r['niveau'] == 'Étage' ? t_et : t_rdc), 'e' => c['e'].to_s.tr(',', '.').to_f }
+      end.compact
+    end
+
     def self.creer(r)
+      poser_couches(couches_depuis(r), r['hsp'], nil)
+    end
+
+    # couches : [{'nom','balise','e'}] de bas en haut. Dalle (A2M_DALLAGE / A2M_PLANCHER_ETAGE) sous le sol, sur l'emprise des murs ;
+    # isolant, chape et autres au-dessus, dans chaque pièce ; plafond à la hauteur sous plafond.
+    # surfaces : nil = murs sélectionnés (ou tous) ; sinon [[contour, trous]] (face sélectionnée), avec z
+    def self.poser_couches(couches, hsp, surfaces, z_surf = nil)
       model = Sketchup.active_model
-      a = analyser(model)
-      return UI.messagebox('Aucun mur balisé trouvé : sélectionnez les murs (ou laissez la sélection vide pour prendre tous les murs du modèle).') unless a
-      return UI.messagebox('Les murs ne forment pas de contour fermé : vérifiez qu\'ils se touchent.') if a[:emprises].empty? && a[:pieces].empty?
-      etage = r['niveau'] == 'Étage'
+      couches = couches.select { |c| c['e'].to_f > 0 }
+      return UI.messagebox('Aucune couche à poser.') if couches.empty?
+      if surfaces
+        a = { pieces: surfaces, emprises: surfaces.map(&:first), z: z_surf }
+      else
+        a = analyser(model)
+        return UI.messagebox('Aucun mur balisé trouvé : sélectionnez les murs (ou laissez la sélection vide pour prendre tous les murs du modèle).') unless a
+        return UI.messagebox('Les murs ne forment pas de contour fermé : vérifiez qu\'ils se touchent.') if a[:emprises].empty? && a[:pieces].empty?
+      end
       z = a[:z]
-      model.start_operation('Dalle, chape et plafond depuis les murs (métré)', true)
+      model.start_operation('Composition de sol ou de plafond (métré)', true)
       begin
         faits = []
-        haut = 0.0     # hauteur cumulée au-dessus du sol (cm)
-        COUCHES.each do |cle, lib, _aide, _e0, t_rdc, t_et, zone|
-          c = (r['couches'] || {})[cle] or next
-          next unless c['actif']
-          e = c['e'].to_s.tr(',', '.').to_f
-          next if e <= 0
-          tag = etage ? t_et : t_rdc
-          if cle == 'dalle'
-            surf = a[:emprises].map { |p| [p, []] }
+        haut = 0.0
+        couches.each do |c|
+          tag = c['balise']; e = c['e'].to_f
+          lib = c['nom'].to_s.empty? ? tag : c['nom']
+          if tag == 'A2M_DALLAGE' || tag == 'A2M_PLANCHER_ETAGE'
+            surf = a[:emprises].map { |pts| [pts, []] }
             surf = a[:pieces] if surf.empty?
-            groupe(model, lib + (etage ? ' étage' : ''), tag, surf, z, e, true)
+            groupe(model, lib, tag, surf, z, e, true)
             faits << "#{lib} #{e} cm"
-          elsif cle == 'plafond'
-            hsp = r['hsp'].to_s.tr(',', '.').to_f
-            hsp = 250.0 if hsp <= 0
-            groupe(model, lib, tag, a[:pieces], z + (haut + hsp).cm, e, false)
-            faits << "#{lib} à #{hsp.round} cm"
+          elsif tag == 'A2M_PLAFOND'
+            h = hsp.to_s.tr(',', '.').to_f
+            h = 250.0 if h <= 0
+            groupe(model, lib, tag, a[:pieces], z + (haut + h).cm, e, false)
+            faits << "#{lib} à #{h.round} cm"
           else
             groupe(model, lib, tag, a[:pieces], z + haut.cm, e, false)
             haut += e
