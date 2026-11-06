@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vues tableau nomenclature phases plan2d miniplan coupes couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -14,6 +14,7 @@ unless file_loaded?(__FILE__)
     ['balises',     'Créer les balises du métré',          'Crée les balises A2M_ du métré (dossier « Métré A2M »), sans toucher à celles qui existent', -> { A2M::Balises.creer }, false],
     ['baliser',     'Baliser la sélection',                'Met la balise choisie sur les groupes, composants, faces ou lignes sélectionnés', -> { A2M::Balises.baliser_selection }, false],
     ['pieces',      'Baliser et nommer les pièces',        'Met A2M_PIECE sur les groupes de sol sélectionnés et demande le nom de chaque pièce', -> { A2M::Balises.nommer_pieces }, false],
+    ['piece_clic',  'Pièce en un clic',                    'Cliquez dans une pièce fermée : sol (épaisseur, revêtement), plinthes, nom (liste et précision libre), surface et périmètre en ml, en une seule fois', -> { A2M::PieceClic.lancer }, false],
     ['pieces_auto', 'Pièces automatiques',                 'Trouve les pièces fermées entre murs et cloisons, crée leur revêtement et demande leur nom', -> { A2M::PiecesAuto.lancer }, false],
     ['tableau',     'Tableau de bord du modèle',           'Contrôle du modèle et métré en direct dans une seule fenêtre : points à vérifier cliquables, surfaces, linéaires et menuiseries par pièce, envoi au métré', -> { A2M::Tableau.ouvrir }, false],
     ['controle',    'Contrôle du modèle',                  'Vérifie balises, solides, chevauchements, pièces et menuiseries avant l\'extraction', -> { A2M::Controle.lancer }, true],
@@ -123,6 +124,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.writestr('a2m_metre/main.rb', s)
     z.write(os.path.join(ici, 'menu_contextuel.rb'), 'a2m_metre/menu_contextuel.rb')
     z.write(os.path.join(ici, 'cotation_auto.rb'), 'a2m_metre/cotation_auto.rb')
+    z.write(os.path.join(ici, 'piece_clic.rb'), 'a2m_metre/piece_clic.rb')
     z.write(os.path.join(ici, 'styles.rb'), 'a2m_metre/styles.rb')
     z.write(os.path.join(ici, 'mes_elements.rb'), 'a2m_metre/mes_elements.rb')
     z.write(os.path.join(ici, 'balises.rb'), 'a2m_metre/balises.rb')
