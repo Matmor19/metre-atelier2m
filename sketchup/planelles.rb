@@ -134,21 +134,23 @@ module A2M
       model.start_operation('Planelles en rive de dalle (métré)', true)
       begin
         faits = []
+        non_recoupees = 0
         dalles.each do |g|
           pts, = contour(g)
           groupes = profils.map { |t, pr| balayer(pts, pr, (dz / 100.0).m, t, model) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
             groupes.each do |gb|
-              copie = gb.copy
-              vol = g.volume rescue -1
-              nom, tag, mat = g.name, g.layer, g.material
-              res = A2M::Ouvertures.inverse? ? g.subtract(copie) : copie.subtract(g)
-              if res && !(vol > 0 && (res.volume rescue 0) > vol + 1)
+              next unless gb.valid? && g.valid?
+              res = soustraire(g, gb)
+              if res
+                nom, tag, mat = g.name, g.layer, g.material
+                g.erase!
                 res.name = nom; res.layer = tag; res.material = mat if mat
+                A2M::Hachures.poser(res, model)
                 g = res
               else
-                copie.erase! if copie.valid?
+                non_recoupees += 1
               end
             end
           end
@@ -157,11 +159,31 @@ module A2M
         end
         model.commit_operation
         UI.messagebox("Planelles posées (#{rep[0]}) :\n" + faits.join("\n") +
+                      (non_recoupees > 0 ? "\n\nLa dalle n'a pas pu être recoupée (#{non_recoupees} fois) : elle doit être un volume fermé (groupe sans trou ni arête isolée). Les planelles sont posées, la dalle est restée intacte." : '') +
                       "\n\nLe linéaire sera rappelé à l'import dans le configurateur (pas de case planelle au métré pour l'instant).")
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Planelles non posées (#{ex.message}).")
       end
+    end
+
+    # Dalle moins planelle, sans jamais perdre la dalle : le calcul se fait sur des copies, dans les deux sens de Group#subtract
+    # (le bon est reconnu au résultat : la dalle amputée garde l'emprise de la dalle). Renvoie le groupe résultat, ou nil.
+    def self.soustraire(g, coupe)
+      vol = g.volume rescue -1
+      return nil unless vol > 0
+      diag = g.bounds.diagonal
+      [A2M::Ouvertures.inverse?, !A2M::Ouvertures.inverse?].each do |inv|
+        a = g.copy; b = coupe.copy
+        res = (inv ? a.subtract(b) : b.subtract(a)) rescue nil
+        if res && res.valid?
+          v = (res.volume rescue 0)
+          return res if v > 0 && v <= vol + 1 && res.bounds.diagonal >= diag * 0.9
+          res.erase!
+        end
+        [a, b].each { |x| x.erase! if x && x.valid? }
+      end
+      nil
     end
 
     # Profil dessiné rangé dans la bibliothèque (réutilisable sans le redessiner)
