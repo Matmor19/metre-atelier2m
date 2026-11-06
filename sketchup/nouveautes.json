@@ -1,4 +1,5 @@
 [
+ "Correction : planelles — après avoir abaissé le mur de soubassement, sa hachure de coupe et ses textures A2M_ sont reposées (il apparaissait en noir en coupe)",
  "Planelles : garde-fou — si la dalle devait disparaître ou perdre l'essentiel de son volume, toute la pose est annulée avec un message ; un journal de la dernière pose est écrit dans Documents/Atelier 2M/planelles_journal.txt",
  "Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un mur » et « Mur composé », et trois compositions de vignettes (brique ou parpaing avec enduit extérieur) ; sa surface est donnée à l'extraction (infos : enduit_ext_m2)",
  "Planelles : quand la planelle (16 cm) est plus haute que la dalle (12 cm), le dessus du mur de soubassement est abaissé de la différence (la planelle prend sa place) et la dalle redescend sur l'emprise du mur ; un message l'indique",

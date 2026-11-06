@@ -174,6 +174,7 @@ module A2M
                 nom, tag, mat = g.name, g.layer, g.material
                 g.erase!
                 fus.name = nom; fus.layer = tag; fus.material = mat if mat
+                (A2M::Hachures.poser(fus, model) rescue nil)
                 g = fus
               else
                 sans_descente += 1
@@ -230,7 +231,11 @@ module A2M
         zt = w.bounds.max.z
         hauts = w.entities.grep(Sketchup::Face).select { |f| f.normal.transform(t).z > 0.99 && (f.vertices.first.position.transform(t).z - zt).abs < 0.05 }
         hauts.each { |f| f.pushpull(-delta) if f.valid? }
-        n += 1 unless hauts.empty?
+        unless hauts.empty?
+          n += 1
+          # Le calcul de la hauteur refait les faces : hachure de coupe et textures A2M_ sont reposées sur le mur
+          (A2M::Hachures.poser(w, Sketchup.active_model) rescue nil)
+        end
       end
       n
     end
