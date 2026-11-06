@@ -62,7 +62,7 @@ module A2M
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         .marque{position:relative}.coller{position:absolute;right:0;top:0;display:flex;gap:3px}.coller button{border:1px solid #d8cfc5;background:#fff;color:#E07838;border-radius:6px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.coller button:hover{background:#FCE9DC}
         </style></head><body>
-        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette au bord gauche de l'écran">◧</button><button type="button" id="cd" title="Coller la palette au bord droit de l'écran">◨</button></span></div>
+        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette au bord gauche de la fenêtre SketchUp">◧</button><button type="button" id="cd" title="Coller la palette au bord droit de la fenêtre SketchUp">◨</button></span></div>
         <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>
@@ -142,26 +142,122 @@ module A2M
         r = (JSON.parse(json.to_s) rescue nil)
         UI.start_timer(0, false) { coller(r) } if r.is_a?(Hash)
       end
-      @dlg.set_on_closed { Sketchup.write_default(CLE, 'ouverte', false) unless @quitte }
+      @dlg.set_on_closed { @ancre = nil; Sketchup.write_default(CLE, 'ouverte', false) unless @quitte }
       @dlg.show
       Sketchup.write_default(CLE, 'ouverte', true)
-      # côté mémorisé : la palette se replace contre le bord à chaque ouverture
+      # côté mémorisé : la palette se replace contre la fenêtre SketchUp à chaque ouverture
       d = (JSON.parse(Sketchup.read_default(CLE, 'ecran', '').to_s) rescue nil)
-      UI.start_timer(0.6, false) { coller(d) } if d.is_a?(Hash)
+      UI.start_timer(0.8, false) { coller(d) } if d.is_a?(Hash)
     end
 
-    # Plaque la palette contre le bord gauche ou droit de l'écran, sur toute la hauteur (coordonnées reçues du navigateur, en pixels logiques)
-    def self.mesure=(f) @mesure = f end
+    # ---- Ancrage à la fenêtre SketchUp (API Windows via Fiddle) ----
+    module Fenetres
+      LARG = 300
+      module_function
 
+      def dispo?
+        return @dispo unless @dispo.nil?
+        require 'fiddle'
+        @u = Fiddle::Handle.new('user32.dll')
+        @dispo = true
+      rescue StandardError, LoadError
+        @dispo = false
+      end
+
+      def fn(nom, args, ret = Fiddle::TYPE_INT)
+        (@fns ||= {})[nom] ||= Fiddle::Function.new(@u[nom], args, ret)
+      end
+
+      # Toutes les fenêtres visibles du processus SketchUp : [[hwnd, titre, [gauche, haut, droite, bas]]]
+      def fenetres
+        res = []
+        pid = Process.pid
+        cb = Fiddle::Closure::BlockCaller.new(Fiddle::TYPE_INT, [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_UINTPTR_T]) do |h, _|
+          begin
+            if fn('IsWindowVisible', [Fiddle::TYPE_UINTPTR_T]).call(h) != 0
+              buf = Fiddle::Pointer.malloc(4)
+              fn('GetWindowThreadProcessId', [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_VOIDP], Fiddle::TYPE_LONG).call(h, buf)
+              if buf[0, 4].unpack1('L') == pid
+                tb = Fiddle::Pointer.malloc(1024)
+                n = fn('GetWindowTextW', [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT]).call(h, tb, 256)
+                titre = tb[0, n * 2].to_s.dup.force_encoding('UTF-16LE').encode('UTF-8')
+                rc = Fiddle::Pointer.malloc(16)
+                fn('GetWindowRect', [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_VOIDP]).call(h, rc)
+                res << [h, titre, rc[0, 16].unpack('l4')]
+              end
+            end
+          rescue StandardError
+            nil
+          end
+          1
+        end
+        fn('EnumWindows', [Fiddle::TYPE_VOIDP, Fiddle::TYPE_UINTPTR_T]).call(cb, 0)
+        res
+      end
+
+      def principale
+        fenetres.select { |_, t, r| t =~ /SketchUp/ && t !~ /Métré/ && (r[2] - r[0]) > 400 }.max_by { |_, _, r| (r[2] - r[0]) * (r[3] - r[1]) }
+      end
+
+      def palette
+        fenetres.find { |_, t, _| t == 'Métré Atelier 2M' }
+      end
+
+      # Plaque la palette contre le bord gauche ou droit de la fenêtre SketchUp ; renvoie le rectangle de SketchUp
+      def ancrer(cote)
+        m = principale or return nil
+        p = palette or return nil
+        g, h, d, b = m[2]
+        marge = 0
+        larg = (LARG * dpi_echelle(m[0])).round
+        x = cote == 'd' ? d - larg - marge : g + marge
+        fn('SetWindowPos', [Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_UINTPTR_T, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_INT, Fiddle::TYPE_UINT]).call(p[0], 0, x, h, larg, b - h, 0x0014)
+        m[2]
+      end
+
+      def dpi_echelle(hwnd)
+        fn('GetDpiForWindow', [Fiddle::TYPE_UINTPTR_T], Fiddle::TYPE_UINT).call(hwnd) / 96.0
+      rescue StandardError
+        1.0
+      end
+    end
+
+    # Ancrage : au clic, et ensuite la palette suit la fenêtre SketchUp quand on la déplace ou la redimensionne
     def self.coller(r)
       return unless @dlg && (@dlg.visible? rescue false)
+      cote = r['cote'] == 'd' ? 'd' : 'g'
+      Sketchup.write_default(CLE, 'ecran', JSON.generate('cote' => cote))
+      if Fenetres.dispo? && (rect = Fenetres.ancrer(cote))
+        @ancre = cote
+        @rect = rect
+        suivre
+      else
+        coller_ecran(r)
+      end
+    end
+
+    def self.suivre
+      return if @suivi
+      @suivi = UI.start_timer(0.5, true) do
+        if !@ancre || !@dlg || !(@dlg.visible? rescue false)
+          UI.stop_timer(@suivi) rescue nil
+          @suivi = nil
+        else
+          m = Fenetres.principale
+          if m && m[2] != @rect
+            @rect = Fenetres.ancrer(@ancre) || @rect
+          end
+        end
+      end
+    end
+
+    # Repli si Windows ne répond pas : bord de l'écran
+    def self.coller_ecran(r)
       d = r['d'].to_f; d = 1.0 if d <= 0
       larg = 300
       x = r['cote'] == 'd' ? r['x'].to_f + r['w'].to_f - larg : r['x'].to_f
       @dlg.set_size(larg, r['h'].to_f.to_i)
       @dlg.set_position(x.to_i, r['y'].to_f.to_i)
-      Sketchup.write_default(CLE, 'ecran', JSON.generate(r))
-      @dlg.execute_script("sketchup.mesure(JSON.stringify({sx:window.screenX,sy:window.screenY,ow:window.outerWidth,oh:window.outerHeight,iw:innerWidth,ih:innerHeight}))") if @mesure
     end
 
     # Rouverte au démarrage si elle l'était à la fermeture de SketchUp
