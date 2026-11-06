@@ -9,6 +9,7 @@ require 'fileutils'
 module A2M
   module MesElements
     CATEGORIES = ['Menuiseries', 'Couverture', 'Zinguerie', 'Charpente', 'Sanitaire', 'Mobilier', 'Divers'].freeze
+    TEX = 'Textures'.freeze   # matières A2M_ du modèle : fichiers .skm (taille réelle du motif comprise) rangés dans ce dossier
 
     def self.dossier
       base = ENV['USERPROFILE'] || ENV['HOME'] || Dir.home
@@ -21,13 +22,13 @@ module A2M
     def self.liste
       d = dossier
       FileUtils.mkdir_p(d) rescue nil
-      cats = (CATEGORIES + Dir.children(d).select { |x| File.directory?(File.join(d, x)) }).uniq
+      cats = (CATEGORIES + [TEX] + Dir.children(d).select { |x| File.directory?(File.join(d, x)) }).uniq
       els = []
       cats.each do |c|
-        Dir.glob(File.join(d, c, '*.skp')).sort.each do |f|
-          png = f.sub(/\.skp\z/, '.png')
+        Dir.glob(File.join(d, c, c == TEX ? '*.skm' : '*.skp')).sort.each do |f|
+          png = f.sub(/\.sk[pm]\z/, '.png')
           img = File.exist?(png) ? 'data:image/png;base64,' + Base64.strict_encode64(File.binread(png)) : ''
-          els << { 'cat' => c, 'nom' => File.basename(f, '.skp'), 'img' => img }
+          els << { 'cat' => c, 'nom' => File.basename(f, c == TEX ? '.skm' : '.skp'), 'img' => img, 'tex' => c == TEX }
         end
       end
       { 'cats' => cats, 'els' => els, 'dossier' => d }
@@ -58,6 +59,72 @@ module A2M
       end
       Sketchup.status_text = "« #{nom} » ajouté à Mes éléments (#{cat})."
       true
+    end
+
+
+    # ---- Textures : matières A2M_ du modèle ouvert -> bibliothèque ----
+    # Nom rétabli : préfixe A2M_, espaces -> _, suffixe « #2 » retiré
+    def self.nom_tex(n)
+      b = n.to_s.strip.sub(/\s*#\d+\z/, '').gsub(/\s+/, '_').gsub(/_+/, '_')
+      b = b.sub(/\Aa2m_/i, 'A2M_')
+      b
+    end
+
+    def self.importer_textures
+      model = Sketchup.active_model
+      mats = model.materials.to_a.select { |m| m.name =~ /\Aa2m_/i }
+      mats = mats.reject { |m| m.name.start_with?('A2M_Tex_') }   # celles de la bibliothèque fournie : déjà proposées par « Textures »
+      return UI.messagebox("Aucune matière dont le nom commence par A2M_ dans ce modèle.\\nNommez vos textures A2M_Parpaing, A2M_Enduit_Beige…") if mats.empty?
+      dir = File.join(dossier, TEX)
+      FileUtils.mkdir_p(dir)
+      faits = []; renommes = []; doublons = []; sans = []
+      mats.each do |m|
+        propre = nom_tex(m.name)
+        if propre != m.name
+          if model.materials[propre] && model.materials[propre] != m
+            doublons << "#{m.name} (existe déjà sous #{propre})"
+            next
+          end
+          renommes << "#{m.name} → #{propre}"
+          m.name = propre
+        end
+        nom = nettoyer(m.name)
+        fic = File.join(dir, nom + '.skm')
+        begin
+          m.save_as(fic)
+          png = fic.sub(/\.skm\z/, '.png')
+          (m.texture ? m.texture.write(png) : nil) rescue nil
+          faits << nom
+          sans << nom unless m.texture
+        rescue StandardError => ex
+          doublons << "#{m.name} : #{ex.message}"
+        end
+      end
+      msg = "#{faits.size} texture(s) enregistrée(s) dans Mes éléments > #{TEX}."
+      msg += "\n\nNoms rétablis :\n  " + renommes.join("\n  ") unless renommes.empty?
+      msg += "\n\nCouleur unie, sans image : " + sans.join(', ') unless sans.empty?
+      msg += "\n\nÀ vérifier :\n  " + doublons.join("\n  ") unless doublons.empty?
+      UI.messagebox(msg)
+      true
+    end
+
+    # Applique la matière à la sélection (groupes, composants, faces) ; sans sélection elle devient la matière active du pot de peinture
+    def self.appliquer_texture(nom)
+      fic = File.join(dossier, TEX, nettoyer(nom) + '.skm')
+      return UI.messagebox('Fichier introuvable : ' + fic) unless File.exist?(fic)
+      model = Sketchup.active_model
+      mat = model.materials[nom] || model.materials.load(fic)
+      sel = model.selection.to_a.select { |e| e.respond_to?(:material=) }
+      if sel.empty?
+        model.materials.current = mat
+        Sketchup.status_text = "« #{nom} » est la matière active : utilisez le pot de peinture."
+        Sketchup.send_action('selectPaintTool:')
+      else
+        model.start_operation('Appliquer une texture', true)
+        sel.each { |e| e.material = mat }
+        model.commit_operation
+        Sketchup.status_text = "« #{nom} » appliquée à #{sel.size} élément(s)."
+      end
     end
 
     # Outil de pose : clic = poser, Tab = tourner de 90°, flèche gauche/droite = miroir, flèche haut/bas = coller au sol ou suivre le point visé
@@ -132,6 +199,7 @@ module A2M
     end
 
     def self.poser(cat, nom)
+      return appliquer_texture(nom) if cat == TEX
       fic = File.join(dossier, nettoyer(cat), nettoyer(nom) + '.skp')
       return UI.messagebox('Fichier introuvable : ' + fic) unless File.exist?(fic)
       model = Sketchup.active_model
@@ -148,7 +216,7 @@ module A2M
       <h2>Ajouter la sélection</h2>
       <div class="dims" style="grid-template-columns:1fr 1fr;"><div><label>Nom</label><input type="text" id="nom" placeholder="Tuile de rive"></div><div><label>Catégorie</label><input type="text" id="cat" placeholder="Couverture"></div></div>
       <div class="petit">Sélectionnez un groupe ou un composant dans le modèle : son point d'insertion devient le milieu du bas de l'objet. Le modèle n'est pas modifié.</div>
-      <div id="bas"><div id="msg"></div><button type="button" id="dossier" style="background:#fff;color:#3C3C3C;border:2px solid #d8d0c6;border-radius:10px;padding:8px 12px;cursor:pointer">Ouvrir le dossier</button><button type="button" id="go">Ajouter</button></div>
+      <div id="bas"><div id="msg"></div><button type="button" id="imptex" style="background:#fff;color:#E07838;border:2px solid #E07838;border-radius:10px;padding:8px 12px;cursor:pointer">Importer les textures A2M_ du modèle</button><button type="button" id="dossier" style="background:#fff;color:#3C3C3C;border:2px solid #d8d0c6;border-radius:10px;padding:8px 12px;cursor:pointer">Ouvrir le dossier</button><button type="button" id="go">Ajouter</button></div>
     HTML
     SCRIPT = <<~'JS'
       var D = __DONNEES__; var cur = null;
@@ -167,13 +235,14 @@ module A2M
           b.innerHTML = '<div class="vignette"></div><span></span>';
           if (t.img) { var i = document.createElement('img'); i.src = t.img; b.querySelector('.vignette').appendChild(i); } else { b.querySelector('.vignette').textContent = '◻'; }
           b.querySelector('span').textContent = t.nom;
-          b.addEventListener('click', function () { sketchup.poser(JSON.stringify({ cat: t.cat, nom: t.nom })); });
+          b.addEventListener('click', function () { sketchup.poser(JSON.stringify({ cat: t.cat, nom: t.nom })); }); if (t.tex) b.title = 'Clic : applique la texture à la sélection (ou la prend au pot de peinture)';
           g.appendChild(b);
         });
         el('vide').textContent = l.length ? 'Cliquez un élément, puis cliquez dans le modèle pour le poser : Tab tourne de 90°, flèches gauche/droite font le miroir, Échap termine.' : 'Rien ici pour l\'instant : ajoutez votre premier élément ci-dessous.';
       }
       el('go').addEventListener('click', function () { sketchup.ajouter(JSON.stringify({ nom: el('nom').value, cat: el('cat').value })); });
       el('dossier').addEventListener('click', function () { sketchup.dossier(''); });
+      el('imptex').addEventListener('click', function () { sketchup.imptex(''); });
       function maj(d) { D = d; rendre(); el('nom').value = ''; }
       rendre();
     JS
@@ -197,6 +266,9 @@ module A2M
             dlg.execute_script("maj(#{JSON.generate(liste)})")
           end
         end
+      end
+      dlg.add_action_callback('imptex') do |_c, _x|
+        UI.start_timer(0, false) { dlg.execute_script("maj(#{JSON.generate(liste)})") if importer_textures }
       end
       dlg.add_action_callback('dossier') { |_c, _x| FileUtils.mkdir_p(dossier); UI.openURL('file:///' + dossier.tr('\\', '/')) }
       dlg.set_on_closed { @fen = nil }
