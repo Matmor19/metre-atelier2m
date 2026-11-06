@@ -1,12 +1,12 @@
 {
- "version": "2.70.3",
+ "version": "2.71.0",
  "notes": [
+  "Nouveau : « Dessiner un sol ou un plafond » a un mode « Sur les murs sélectionnés (un clic) » pour la dalle, l'isolant, la chape…",
+  "Correction : Planelles",
   "Correction : Planelles en rive de dalle avec ton profil « Planelle 16 cm »",
   "Correction : Planelles en rive de dalle",
   "Correction : la fenêtre de mise à jour n'affiche plus que les 6 dernières nouveautés, en une phrase chacune : le bouton « Oui »…",
   "Correction : le message « undefined method 'encode' for module URI » (extension BIMobject) à chaque ouverture de SketchUp est…",
-  "Nouveau : « Vue 2D de l'objet sélectionné »",
-  "Coupes : nouvelle « coupe brisée »",
-  "… et 43 autres nouveautés plus anciennes."
+  "… et 45 autres nouveautés plus anciennes."
  ]
 }

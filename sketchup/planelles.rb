@@ -108,7 +108,7 @@ module A2M
       bib = bibliotheque
       noms = (faces.any? ? [PROFIL_DESSINE] : []) + bib.map { |o| A2M::Profils.libelle(o) } + [RECTANGLE]
       prec = noms.include?(@r[:profil]) ? @r[:profil] : noms[0]
-      rep = UI.inputbox(['Profil', 'Nu extérieur du profil dessiné', 'Position', 'Décalage vertical depuis le dessous de la dalle (cm)',
+      rep = UI.inputbox(['Profil', 'Nu extérieur du profil dessiné', 'Position', 'Décalage vertical (cm) — 0 : le haut de la planelle au niveau du haut de la dalle',
                          'Rectangle : hauteur (cm)', 'Rectangle : épaisseur (cm)', 'Rectangle : isolant derrière (cm, 0 = aucun)',
                          'Ranger le profil dessiné dans la bibliothèque sous le nom (vide = non)'],
                         [prec, @r[:ext] || EXT_LONG, @r[:pos] || DANS, (@r[:dz] || 0).to_s, (@r[:h] || ep_dalle).to_s, (@r[:e] || 5).to_s, (@r[:iso] || 0).to_s, ''],
@@ -137,13 +137,17 @@ module A2M
         non_recoupees = 0
         dalles.each do |g|
           pts, = contour(g)
-          groupes = profils.map { |t, pr| balayer(pts, pr, (dz / 100.0).m, t, model, g.parent.entities) }
+          # Le haut de la planelle se cale sur le haut de la dalle (la planelle descend si elle est plus haute que la dalle)
+          _, zb, zh = contour(g)
+          hmax = profils.flat_map { |_, pr| pr.map(&:last) }.max
+          dz_long = (zh - zb) - hmax + (dz / 100.0).m
+          groupes = profils.map { |t, pr| balayer(pts, pr, dz_long, t, model, g.parent.entities) }
           specs = profils.map { |_, pr| spec_rect(pr) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
             groupes.each_with_index do |gb, k|
               next unless gb.valid? && g.valid?
-              res = soustraire(g, gb, specs[k], (dz / 100.0).m)
+              res = soustraire(g, gb, specs[k], dz_long)
               if res
                 nom, tag, mat = g.name, g.layer, g.material
                 g.erase!

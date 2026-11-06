@@ -102,6 +102,7 @@ module A2M
       model.start_operation('Composition de sol ou de plafond (métré)', true)
       begin
         faits = []
+        crees = []
         haut = 0.0
         couches.each do |c|
           tag = c['balise']; e = c['e'].to_f
@@ -109,20 +110,21 @@ module A2M
           if tag == 'A2M_DALLAGE' || tag == 'A2M_PLANCHER_ETAGE'
             surf = a[:emprises].map { |pts| [pts, []] }
             surf = a[:pieces] if surf.empty?
-            groupe(model, lib, tag, surf, z, e, true)
+            crees << groupe(model, lib, tag, surf, z, e, true)
             faits << "#{lib} #{e} cm"
           elsif tag == 'A2M_PLAFOND'
             h = hsp.to_s.tr(',', '.').to_f
             h = 250.0 if h <= 0
-            groupe(model, lib, tag, a[:pieces], z + (haut + h).cm, e, false)
+            crees << groupe(model, lib, tag, a[:pieces], z + (haut + h).cm, e, false)
             faits << "#{lib} à #{h.round} cm"
           else
-            groupe(model, lib, tag, a[:pieces], z + haut.cm, e, false)
+            crees << groupe(model, lib, tag, a[:pieces], z + haut.cm, e, false)
             haut += e
             faits << "#{lib} #{e} cm"
           end
         end
         model.commit_operation
+        model.selection.clear; model.selection.add(crees.compact)   # la dalle posée est sélectionnée : les planelles se posent ensuite d'un clic
         Sketchup.status_text = faits.join(' + ') + " : #{a[:pieces].size} pièce(s)."
         UI.messagebox("Posé : " + faits.join(', ') + ".\n#{a[:pieces].size} pièce(s) fermée(s) trouvée(s)." + (haut > 0 ? "\nLes couches du sol montent de #{haut.round(1)} cm au-dessus de la base des murs." : ''))
       rescue StandardError => ex

@@ -18,6 +18,7 @@ module A2M
       ['Plafond',                 'A2M_PLAFOND',       'A2M_PLAFOND',         1.3, 0, 'Plafond']
     ]
     NIVEAUX = ['RDC', 'Étage']
+    MODES = ['Tracer le contour au clic', 'Sur les murs sélectionnés (un clic, sans tracer)']
     SENS = ['Au-dessus du tracé (le tracé est le dessous)', 'En dessous du tracé (le tracé est le dessus)']
     @reglages = {}
 
@@ -25,9 +26,9 @@ module A2M
       t = TYPES.find { |x| x[0] == @reglages[:type] } || TYPES[0]
       r = @reglages[t[0]] || {}
       alt0 = r[:alt] || (t[0] == 'Plafond' ? 2.5 : 0.0)
-      rep = UI.inputbox(['Type', 'Niveau', 'Épaisseur (cm)', 'Pose', 'Hauteur au-dessus du tracé (m) — plafond : hauteur sous plafond'],
-                        [t[0], @reglages[:niveau] || NIVEAUX[0], (r[:e] || t[3]).to_s, SENS[r[:sens] || t[4]], alt0.to_s],
-                        [TYPES.map(&:first).join('|'), NIVEAUX.join('|'), '', SENS.join('|'), ''], 'Dessiner un sol ou un plafond (Métré Atelier 2M)')
+      rep = UI.inputbox(['Type', 'Niveau', 'Épaisseur (cm)', 'Pose', 'Hauteur au-dessus du tracé (m) — plafond : hauteur sous plafond', 'Mode (dalle, isolant, chape, plafond)'],
+                        [t[0], @reglages[:niveau] || NIVEAUX[0], (r[:e] || t[3]).to_s, SENS[r[:sens] || t[4]], alt0.to_s, @reglages[:mode] || MODES[0]],
+                        [TYPES.map(&:first).join('|'), NIVEAUX.join('|'), '', SENS.join('|'), '', MODES.join('|')], 'Dessiner un sol ou un plafond (Métré Atelier 2M)')
       return nil unless rep
       type = TYPES.find { |x| x[0] == rep[0] }
       e = rep[2].to_s.tr(',', '.').to_f
@@ -37,6 +38,12 @@ module A2M
       # Type changé dans la liste : le plafond propose 2,50 m s'il n'a pas encore de réglage
       alt = 2.5 if type[0] == 'Plafond' && alt.zero? && !(@reglages[type[0]] || {})[:alt] && rep[0] != t[0]
       nom = nil
+      @reglages[:mode] = rep[5]
+      # Un clic sur les murs sélectionnés : dalle sous l'emprise, isolant, chape et plafond dans chaque pièce fermée
+      if rep[5] == MODES[1] && type[0] =~ /Dalle|Plancher|Isolation|Chape|Plafond/
+        @reglages[:type] = type[0]; @reglages[:niveau] = rep[1]; @reglages[type[0]] = { e: e, sens: sens, alt: alt }
+        return { murs: true, type: type, etage: rep[1] == 'Étage', e: e, alt: alt }
+      end
       if type[5].nil?
         rp = UI.inputbox(['Nom de la pièce (ex. Séjour, Chambre 1)'], [type[0].start_with?('Terrasse') ? 'Terrasse' : ''], 'Revêtement de sol')
         return nil unless rp && !rp[0].to_s.strip.empty?
@@ -48,7 +55,19 @@ module A2M
 
     def self.lancer
       p = demander
-      Sketchup.active_model.select_tool(Outil.new(p)) if p
+      return unless p
+      return poser_sur_murs(p) if p[:murs]
+      Sketchup.active_model.select_tool(Outil.new(p))
+    end
+
+    # Mode « sur les murs sélectionnés » : même calcul que « Dalle, chape, plafond depuis les murs »
+    def self.poser_sur_murs(p)
+      model = Sketchup.active_model
+      type = p[:type]
+      tag = p[:etage] ? type[2] : type[1]
+      base = "#{type[5]}#{type[1] != type[2] ? (p[:etage] ? ' étage' : ' RDC') : ''}"
+      num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(base) }
+      A2M::SolMurs.poser_couches([{ 'nom' => "#{base} #{num}", 'balise' => tag, 'e' => p[:e] }], (p[:alt].to_f * 100.0), nil)
     end
 
     def self.construire(pts, p)
