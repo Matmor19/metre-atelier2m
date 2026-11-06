@@ -56,6 +56,31 @@ module A2M
     JS
 
     # Égouts : arêtes horizontales au bas d'un pan incliné, avec leur direction horizontale vers l'extérieur
+    # Parcourt groupes et composants ; ne retient que les pans (faces inclinées vers le haut) des éléments dont le tag correspond
+    def self.scan_pans(ents, t, roof, res, prof, dedans)
+      ents.each do |g|
+        if g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)
+          tt = t * g.transformation
+          nom = g.layer.name.to_s
+          ok = dedans || roof.nil? || nom.start_with?('A2M_TOITURE') || nom =~ roof
+          sous = g.is_a?(Sketchup::Group) ? g.entities : g.definition.entities
+          scan_pans(sous, tt, roof, res, prof + 1, ok) if prof < 5
+        elsif g.is_a?(Sketchup::Face) && (dedans || roof.nil?)
+          n = t * g.normal
+          n = n.reverse if n.z < 0
+          next unless n.z > 0.05 && n.z < 0.999
+          zmin = g.vertices.map { |v| (t * v.position).z }.min
+          g.edges.each do |e|
+            autre = e.faces.find { |f| f != g }
+            next if autre && (t * autre.normal).z > 0.05 && (t * autre.normal).z < 0.999 && (t * autre.normal).dot(n) > 0.2
+            a = t * e.start.position; b = t * e.end.position
+            next unless (a.z - zmin).abs < 0.02 && (b.z - zmin).abs < 0.02
+            res << [a, b, Geom::Vector3d.new(n.x, n.y, 0)]
+          end
+        end
+      end
+    end
+
     def self.egouts(model, cible)
       res = []
       if cible == 'sel'
@@ -67,21 +92,15 @@ module A2M
           res << [a, b, sortie]
         end
       else
-        model.entities.each do |g|
-          next unless (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.layer.name.to_s.start_with?('A2M_TOITURE')
-          ents = g.is_a?(Sketchup::Group) ? g.entities : g.definition.entities
-          t = g.transformation
-          ents.grep(Sketchup::Face).each do |f|
-            n = t * f.normal
-            next unless n.z > 0.05 && n.z < 0.999
-            zmin = f.vertices.map { |v| (t * v.position).z }.min
-            f.edges.each do |e|
-              next unless e.faces.size == 1
-              a = t * e.start.position; b = t * e.end.position
-              next unless (a.z - zmin).abs < 0.02 && (b.z - zmin).abs < 0.02
-              res << [a, b, Geom::Vector3d.new(n.x, n.y, 0)]
-            end
-          end
+        # 1) groupes de toiture Atelier 2M ou tags évoquant une toiture ; 2) à défaut, tout pan incliné du modèle
+        roof = /toit|couvert|tuile|zinc|ardoise|pan/i
+        [:roof, :tout].each do |mode|
+          res.clear
+          scan_pans(model.entities, Geom::Transformation.new, mode == :roof ? roof : nil, res, 0, false)
+          break unless res.empty?
+        end
+        if res.empty?
+          return egouts(model, 'sel') if model.selection.grep(Sketchup::Edge).any? && cible != 'sel'
         end
       end
       res.select { |a, b, s| a.distance(b) > 5.cm && s.length > 0.001 }
