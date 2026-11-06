@@ -3,15 +3,31 @@
 # l'épaisseur du sol, le revêtement, le profil de plinthes, le nom (liste + précision libre) et affiche la surface et le périmètre en ml.
 require 'sketchup.rb'
 require 'json'
+require 'base64'
 
 module A2M
   module PieceClic
     NOMS = ['Entrée', 'Séjour', 'Salon', 'Salle à manger', 'Cuisine', 'Cellier', 'Buanderie', 'Couloir', 'Dégagement', 'Palier', 'Chambre 1', 'Chambre 2', 'Chambre 3',
             'Chambre parentale', 'Dressing', 'Salle de bains', 'Salle d\'eau', 'WC', 'Bureau', 'Garage', 'Cave', 'Combles', 'Local technique', 'Terrasse'].freeze
-    # libellé, couleur du sol (RVB)
-    REVETEMENTS = [['Carrelage', [205, 200, 190]], ['Parquet', [190, 150, 100]], ['Stratifié', [205, 175, 125]], ['Béton ciré', [170, 170, 172]],
-                   ['Moquette', [125, 135, 155]], ['Résine', [140, 150, 156]], ['PVC / vinyle', [185, 175, 165]], ['Pierre naturelle', [190, 175, 150]],
-                   ['Sol brut (sans revêtement)', nil]].freeze
+    # Revêtements : les textures du dossier « sols » (nom affiché, fichier) puis quelques teintes unies sans texture
+    TEINTES = [['Stratifié', [205, 175, 125]], ['Moquette', [125, 135, 155]], ['Résine', [140, 150, 156]], ['PVC / vinyle', [185, 175, 165]],
+               ['Pierre naturelle', [190, 175, 150]], ['Sol brut (sans revêtement)', nil]].freeze
+
+    def self.textures_sols
+      accents = { 'Beton cire' => 'Béton ciré', 'Mosaique' => 'Mosaïque', 'Parquet chene' => 'Parquet chêne' }
+      Dir.glob("#{A2M::Textures::DOSSIER}/sols/*.jpg").sort.map { |f| n = A2M::Textures.nom_affiche(File.basename(f, '.jpg')); [accents[n] || n, File.basename(f, '.jpg')] }
+    end
+
+    def self.vignette_sol(nom)
+      f = "#{A2M::Textures::DOSSIER}/miniatures/sols/#{nom}.jpg"
+      f = "#{A2M::Textures::DOSSIER}/sols/#{nom}.jpg" unless File.exist?(f)
+      File.exist?(f) ? 'data:image/jpeg;base64,' + Base64.strict_encode64(File.binread(f)) : ''
+    end
+
+    def self.revetements
+      textures_sols.map { |l, n| { 'nom' => l, 'img' => vignette_sol(n) } } + TEINTES.map { |l, _| { 'nom' => l, 'img' => '' } }
+    end
+
     SANS_PLINTHE = 'Aucune plinthe'
     RECT = 'Plinthe rectangulaire 10 × 1,2 cm'
 
@@ -77,14 +93,19 @@ module A2M
         f.pushpull(ep.cm) if ep > 0
         g.layer = lb
         A2M::Hachures.poser(g, model)
-        rev = REVETEMENTS.find { |l, _| l == r['revetement'] }
-        if rev && rev[1]
-          m = model.materials["A2M sol #{rev[0]}"] || model.materials.add("A2M sol #{rev[0]}")
-          m.color = Sketchup::Color.new(*rev[1])
+        choix = r['revetement'].to_s
+        tex = textures_sols.find { |l, _| l == choix }
+        teinte = TEINTES.find { |l, _| l == choix }
+        if tex
+          m = A2M::Textures.materiau(model, 'sols', tex[1])
+          g.entities.grep(Sketchup::Face).each { |x| x.material = m if x.normal.z > 0.99 }
+        elsif teinte && teinte[1]
+          m = model.materials["A2M sol #{teinte[0]}"] || model.materials.add("A2M sol #{teinte[0]}")
+          m.color = Sketchup::Color.new(*teinte[1])
           g.entities.grep(Sketchup::Face).each { |x| x.material = m if x.normal.z > 0.99 }
         end
         g.name = nom_final
-        g.set_attribute('a2m', 'revetement', rev ? rev[0] : '')
+        g.set_attribute('a2m', 'revetement', choix)
         g.set_attribute('a2m', 'nom_liste', nom)
         g.set_attribute('a2m', 'precision', prec)
         g.set_attribute('a2m', 'epaisseur_sol', ep)
@@ -113,9 +134,9 @@ module A2M
       <h2>Nom de la pièce</h2>
       <div class="puces" id="noms"></div>
       <div class="dims" style="grid-template-columns:1fr 1fr;margin-top:8px"><div><label>Autre nom (liste)</label><select id="liste" style="width:100%;padding:8px;border:2px solid #d8d0c6;border-radius:9px;background:#fff"></select></div><div><label>Précision libre (facultatif)</label><input type="text" id="prec" placeholder="ex. côté jardin" style="font-size:14px;text-align:left"></div></div>
-      <h2>Sol</h2>
+      <h2>Sol : épaisseur et texture</h2>
       <div class="dims"><div><label>Épaisseur (cm)</label><input type="text" id="ep"></div></div>
-      <div class="puces" id="rev" style="margin-top:8px"></div>
+      <div class="grille" id="rev" style="margin-top:8px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))"></div>
       <h2>Plinthes</h2>
       <div class="puces" id="pl"></div>
       <div id="bas"><div id="msg"></div><button type="button" id="go">Créer la pièce</button></div>
@@ -135,7 +156,14 @@ module A2M
         el('surf').textContent = D.surface.toFixed(2).replace('.', ',') + ' m²';
         el('per').textContent = D.perimetre.toFixed(2).replace('.', ',') + ' ml';
         puces(el('noms'), D.noms.slice(0, 8), s.nom, function (t) { s.nom = t; el('liste').value = t; rendre(); });
-        puces(el('rev'), D.revetements, s.revetement, function (t) { s.revetement = t; rendre(); });
+        var rv = el('rev'); rv.innerHTML = '';
+        D.revetements.forEach(function (t) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (s.revetement === t.nom ? ' rempli' : '');
+          b.innerHTML = '<div class="vignette" style="height:46px"></div><span style="font-size:11px"></span>';
+          if (t.img) { var i = document.createElement('img'); i.src = t.img; b.querySelector('.vignette').appendChild(i); }
+          b.querySelector('span').textContent = t.nom;
+          b.addEventListener('click', function () { s.revetement = t.nom; rendre(); }); rv.appendChild(b);
+        });
         puces(el('pl'), D.plinthes, s.plinthe, function (t) { s.plinthe = t; rendre(); });
         var e = parseFloat(String(el('ep').value).replace(',', '.'));
         el('ep').className = e >= 0 ? 'ok' : '';
@@ -182,10 +210,10 @@ module A2M
       model = Sketchup.active_model
       existants = model.active_entities.select { |g| (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.layer && g.layer.name == 'A2M_PIECE' }.map { |g| g.get_attribute('a2m', 'nom_liste').to_s }.reject(&:empty?)
       noms = (NOMS + existants).uniq
-      @etat ||= { 'nom' => '', 'ep' => '1', 'revetement' => 'Carrelage', 'plinthe' => RECT }
+      @etat ||= { 'nom' => '', 'ep' => '1', 'revetement' => (textures_sols.first || ['Sol brut (sans revêtement)']).first, 'plinthe' => RECT }
       pls = [SANS_PLINTHE, RECT] + profils.map { |o| A2M::Profils.libelle(o) }
       pl = pls.include?(@etat['plinthe']) ? @etat['plinthe'] : RECT
-      d = { 'noms' => noms, 'revetements' => REVETEMENTS.map(&:first), 'plinthes' => pls, 'surface' => ctr[2], 'perimetre' => perimetre(ctr[0]),
+      d = { 'noms' => noms, 'revetements' => revetements, 'plinthes' => pls, 'surface' => ctr[2], 'perimetre' => perimetre(ctr[0]),
             'etat' => { 'nom' => '', 'ep' => @etat['ep'], 'revetement' => @etat['revetement'], 'plinthe' => pl } }
       html = A2M::Panneau.page('Pièce en un clic', 'Sol, plinthes et nom en une fois', CORPS, SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : pièce', 'A2M_Panneau_PieceClic', html, 480, 760)
