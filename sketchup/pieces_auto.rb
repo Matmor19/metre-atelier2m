@@ -6,10 +6,10 @@ module A2M
   module PiecesAuto
     MURS = %w[A2M_MUR_PERI A2M_MUR_REFEND A2M_CLOISON A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_MUR_PIGNON]
 
-    def self.murs(model)
-      sel = model.selection.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.layer && MURS.include?(e.layer.name) }
+    def self.murs(model, tags = MURS)
+      sel = model.selection.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.layer && tags.include?(e.layer.name) }
       return sel unless sel.empty?
-      model.active_entities.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && !e.hidden? && e.layer && MURS.include?(e.layer.name) }
+      model.active_entities.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && !e.hidden? && e.layer && tags.include?(e.layer.name) }
     end
 
     # Dessus de chaque mur (les baies ne coupent pas le dessus) : contours extérieurs et trous, en coordonnées du modèle

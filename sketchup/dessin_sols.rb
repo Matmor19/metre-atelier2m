@@ -42,7 +42,7 @@ module A2M
       # Un clic sur les murs sélectionnés : dalle sous l'emprise, isolant, chape et plafond dans chaque pièce fermée
       if rep[5] == MODES[1] && type[0] =~ /Dalle|Plancher|Isolation|Chape|Plafond/
         @reglages[:type] = type[0]; @reglages[:niveau] = rep[1]; @reglages[type[0]] = { e: e, sens: sens, alt: alt }
-        return { murs: true, type: type, etage: rep[1] == 'Étage', e: e, alt: alt }
+        return { murs: true, type: type, etage: rep[1] == 'Étage', e: e, alt: alt, sens: sens }
       end
       if type[5].nil?
         rp = UI.inputbox(['Nom de la pièce (ex. Séjour, Chambre 1)'], [type[0].start_with?('Terrasse') ? 'Terrasse' : ''], 'Revêtement de sol')
@@ -67,7 +67,7 @@ module A2M
       tag = p[:etage] ? type[2] : type[1]
       base = "#{type[5]}#{type[1] != type[2] ? (p[:etage] ? ' étage' : ' RDC') : ''}"
       num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(base) }
-      A2M::SolMurs.poser_couches([{ 'nom' => "#{base} #{num}", 'balise' => tag, 'e' => p[:e] }], (p[:alt].to_f * 100.0), nil)
+      A2M::SolMurs.poser_couches([{ 'nom' => "#{base} #{num}", 'balise' => tag, 'e' => p[:e] }], (p[:alt].to_f * 100.0), nil, nil, p[:sens] == 0)
     end
 
     def self.construire(pts, p)

@@ -16,7 +16,7 @@ module A2M
 
     # Pièces fermées (contours intérieurs) et emprise extérieure des murs, en coordonnées du modèle
     def self.analyser(model)
-      ms = A2M::PiecesAuto.murs(model)
+      ms = A2M::PiecesAuto.murs(model, A2M::PiecesAuto::MURS + ['A2M_MUR_SOUB'])   # le soubassement porte aussi la dalle
       return nil if ms.empty?
       emp = A2M::PiecesAuto.empreintes(ms)
       z = ms.map { |g| g.bounds.min.z }.min
@@ -49,7 +49,7 @@ module A2M
       ensure
         model.abort_operation
       end
-      { pieces: pieces, emprises: emprises, z: z }
+      { pieces: pieces, emprises: emprises, z: z, z_haut: ms.map { |g| g.bounds.max.z }.max }
     end
 
     def self.groupe(model, nom, tag, surfaces, z, epaisseur_cm, vers_le_bas)
@@ -87,7 +87,7 @@ module A2M
     # couches : [{'nom','balise','e'}] de bas en haut. Dalle (A2M_DALLAGE / A2M_PLANCHER_ETAGE) sous le sol, sur l'emprise des murs ;
     # isolant, chape et autres au-dessus, dans chaque pièce ; plafond à la hauteur sous plafond.
     # surfaces : nil = murs sélectionnés (ou tous) ; sinon [[contour, trous]] (face sélectionnée), avec z
-    def self.poser_couches(couches, hsp, surfaces, z_surf = nil)
+    def self.poser_couches(couches, hsp, surfaces, z_surf = nil, sur_dessus = false)
       model = Sketchup.active_model
       couches = couches.select { |c| c['e'].to_f > 0 }
       return UI.messagebox('Aucune couche à poser.') if couches.empty?
@@ -110,7 +110,8 @@ module A2M
           if tag == 'A2M_DALLAGE' || tag == 'A2M_PLANCHER_ETAGE'
             surf = a[:emprises].map { |pts| [pts, []] }
             surf = a[:pieces] if surf.empty?
-            crees << groupe(model, lib, tag, surf, z, e, true)
+            # sur_dessus : la dalle repose sur le dessus des murs sélectionnés (soubassement) ; sinon elle descend depuis leur pied
+            crees << (sur_dessus && a[:z_haut] ? groupe(model, lib, tag, surf, a[:z_haut], e, false) : groupe(model, lib, tag, surf, z, e, true))
             faits << "#{lib} #{e} cm"
           elsif tag == 'A2M_PLAFOND'
             h = hsp.to_s.tr(',', '.').to_f
