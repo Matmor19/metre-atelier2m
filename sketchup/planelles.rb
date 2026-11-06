@@ -90,6 +90,18 @@ module A2M
     end
 
     # Tous les profils de la bibliothèque de profils, les planelles en premier
+    # Journal de la dernière pose (Documents/Atelier 2M/planelles_journal.txt) : permet de comprendre un souci sans refaire la pose
+    def self.journal(txt = nil)
+      f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'planelles_journal.txt')
+      if txt.nil?
+        File.write(f, "#{Time.now}\n", encoding: 'UTF-8')
+      else
+        File.open(f, 'a', encoding: 'UTF-8') { |io| io.puts(txt) }
+      end
+    rescue StandardError
+      nil
+    end
+
     def self.bibliotheque
       (A2M::Profils.tous('Planelle') rescue [])
     end
@@ -132,6 +144,7 @@ module A2M
         profils = profils.map { |t, pts| [t, pts.map { |w, hh| [w - wmax, hh] }] }   # tout le profil à l'extérieur du bord
       end
       model.start_operation('Planelles en rive de dalle (métré)', true)
+      journal
       begin
         faits = []
         non_recoupees = 0
@@ -140,6 +153,8 @@ module A2M
         hmax_cm = 0.0; ep_cm = 0.0
         dalles.each do |g|
           pts, = contour(g)
+          vol0 = g.volume rescue 0
+          journal("dalle #{g.name} : volume #{vol0.round(0)}, valide #{g.valid?}")
           # Le haut de la planelle se cale sur le haut de la dalle (la planelle descend si elle est plus haute que la dalle)
           _, zb, zh = contour(g)
           hmax = profils.flat_map { |_, pr| pr.map(&:last) }.max
@@ -154,6 +169,7 @@ module A2M
               murs_abaisses += abaisser_soubassement(g, zb, dz_long)
               pleins = remplissages_soubassement(g, zb, dz_long)
               fus = pleins.empty? ? nil : fusionner(g, pleins)
+              journal("descente : murs abaissés #{murs_abaisses}, remplissages #{pleins.size}, fusion #{fus ? 'OK volume ' + fus.volume.round(0).to_s : 'refusée'}")
               if fus
                 nom, tag, mat = g.name, g.layer, g.material
                 g.erase!
@@ -167,6 +183,7 @@ module A2M
             groupes.each_with_index do |gb, k|
               next unless gb.valid? && g.valid?
               res = soustraire(g, gb, specs[k], dz_long)
+              journal("coupe #{k} (#{gb.name}) : #{res ? 'OK volume ' + res.volume.round(0).to_s : 'refusée'}")
               if res
                 nom, tag, mat = g.name, g.layer, g.material
                 g.erase!
@@ -177,6 +194,11 @@ module A2M
                 non_recoupees += 1
               end
             end
+          end
+          # Garde-fou : la dalle ne doit jamais disparaître ni perdre l'essentiel de son volume
+          unless g.valid? && (g.volume rescue 0) > vol0 * 0.4 && g.visible?
+            journal("ANNULÉ : dalle perdue (valide #{g.valid?})")
+            raise 'la dalle aurait été perdue, tout est annulé'
           end
           long = (0...pts.size).sum { |k| pts[k].distance(pts[(k + 1) % pts.size]) } * 0.0254
           faits << "#{g.name.to_s.empty? ? 'Dalle' : g.name} : #{long.round(2)} ml"
