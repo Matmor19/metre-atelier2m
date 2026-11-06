@@ -21,6 +21,10 @@ module A2M
       <button type="button" class="puce rempli" id="trace">Tracer une coupe (2 clics + 1 clic pour le sens de vue)</button>
       <h2>Réglages</h2>
       <div class="puces" id="regl"></div>
+      <h2>Niveaux (N1, N2, N3…)</h2>
+      <div class="petit">Altitudes nommées, en cm depuis le sol fini : elles s'ajoutent aux niveaux relevés (sol, plancher, plafond, point haut) sur chaque coupe.</div>
+      <div id="niv"></div>
+      <div class="puces" style="margin-top:6px"><button type="button" class="puce" id="nivplus">+ Niveau</button></div>
       <h2>Coupes du modèle</h2>
       <div id="liste"></div>
       <div id="bas"><div id="msg"></div></div>
@@ -56,10 +60,29 @@ module A2M
             var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = x[1];
             b.addEventListener('click', function () { sketchup.action(JSON.stringify({ a: x[0], nom: c.nom, reg: reg })); }); d.appendChild(b);
           });
+          [['↺ 15°', -15], ['↻ 15°', 15], ['90°', 90]].forEach(function (x) {
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = x[0]; b.title = 'Tourner la ligne de coupe';
+            b.addEventListener('click', function () { sketchup.action(JSON.stringify({ a: 'rot', ang: x[1], nom: c.nom, reg: reg })); }); d.appendChild(b);
+          });
           l.appendChild(d);
         });
       }
-      function maj(liste) { D.coupes = liste; rendre(); }
+      function maj(liste) { D.coupes = liste; rendre(); if (typeof dessiner === 'function' && ZONE) { L = D.coupes.map(function (c) { var l = aPartirDe(c); l.actif = true; return l; }); dessiner(); } }
+      var NIV = (D.niveaux || []).slice();
+      function niveaux() {
+        var c = el('niv'); c.innerHTML = '';
+        NIV.forEach(function (n, i) {
+          var d = document.createElement('div'); d.style.cssText = 'display:flex;gap:6px;align-items:center;margin:4px 0';
+          var a = document.createElement('input'); a.type = 'text'; a.value = n.nom; a.style.cssText = 'width:90px;padding:5px;font-size:13px'; a.oninput = function () { n.nom = a.value; };
+          var b = document.createElement('input'); b.type = 'text'; b.value = n.cm; b.style.cssText = 'width:80px;padding:5px;font-size:13px;text-align:center'; b.oninput = function () { n.cm = parseFloat(String(b.value).replace(',', '.')) || 0; };
+          var u = document.createElement('span'); u.textContent = 'cm';
+          var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'puce'; ok.textContent = 'Appliquer'; ok.onclick = function () { sketchup.niveaux(JSON.stringify(NIV)); };
+          var x = document.createElement('button'); x.type = 'button'; x.className = 'puce'; x.textContent = '×'; x.onclick = function () { NIV.splice(i, 1); niveaux(); sketchup.niveaux(JSON.stringify(NIV)); };
+          [a, b, u, ok, x].forEach(function (q) { d.appendChild(q); }); c.appendChild(d);
+        });
+      }
+      el('nivplus').addEventListener('click', function () { NIV.push({ nom: 'N' + (NIV.length + 1), cm: 270 * (NIV.length + 1) }); niveaux(); });
+      niveaux();
       el('trace').addEventListener('click', function () { sketchup.tracer(JSON.stringify({ reg: reg })); });
       rendre();
 
@@ -72,6 +95,7 @@ module A2M
       }
       function aPartirDe(c) {
         var h = Math.abs(c.dir[1]) >= Math.abs(c.dir[0]);
+        if (Math.min(Math.abs(c.dir[0]), Math.abs(c.dir[1])) > 0.02) return { nom: c.nom, libre: true, a: [c.a[0], -c.a[1]], b: [c.b[0], -c.b[1]], dir: c.dir };
         return { nom: c.nom, t: h ? 'R' : 'V', pos: h ? -c.a[1] : c.a[0], dir: h ? (c.dir[1] > 0 ? 1 : -1) : (c.dir[0] > 0 ? 1 : -1) };
       }
       function monde(l) {
@@ -89,6 +113,14 @@ module A2M
         D.plan.ouv.forEach(function (o) { trace(o.d, o.f, 0, { fill: '#FFFFFF', stroke: '#333', w: 1 }, g); });
         var k = ZONE[2] / 400;
         L.forEach(function (l) {
+          if (l.libre) {
+            var cg = e('g', {}, svg), kk = ZONE[2] / 400;
+            e('line', { x1: l.a[0], y1: l.a[1], x2: l.b[0], y2: l.b[1], stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }, cg);
+            var mx2 = (l.a[0] + l.b[0]) / 2, my2 = (l.a[1] + l.b[1]) / 2, vx2 = l.dir[0], vy2 = -l.dir[1];
+            e('line', { x1: mx2, y1: my2, x2: mx2 + vx2 * 30 * kk, y2: my2 + vy2 * 30 * kk, stroke: '#B3302F', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }, cg);
+            var tl = e('text', { x: l.a[0], y: l.a[1] - 8 * kk, 'font-size': 13 * kk, fill: '#B3302F', 'font-weight': 700, 'font-family': 'Segoe UI,Arial' }, cg); tl.textContent = l.nom + ' (oblique)';
+            return;
+          }
           var col = l.t === 'R' ? '#B3302F' : '#2E8B6A', h = l.t === 'R';
           var grp = e('g', { style: 'cursor:' + (h ? 'ns-resize' : 'ew-resize') }, svg);
           var x1 = h ? BB[0] - 50 : l.pos, x2 = h ? BB[2] + 50 : l.pos, y1 = h ? l.pos : BB[1] - 50, y2 = h ? l.pos : BB[3] + 50;
@@ -217,7 +249,22 @@ module A2M
       liste = [['Sol fini', sol]]
       zs.each { |k, z| liste << [k, z] }
       liste << ['Point haut', haut]
+      niveaux_perso(model).each { |nom, cm| liste << [nom, sol + cm.cm] }
       liste.sort_by { |_, z| z }.uniq { |_, z| z.round(2) }
+    end
+
+    # Niveaux nommés par l'utilisateur (N1, N2…) : altitude en cm depuis le sol fini, rangés dans le modèle
+    def self.niveaux_perso(model)
+      l = JSON.parse(model.get_attribute('a2m', 'niveaux_coupe', '[]').to_s) rescue []
+      l.select { |x| x.is_a?(Hash) && x['nom'].to_s != '' }.map { |x| [x['nom'].to_s, x['cm'].to_f] }
+    end
+
+    def self.enregistrer_niveaux(l)
+      model = Sketchup.active_model
+      propres = (l || []).select { |x| x.is_a?(Hash) && x['nom'].to_s.strip != '' }.map { |x| { 'nom' => x['nom'].to_s.strip, 'cm' => x['cm'].to_s.tr(',', '.').to_f } }
+      model.set_attribute('a2m', 'niveaux_coupe', JSON.generate(propres))
+      rafraichir
+      majliste
     end
 
     def self.cm_txt(z, sol) format('%+.2f m', (z - sol).to_f * 0.0254).tr('.', ',') end
@@ -419,6 +466,16 @@ module A2M
         model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && ["Cotes coupe #{nom}", "Repère coupe #{nom}"].include?(g.name) }
         ["A2M – Coupe #{nom}", "A2M – Coupe #{nom} 3D"].each { |np| pg = model.pages[np]; model.pages.erase(pg) if pg }
         model.commit_operation
+      when 'rot'
+        pl = sp.get_plane
+        n2 = Geom::Vector3d.new(pl[0], pl[1], 0); n2.normalize!
+        u2 = Z_AXIS.cross(n2); u2.normalize!
+        q = pl[0]**2 + pl[1]**2 + pl[2]**2
+        mil = milieu(pl, d)
+        long = Geom::Point3d.new(*d['a']).distance(Geom::Point3d.new(*d['b'])) / 2
+        t = Geom::Transformation.rotation(mil, Z_AXIS, r['ang'].to_f.degrees)
+        creer(mil.offset(u2, -long).transform(t), mil.offset(u2, long).transform(t), n2.transform(t), reg, nom)
+        return
       when 'inv'
         dir = Geom::Vector3d.new(*d['dir']).reverse
         creer(Geom::Point3d.new(*d['a']), Geom::Point3d.new(*d['b']), dir, reg, nom)
@@ -429,7 +486,7 @@ module A2M
         n = Geom::Vector3d.new(pl[0], pl[1], pl[2]); n.z = 0; n.normalize!
         dir = n
         u = Z_AXIS.cross(dir); u.normalize!
-        mil = Geom::Point3d.new(-pl[3] * pl[0] / (pl[0]**2 + pl[1]**2 + pl[2]**2), -pl[3] * pl[1] / (pl[0]**2 + pl[1]**2 + pl[2]**2), 0)
+        mil = milieu(pl, d)
         long = Geom::Point3d.new(*d['a']).distance(Geom::Point3d.new(*d['b'])) / 2
         a = mil.offset(u, -long); b = mil.offset(u, long)
         if r['a'] == 'voir'
@@ -441,6 +498,15 @@ module A2M
         end
       end
       majliste
+    end
+
+    # Milieu de la ligne de coupe après un éventuel déplacement du plan : l'ancien milieu projeté sur le plan actuel
+    def self.milieu(pl, d)
+      a = d['a']; b = d['b']
+      mx = (a[0] + b[0]) / 2.0; my = (a[1] + b[1]) / 2.0
+      q = pl[0]**2 + pl[1]**2
+      t = (pl[0] * mx + pl[1] * my + pl[3]) / q
+      Geom::Point3d.new(mx - pl[0] * t, my - pl[1] * t, 0)
     end
 
     # Lignes de coupe existantes (cm, y en repère modèle)
@@ -471,7 +537,7 @@ module A2M
         return
       end
       html = A2M::Panneau.page('Coupes automatiques', 'Une ligne de coupe, une scène, les niveaux et les cotes de hauteur',
-                               CORPS, SCRIPT, 'coupes' => lignes(Sketchup.active_model), 'plan' => A2M::MiniPlan.donnees(120.0))
+                               CORPS, SCRIPT, 'coupes' => lignes(Sketchup.active_model), 'niveaux' => niveaux_perso(Sketchup.active_model).map { |n, c| { 'nom' => n, 'cm' => c } }, 'plan' => A2M::MiniPlan.donnees(120.0))
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : coupes', 'A2M_Panneau_Coupes', html, 470, 820)
       @fen = dlg
       dlg.add_action_callback('auto') do |_c, json|
@@ -485,6 +551,10 @@ module A2M
       dlg.add_action_callback('appliquer') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
         UI.start_timer(0, false) { appliquer(r) } if r
+      end
+      dlg.add_action_callback('niveaux') do |_c, json|
+        l = (JSON.parse(json.to_s) rescue nil)
+        UI.start_timer(0, false) { enregistrer_niveaux(l) } if l.is_a?(Array)
       end
       dlg.add_action_callback('action') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
