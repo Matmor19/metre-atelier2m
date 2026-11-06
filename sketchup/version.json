@@ -1,12 +1,12 @@
 {
- "version": "2.70.1",
+ "version": "2.70.2",
  "notes": [
+  "Correction : Planelles en rive de dalle",
   "Correction : la fenêtre de mise à jour n'affiche plus que les 6 dernières nouveautés, en une phrase chacune : le bouton « Oui »…",
   "Correction : le message « undefined method 'encode' for module URI » (extension BIMobject) à chaque ouverture de SketchUp est…",
   "Nouveau : « Vue 2D de l'objet sélectionné »",
   "Coupes : nouvelle « coupe brisée »",
   "Nouveau : « Séparateur de pièce »",
-  "Coupes : niveaux nommés N1, N2, N3… (altitude en cm depuis le sol fini, ajoutés aux cotes de chaque coupe) et rotation de la…",
-  "… et 41 autres nouveautés plus anciennes."
+  "… et 42 autres nouveautés plus anciennes."
  ]
 }

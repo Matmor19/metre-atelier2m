@@ -1,4 +1,5 @@
 [
+ "Correction : Planelles en rive de dalle — la planelle se posait mal quand un groupe était ouvert en édition (le calcul se faisait dans le mauvais contexte) ; elle est maintenant créée au même niveau que la dalle, et la dalle est recoupée proprement (testé sur ta dalle réelle, aucune perte)",
  "Correction : la fenêtre de mise à jour n'affiche plus que les 6 dernières nouveautés, en une phrase chacune : le bouton « Oui » reste visible",
  "Correction : le message « undefined method 'encode' for module URI » (extension BIMobject) à chaque ouverture de SketchUp est supprimé — l'extension remet les anciennes méthodes URI.encode et URI.decode que le Ruby de SketchUp 2027 n'a plus",
  "Nouveau : « Vue 2D de l'objet sélectionné » — dessus et face de n'importe quel meuble ou menuiserie, en projection parallèle, à sa vraie géométrie, avec ses couleurs et textures d'origine (PNG à fond transparent, dans Documents/Atelier 2M/Vues 2D). Créées aussi automatiquement quand un objet est rangé dans la bibliothèque ; le modèle, la caméra et le style ne changent pas",

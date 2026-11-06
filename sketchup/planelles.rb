@@ -70,8 +70,8 @@ module A2M
     end
 
     # Balaye un profil le long du contour fermé (départ au milieu du premier côté : angles propres)
-    def self.balayer(pts, profil, dz, type, model)
-      grp = model.active_entities.add_group
+    def self.balayer(pts, profil, dz, type, model, ents_cible = nil)
+      grp = (ents_cible || model.active_entities).add_group
       ents = grp.entities
       milieu = Geom::Point3d.new((pts[0].x + pts[1].x) / 2.0, (pts[0].y + pts[1].y) / 2.0, pts[0].z)
       chemin = [milieu] + pts[1..-1] + [pts[0], milieu]
@@ -137,12 +137,13 @@ module A2M
         non_recoupees = 0
         dalles.each do |g|
           pts, = contour(g)
-          groupes = profils.map { |t, pr| balayer(pts, pr, (dz / 100.0).m, t, model) }
+          groupes = profils.map { |t, pr| balayer(pts, pr, (dz / 100.0).m, t, model, g.parent.entities) }
+          specs = profils.map { |_, pr| spec_rect(pr) }
           # Dans l'épaisseur : la dalle est recoupée là où passe la planelle
           if dans
-            groupes.each do |gb|
+            groupes.each_with_index do |gb, k|
               next unless gb.valid? && g.valid?
-              res = soustraire(g, gb)
+              res = soustraire(g, gb, specs[k], (dz / 100.0).m)
               if res
                 nom, tag, mat = g.name, g.layer, g.material
                 g.erase!
@@ -167,14 +168,73 @@ module A2M
       end
     end
 
-    # Dalle moins planelle, sans jamais perdre la dalle : le calcul se fait sur des copies, dans les deux sens de Group#subtract
-    # (le bon est reconnu au résultat : la dalle amputée garde l'emprise de la dalle). Renvoie le groupe résultat, ou nil.
-    def self.soustraire(g, coupe)
+    # Pour recouper la dalle, le volume balayé ne convient pas (Group#subtract le refuse, bruit de calcul du balayage).
+    # Quand le profil est un rectangle, on reconstruit l'anneau de coupe proprement : contour décalé vers l'intérieur
+    # de la dalle (calcul exact), face avec son trou, puis relevée. Renvoie [wmin, wmax, hmin, hmax] ou nil.
+    def self.spec_rect(pr)
+      return nil unless pr.size == 4
+      ws = pr.map(&:first).uniq.sort
+      hs = pr.map(&:last).uniq.sort
+      return nil unless ws.size == 2 && hs.size == 2 && pr.all? { |w, h| ws.include?(w) && hs.include?(h) }
+      [ws[0], ws[1], hs[0], hs[1]]
+    end
+
+    # Contour (sens trigonométrique) décalé de w vers l'intérieur : intersection des droites décalées de chaque côté
+    def self.decaler(pts, w)
+      return pts.map(&:clone) if w.abs < 1e-9
+      n = pts.size
+      droites = (0...n).map do |i|
+        a, b = pts[i], pts[(i + 1) % n]
+        d = (b - a).normalize
+        d = Geom::Vector3d.new(0, d.y <=> 0, 0) if d.x.abs < 1e-9      # côtés d'axe : coordonnées exactes, sans bruit de calcul
+        d = Geom::Vector3d.new(d.x <=> 0, 0, 0) if d.y.abs < 1e-9
+        nm = Z_AXIS.cross(d).normalize
+        [a.offset(nm, w), d]
+      end
+      (0...n).map do |i|
+        p1, d1 = droites[i - 1]
+        p2, d2 = droites[i]
+        den = d1.x * d2.y - d1.y * d2.x
+        return nil if den.abs < 1e-9
+        t = ((p2.x - p1.x) * d2.y - (p2.y - p1.y) * d2.x) / den
+        Geom::Point3d.new((p1.x + d1.x * t).round(9), (p1.y + d1.y * t).round(9), p1.z)   # arrondi : le bruit de calcul (1e-14) fait refuser le booléen
+      end
+    end
+
+    def self.anneau_coupe(pts, spec, dz, ents_cible = nil)
+      wmin, wmax, hmin, hmax = spec
+      w0 = [wmin, 0.0].max
+      return nil if wmax <= 1e-9 || hmax - hmin < 1e-9
+      ext = decaler(pts, w0)
+      int = decaler(pts, wmax)
+      return nil unless ext && int
+      z0 = pts[0].z + dz + hmin
+      g = (ents_cible || Sketchup.active_model.active_entities).add_group
+      lv = ->(l) { l.map { |p| Geom::Point3d.new(p.x, p.y, z0) } }
+      g.entities.add_face(lv.call(ext))
+      g.entities.add_face(lv.call(int)).erase!
+      f = g.entities.grep(Sketchup::Face).first
+      f.reverse! if f.normal.z < 0
+      f.pushpull(hmax - hmin)
+      g
+    rescue StandardError
+      g.erase! if g && g.valid?
+      nil
+    end
+
+    # Dalle moins planelle, sans jamais perdre la dalle : calcul sur des copies neuves à chaque essai (un Group#subtract
+    # raté détruit ses opérandes), dans les deux sens ; le bon sens est reconnu au résultat (la dalle amputée garde
+    # l'emprise de la dalle). Renvoie le groupe résultat, ou nil.
+    def self.soustraire(g, coupe, spec = nil, dz = 0.0)
       vol = g.volume rescue -1
       return nil unless vol > 0
       diag = g.bounds.diagonal
+      pts, = contour(g)
       [A2M::Ouvertures.inverse?, !A2M::Ouvertures.inverse?].each do |inv|
-        a = g.copy; b = coupe.copy
+        next unless g.valid? && coupe.valid?
+        a = g.copy
+        b = (spec && pts) ? anneau_coupe(pts, spec, dz, g.parent.entities) : coupe.copy
+        next unless a && b
         res = (inv ? a.subtract(b) : b.subtract(a)) rescue nil
         if res && res.valid?
           v = (res.volume rescue 0)
