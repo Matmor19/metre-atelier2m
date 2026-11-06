@@ -173,6 +173,7 @@ module A2M
     # de la dalle (calcul exact), face avec son trou, puis relevée. Renvoie [wmin, wmax, hmin, hmax] ou nil.
     def self.spec_rect(pr)
       return nil unless pr.size == 4
+      pr = pr.map { |w, h| [w.round(6), h.round(6)] }
       ws = pr.map(&:first).uniq.sort
       hs = pr.map(&:last).uniq.sort
       return nil unless ws.size == 2 && hs.size == 2 && pr.all? { |w, h| ws.include?(w) && hs.include?(h) }
@@ -233,7 +234,9 @@ module A2M
       [A2M::Ouvertures.inverse?, !A2M::Ouvertures.inverse?].each do |inv|
         next unless g.valid? && coupe.valid?
         a = g.copy
+        a.make_unique   # une copie partage la définition de l'original : un booléen raté détruirait aussi l'original
         b = (spec && pts) ? anneau_coupe(pts, spec, dz, g.parent.entities) : coupe.copy
+        b.make_unique if b && b.valid?
         next unless a && b
         res = (inv ? a.subtract(b) : b.subtract(a)) rescue nil
         if res && res.valid?

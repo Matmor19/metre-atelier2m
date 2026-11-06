@@ -1,4 +1,5 @@
 [
+ "Correction : Planelles en rive de dalle avec ton profil « Planelle 16 cm » — un calcul de découpe raté détruisait aussi la planelle posée (copies liées à l'original) ; chaque découpe se fait maintenant sur des copies indépendantes, et les pièces rectangulaires du profil sont recoupées proprement dans la dalle (testé sur ta dalle RDC 1 : les 3 pièces passent, la dalle et les planelles restent intactes)",
  "Correction : Planelles en rive de dalle — la planelle se posait mal quand un groupe était ouvert en édition (le calcul se faisait dans le mauvais contexte) ; elle est maintenant créée au même niveau que la dalle, et la dalle est recoupée proprement (testé sur ta dalle réelle, aucune perte)",
  "Correction : la fenêtre de mise à jour n'affiche plus que les 6 dernières nouveautés, en une phrase chacune : le bouton « Oui » reste visible",
  "Correction : le message « undefined method 'encode' for module URI » (extension BIMobject) à chaque ouverture de SketchUp est supprimé — l'extension remet les anciennes méthodes URI.encode et URI.decode que le Ruby de SketchUp 2027 n'a plus",
