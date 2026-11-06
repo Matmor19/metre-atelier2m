@@ -11,6 +11,7 @@ module A2M
       ['A2M_MUR_SOUB',         'Murs de soubassement (groupe)',                    [150, 90, 40]],
       ['A2M_MUR_REFEND',       'Murs de refend (groupe)',                          [240, 170, 90]],
       ['A2M_MUR_PIGNON',       'Murs pignons (groupe)',                            [200, 100, 60]],
+      ['A2M_ENDUIT_EXT',       'Enduit extérieur (groupe, surface au ravalement)', [215, 195, 160]],
       ['A2M_DOUBLAGE',         'Doublage : plaque de plâtre (groupe)',             [235, 235, 235]],
       ['A2M_ISOLANT_DOUBLAGE', 'Doublage : isolant (groupe)',                      [250, 220, 90]],
       ['A2M_CLOISON',          'Cloisons (groupe)',                                [200, 200, 210]],

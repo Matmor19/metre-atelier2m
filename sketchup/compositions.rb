@@ -13,11 +13,11 @@ module A2M
     MURS = ['Murs', 'Cloisons'].freeze
 
     BALISES_MUR = [['A2M_MUR_PERI', 'Maçonnerie ou structure (mur périphérique)'], ['A2M_MUR_REFEND', 'Mur de refend'], ['A2M_MUR_SOUB', 'Soubassement'],
-                   ['A2M_MUR_PIGNON', 'Mur pignon'], ['A2M_ISOLANT_DOUBLAGE', 'Isolant (doublage)'], ['A2M_DOUBLAGE', 'Plaque de plâtre (doublage)'],
+                   ['A2M_MUR_PIGNON', 'Mur pignon'], ['A2M_ENDUIT_EXT', 'Enduit extérieur'], ['A2M_ISOLANT_DOUBLAGE', 'Isolant (doublage)'], ['A2M_DOUBLAGE', 'Plaque de plâtre (doublage)'],
                    ['A2M_CLOISON', 'Cloison']].freeze
     BALISES_SOL = [['A2M_DALLAGE', 'Dalle béton (RDC)'], ['A2M_PLANCHER_ETAGE', 'Plancher d\'étage'], ['A2M_ISOLANT_SOL', 'Isolation au sol'],
                    ['A2M_CHAPE', 'Chape'], ['A2M_PLAFOND', 'Plafond']].freeze
-    COULEURS = { 'A2M_MUR_PERI' => [190, 175, 160], 'A2M_MUR_REFEND' => [170, 165, 160], 'A2M_MUR_SOUB' => [150, 150, 150], 'A2M_MUR_PIGNON' => [190, 175, 160],
+    COULEURS = { 'A2M_MUR_PERI' => [190, 175, 160], 'A2M_MUR_REFEND' => [170, 165, 160], 'A2M_MUR_SOUB' => [150, 150, 150], 'A2M_MUR_PIGNON' => [190, 175, 160], 'A2M_ENDUIT_EXT' => [225, 210, 185],
                  'A2M_ISOLANT_DOUBLAGE' => [250, 224, 140], 'A2M_DOUBLAGE' => [245, 245, 245], 'A2M_CLOISON' => [225, 215, 200],
                  'A2M_DALLAGE' => [150, 150, 155], 'A2M_PLANCHER_ETAGE' => [190, 150, 100], 'A2M_ISOLANT_SOL' => [250, 224, 140],
                  'A2M_CHAPE' => [205, 190, 160], 'A2M_PLAFOND' => [240, 240, 245] }.freeze
@@ -26,6 +26,9 @@ module A2M
 
     # Compositions fournies (modifiables en copie). Murs : de l'extérieur vers l'intérieur. Sols : de bas en haut.
     FOURNIES = [
+      { 'id' => 'f_mur_brique_enduit', 'nom' => 'Enduit ext. 1,8 + brique 20 + isolant 12 + plaque', 'famille' => 'Murs', 'couches' => [c('Enduit extérieur', 'A2M_ENDUIT_EXT', 1.8), c('Brique', 'A2M_MUR_PERI', 20), c('Isolant', 'A2M_ISOLANT_DOUBLAGE', 12), c('Plaque de plâtre', 'A2M_DOUBLAGE', 1.3)] },
+      { 'id' => 'f_mur_parpaing_enduit', 'nom' => 'Enduit ext. 1,8 + parpaing 20 + doublage isolé', 'famille' => 'Murs', 'couches' => [c('Enduit extérieur', 'A2M_ENDUIT_EXT', 1.8), c('Parpaing', 'A2M_MUR_PERI', 20), c('Isolant', 'A2M_ISOLANT_DOUBLAGE', 10), c('Plaque de plâtre', 'A2M_DOUBLAGE', 1.3)] },
+      { 'id' => 'f_mur_parpaing_enduit_brut', 'nom' => 'Enduit ext. 1,8 + parpaing 20 brut', 'famille' => 'Murs', 'couches' => [c('Enduit extérieur', 'A2M_ENDUIT_EXT', 1.8), c('Parpaing', 'A2M_MUR_PERI', 20)] },
       { 'id' => 'f_mur_brique', 'nom' => 'Brique 20 + isolant 12 + plaque', 'famille' => 'Murs', 'couches' => [c('Brique', 'A2M_MUR_PERI', 20), c('Isolant', 'A2M_ISOLANT_DOUBLAGE', 12), c('Plaque de plâtre', 'A2M_DOUBLAGE', 1.3)] },
       { 'id' => 'f_mur_parpaing_doub', 'nom' => 'Parpaing 20 + doublage isolé', 'famille' => 'Murs', 'couches' => [c('Parpaing', 'A2M_MUR_PERI', 20), c('Isolant', 'A2M_ISOLANT_DOUBLAGE', 10), c('Plaque de plâtre', 'A2M_DOUBLAGE', 1.3)] },
       { 'id' => 'f_mur_parpaing', 'nom' => 'Parpaing 20 brut', 'famille' => 'Murs', 'couches' => [c('Parpaing', 'A2M_MUR_PERI', 20)] },

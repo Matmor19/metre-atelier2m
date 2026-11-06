@@ -11,6 +11,7 @@ module A2M
       ['Mur de soubassement',        'A2M_MUR_SOUB',         1.00, 20.0, 'Mur de soubassement'],
       ['Mur de refend',              'A2M_MUR_REFEND',       2.50, 20.0, 'Mur de refend'],
       ['Mur pignon',                 'A2M_MUR_PIGNON',       2.50, 20.0, 'Mur pignon'],
+      ['Enduit extérieur',           'A2M_ENDUIT_EXT',       2.50, 1.8,  'Enduit extérieur'],
       ['Doublage : plaque de plâtre', 'A2M_DOUBLAGE',        2.50, 1.3,  'Doublage plaque'],
       ['Doublage : isolant',         'A2M_ISOLANT_DOUBLAGE', 2.50, 14.0, 'Doublage isolant'],
       ['Cloison',                    'A2M_CLOISON',          2.50, 7.2,  'Cloison']

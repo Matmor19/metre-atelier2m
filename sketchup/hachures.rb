@@ -19,7 +19,7 @@ module A2M
     PREFIXE = 'A2M · '
     ICI = File.dirname(__FILE__)
     # Balises qui donnent des volumes coupés
-    BALISES = %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_CLOISON
+    BALISES = %w[A2M_MUR_PERI A2M_MUR_SOUB A2M_MUR_REFEND A2M_MUR_PIGNON A2M_ENDUIT_EXT A2M_DOUBLAGE A2M_ISOLANT_DOUBLAGE A2M_CLOISON
                  A2M_ISOLANT_SOL A2M_CHAPE A2M_PLANELLE A2M_ISOLANT_PLANELLE A2M_SEMELLE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
     DEFAUT = { 'trait' => '#1e1e1e', 'trait_op' => 100, 'fond' => '#ffffff', 'fond_op' => 0, 'ep' => 4, 'taille' => 10, 'angle' => 0, 'largeur' => 80 }
     # Hachures gratuites téléchargées sur cet ordinateur, pour votre usage

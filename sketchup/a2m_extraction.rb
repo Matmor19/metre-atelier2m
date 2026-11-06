@@ -30,6 +30,7 @@ module A2M
     # Doublage des murs périphériques : un groupe pour la plaque de plâtre, un groupe pour l'isolant (facultatif)
     DOUBLAGE = 'A2M_DOUBLAGE'
     ISOLANT_DOUBLAGE = 'A2M_ISOLANT_DOUBLAGE'
+    ENDUIT_EXT = 'A2M_ENDUIT_EXT'
     SEMELLE = 'A2M_SEMELLE'
     # Faces : surface (et périmètre pour le terrain et les pièces)
     FACES = %w[A2M_TERRAIN A2M_DECAPAGE A2M_DALLAGE A2M_PLANCHER_ETAGE A2M_PLAFOND A2M_ISOLANT_SOL A2M_CHAPE A2M_ALLEE A2M_PIECE A2M_TOITURE A2M_TOITURE_2 A2M_TOITURE_3 A2M_TOITURE_4]
@@ -39,7 +40,7 @@ module A2M
                 A2M_CLOTURE A2M_RESEAU_EAU A2M_RESEAU_EU A2M_RESEAU_EP A2M_RESEAU_ELEC]
     ELEC = 'A2M_ELEC'
     PISCINE = 'A2M_PISCINE'
-    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON, DOUBLAGE, ISOLANT_DOUBLAGE, SEMELLE, ELEC, PISCINE]
+    OBJETS = MURS.keys + MENUISERIES.keys + [PORTE_INT, CLOISON, DOUBLAGE, ISOLANT_DOUBLAGE, ENDUIT_EXT, SEMELLE, ELEC, PISCINE]
 
     POUCE2_EN_M2 = 0.0254 * 0.0254
 
@@ -294,6 +295,7 @@ module A2M
       surf = Hash.new(0.0); perim = Hash.new(0.0); lin = Hash.new(0.0)
       toits = Hash.new { |h, k| h[k] = { vraie: 0.0, sol: 0.0, pente: 0.0 } }
       pieces = {}; menus = []; portes = []; cloisons = 0.0; pans = []; planelles = 0.0
+      enduit = { m2: 0.0, ep_aire: 0.0, l: 0.0 }
       sem = { l: 0.0, aire: 0.0, h: 0.0 }; elecs = []; piscines = []
       doub = { plaque: { l: 0.0, aire: 0.0, h: 0.0 }, isolant: { l: 0.0, aire: 0.0, h: 0.0 } }
 
@@ -335,6 +337,11 @@ module A2M
           elsif tag == SEMELLE
             # Semelles filantes : linéaire à l'axe, largeur (épaisseur de l'empreinte), hauteur
             murs_de(e, tr, 'semelle', nom).each { |d| sem[:l] += d['longueur']; sem[:aire] += d['longueur'] * d['epaisseur']; sem[:h] = [sem[:h], d['hauteur']].max }
+          elsif tag == ENDUIT_EXT
+            # Enduit extérieur : développé × hauteur de chaque mur d'enduit (surface de ravalement), épaisseur moyenne
+            murs_de(e, tr, 'enduit', nom).each do |d|
+              enduit[:l] += d['longueur']; enduit[:m2] += d['longueur'] * d['hauteur']; enduit[:ep_aire] += d['longueur'] * d['epaisseur']
+            end
           elsif tag == DOUBLAGE || tag == ISOLANT_DOUBLAGE
             # Mesuré comme un mur : linéaire à l'axe (la face côté pièce pour la plaque), hauteur, épaisseur
             murs_de(e, tr, 'doublage', nom).each do |d|
@@ -426,6 +433,8 @@ module A2M
       res['infos']['isolant_sol'] = r2(surf['A2M_ISOLANT_SOL']) if surf['A2M_ISOLANT_SOL'] > 0
       res['infos']['chape'] = r2(surf['A2M_CHAPE']) if surf['A2M_CHAPE'] > 0
       res['infos']['planelles'] = r2(planelles) if planelles > 0
+      res['infos']['enduit_ext_m2'] = r2(enduit[:m2]) if enduit[:m2] > 0
+      res['infos']['enduit_ext_ep_cm'] = r2(enduit[:ep_aire] / enduit[:l]) if enduit[:l] > 0
       res['infos']['allees'] = r2(surf['A2M_ALLEE']) if surf['A2M_ALLEE'] > 0
       unless piscines.empty?
         res['equip'] = { 'piscine' => 'oui' }

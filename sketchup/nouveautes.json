@@ -1,4 +1,5 @@
 [
+ "Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un mur » et « Mur composé », et trois compositions de vignettes (brique ou parpaing avec enduit extérieur) ; sa surface est donnée à l'extraction (infos : enduit_ext_m2)",
  "Planelles : quand la planelle (16 cm) est plus haute que la dalle (12 cm), le dessus du mur de soubassement est abaissé de la différence (la planelle prend sa place) et la dalle redescend sur l'emprise du mur ; un message l'indique",
  "Planelles : la dalle épouse le contour de la planelle et redescend, au droit du mur de soubassement, jusqu'au dessus de ce mur (la planelle de 16 cm dépasse la dalle de 12 cm) ; ton profil de la bibliothèque est respecté tel quel",
  "Nouveau : « Dessiner un sol ou un plafond » a un mode « Sur les murs sélectionnés (un clic) » pour la dalle, l'isolant, la chape et le plafond (le tracé au clic reste disponible) ; la dalle posée reste sélectionnée pour enchaîner les planelles d'un clic",
