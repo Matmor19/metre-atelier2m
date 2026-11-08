@@ -100,6 +100,16 @@ module A2M
           doublons << "#{m.name} : #{ex.message}"
         end
       end
+      # Rangement : dans quelle catégorie de la bibliothèque de textures chaque nouvelle texture doit apparaître
+      if defined?(A2M::Textures)
+        titres = ['Non rangée'] + A2M::Textures.titres
+        faits.each do |nom|
+          next if A2M::Textures.classement[nom]
+          rep = UI.inputbox(["Ranger « #{nom} » dans"], ['Non rangée'], [titres.join('|')], 'Ranger la texture dans la bibliothèque') rescue nil
+          break unless rep
+          A2M::Textures.ranger(nom, rep[0] == 'Non rangée' ? nil : rep[0])
+        end
+      end
       msg = "#{faits.size} texture(s) enregistrée(s) dans Mes éléments > #{TEX}."
       msg += "\n\nNoms rétablis :\n  " + renommes.join("\n  ") unless renommes.empty?
       msg += "\n\nCouleur unie, sans image : " + sans.join(', ') unless sans.empty?

@@ -5,6 +5,7 @@ require 'sketchup.rb'
 require 'base64'
 require 'json'
 require 'tmpdir'
+require 'fileutils'
 
 module A2M
   module Textures
@@ -175,6 +176,35 @@ module A2M
       end
     end
 
+    # Rangement de mes textures dans une catégorie de la bibliothèque : { nom => titre de catégorie }
+    def self.fichier_classement
+      File.join(A2M::MesElements.dossier, 'classement_textures.json')
+    end
+
+    def self.classement
+      c = JSON.parse(File.read(fichier_classement, encoding: 'UTF-8'))
+      c.is_a?(Hash) ? c : {}
+    rescue StandardError
+      {}
+    end
+
+    # cat : titre de catégorie (ex. « Enduits »), ou nil pour retirer le rangement
+    def self.ranger(nom, cat)
+      c = classement
+      cat.to_s.empty? ? c.delete(nom) : c[nom] = cat
+      FileUtils.mkdir_p(File.dirname(fichier_classement))
+      File.write(fichier_classement, JSON.generate(c), encoding: 'UTF-8')
+    end
+
+    def self.titres() CATEGORIES.map(&:first) end
+
+    # Une de mes textures : bouton pour l'appliquer + liste « Ranger dans »
+    def self.tuile_mes(nom, img, rang)
+      pic = img.start_with?('data:') ? "<img src=\"#{img}\" alt=\"\">" : "<div style=\"width:100px;height:100px;border-radius:6px;margin:0 auto 5px;background:#{img.start_with?('color:') ? img[6..-1] : '#ddd'}\"></div>"
+      opts = "<option value=\"\">Non rangée</option>" + CATEGORIES.each_with_index.map { |c, i| "<option value=\"#{i}\"#{c[0] == rang ? ' selected' : ''}>#{c[0]}</option>" }.join
+      "<div class=\"tuile\" data-n=\"#{nom}\"><button data-i=\"mes\" data-d=\"mes\" data-n=\"#{nom}\" title=\"#{nom}\">#{pic}<span>#{nom.sub(/\AA2M_/, '').tr('_', ' ')}</span></button><select class=\"ranger\" title=\"Ranger dans la bibliothèque\">#{opts}</select></div>"
+    end
+
     # Mes textures : matières A2M_ rangées dans Mes éléments > Textures, plus celles du modèle ouvert
     def self.mes_textures
       res = {}
@@ -186,9 +216,9 @@ module A2M
         img = ''
         begin
           if m.texture
-            f = File.join(Dir.tmpdir, "a2m_mat_#{nom.gsub(/[^A-Za-z0-9]/, '_')}.png")
+            f = File.join(Dir.tmpdir, "a2m_mat_#{nom.gsub(/[^A-Za-z0-9]/, '_')}.jpg")
             m.texture.write(f)
-            img = 'data:image/png;base64,' + Base64.strict_encode64(File.binread(f)) if File.size(f) < 400_000
+            img = 'data:image/jpeg;base64,' + Base64.strict_encode64(File.binread(f)) if File.size(f) < 1_500_000
           else
             c = m.color
             img = "color:rgb(#{c.red},#{c.green},#{c.blue})"
@@ -221,6 +251,8 @@ module A2M
     end
 
     def self.html
+      cl = classement
+      mes_rangees = mes_textures.map { |n, im| [n, im, cl[n]] }
       onglets = CATEGORIES.each_with_index.map { |c, i| "<button class=\"onglet\" data-i=\"#{i}\">#{c[0]}</button>" }.join
       sections = CATEGORIES.each_with_index.map do |cat, i|
         vignettes = textures(cat).map do |d, nom|
@@ -228,15 +260,13 @@ module A2M
           img = File.exist?(chemin) ? Base64.strict_encode64(File.binread(chemin)) : ''
           "<button data-i=\"#{i}\" data-d=\"#{d}\" data-n=\"#{nom}\" title=\"#{nom_affiche(nom)}\"><img src=\"data:image/jpeg;base64,#{img}\" alt=\"\"><span>#{nom_affiche(nom)}</span></button>"
         end.join
+        vignettes += mes_rangees.select { |_n, _img, r| r == cat[0] }.map { |n, im, r| tuile_mes(n, im, r) }.join
         "<section data-i=\"#{i}\"><p class=\"aide\">#{cat[2].empty? ? 'Sélectionnez les éléments avant de cliquer une texture.' : 'Sans sélection : s\'applique à tous les éléments balisés de cette catégorie. Avec une sélection : à la sélection.'}</p><div class=\"grille\">#{vignettes}</div></section>"
       end.join
       mes = mes_textures
       onglets += "<button class=\"onglet\" data-i=\"mes\">Mes textures (#{mes.size})</button>"
-      vign = mes.map do |nom, img|
-        pic = img.start_with?('data:') ? "<img src=\"#{img}\" alt=\"\">" : "<div style=\"width:100px;height:100px;border-radius:6px;margin:0 auto 5px;background:#{img.start_with?('color:') ? img[6..-1] : '#ddd'}\"></div>"
-        "<button data-i=\"mes\" data-d=\"mes\" data-n=\"#{nom}\" title=\"#{nom}\">#{pic}<span>#{nom.sub(/\AA2M_/, '').tr('_', ' ')}</span></button>"
-      end.join
-      sections += "<section data-i=\"mes\"><p class=\"aide\">Vos matières A2M_ (Mes éléments > Textures et modèle ouvert). Choisissez la couche à gauche, puis cliquez la matière.</p><div class=\"grille\">#{vign.empty? ? 'Aucune matière A2M_ trouvée.' : vign}</div></section>"
+      vign = mes.map { |nom, img| tuile_mes(nom, img, cl[nom]) }.join
+      sections += "<section data-i=\"mes\"><p class=\"aide\">Vos matières A2M_ (Mes éléments > Textures et modèle ouvert). Choisissez la couche à gauche, puis cliquez la matière. La liste sous chaque matière la range dans une catégorie de la bibliothèque (Enduits, Isolants…).</p><div class=\"grille\">#{vign.empty? ? 'Aucune matière A2M_ trouvée.' : vign}</div></section>"
       <<~HTML
         <!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
         :root{--o:#E07838;--g:#3C3C3C;--f:#F6F3EF}
@@ -257,6 +287,9 @@ module A2M
         section.actif{display:block}
         .aide{color:#6f665e;font-size:11.5px;margin:0 0 8px}
         .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+        .tuile{background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12);padding-bottom:6px;text-align:center}
+        .tuile button{box-shadow:none!important;transform:none!important}
+        .tuile select.ranger{width:92%;font:inherit;font-size:11px;padding:3px;border:1px solid #d6cdc3;border-radius:6px;background:#faf8f6}
         .grille button{border:0;background:#fff;border-radius:9px;padding:6px;cursor:pointer;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .14s,box-shadow .14s}
         .grille button:hover{transform:translateY(-2px);box-shadow:0 6px 12px rgba(224,120,56,.35)}
         .grille img{width:100px;height:100px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 5px}
@@ -288,11 +321,26 @@ module A2M
           document.querySelectorAll('section').forEach(function(s){s.classList.toggle('actif', s.dataset.i==i)});
         }
         document.querySelectorAll('.onglet').forEach(function(b){b.addEventListener('click',function(){montrer(b.dataset.i)})});
-        document.querySelectorAll('.grille button').forEach(function(b){
+        function lier(t){
+          var b=t.tagName==='BUTTON'?t:t.querySelector('button');
           b.addEventListener('click',function(){
             sketchup.appliquer(JSON.stringify({i:b.dataset.i,d:b.dataset.d,n:b.dataset.n,c:courant}));
           });
-        });
+          var sel=t.querySelector('select.ranger');
+          if(sel) sel.addEventListener('change',function(){ranger(t,sel.value)});
+        }
+        // Range une de mes textures dans une catégorie : elle y apparaît tout de suite, et reste dans « Mes textures »
+        function ranger(t,idx){
+          var nom=t.dataset.n;
+          document.querySelectorAll('section:not([data-i="mes"]) .tuile').forEach(function(x){if(x.dataset.n===nom) x.parentNode.removeChild(x)});
+          document.querySelectorAll('section[data-i="mes"] .tuile').forEach(function(x){if(x.dataset.n===nom) x.querySelector('select.ranger').value=idx});
+          if(idx!==''){
+            var g=document.querySelector('section[data-i="'+idx+'"] .grille');
+            if(g){var c=t.cloneNode(true); c.querySelector('select.ranger').value=idx; g.appendChild(c); lier(c);}
+          }
+          sketchup.ranger(JSON.stringify({n:nom,c:idx}));
+        }
+        document.querySelectorAll('.grille > button, .grille > .tuile').forEach(lier);
         montrer(0);
         </script></body></html>
       HTML
@@ -315,6 +363,10 @@ module A2M
             @dlg.execute_script("majCouches(#{JSON.generate(couches_page)})") rescue nil
           end
         end
+      end
+      @dlg.add_action_callback('ranger') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        ranger(d['n'], d['c'].to_s.empty? ? nil : titres[d['c'].to_i]) if d
       end
       @dlg.add_action_callback('retirer') do |_ctx, couche|
         UI.start_timer(0, false) do

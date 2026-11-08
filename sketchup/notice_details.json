@@ -79,6 +79,7 @@
   "« Modifier le tracé… » (dans la même fenêtre) : cliquez un point du tracé puis son nouvel emplacement (accrochages SketchUp) ; cliquez sur un tronçon pour y ajouter un point ; Suppr sur un point le retire ; Échap termine. Le mur (toutes ses couches) est refait à chaque geste."
  ],
  "textures": [
-  "À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle)."
+  "À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle).",
+  "Ranger une de vos textures : dans l'onglet « Mes textures », la liste sous chaque matière permet de la ranger dans une catégorie (Enduits, Isolants…) ; elle apparaît alors dans cette catégorie. Quand vous enregistrez de nouvelles textures A2M_ dans Mes éléments, la catégorie vous est proposée."
  ]
 }

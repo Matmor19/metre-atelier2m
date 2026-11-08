@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.85.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.86.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -137,6 +137,7 @@ Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée
 Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d'un élément pour la présentation client (hors métré)
 
 - À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle).
+- Ranger une de vos textures : dans l'onglet « Mes textures », la liste sous chaque matière permet de la ranger dans une catégorie (Enduits, Isolants…) ; elle apparaît alors dans cette catégorie. Quand vous enregistrez de nouvelles textures A2M_ dans Mes éléments, la catégorie vous est proposée.
 
 ### Textures A2M_ automatiques
 Pose sur les éléments dessinés (murs de soubassement, semelles…) les matières A2M_ de leur type, sur les murs existants ou la sélection
@@ -256,6 +257,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits, Isolants…) ; elle y apparaît aussitôt. À l'enregistrement d'une nouvelle texture A2M_, la catégorie est proposée. Miniatures de tes textures corrigées
 - Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon, retirer un point avec Suppr) ; le mur est refait à chaque geste
 - Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp
 - Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures » avec tes matières A2M_ (Mes éléments > Textures et modèle ouvert)
@@ -275,4 +277,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
 - Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le pivotent de 90°, Échap annule. Sur le Plan 2D, l'image 2D de l'objet (couleur) apparaît toute seule à sa place et le suit quand on le déplace ; clic droit sur l'objet : « image 2D du plan » en version couleur ou blanche (ou sur le groupe des symboles : tous les objets d'un coup)
-- Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau dossier », pièce) à la place de la longue liste de questions. Les détails de menuiserie (vantaux, matériau, vitrage…) ne sont demandés que pour les fenêtres et portes
