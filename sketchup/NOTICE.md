@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.81.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.81.2)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -250,6 +250,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
 - Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
 - Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
@@ -269,4 +270,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la version et si la planelle a été posée sur le soubassement (la dalle monte alors de la différence) ou, à défaut, calée sur la dalle
 - Planelles : l'aspect de ton dessin est repris — matière 3D de ses faces et hachure de coupe de son groupe sont rangées avec le profil (« Ranger le profil dessiné ») et reposées sur chaque planelle
 - Correction : planelles — la planelle se pose maintenant SUR le mur de soubassement (qui n'est plus abaissé) ; la dalle se cale ensuite sur le haut de la planelle (elle monte ou descend de la différence) puis épouse le profil de la planelle jusqu'au dessus du soubassement
-- Correction : planelles — après avoir abaissé le mur de soubassement, sa hachure de coupe et ses textures A2M_ sont reposées (il apparaissait en noir en coupe)

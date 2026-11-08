@@ -106,7 +106,9 @@ module A2M
         t = t =~ /^\s*\*/ ? t.sub(/^\s*\*[^,\n]*/, "*#{nom}") : "*#{nom}, #{nom}\n#{t}"
         File.write(sortie, t, encoding: 'UTF-8')
       end
-      bibliotheque_sketchup.each_with_index do |f, i|
+      # fichiers .skh de SketchUp, du dossier « Motifs » et des dossiers ajoutés à l'outil
+      extra = ([File.join(dossier, 'Motifs')] + dossiers_ajoutes).map { |d| d.tr('\\', '/') }.select { |d| File.directory?(d) }.flat_map { |d| Dir.glob(File.join(d, '**', '*.skh')) }
+      (bibliotheque_sketchup + extra).uniq.each_with_index do |f, i|
         nom = File.basename(f, '.skh')
         sortie = File.join(dest, "#{nom}.pat")
         next if File.exist?(sortie) && File.size(sortie) > 0 && File.mtime(sortie) >= File.mtime(f)
