@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.86.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.87.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -13,9 +13,6 @@ Crée les balises A2M_ du métré (dossier « Métré A2M »), sans toucher à c
 
 ### Baliser la sélection
 Met la balise choisie sur les groupes, composants, faces ou lignes sélectionnés
-
-### Baliser et nommer les pièces
-Met A2M_PIECE sur les groupes de sol sélectionnés et demande le nom de chaque pièce
 
 ### Pièce en un clic
 Cliquez dans une pièce fermée : sol (épaisseur, revêtement), plinthes, nom (liste et précision libre), surface et périmètre en ml, en une seule fois
@@ -39,9 +36,6 @@ Tapez les mesures prises sur place (deux côtes, ou côté par côté avec les a
 
 ### Fiche pièce
 Cliquez dans une pièce : surface, périmètre, murs à peindre, plinthes, menuiseries, portes et appareillage de la pièce, avec envoi au métré
-
-### Contrôle du modèle
-Vérifie balises, solides, chevauchements, pièces et menuiseries avant l'extraction
 
 ### Vues prêtes à l'emploi
 Plan, façades Nord/Sud/Est/Ouest et perspective créés en scènes en un clic
@@ -138,11 +132,7 @@ Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d'
 
 - À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle).
 - Ranger une de vos textures : dans l'onglet « Mes textures », la liste sous chaque matière permet de la ranger dans une catégorie (Enduits, Isolants…) ; elle apparaît alors dans cette catégorie. Quand vous enregistrez de nouvelles textures A2M_ dans Mes éléments, la catégorie vous est proposée.
-
-### Textures A2M_ automatiques
-Pose sur les éléments dessinés (murs de soubassement, semelles…) les matières A2M_ de leur type, sur les murs existants ou la sélection
-
-- Applique automatiquement vos matières A2M_ selon la balise de chaque objet. Vos matières et la taille de leurs motifs ne sont jamais modifiées.
+- « Réappliquer les textures des couches » (colonne de gauche) repose sur tous les objets la texture choisie pour chaque couche ; il remplace l'ancien bouton « Textures A2M_ automatiques ».
 
 ### Phases : existant, démolition, construction
 Marque les éléments à conserver (gris), à démolir (rouge) ou à construire (bleu), et affiche l'état existant, la démolition ou le projet fini
@@ -224,9 +214,6 @@ Exporte le modèle en DWG ou DXF dans Documents/Atelier 2M/Export CAO : chaque b
 ### Dossier de présentation client
 Vues du modèle, surfaces par pièce, menuiseries et synthèse en un document aux couleurs d'Atelier 2M, prêt à imprimer ou à enregistrer en PDF
 
-### Extraire pour le configurateur
-Enregistre le fichier .json à importer dans le configurateur du métré
-
 ### Envoyer au métré
 Envoie l'extraction directement au métré : bouton « Récupérer depuis SketchUp » dans le configurateur
 
@@ -251,12 +238,25 @@ Liste des balises du métré et de leur usage
 
 ## Autres commandes (menu Extensions)
 
+### Baliser et nommer les pièces
+Met A2M_PIECE sur les groupes de sol sélectionnés et demande le nom de chaque pièce
+
+### Contrôle du modèle
+Vérifie balises, solides, chevauchements, pièces et menuiseries avant l'extraction
+
+### Textures A2M_ automatiques
+Pose sur les éléments dessinés (murs de soubassement, semelles…) les matières A2M_ de leur type, sur les murs existants ou la sélection
+
+### Extraire pour le configurateur
+Enregistre le fichier .json à importer dans le configurateur du métré
+
 ### Palette Atelier 2M
 Ouvre la palette flottante : boutons espacés, animés au survol, rangés par étape, avec leur explication
 
 
 ## Dernières nouveautés
 
+- Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles, compositions) ; boutons en double retirés de la palette (contrôle du modèle = tableau de bord, textures A2M_ automatiques = fenêtre Textures, extraire = envoyer au métré, baliser les pièces = pièce en un clic), toujours disponibles dans le menu Extensions
 - Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits, Isolants…) ; elle y apparaît aussitôt. À l'enregistrement d'une nouvelle texture A2M_, la catégorie est proposée. Miniatures de tes textures corrigées
 - Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon, retirer un point avec Suppr) ; le mur est refait à chaque geste
 - Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp
@@ -276,4 +276,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
 - Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
-- Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le pivotent de 90°, Échap annule. Sur le Plan 2D, l'image 2D de l'objet (couleur) apparaît toute seule à sa place et le suit quand on le déplace ; clic droit sur l'objet : « image 2D du plan » en version couleur ou blanche (ou sur le groupe des symboles : tous les objets d'un coup)

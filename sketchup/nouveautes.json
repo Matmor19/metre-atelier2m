@@ -1,4 +1,5 @@
 [
+ "Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles, compositions) ; boutons en double retirés de la palette (contrôle du modèle = tableau de bord, textures A2M_ automatiques = fenêtre Textures, extraire = envoyer au métré, baliser les pièces = pièce en un clic), toujours disponibles dans le menu Extensions",
  "Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits, Isolants…) ; elle y apparaît aussitôt. À l'enregistrement d'une nouvelle texture A2M_, la catégorie est proposée. Miniatures de tes textures corrigées",
  "Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon, retirer un point avec Suppr) ; le mur est refait à chaque geste",
  "Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp",

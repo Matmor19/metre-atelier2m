@@ -295,7 +295,7 @@ module A2M
         .grille img{width:100px;height:100px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 5px}
         .grille span{font-size:11px;line-height:1.25;display:block}
         </style></head><body>
-        <div class="cadre"><div class="gauche"><h3>1. Choisissez la couche</h3><div id="liste"></div><button id="retirer" type="button" class="onglet" style="display:none;margin-top:8px">Retirer la texture de cette couche</button></div>
+        <div class="cadre"><div class="gauche"><h3>1. Choisissez la couche</h3><div id="liste"></div><button id="retirer" type="button" class="onglet" style="display:none;margin-top:8px">Retirer la texture de cette couche</button><button id="tout" type="button" class="onglet" style="margin-top:8px" title="Repose sur tous les objets la texture choisie pour chaque couche">Réappliquer les textures des couches</button></div>
         <div class="droite"><h3>2. Cliquez la texture</h3><div id="ccouche" class="aide"></div><div class="onglets">#{onglets}</div>
         #{sections}</div></div>
         <script>
@@ -313,6 +313,7 @@ module A2M
           document.getElementById('retirer').style.display=c&&c.tex?'':'none';
           document.getElementById('ccouche').innerHTML=c?('Couche choisie : <b>'+c.lib+'</b>. Cliquez une texture : elle est posée sur les '+c.nb+' objet(s) de cette couche et sur les prochains que vous dessinerez.'):'Aucune couche choisie : la texture va sur la sélection, ou sur les éléments balisés de la catégorie.';
         }
+        document.getElementById('tout').onclick=function(){sketchup.tout()};
         document.getElementById('retirer').onclick=function(){if(courant) sketchup.retirer(courant)};
         function majCouches(d){COUCHES=d; remplir()}
         remplir();
@@ -364,6 +365,7 @@ module A2M
           end
         end
       end
+      @dlg.add_action_callback('tout') { |_ctx, _x| UI.start_timer(0, false) { A2M::TexturesAuto.tout_le_modele } }
       @dlg.add_action_callback('ranger') do |_ctx, json|
         d = (JSON.parse(json.to_s) rescue nil)
         ranger(d['n'], d['c'].to_s.empty? ? nil : titres[d['c'].to_i]) if d

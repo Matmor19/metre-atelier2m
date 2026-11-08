@@ -8,17 +8,22 @@ module A2M
     CLE = 'A2M_Metre_Palette'
     # Groupes de la palette : [titre, noms d'icônes]
     GROUPES = [
-      ['Préparer',            %w[tableau balises baliser pieces piece_clic separateur separateur_voir pieces_auto calage reglementaire releve fiche controle vues plan2d coupes cotation styles variantes]],
-      ['Dessiner',            %w[axes mur compose modifier_mur compositions sol_murs sol planelle toiture charpente couverture zinguerie escalier gardecorps fondation hachures textures textures_auto phases]],
+      ['Préparer',            %w[tableau balises baliser piece_clic separateur separateur_voir pieces_auto calage reglementaire releve fiche vues plan2d coupes cotation styles variantes]],
+      ['Dessiner',            %w[axes mur compose modifier_mur compositions sol_murs sol planelle toiture charpente couverture zinguerie escalier gardecorps fondation hachures textures phases]],
       ['Ouvertures, finitions', %w[ouverture porte plinthe elec]],
       ['Bibliothèque',        %w[importer verif_objet vue_objet objet biblio mes_elements profils]],
-      ['Métré',               %w[cartouches feuille export_cao dossier nomenclature extraire envoi aide]]
+      ['Métré',               %w[cartouches feuille export_cao dossier nomenclature envoi aide]]
     ]
 
     def self.actions() ::ACTIONS_A2M end
 
     def self.html
       dico = File.join(File.dirname(__FILE__), 'icones')
+      logo = begin
+        'data:image/png;base64,' + [File.binread(File.join(dico, 'logo_a2m.png'))].pack('m0')
+      rescue StandardError
+        ''
+      end
       act = Hash[actions.map { |nom, titre, bulle, _a, _s| [nom, [titre, bulle]] }]
       blocs = GROUPES.map do |titre, noms|
         btns = noms.select { |n| act[n] }.map do |n|
@@ -62,7 +67,7 @@ module A2M
         #info span{color:#6f665e;font-size:11.5px;line-height:1.35}
         .marque{position:relative}.coller{position:absolute;right:0;top:0;display:flex;gap:3px}.coller button{border:1px solid #d8cfc5;background:#fff;color:#E07838;border-radius:6px;width:26px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}.coller button:hover{background:#FCE9DC}
         </style></head><body>
-        <div class="marque"><svg viewBox="0 0 28 24" width="28" height="24"><path d="M3 21 V4 L14 15" fill="none" stroke="#6B6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15 L25 4 V21" fill="none" stroke="#F0A060" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette à gauche de la fenêtre SketchUp">◧</button><button type="button" id="cd" title="Coller la palette à droite de la fenêtre SketchUp">◨</button></span></div>
+        <div class="marque"><img src="#{logo}" alt="Atelier 2M" height="46" style="display:block"><div><b>Atelier 2M</b><span>Métré</span></div><span class="coller"><button type="button" id="cg" title="Coller la palette à gauche de la fenêtre SketchUp">◧</button><button type="button" id="cd" title="Coller la palette à droite de la fenêtre SketchUp">◨</button></span></div>
         <div id="stats"></div>
         #{blocs}
         <div id="bulle"></div>

@@ -1,12 +1,12 @@
 {
- "version": "2.86.0",
+ "version": "2.87.0",
  "notes": [
+  "Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles,…",
   "Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits,…",
   "Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon,…",
   "Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp",
   "Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures »…",
   "Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour…",
-  "Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la…",
-  "… et 85 autres nouveautés plus anciennes."
+  "… et 86 autres nouveautés plus anciennes."
  ]
 }
