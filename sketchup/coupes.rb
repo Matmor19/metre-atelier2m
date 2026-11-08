@@ -53,6 +53,8 @@ module A2M
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg[x[0]] ? ' rempli' : ''); b.textContent = x[1];
           b.addEventListener('click', function () { reg[x[0]] = !reg[x[0]]; rendre(); if (ZONE) dessiner(); envoyer(); }); r.appendChild(b);
         });
+        var bi = document.createElement('button'); bi.type = 'button'; bi.className = 'puce'; bi.textContent = 'Inverser toutes les coupes'; bi.title = 'Change le sens de vue de toutes les coupes';
+        bi.addEventListener('click', function () { sketchup.invtoutes(''); }); r.appendChild(bi);
         [0, 10, 20].forEach(function (m) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (reg.marge === m ? ' rempli' : ''); b.textContent = 'Marge ' + m + ' %';
           b.addEventListener('click', function () { reg.marge = m; rendre(); envoyer(); }); r.appendChild(b);
@@ -68,7 +70,16 @@ module A2M
         if (!D.coupes.length) { l.innerHTML = '<div class="petit">Aucune coupe pour le moment.</div>'; }
         D.coupes.forEach(function (c) {
           var d = document.createElement('div'); d.className = 'ligne'; d.style.cssText = 'display:flex;gap:6px;align-items:center;margin:4px 0';
-          var s = document.createElement('span'); s.style.flex = '1'; s.textContent = 'Coupe ' + c.nom; d.appendChild(s);
+          var s = document.createElement('input'); s.type = 'text'; s.value = c.nom; s.title = 'Renommer la coupe (Entrée)'; s.style.cssText = 'flex:1;min-width:50px;max-width:90px;padding:5px;font-size:13px;font-weight:700';
+          s.addEventListener('change', function () { if (s.value.trim() && s.value !== c.nom) sketchup.action(JSON.stringify({ a: 'ren', nom: c.nom, nv: s.value.trim(), reg: reg })); else s.value = c.nom; });
+          d.appendChild(s);
+          if (!c.brisee) {
+            var sc = c.scenes || { d2: true, d3: reg.paire !== false };
+            [['d2', '2D', 'Scène élévation 2D'], ['d3', '3D', 'Scène coupe 3D en perspective']].forEach(function (x) {
+              var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (sc[x[0]] ? ' rempli' : ''); b.textContent = x[1]; b.title = x[2];
+              b.addEventListener('click', function () { var n = { d2: sc.d2, d3: sc.d3 }; n[x[0]] = !n[x[0]]; sketchup.action(JSON.stringify({ a: 'scn', nom: c.nom, d2: n.d2, d3: n.d3, reg: reg })); }); d.appendChild(b);
+            });
+          }
           [['maj', 'Actualiser'], ['inv', 'Inverser'], ['voir', 'Voir'], ['sup', 'Supprimer']].forEach(function (x) {
             var b = document.createElement('button'); b.type = 'button'; b.className = 'puce'; b.textContent = x[1];
             b.addEventListener('click', function () { sketchup.action(JSON.stringify({ a: x[0], nom: c.nom, reg: reg })); }); d.appendChild(b);
@@ -379,9 +390,13 @@ module A2M
         return UI.messagebox('La ligne de coupe est trop courte.') if u.length < 1.cm
         u.normalize!
         mil = Geom::Point3d.new((a.x + b.x) / 2, (a.y + b.y) / 2, 0)
-        model.entities.grep(Sketchup::SectionPlane).each { |s| s.erase! if s.name == PREFIXE + nom }
+        anciens = model.entities.grep(Sketchup::SectionPlane).select { |s| s.name == PREFIXE + nom }
+        flags = @flags_prochain || anciens.map { |s| s.get_attribute('a2m', 'scenes') }.compact.first
+        @flags_prochain = nil
+        anciens.each(&:erase!)
         sp = model.entities.add_section_plane([mil.x, mil.y, model.bounds.center.z], [dir.x, dir.y, dir.z])
         sp.name = PREFIXE + nom
+        sp.set_attribute('a2m', 'scenes', flags) if flags
         sp.activate
         sp.set_attribute('a2m', 'coupe', JSON.generate('a' => a.to_a, 'b' => b.to_a, 'dir' => dir.to_a))
         habiller(model, nom, a, b, dir, u, reg)
@@ -543,10 +558,16 @@ module A2M
         view.camera = c2
       end
       nomp = "A2M – Coupe #{nom}"
-      page = model.pages[nomp] || model.pages.add(nomp)
-      page.update
+      fl = scenes_de(sp, reg)
+      page = nil
+      if fl['d2']
+        page = model.pages[nomp] || model.pages.add(nomp)
+        page.update
+      elsif model.pages[nomp]
+        model.pages.erase(model.pages[nomp])
+      end
       page3 = nil
-      if reg['paire'] != false
+      if fl['d3']
         # scène jumelle en 3D : même coupe vue de trois quarts, en perspective
         side = Z_AXIS.cross(dir); side.normalize!
         v = Geom::Vector3d.new(dir.x * 0.8 + side.x * 0.6, dir.y * 0.8 + side.y * 0.6, -0.55)
@@ -562,6 +583,7 @@ module A2M
         c2 = view.camera
         view.zoom_extents
         if marge > 0 then c2 = view.camera; c2.height = c2.height * (1 + marge / 100.0) rescue nil; view.camera = c2 end
+        page.update if page
       else
         model.pages.erase(model.pages["#{nomp} 3D"]) if model.pages["#{nomp} 3D"]
       end
@@ -572,7 +594,15 @@ module A2M
         end
       end
       model.pages.each { |p| p.set_visibility(model.layers[A2M::Plan2D::TAG], true) if p.name =~ /Plan 2D/ && model.layers[A2M::Plan2D::TAG] } rescue nil
-      model.pages.selected_page = page rescue nil
+      model.pages.selected_page = (page || page3) rescue nil
+    end
+
+    # Scènes voulues pour une coupe : 2D (élévation) et/ou 3D (coupe en perspective) ; par défaut les deux si « jumelle » est actif
+    def self.scenes_de(sp, reg)
+      f = sp && sp.get_attribute('a2m', 'scenes')
+      f = (JSON.parse(f) rescue nil) if f.is_a?(String)
+      return { 'd2' => f['d2'] != false, 'd3' => f['d3'] ? true : false } if f.is_a?(Hash)
+      { 'd2' => true, 'd3' => reg['paire'] != false }
     end
 
     # Toutes les coupes (droites et brisées) sont refaites avec les réglages courants, sans changer la vue de l'utilisateur
@@ -629,6 +659,17 @@ module A2M
         model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.valid? && ["Cotes coupe #{nom}", "Repère coupe #{nom}"].include?(g.name) }
         ["A2M – Coupe #{nom}", "A2M – Coupe #{nom} 3D"].each { |np| pg = model.pages[np]; model.pages.erase(pg) if pg }
         model.commit_operation
+      when 'scn'
+        sp.set_attribute('a2m', 'scenes', JSON.generate('d2' => r['d2'] ? true : false, 'd3' => r['d3'] ? true : false))
+        mettre_a_jour_apres(model, sp, d, nom, reg)
+        return
+      when 'ren'
+        nn = r['nv'].to_s.strip
+        return majliste if nn.empty? || nn == nom || plan_de(model, nn)
+        @flags_prochain = sp.get_attribute('a2m', 'scenes')
+        creer(Geom::Point3d.new(*d['a']), Geom::Point3d.new(*d['b']), Geom::Vector3d.new(*d['dir']), reg, nn)
+        action('a' => 'sup', 'nom' => nom, 'reg' => reg)
+        return
       when 'rot'
         pl = sp.get_plane
         n2 = Geom::Vector3d.new(pl[0], pl[1], 0); n2.normalize!
@@ -663,6 +704,16 @@ module A2M
       majliste
     end
 
+    # Refait la coupe (scènes comprises) après un changement de choix 2D / 3D
+    def self.mettre_a_jour_apres(model, sp, d, nom, reg)
+      pl = sp.get_plane
+      n = Geom::Vector3d.new(pl[0], pl[1], pl[2]); n.z = 0; n.normalize!
+      u = Z_AXIS.cross(n); u.normalize!
+      mil = milieu(pl, d)
+      long = Geom::Point3d.new(*d['a']).distance(Geom::Point3d.new(*d['b'])) / 2
+      creer(mil.offset(u, -long), mil.offset(u, long), n, reg, nom)
+    end
+
     # Milieu de la ligne de coupe après un éventuel déplacement du plan : l'ancien milieu projeté sur le plan actuel
     def self.milieu(pl, d)
       a = d['a']; b = d['b']
@@ -676,7 +727,8 @@ module A2M
     def self.lignes(model)
       model.entities.grep(Sketchup::SectionPlane).select { |s| s.name.start_with?(PREFIXE) }.map do |sp|
         d = lire(sp) or next
-        { 'nom' => sp.name.sub(PREFIXE, ''), 'a' => d['a'][0, 2].map { |v| (v * 2.54).round(1) }, 'b' => d['b'][0, 2].map { |v| (v * 2.54).round(1) }, 'dir' => d['dir'][0, 2] }
+        { 'nom' => sp.name.sub(PREFIXE, ''), 'a' => d['a'][0, 2].map { |v| (v * 2.54).round(1) }, 'b' => d['b'][0, 2].map { |v| (v * 2.54).round(1) }, 'dir' => d['dir'][0, 2],
+          'scenes' => scenes_de(sp, reglages(model)) }
       end.compact + (defined?(A2M::CoupeBrisee) ? A2M::CoupeBrisee.lignes(model) : [])
     end
 
@@ -721,6 +773,13 @@ module A2M
       end
       dlg.add_action_callback('tout') do |_c, _j|
         UI.start_timer(0, false) { tout_actualiser }
+      end
+      dlg.add_action_callback('invtoutes') do |_c, _j|
+        UI.start_timer(0, false) do
+          noms = lignes(Sketchup.active_model).map { |l| l['nom'] }
+          noms.each { |n| action('a' => 'inv', 'nom' => n) }
+          majliste
+        end
       end
       dlg.add_action_callback('niveaux') do |_c, json|
         l = (JSON.parse(json.to_s) rescue nil)

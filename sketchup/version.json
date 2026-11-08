@@ -1,12 +1,12 @@
 {
- "version": "2.75.4",
+ "version": "2.76.0",
  "notes": [
+  "Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène…",
   "Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)",
   "Hachures de coupe : la dalle béton (rez-de-chaussée) et le plancher d'étage sont maintenant dans la liste des couches, pour leur…",
   "Correction : planelles",
   "Planelles : la coque est refaite creuse, comme ton dessin",
   "Planelles : la planelle est maintenant UN SEUL objet (groupe A2M_PLANELLE contenant la coque et l'isolant, chacun avec sa…",
-  "Correction : « Dessiner un sol » sur les murs sélectionnés",
-  "… et 60 autres nouveautés plus anciennes."
+  "… et 61 autres nouveautés plus anciennes."
  ]
 }
