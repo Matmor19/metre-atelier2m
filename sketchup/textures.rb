@@ -4,6 +4,7 @@
 require 'sketchup.rb'
 require 'base64'
 require 'json'
+require 'tmpdir'
 
 module A2M
   module Textures
@@ -174,6 +175,51 @@ module A2M
       end
     end
 
+    # Mes textures : matières A2M_ rangées dans Mes éléments > Textures, plus celles du modèle ouvert
+    def self.mes_textures
+      res = {}
+      (A2M::MesElements.liste['els'] rescue []).select { |e| e['tex'] }.each { |e| res[e['nom']] = e['img'].to_s }
+      model = Sketchup.active_model
+      model.materials.to_a.select { |m| m.name =~ /\Aa2m_/i && !m.name.start_with?('A2M_Tex_') }.each do |m|
+        nom = A2M::MesElements.nettoyer(m.name)
+        next if res[nom] && !res[nom].empty?
+        img = ''
+        begin
+          if m.texture
+            f = File.join(Dir.tmpdir, "a2m_mat_#{nom.gsub(/[^A-Za-z0-9]/, '_')}.png")
+            m.texture.write(f)
+            img = 'data:image/png;base64,' + Base64.strict_encode64(File.binread(f)) if File.size(f) < 400_000
+          else
+            c = m.color
+            img = "color:rgb(#{c.red},#{c.green},#{c.blue})"
+          end
+        rescue StandardError
+          img = ''
+        end
+        res[nom] = img
+      end
+      res.sort_by { |n, _| n.downcase }
+    end
+
+    # Une matière « Mes textures » : sur la couche choisie, sinon sur la sélection (ou pot de peinture)
+    def self.appliquer_mes(nom, couche)
+      model = Sketchup.active_model
+      couche = nil if couche.to_s.empty?
+      fic = File.join(A2M::MesElements.dossier, A2M::MesElements::TEX, A2M::MesElements.nettoyer(nom) + '.skm')
+      mat = model.materials[nom] || (File.exist?(fic) ? model.materials.load(fic) : nil)
+      return UI.messagebox("Matière introuvable : #{nom}") unless mat
+      if couche && !MENUISERIES.include?(couche)
+        A2M::TexturesAuto.enregistrer(couche, mat.name)
+        cibles = A2M::Hachures.objets(model, couche)
+        model.start_operation('Texture de la couche (métré)', true)
+        cibles.each { |e| A2M::TexturesAuto.appliquer(e, model, true) }
+        model.commit_operation
+        Sketchup.status_text = "#{cibles.size} objet(s) : #{nom}"
+      else
+        A2M::MesElements.appliquer_texture(nom)
+      end
+    end
+
     def self.html
       onglets = CATEGORIES.each_with_index.map { |c, i| "<button class=\"onglet\" data-i=\"#{i}\">#{c[0]}</button>" }.join
       sections = CATEGORIES.each_with_index.map do |cat, i|
@@ -184,13 +230,26 @@ module A2M
         end.join
         "<section data-i=\"#{i}\"><p class=\"aide\">#{cat[2].empty? ? 'Sélectionnez les éléments avant de cliquer une texture.' : 'Sans sélection : s\'applique à tous les éléments balisés de cette catégorie. Avec une sélection : à la sélection.'}</p><div class=\"grille\">#{vignettes}</div></section>"
       end.join
+      mes = mes_textures
+      onglets += "<button class=\"onglet\" data-i=\"mes\">Mes textures (#{mes.size})</button>"
+      vign = mes.map do |nom, img|
+        pic = img.start_with?('data:') ? "<img src=\"#{img}\" alt=\"\">" : "<div style=\"width:100px;height:100px;border-radius:6px;margin:0 auto 5px;background:#{img.start_with?('color:') ? img[6..-1] : '#ddd'}\"></div>"
+        "<button data-i=\"mes\" data-d=\"mes\" data-n=\"#{nom}\" title=\"#{nom}\">#{pic}<span>#{nom.sub(/\AA2M_/, '').tr('_', ' ')}</span></button>"
+      end.join
+      sections += "<section data-i=\"mes\"><p class=\"aide\">Vos matières A2M_ (Mes éléments > Textures et modèle ouvert). Choisissez la couche à gauche, puis cliquez la matière.</p><div class=\"grille\">#{vign.empty? ? 'Aucune matière A2M_ trouvée.' : vign}</div></section>"
       <<~HTML
         <!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
         :root{--o:#E07838;--g:#3C3C3C;--f:#F6F3EF}
         *{box-sizing:border-box}
         body{margin:0;padding:10px;font:12px "Segoe UI",Arial,sans-serif;background:var(--f);color:var(--g);user-select:none}
-        .couche{margin-bottom:10px;padding:8px;background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-        .couche select{padding:6px;border:1px solid #d6cdc3;border-radius:8px;font:inherit;max-width:60%}
+        .cadre{display:flex;gap:14px;align-items:flex-start}
+        .gauche{width:250px;flex:none;position:sticky;top:10px;max-height:94vh;overflow:auto;padding-right:4px}
+        .droite{flex:1;min-width:0}
+        h3{margin:0 0 8px;font-size:13px;color:var(--o)}
+        .lc{display:block;width:100%;text-align:left;border:2px solid #e3dbd1;background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font:inherit}
+        .lc small{display:block;color:#8a7f75;font-size:11px;margin-top:2px}
+        .lc.sel{border-color:var(--o);background:#fdeedd}
+        .lc.sel b{color:#c9672f}
         .onglets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
         .onglet{border:1px solid #d6cdc3;background:#fff;border-radius:16px;padding:5px 11px;cursor:pointer;font:inherit}
         .onglet.actif{background:var(--o);border-color:var(--o);color:#fff}
@@ -203,23 +262,25 @@ module A2M
         .grille img{width:100px;height:100px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 5px}
         .grille span{font-size:11px;line-height:1.25;display:block}
         </style></head><body>
-        <div class="couche"><label>Couche concernée</label><select id="couche"></select> <button id="retirer" type="button" class="onglet" style="display:none">Retirer la texture de cette couche</button><div id="ccouche" class="aide"></div></div>
-        <div class="onglets">#{onglets}</div>
-        #{sections}
+        <div class="cadre"><div class="gauche"><h3>1. Choisissez la couche</h3><div id="liste"></div><button id="retirer" type="button" class="onglet" style="display:none;margin-top:8px">Retirer la texture de cette couche</button></div>
+        <div class="droite"><h3>2. Cliquez la texture</h3><div id="ccouche" class="aide"></div><div class="onglets">#{onglets}</div>
+        #{sections}</div></div>
         <script>
-        var COUCHES=#{JSON.generate(couches_page).gsub('</', '<\\/')};
+        var COUCHES=#{JSON.generate(couches_page).gsub('</', '<\\/')}, courant='';
         function remplir(){
-          var s=document.getElementById('couche'), v=s.value;
-          s.innerHTML='<option value="">Sélection, ou toutes les couches de la catégorie</option>'+COUCHES.map(function(c){return '<option value="'+c.b+'">'+c.lib+' ('+c.nb+')'+(c.tex?' — '+c.tex:'')+'</option>'}).join('');
-          s.value=v; info();
+          var L=document.getElementById('liste');
+          var h='<button type="button" class="lc'+(courant===''?' sel':'')+'" data-b=""><b>Sélection</b><small>ou toutes les couches de la catégorie</small></button>';
+          COUCHES.forEach(function(c){h+='<button type="button" class="lc'+(courant===c.b?' sel':'')+'" data-b="'+c.b+'"><b>'+c.lib+'</b><small>'+c.nb+' objet(s)'+(c.tex?' · '+c.tex:' · pas de texture')+'</small></button>'});
+          L.innerHTML=h;
+          L.querySelectorAll('.lc').forEach(function(b){b.onclick=function(){courant=b.dataset.b; remplir()}});
+          info();
         }
         function info(){
-          var v=document.getElementById('couche').value, c=COUCHES.filter(function(x){return x.b===v})[0];
+          var c=COUCHES.filter(function(x){return x.b===courant})[0];
           document.getElementById('retirer').style.display=c&&c.tex?'':'none';
-          document.getElementById('ccouche').textContent=c?('Cliquez une texture : elle est posée sur les '+c.nb+' objet(s) de cette couche et sur les prochains que vous dessinerez.'):'Sans couche choisie : texture posée sur la sélection ou sur les éléments balisés de la catégorie.';
+          document.getElementById('ccouche').innerHTML=c?('Couche choisie : <b>'+c.lib+'</b>. Cliquez une texture : elle est posée sur les '+c.nb+' objet(s) de cette couche et sur les prochains que vous dessinerez.'):'Aucune couche choisie : la texture va sur la sélection, ou sur les éléments balisés de la catégorie.';
         }
-        document.getElementById('couche').onchange=info;
-        document.getElementById('retirer').onclick=function(){var v=document.getElementById('couche').value; if(v) sketchup.retirer(v)};
+        document.getElementById('retirer').onclick=function(){if(courant) sketchup.retirer(courant)};
         function majCouches(d){COUCHES=d; remplir()}
         remplir();
         function montrer(i){
@@ -229,7 +290,7 @@ module A2M
         document.querySelectorAll('.onglet').forEach(function(b){b.addEventListener('click',function(){montrer(b.dataset.i)})});
         document.querySelectorAll('.grille button').forEach(function(b){
           b.addEventListener('click',function(){
-            sketchup.appliquer(JSON.stringify({i:b.dataset.i,d:b.dataset.d,n:b.dataset.n,c:document.getElementById('couche').value}));
+            sketchup.appliquer(JSON.stringify({i:b.dataset.i,d:b.dataset.d,n:b.dataset.n,c:courant}));
           });
         });
         montrer(0);
@@ -242,15 +303,15 @@ module A2M
         @dlg.bring_to_front
         return
       end
-      @dlg = UI::HtmlDialog.new(dialog_title: 'Textures extérieures Atelier 2M', preferences_key: CLE, scrollable: true,
-                                resizable: true, width: 560, height: 620, min_width: 360, min_height: 300,
+      @dlg = UI::HtmlDialog.new(dialog_title: 'Textures extérieures Atelier 2M', preferences_key: CLE + '2', scrollable: true,
+                                resizable: true, width: 940, height: 700, min_width: 640, min_height: 400,
                                 style: UI::HtmlDialog::STYLE_DIALOG)
       @dlg.set_html(html)
       @dlg.add_action_callback('appliquer') do |_ctx, json|
         d = JSON.parse(json) rescue nil
         if d
           UI.start_timer(0, false) do
-            appliquer(d['i'].to_i, d['d'], d['n'], d['c'])
+            d['d'] == 'mes' ? appliquer_mes(d['n'], d['c']) : appliquer(d['i'].to_i, d['d'], d['n'], d['c'])
             @dlg.execute_script("majCouches(#{JSON.generate(couches_page)})") rescue nil
           end
         end

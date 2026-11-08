@@ -78,6 +78,6 @@
   "Attention : le mur est refait, donc les ouvertures déjà percées dedans sont à refaire. Les murs dessinés avant cette version sont à retracer une fois pour garder leurs réglages."
  ],
  "textures": [
-  "En haut de la fenêtre, « Couche concernée » : choisissez une couche (mur périphérique, enduit, doublage…), puis cliquez une texture. Elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche choisie, la texture va sur la sélection ou sur les éléments balisés de la catégorie, comme avant."
+  "À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle)."
  ]
 }

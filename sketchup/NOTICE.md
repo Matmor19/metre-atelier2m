@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.84.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.84.2)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -136,7 +136,7 @@ Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée
 ### Textures extérieures
 Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d'un élément pour la présentation client (hors métré)
 
-- En haut de la fenêtre, « Couche concernée » : choisissez une couche (mur périphérique, enduit, doublage…), puis cliquez une texture. Elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche choisie, la texture va sur la sélection ou sur les éléments balisés de la catégorie, comme avant.
+- À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle).
 
 ### Textures A2M_ automatiques
 Pose sur les éléments dessinés (murs de soubassement, semelles…) les matières A2M_ de leur type, sur les murs existants ou la sélection
@@ -256,6 +256,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures » avec tes matières A2M_ (Mes éléments > Textures et modèle ouvert)
 - Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour l'activer
 - Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la texture, qui est posée sur tous les objets de la couche et sur les prochains dessinés ; bouton pour la retirer
 - Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la main), SketchUp les recharge tout seul en quelques secondes, sans redémarrer
@@ -275,4 +276,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau dossier », pièce) à la place de la longue liste de questions. Les détails de menuiserie (vantaux, matériau, vitrage…) ne sont demandés que pour les fenêtres et portes
 - Nouveau bouton « Contrôler et préparer un objet » (Bibliothèque) : pour un objet déjà dans le modèle, il le réunit en un composant, retire les éléments parasites, retourne les faces à l'envers, vérifie la taille (propose la mise à l'échelle si elle est douteuse), le poids et le nom, purge le modèle, puis propose de le ranger dans la bibliothèque avec ses images 2D
 - Bibliothèque d'objets : nouveau bouton « Poser l'image 2D » (dessus ou face, couleur ou blanc) qui place l'image de l'objet sur le plan, à l'échelle de la largeur/hauteur indiquée, sur le tag A2M_SYMBOLES_2D. Les objets rangés avant cette version voient leurs images recréées automatiquement au premier usage
-- Vues 2D d'un objet : en plus des images aux couleurs d'origine (dessus et face), la même image en version blanche (fichiers « …_blanc.png »), créée en même temps au rangement dans la bibliothèque

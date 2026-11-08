@@ -1,4 +1,5 @@
 [
+ "Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures » avec tes matières A2M_ (Mes éléments > Textures et modèle ouvert)",
  "Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour l'activer",
  "Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la texture, qui est posée sur tous les objets de la couche et sur les prochains dessinés ; bouton pour la retirer",
  "Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la main), SketchUp les recharge tout seul en quelques secondes, sans redémarrer",
