@@ -14,6 +14,8 @@ CUBE = lambda dx=0, dy=0: (f'<path d="M12 3.5 L19.5 7.8 L12 12.1 L4.5 7.8 Z" fil
 icones = {}
 icones['mur'] = mur_base() + badge_plus(17.6, 17.4)
 icones['modifier_mur'] = mur_base() + poignee(3.5, 5) + poignee(20.5, 5) + poignee(3.5, 19) + CRAYON
+icones['modifier_toiture'] = (f'<path d="M3 12 L12 4 L21 12 Z" fill="{O}" opacity=".55"/><path d="M3 12 L12 4 L21 12" fill="none" {st(0.9)}/><rect x="6" y="12" width="12" height="7.5" fill="#FFFFFF" {st()}/>'
+                              + poignee(3, 12) + poignee(12, 4) + poignee(21, 12) + CRAYON)
 icones['verif_objet'] = CUBE() + f'<circle cx="17.4" cy="17.4" r="5" fill="{O}" stroke="#fff" stroke-width="0.8"/><path d="M14.8 17.5 L16.7 19.4 L20 15.6" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
 icones['palette'] = f'<rect x="3.5" y="4" width="17" height="16" rx="1.5" fill="#FFFFFF" {st()}/><rect x="3.5" y="4" width="5.2" height="16" rx="1.2" fill="{O}" {st()}/><rect x="10.5" y="6.4" width="3.6" height="3.6" fill="#F9DCC0" {st(0.6)}/><rect x="15.4" y="6.4" width="3.6" height="3.6" fill="#F9DCC0" {st(0.6)}/><rect x="10.5" y="11.6" width="3.6" height="3.6" fill="#F9DCC0" {st(0.6)}/><rect x="15.4" y="11.6" width="3.6" height="3.6" fill="#F9DCC0" {st(0.6)}/><path d="M10.5 17.6 H19" stroke="{D}" stroke-width="0.6" stroke-linecap="round"/>'
 icones['styles'] = (f'<path d="M12 3.5 L19.5 7.8 L12 12.1 L4.5 7.8 Z" fill="#FFFFFF" {st()}/><path d="M4.5 7.8 L12 12.1 V20.5 L4.5 16.2 Z" fill="#F4B988" {st()}/><path d="M12 12.1 L19.5 7.8 V16.2 L12 20.5 Z" fill="#8F8F8F" {st()}/>'

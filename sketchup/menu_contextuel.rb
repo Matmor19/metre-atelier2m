@@ -111,6 +111,11 @@ module A2M
           menu.add_separator
           menu.add_item('Atelier 2M : modifier ce mur') { A2M::DessinMurs.modifier(mur) }
         end
+        toit = Sketchup.active_model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute('a2m_toiture', 'base') }
+        if toit
+          menu.add_separator
+          menu.add_item('Atelier 2M : modifier cette toiture') { A2M::Toiture.modifier(toit) }
+        end
         ob = objets_biblio(Sketchup.active_model.selection.to_a)
         unless ob.empty?
           menu.add_separator

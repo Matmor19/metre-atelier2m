@@ -88,5 +88,10 @@
   "Sélectionnez les murs (groupes), puis lancez « Créer la toiture ».",
   "Choisissez le type : 2 pans, 4 pans, Monopente (sur le rectangle des murs) ou « Suit les murs » (la toiture épouse exactement le contour, par exemple une maison en L).",
   "Réglez la pente, le débord et l'épaisseur : tous les pans ont la même pente. « Faîtage parallèle » et « côté haut » ne servent pas pour « Suit les murs »."
+ ],
+ "modifier_toiture": [
+  "Sélectionnez la toiture (ou faites un clic droit dessus → « modifier cette toiture »), puis lancez « Modifier la toiture ».",
+  "Changez le type, la pente, le débord, l'épaisseur ou le faîtage : la toiture est refaite au même endroit.",
+  "Pour changer le contour : choisissez « Reprendre sur les murs sélectionnés avec la toiture » après avoir sélectionné les murs en plus de la toiture."
  ]
 }

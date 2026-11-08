@@ -1,6 +1,7 @@
 # encoding: UTF-8
 # Métré Atelier 2M : toiture générée sur les murs sélectionnés (monopente, 2 pans, 4 pans, ou toiture qui suit exactement le contour des murs)
 require 'sketchup.rb'
+require 'json'
 require File.join(File.dirname(__FILE__), 'squelette')
 
 module A2M
@@ -118,75 +119,145 @@ module A2M
       end
     end
 
+    ATTR = 'a2m_toiture'
+
+    # Fenêtre de réglages ; avec modif = true, une question de plus sur le contour. Retourne un Hash ou nil.
+    def self.saisir(prm, modif = false)
+      r = prm || @r
+      noms = ['Type de toiture', 'Pente (%)', 'Débord (m)', 'Épaisseur de la toiture (cm), perpendiculaire au pan (0 = simple face)',
+              'Faîtage parallèle au', 'Monopente : côté haut', 'Toiture n°']
+      vals = [r[:type] || '2 pans', (r[:pente] || 45).to_s, (r[:d] || 0.5).to_s, (r[:ep] || 20).to_s,
+              r[:sens] || 'grand côté', r[:haut] || 'côté opposé à l\'origine', r[:num] || '1']
+      listes = [TYPES.join('|'), '', '', '', 'grand côté|petit côté', 'côté opposé à l\'origine|côté de l\'origine', '1|2|3|4']
+      if modif
+        noms << 'Contour de la toiture'; vals << 'Garder le contour actuel'
+        listes << 'Garder le contour actuel|Reprendre sur les murs sélectionnés avec la toiture'
+      end
+      rep = UI.inputbox(noms, vals, listes, modif ? 'Modifier la toiture (Métré Atelier 2M)' : 'Toiture (Métré Atelier 2M)')
+      return nil unless rep
+      h = { type: rep[0], pente: rep[1].tr(',', '.').to_f, d: rep[2].tr(',', '.').to_f, ep: rep[3].tr(',', '.').to_f,
+            sens: rep[4], haut: rep[5], num: rep[6], reprendre: modif && rep[7].start_with?('Reprendre') }
+      if h[:pente] <= 0 then UI.messagebox('La pente doit être supérieure à 0.'); return nil end
+      if h[:ep] < 0 then UI.messagebox('L\'épaisseur ne peut pas être négative.'); return nil end
+      @r = h.reject { |k, _| k == :reprendre }
+      h
+    end
+
+    # Ce qu'il faut retenir des murs pour refaire la toiture plus tard (JSON-able)
+    def self.base_des_murs(murs, type, model)
+      if type == SUIT
+        c = contour(murs, model)
+        return nil unless c
+        { 'k' => 'suit', 'cpts' => c[0], 'ztop' => c[1].to_f }
+      else
+        rc = rectangle(murs)
+        return nil unless rc
+        o, u, v, l, w, ztop = rc
+        { 'k' => 'rect', 'o' => o.to_a, 'u' => u.to_a, 'v' => v.to_a, 'l' => l, 'w' => w, 'ztop' => ztop.to_f }
+      end
+    end
+
+    def self.batir(model, prm, base)
+      type, d, ep, num = prm[:type], prm[:d], prm[:ep], prm[:num]
+      s = prm[:pente] / 100.0
+      tag = num == '1' ? 'A2M_TOITURE' : "A2M_TOITURE_#{num}"
+      ztop = base['ztop'].to_f
+      ztop += (ep / 100.0 * Math.sqrt(1 + s * s)).m if ep > 0   # la sous-face repose sur le haut des murs
+      if base['k'] == 'suit'
+        raise 'Ce contour ne convient pas au type choisi' unless type == SUIT
+        ext = A2M::Squelette.decaler(A2M::Squelette.nettoyer(base['cpts']), d)
+        polys = A2M::Squelette.toit(ext, s).map { |poly| poly.map { |x, y, z| Geom::Point3d.new(x.m, y.m, ztop + (z - s * d).m) } }
+      else
+        raise 'Ce contour ne convient pas au type choisi : reprenez-le sur les murs' if type == SUIT
+        o = Geom::Point3d.new(*base['o']); u = Geom::Vector3d.new(*base['u']); v = Geom::Vector3d.new(*base['v'])
+        l, w = base['l'], base['w']
+        if prm[:sens] == 'petit côté'
+          o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l
+        end
+        if type == 'Monopente' && prm[:haut] == 'côté de l\'origine'
+          o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse
+        end
+        polys = pans(type, l, w, s, d).map do |poly|
+          poly.map { |pu, pv, pz| o.offset(u, pu.m).offset(v, pv.m).offset(Z_AXIS, ztop + pz.m) }
+        end
+      end
+      grp = model.active_entities.add_group
+      polys.each do |pts|
+        f = grp.entities.add_face(pts)
+        f.reverse! if f && f.normal.z < 0
+      end
+      epaissir(grp.entities, polys, ep, s) if ep > 0
+      lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
+      grp.layer = lb
+      A2M::Hachures.poser(grp, model)
+      grp.name = "Toiture #{num} – #{type} #{prm[:pente].round}%#{ep > 0 ? ", ép. #{ep.round(1)} cm" : ''}"
+      grp.set_attribute(ATTR, 'prm', JSON.generate(prm.reject { |k, _| k == :reprendre }.map { |k, v| [k.to_s, v] }.to_h))
+      grp.set_attribute(ATTR, 'base', JSON.generate(base))
+      grp
+    end
+
     def self.lancer
       model = Sketchup.active_model
-      murs = model.selection.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
+      murs = model.selection.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && !e.get_attribute(ATTR, 'base') }
       if murs.empty?
         UI.messagebox('Sélectionnez les murs (groupes) sur lesquels poser la toiture. Elle couvre le rectangle de ces murs, ou suit exactement leur contour (type « Suit les murs »).')
         return
       end
-      rep = UI.inputbox(['Type de toiture', 'Pente (%)', 'Débord (m)', 'Épaisseur de la toiture (cm), perpendiculaire au pan (0 = simple face)',
-                         'Faîtage parallèle au', 'Monopente : côté haut', 'Toiture n°'],
-                        [@r[:type] || '2 pans', (@r[:pente] || 45).to_s, (@r[:d] || 0.5).to_s, (@r[:ep] || 20).to_s,
-                         @r[:sens] || 'grand côté', @r[:haut] || 'côté opposé à l\'origine', @r[:num] || '1'],
-                        [TYPES.join('|'), '', '', '', 'grand côté|petit côté', 'côté opposé à l\'origine|côté de l\'origine', '1|2|3|4'], 'Toiture (Métré Atelier 2M)')
-      return unless rep
-      type, pente, d, ep, sens, haut, num = rep[0], rep[1].tr(',', '.').to_f, rep[2].tr(',', '.').to_f, rep[3].tr(',', '.').to_f, rep[4], rep[5], rep[6]
-      return UI.messagebox('La pente doit être supérieure à 0.') if pente <= 0
-      return UI.messagebox('L\'épaisseur ne peut pas être négative.') if ep < 0
-      @r = { type: type, pente: pente, d: d, ep: ep, sens: sens, haut: haut, num: num }
-      suit = (type == SUIT)
-      if suit
-        ztop = nil
-      else
-        rc = rectangle(murs)
-        return UI.messagebox('Aucune géométrie trouvée dans la sélection.') unless rc
-        o, u, v, l, w, ztop = rc
-      end
-      if !suit && sens == 'petit côté'
-        o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l
-      end
-      if !suit && type == 'Monopente' && haut == 'côté de l\'origine'
-        o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse
-      end
-      tag = num == '1' ? 'A2M_TOITURE' : "A2M_TOITURE_#{num}"
+      prm = saisir(nil) or return
       model.start_operation('Toiture (métré)', true)
       begin
-        s = pente / 100.0
-        if suit
-          c = contour(murs, model)
-          unless c
-            model.abort_operation
-            return UI.messagebox('Je ne trouve pas le dessus des murs dans la sélection (faces horizontales en haut des murs).')
-          end
-          cpts, ztop = c
-          ztop += (ep / 100.0 * Math.sqrt(1 + s * s)).m if ep > 0
-          ext = A2M::Squelette.decaler(A2M::Squelette.nettoyer(cpts), d)
-          pans3 = A2M::Squelette.toit(ext, s)
-          polys = pans3.map { |poly| poly.map { |x, y, z| Geom::Point3d.new(x.m, y.m, ztop + (z - s * d).m) } }
-          l = w = 0
-        else
-          # Avec une épaisseur, la sous-face repose sur le haut des murs (au nu extérieur) : le dessus est remonté d'autant
-          ztop += (ep / 100.0 * Math.sqrt(1 + s * s)).m if ep > 0
-          polys = pans(type, l, w, s, d).map do |poly|
-            poly.map { |pu, pv, pz| o.offset(u, pu.m).offset(v, pv.m).offset(Z_AXIS, ztop + pz.m) }
-          end
+        base = base_des_murs(murs, prm[:type], model)
+        unless base
+          model.abort_operation
+          return UI.messagebox(prm[:type] == SUIT ? 'Je ne trouve pas le dessus des murs dans la sélection (faces horizontales en haut des murs).' : 'Aucune géométrie trouvée dans la sélection.')
         end
-        grp = model.active_entities.add_group
-        polys.each do |pts|
-          f = grp.entities.add_face(pts)
-          f.reverse! if f && f.normal.z < 0
-        end
-        epaissir(grp.entities, polys, ep, pente / 100.0) if ep > 0
-        lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
-        grp.layer = lb
-        A2M::Hachures.poser(grp, model)
-        grp.name = "Toiture #{num} – #{type} #{pente.round}%#{ep > 0 ? ", ép. #{ep.round(1)} cm" : ''}"
+        grp = batir(model, prm, base)
         model.commit_operation
-        Sketchup.status_text = suit ? "#{grp.name} créée (suit les murs), débord #{d} m, balise #{tag}" : "#{grp.name} créée sur #{l.round(2)} × #{w.round(2)} m, débord #{d} m, balise #{tag}"
+        Sketchup.status_text = "#{grp.name} créée, débord #{prm[:d]} m. Pour la changer : « Modifier la toiture »."
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("La toiture n'a pas pu être créée (#{ex.message}).")
+      end
+    end
+
+    # Rouvre une toiture déjà créée : mêmes réglages, contour gardé (ou repris sur d'autres murs sélectionnés avec elle)
+    def self.modifier(grp = nil)
+      model = Sketchup.active_model
+      grp ||= model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute(ATTR, 'base') }
+      unless grp
+        UI.messagebox('Sélectionnez la toiture à modifier (une toiture créée avec « Créer la toiture »).')
+        return
+      end
+      prm = (JSON.parse(grp.get_attribute(ATTR, 'prm')).map { |k, v| [k.to_sym, v] }.to_h rescue nil)
+      base = (JSON.parse(grp.get_attribute(ATTR, 'base')) rescue nil)
+      return UI.messagebox('Cette toiture n\'a pas gardé ses réglages.') unless prm && base
+      nv = saisir(prm, true) or return
+      model.start_operation('Modifier la toiture (métré)', true)
+      begin
+        if nv[:reprendre]
+          murs = model.selection.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && !e.get_attribute(ATTR, 'base') }
+          if murs.empty?
+            model.abort_operation
+            return UI.messagebox('Pour reprendre le contour : sélectionnez les murs EN PLUS de la toiture, puis relancez « Modifier la toiture ».')
+          end
+          base = base_des_murs(murs, nv[:type], model)
+          unless base
+            model.abort_operation
+            return UI.messagebox('Je ne trouve pas le dessus de ces murs.')
+          end
+        elsif (nv[:type] == SUIT) != (base['k'] == 'suit')
+          model.abort_operation
+          return UI.messagebox('Ce changement de type demande de reprendre le contour : choisissez « Reprendre sur les murs sélectionnés avec la toiture ».')
+        end
+        nouvelle = batir(model, nv, base)
+        grp.erase!
+        model.commit_operation
+        model.selection.clear
+        model.selection.add(nouvelle)
+        Sketchup.status_text = "#{nouvelle.name} modifiée."
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("La toiture n'a pas pu être modifiée (#{ex.message}).")
       end
     end
   end
