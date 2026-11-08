@@ -237,8 +237,14 @@ module A2M
       end
     end
 
-    def self.marquer(grp, id, pts, ferme, p, i)
+    # chemins : plusieurs tracés fusionnés dans un même mur (cloisons reliées) ; pts/ferme gardent le premier
+    def self.marquer(grp, id, pts, ferme, p, i, chemins = nil)
       d = 'a2m_mur'
+      if chemins && chemins.size > 1
+        grp.set_attribute(d, 'chemins', JSON.generate(chemins.map { |cp, cf| [cp.map { |q| [q.x.to_f, q.y.to_f, q.z.to_f] }, cf ? true : false] }))
+      else
+        grp.delete_attribute(d, 'chemins')
+      end
       grp.set_attribute(d, 'id', id)
       grp.set_attribute(d, 'pts', JSON.generate(pts.map { |q| [q.x.to_f, q.y.to_f, q.z.to_f] }))
       grp.set_attribute(d, 'ferme', ferme ? true : false)
@@ -256,6 +262,8 @@ module A2M
           marquer(g, id, pts, ferme, p, i)
           "#{g.name} (#{ecm} cm)"
         end
+        fus = (!p[:couches] && p[:type] && p[:type][0] == 'Cloison') ? fusionner(id) : 0
+        noms << "fusionnée avec #{fus} cloison(s) reliée(s)" if fus > 0
         model.commit_operation
         Sketchup.status_text = "Créé : #{noms.join(' + ')}"
       rescue StandardError => ex
@@ -277,6 +285,8 @@ module A2M
           r[:pts] = JSON.parse(g.get_attribute('a2m_mur', 'pts')).map { |x, y, z| Geom::Point3d.new(x, y, z) }
           r[:ferme] = g.get_attribute('a2m_mur', 'ferme') ? true : false
           r[:j] = JSON.parse(g.get_attribute('a2m_mur', 'p'))
+          ch = g.get_attribute('a2m_mur', 'chemins')
+          r[:chemins] = JSON.parse(ch).map { |cp, cf| [cp.map { |x, y, z| Geom::Point3d.new(x, y, z) }, cf ? true : false] } if ch
         rescue StandardError
           r[:pts] = nil
         end
@@ -297,11 +307,16 @@ module A2M
       Math.hypot(q.x - (a.x + t * dx), q.y - (a.y + t * dy))
     end
 
+    def self.chemins_de(r) r[:chemins] || [[r[:pts], r[:ferme]]] end
+
     def self.relies?(a, b, tol = 0.4)
       touche = lambda do |u, v|
-        segs = v[:pts].each_cons(2).to_a
-        segs << [v[:pts][-1], v[:pts][0]] if v[:ferme]
-        u[:pts].any? { |q| segs.any? { |s, e| distance_segment(q, s, e) < tol } }
+        segs = chemins_de(v).flat_map do |cp, cf|
+          l = cp.each_cons(2).to_a
+          l << [cp[-1], cp[0]] if cf
+          l
+        end
+        chemins_de(u).any? { |cp, _cf| cp.any? { |q| segs.any? { |s, e| distance_segment(q, s, e) < tol } } }
       end
       touche.call(a, b) || touche.call(b, a)
     end
@@ -330,12 +345,44 @@ module A2M
     def self.reconstruire(r, p)
       r[:groupes].each { |g| g.erase! if g.valid? }
       nv = []
+      ch = chemins_de(r)
       couches_de(p).each_with_index do |(type, hm, dg, dd, _e, bas), i|
-        g = construire_couche(r[:pts], r[:ferme], type, hm, dg, dd, bas.to_f)
-        marquer(g, r[:id], r[:pts], r[:ferme], p, i)
-        nv << g
+        gs = ch.map { |cp, cf| construire_couche(cp, cf, type, hm, dg, dd, bas.to_f) }
+        gs = unir(gs, type) if gs.size > 1
+        gs.each { |g| marquer(g, r[:id], ch[0][0], ch[0][1], p, i, ch) }
+        nv.concat(gs)
       end
       nv
+    end
+
+    # Fusionne plusieurs groupes de même couche en un seul (union de solides). Si SketchUp refuse, ils restent côte à côte
+    # (toujours rattachés au même mur, donc toujours modifiables ensemble).
+    def self.unir(gs, type)
+      return gs unless gs.all? { |g| g.respond_to?(:manifold?) && g.manifold? }
+      res = gs[0]
+      gs[1..-1].each_with_index do |g, k|
+        u = (res.union(g) rescue nil)
+        return ([res] + gs[(k + 1)..-1]).select(&:valid?) unless u
+        res = u
+      end
+      l, _ = A2M::Balises.balise(Sketchup.active_model, type[1], (A2M::Balises::LISTE.find { |n, _, _| n == type[1] } || [])[2])
+      res.layer = l
+      res.name = "#{type[4]} #{Sketchup.active_model.active_entities.grep(Sketchup::Group).count { |x| x.name.start_with?(type[4]) }}"
+      A2M::Hachures.poser(res, Sketchup.active_model)
+      [res]
+    end
+
+    # Cloison qui vient d'être dessinée : elle absorbe les cloisons reliées de même réglage (leurs tracés sont gardés)
+    def self.fusionner(id)
+      murs = murs_du_modele
+      nv = murs[id] or return 0
+      voisins = murs.values.select { |m| m[:id] != id && m[:j] == nv[:j] && relies?(nv, m) }
+      return 0 if voisins.empty?
+      tout = { id: id, groupes: nv[:groupes] + voisins.flat_map { |m| m[:groupes] }, j: nv[:j],
+               chemins: chemins_de(nv) + voisins.flat_map { |m| chemins_de(m) } }
+      tout[:pts], tout[:ferme] = tout[:chemins][0]
+      reconstruire(tout, p_de(nv[:j]))
+      voisins.size
     end
 
     # Un groupe de mur (balise d'un type de mur) qu'on peut proposer à la modification, même sans mémoire
@@ -398,10 +445,11 @@ module A2M
     end
 
     # Refait le mur avec un nouveau tracé (mêmes réglages)
-    def self.refaire_trace(id, pts)
+    def self.refaire_trace(id, chemins)
       m = Sketchup.active_model
       r = murs_du_modele(m)[id] or return false
-      r[:pts] = pts
+      r[:chemins] = chemins.size > 1 ? chemins : nil
+      r[:pts], r[:ferme] = chemins[0]
       m.start_operation('Modifier le tracé du mur (métré)', true)
       begin
         reconstruire(r, p_de(r[:j]))
@@ -498,11 +546,11 @@ module A2M
         maj_statut
       end
 
+      # @cs : liste de tracés [points, fermé] ; un point se désigne par [numéro de tracé, numéro de point]
       def charger
         r = A2M::DessinMurs.murs_du_modele[@id]
         if r
-          @pts = r[:pts].map { |q| Geom::Point3d.new(q.x, q.y, q.z) }
-          @ferme = r[:ferme]
+          @cs = A2M::DessinMurs.chemins_de(r).map { |cp, cf| [cp.map { |q| Geom::Point3d.new(q.x, q.y, q.z) }, cf] }
         else
           Sketchup.active_model.select_tool(nil)
         end
@@ -515,21 +563,27 @@ module A2M
       def deactivate(view) view.invalidate end
 
       def segments
-        n = @pts.size
-        (0...(@ferme ? n : n - 1)).map { |i| [i, @pts[i], @pts[(i + 1) % n]] }
+        res = []
+        @cs.each_with_index do |(pts, ferme), c|
+          n = pts.size
+          (0...(ferme ? n : n - 1)).each { |i| res << [c, i, pts[i], pts[(i + 1) % n]] }
+        end
+        res
       end
 
       def ecran(pt, view) q = view.screen_coords(pt); [q.x, q.y] end
 
       def survol(x, y, view)
-        @pts.each_with_index do |q, i|
-          a = ecran(q, view)
-          return [:point, i] if Math.hypot(a[0] - x, a[1] - y) < PRISE
+        @cs.each_with_index do |(pts, _f), c|
+          pts.each_with_index do |q, i|
+            a = ecran(q, view)
+            return [:point, c, i] if Math.hypot(a[0] - x, a[1] - y) < PRISE
+          end
         end
-        segments.each do |i, a, b|
+        segments.each do |c, i, a, b|
           sa = ecran(a, view); sb = ecran(b, view)
           d = A2M::DessinMurs.distance_segment(Geom::Point3d.new(x, y, 0), Geom::Point3d.new(sa[0], sa[1], 0), Geom::Point3d.new(sb[0], sb[1], 0))
-          return [:segment, i, x, y] if d < PRISE
+          return [:segment, c, i, x, y] if d < PRISE
         end
         nil
       end
@@ -538,7 +592,7 @@ module A2M
         if @sel
           @ip.pick(view, x, y)
           q = @ip.position
-          @cur = Geom::Point3d.new(q.x, q.y, @pts[@sel].z)
+          @cur = Geom::Point3d.new(q.x, q.y, @cs[@sel[0]][0][@sel[1]].z)
         else
           @surv = survol(x, y, view)
         end
@@ -548,30 +602,30 @@ module A2M
       def onLButtonDown(_flags, x, y, view)
         if @sel
           return unless @cur
-          @pts[@sel] = @cur
+          @cs[@sel[0]][0][@sel[1]] = @cur
           appliquer(view)
         else
           s = survol(x, y, view) or return
           if s[0] == :point
-            @sel = s[1]
+            @sel = [s[1], s[2]]
           else
-            i = s[1]
-            a = @pts[i]; b = @pts[(i + 1) % @pts.size]
+            c, i = s[1], s[2]
+            pts = @cs[c][0]
+            a = pts[i]
             pk = view.pickray(x, y)
-            plan = [a, Geom::Vector3d.new(0, 0, 1)]
-            q = Geom.intersect_line_plane(pk, plan) || a
+            q = Geom.intersect_line_plane(pk, [a, Geom::Vector3d.new(0, 0, 1)]) || a
             q = Geom::Point3d.new(q.x, q.y, a.z)
-            @pts.insert(i + 1, q)
-            @sel = i + 1
+            pts.insert(i + 1, q)
+            @sel = [c, i + 1]
           end
-          @cur = @pts[@sel]
+          @cur = @cs[@sel[0]][0][@sel[1]]
         end
         view.invalidate
       end
 
       def onKeyDown(key, _rpt, _flags, view)
-        return false unless key == 46 && @surv && @surv[0] == :point && @pts.size > 2 # Suppr
-        @pts.delete_at(@surv[1]); @surv = nil
+        return false unless key == 46 && @surv && @surv[0] == :point && @cs[@surv[1]][0].size > 2 # Suppr
+        @cs[@surv[1]][0].delete_at(@surv[2]); @surv = nil
         appliquer(view)
         true
       end
@@ -586,27 +640,29 @@ module A2M
 
       def appliquer(view)
         @sel = nil
-        A2M::DessinMurs.refaire_trace(@id, @pts.map { |q| Geom::Point3d.new(q.x, q.y, q.z) })
+        A2M::DessinMurs.refaire_trace(@id, @cs.map { |pts, f| [pts.map { |q| Geom::Point3d.new(q.x, q.y, q.z) }, f] })
         charger
         view.invalidate
       end
 
       def draw(view)
-        return unless @pts
-        pts = @pts.each_with_index.map { |q, i| i == @sel && @cur ? @cur : q }
-        pts += [pts[0]] if @ferme
+        return unless @cs
         view.line_width = 2
         view.drawing_color = 'orange'
-        view.draw(GL_LINE_STRIP, pts)
-        @pts.each_with_index do |q, i|
-          c = i == @sel ? 'red' : (@surv && @surv[0] == :point && @surv[1] == i ? 'blue' : 'orange')
-          view.draw_points([i == @sel && @cur ? @cur : q], 10, 2, c)
+        @cs.each_with_index do |(pts0, ferme), c|
+          pts = pts0.each_with_index.map { |q, i| @sel == [c, i] && @cur ? @cur : q }
+          pts += [pts[0]] if ferme
+          view.draw(GL_LINE_STRIP, pts)
+          pts0.each_with_index do |q, i|
+            coul = @sel == [c, i] ? 'red' : (@surv && @surv[0] == :point && @surv[1] == c && @surv[2] == i ? 'blue' : 'orange')
+            view.draw_points([@sel == [c, i] && @cur ? @cur : q], 10, 2, coul)
+          end
         end
       end
 
       def getExtents
         bb = Geom::BoundingBox.new
-        (@pts || []).each { |q| bb.add(q) }
+        (@cs || []).each { |pts, _f| pts.each { |q| bb.add(q) } }
         bb.add(@cur) if @cur
         bb
       end

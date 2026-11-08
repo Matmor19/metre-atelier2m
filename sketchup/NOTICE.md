@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.88.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.89.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -80,6 +80,7 @@ Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise
 - 2. Couche d'insertion (★, en surbrillance) : c'est elle que vous tracez. Par défaut le mur périphérique. Le tracé en est la face extérieure ; l'enduit se place à l'extérieur du tracé, les doublages à l'intérieur. L'aperçu en coupe montre le tracé en orange.
 - 3. Choisissez le côté (intérieur à droite ou à gauche du tracé, ou tracé dans l'axe de la couche d'insertion) puis « Dessiner le mur » : cliquez les points ; Tab change de côté, Entrée termine.
 - Dernière colonne de chaque couche : « descend plus bas (cm) ». Exemple : 30 pour l'enduit = il descend 30 cm sous le pied du mur (même sommet, plus haut de 30 cm). 0 = au niveau du tracé. Réglable aussi dans « Modifier un mur ».
+- Cloisons : une cloison dessinée contre une autre cloison de même type et même épaisseur fusionne avec elle automatiquement ; « Modifier le tracé » affiche alors tous les tracés réunis.
 
 ### Dalle, chape, plafond depuis les murs
 Sélectionnez les murs : dalle béton sous l'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d'un coup avec leurs épaisseurs
@@ -260,6 +261,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un seul solide ; tous les tracés sont gardés en mémoire (Modifier un mur → Modifier le tracé montre et déplace les points de chacun). Si SketchUp refuse l'union, les morceaux restent côte à côte mais toujours liés au même mur
 - Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en U…), tous les pans ont la même pente, avec faîtages, noues et arêtiers calculés ; débord et épaisseur comme pour les autres types
 - Modifier un mur : les murs et cloisons déjà dessinés (droits) sont repris automatiquement : leur axe, épaisseur et hauteur sont retrouvés, ils peuvent donc être modifiés sans les retracer ; un mur non droit (angle, tour fermé) demande encore d'être retracé une fois
 - Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles, compositions) ; boutons en double retirés de la palette (contrôle du modèle = tableau de bord, textures A2M_ automatiques = fenêtre Textures, extraire = envoyer au métré, baliser les pièces = pièce en un clic), toujours disponibles dans le menu Extensions
@@ -279,4 +281,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
 - Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.
 - Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
-- Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
