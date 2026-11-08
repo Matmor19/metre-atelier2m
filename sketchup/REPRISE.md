@@ -5,6 +5,7 @@
 ## Méthode de travail (à respecter)
 - Répondre en français, ton pédagogique, niveau débutant. Une seule question à la fois.
 - Après chaque modification : `ruby -c`, monter la version dans `a2m_metre_chargeur.rb`, mettre les nouveautés dans `nouveautes.json`, `python3 build_rbz.py`, commit (avec les lignes d'attribution), push sur `main`. Ne pas demander « publier ? ».
+- Notice d'utilisation : `NOTICE.md` / `notice.html` sont régénérés par `build_rbz.py`. Pour tout outil nouveau ou modifié, ajouter ou corriger sa marche à suivre dans `notice_details.json` (clé = nom d'icône), puis republier la notice en artefact. Mathieu veut qu'elle soit tenue à jour à chaque modification.
 - Outils SketchUp : simplicité et rapidité, le moins de paramètres possible (déduire ce qui peut l'être).
 - Libellés en français (Mathieu a du mal avec l'anglais).
 - Rien d'automatique dans le choix des ouvrages ; case vide = rien au métré ; chaque liste a son crayon ; couleurs jaune / blanc / bleu pâle.

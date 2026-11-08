@@ -210,3 +210,7 @@ if len(notes) > 6:
     resume.append('… et %d autres nouveautés plus anciennes.' % (len(notes) - 6))
 json.dump({'version': ver, 'notes': resume}, open(os.path.join(ici, 'version.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('ok', dest, ver)
+
+# Notice d'utilisation (NOTICE.md et notice.html) régénérée à chaque construction
+import notice
+notice.generer()
