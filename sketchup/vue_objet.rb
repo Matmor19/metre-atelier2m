@@ -23,7 +23,7 @@ module A2M
     def self.nom_fichier(n) n.to_s.gsub(/[\\\/:*?"<>|]/, '-').strip.gsub(/\s+/, '_') end
 
     # Photographie l'instance déjà posée au loin ; renvoie la liste des fichiers écrits
-    def self.photographier(model, inst, base, cles)
+    def self.photographier(model, inst, base, cles, suffixe = '')
       view = model.active_view
       b = inst.bounds
       c = b.center
@@ -46,12 +46,37 @@ module A2M
         cam.perspective = false
         cam.height = hauteur
         view.camera = cam
-        f = "#{base}_#{cle}.png"
+        f = "#{base}_#{cle}#{suffixe}.png"
         FileUtils.mkdir_p(File.dirname(f))
         ok = view.write_image(filename: f, width: larg, height: haut, antialias: true, transparent: true)
         ecrits << f if ok && File.exist?(f)
       end
       ecrits
+    end
+
+    # Version blanche : toutes les faces en blanc uni (textures et couleurs retirées), arêtes conservées.
+    # Appelée seulement à l'intérieur de l'opération annulée à la fin : le modèle n'en garde rien.
+    def self.blanchir(ent, blanc)
+      return unless ent && ent.valid?
+      ent.material = nil rescue nil
+      ents = ent.is_a?(Sketchup::Group) ? ent.entities : (ent.respond_to?(:definition) ? ent.definition.entities : nil)
+      return unless ents
+      ents.each do |e|
+        if e.is_a?(Sketchup::Face) then e.material = blanc; e.back_material = blanc
+        elsif e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) then blanchir(e, blanc)
+        end
+      end
+    end
+
+    # Images aux couleurs d'origine, puis les mêmes en version blanche (suffixe _blanc)
+    def self.deux_versions(model, inst, base, cles)
+      res = photographier(model, inst, base, cles)
+      blanc = model.materials.add('A2M_blanc_temporaire')
+      blanc.color = Sketchup::Color.new(255, 255, 255)
+      blanchir(inst, blanc)
+      res + photographier(model, inst, base, cles, '_blanc')
+    rescue StandardError
+      res || []
     end
 
     # Cadre commun : état sauvegardé, instance au loin fournie par le bloc, tout restauré à la fin
@@ -90,7 +115,7 @@ module A2M
       res = []
       avec_objet_au_loin(model) do
         inst = model.entities.add_instance(defn, Geom::Transformation.translation([LOIN, LOIN, 0]))
-        res = photographier(model, inst, base, cles)
+        res = deux_versions(model, inst, base, cles)
       end
       res
     rescue StandardError => ex
@@ -107,7 +132,8 @@ module A2M
         c.layer = model.layers[0]
         d = Geom::Point3d.new(LOIN, LOIN, 0) - Geom::Point3d.new(c.bounds.center.x, c.bounds.center.y, c.bounds.min.z)
         c.transform!(Geom::Transformation.translation(d))
-        res = photographier(model, c, base, cles)
+        c.make_unique if c.respond_to?(:make_unique) && c.is_a?(Sketchup::Group)
+        res = deux_versions(model, c, base, cles)
       end
       res
     rescue StandardError => ex

@@ -1,4 +1,5 @@
 [
+ "Vues 2D d'un objet : en plus des images aux couleurs d'origine (dessus et face), la même image en version blanche (fichiers « …_blanc.png »), créée en même temps au rangement dans la bibliothèque",
  "Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène coupe 3D, au choix par coupe) et le bouton « Inverser toutes les coupes »",
  "Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)",
  "Hachures de coupe : la dalle béton (rez-de-chaussée) et le plancher d'étage sont maintenant dans la liste des couches, pour leur donner une hachure de coupe comme aux autres",
