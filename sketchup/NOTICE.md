@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.84.3)
+# Métré Atelier 2M — notice d'utilisation (version 2.85.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -256,6 +256,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon, retirer un point avec Suppr) ; le mur est refait à chaque geste
 - Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp
 - Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures » avec tes matières A2M_ (Mes éléments > Textures et modèle ouvert)
 - Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour l'activer
@@ -275,4 +276,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
 - Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le pivotent de 90°, Échap annule. Sur le Plan 2D, l'image 2D de l'objet (couleur) apparaît toute seule à sa place et le suit quand on le déplace ; clic droit sur l'objet : « image 2D du plan » en version couleur ou blanche (ou sur le groupe des symboles : tous les objets d'un coup)
 - Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau dossier », pièce) à la place de la longue liste de questions. Les détails de menuiserie (vantaux, matériau, vitrage…) ne sont demandés que pour les fenêtres et portes
-- Nouveau bouton « Contrôler et préparer un objet » (Bibliothèque) : pour un objet déjà dans le modèle, il le réunit en un composant, retire les éléments parasites, retourne les faces à l'envers, vérifie la taille (propose la mise à l'échelle si elle est douteuse), le poids et le nom, purge le modèle, puis propose de le ranger dans la bibliothèque avec ses images 2D

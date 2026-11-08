@@ -338,6 +338,32 @@ module A2M
       nv
     end
 
+    # Réglages mémorisés → paramètres complets pour couches_de
+    def self.p_de(j)
+      if j['compose']
+        p_compose(j).merge(type: ['Mur composé'], h: j['couches'].map { |c| c[2].to_f }.max, e: j['couches'].sum { |c| c[1].to_f }.round(1))
+      else
+        { type: type_nomme(j['type']), h: j['h'].to_f, e: j['e'].to_f, trace: j['trace'].to_i }
+      end
+    end
+
+    # Refait le mur avec un nouveau tracé (mêmes réglages)
+    def self.refaire_trace(id, pts)
+      m = Sketchup.active_model
+      r = murs_du_modele(m)[id] or return false
+      r[:pts] = pts
+      m.start_operation('Modifier le tracé du mur (métré)', true)
+      begin
+        reconstruire(r, p_de(r[:j]))
+        m.commit_operation
+        true
+      rescue StandardError => ex
+        m.abort_operation
+        UI.messagebox("Le tracé n'a pas pu être modifié (#{ex.message}). Vérifiez que le tracé ne se recoupe pas.")
+        false
+      end
+    end
+
     def self.modifier(ent)
       murs = murs_du_modele
       r = mur_de(ent, murs)
@@ -355,8 +381,9 @@ module A2M
                   'types' => TYPES.map { |t| [t[0], t[3], t[2]] }, 'defaut' => COMPO_DEFAUT,
                   'cotes' => ['Intérieur à droite du tracé', 'Intérieur à gauche du tracé', 'Tracé dans l\'axe de la couche d\'insertion'] }
       corps = CORPS_COMPOSE.sub('Dessiner le mur', 'Appliquer à ce mur')
+                           .sub('<button id="annuler"', '<button id="trace" type="button" class="puce">Modifier le tracé…</button><button id="annuler"')
                            .sub('<button id="go"', "<button id=\"tous\" type=\"button\" class=\"puce\">Appliquer aux #{nb} murs reliés de même composition</button><button id=\"go\"")
-      js = SCRIPT_COMPOSE + "\nel('tous').addEventListener('click', function () { etat.tous = true; el('go').click(); etat.tous = false; });\n"
+      js = SCRIPT_COMPOSE + "\nel('trace').addEventListener('click', function () { sketchup.trace(''); });\nel('tous').addEventListener('click', function () { etat.tous = true; el('go').click(); etat.tous = false; });\n"
       html = A2M::Panneau.page('Modifier le mur', 'Changez les couches, la couche d’insertion ou le côté, puis appliquez', corps, js, donnees)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : modifier le mur', 'A2M_Panneau_Modif', html, 640, 720)
       @fen_modif = dlg
@@ -383,6 +410,10 @@ module A2M
           end
         end
       end
+      dlg.add_action_callback('trace') do |_ctx, _x|
+        dlg.close
+        UI.start_timer(0.1, false) { Sketchup.active_model.select_tool(OutilTrace.new(r[:id])) }
+      end
       dlg.add_action_callback('annuler') { |_ctx, _x| dlg.close }
       dlg.set_on_closed { @fen_modif = nil }
       dlg.show
@@ -395,6 +426,135 @@ module A2M
       sel = model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id') }
       return modifier(sel) if sel
       model.select_tool(OutilModifier.new)
+    end
+
+    # Déplace, ajoute ou supprime les points du tracé d'un mur déjà dessiné ; le mur est refait à chaque geste
+    class OutilTrace
+      PRISE = 12 # pixels
+
+      def initialize(id)
+        @id = id
+        @sel = nil; @surv = nil; @cur = nil
+        @ip = Sketchup::InputPoint.new
+      end
+
+      def activate
+        charger
+        maj_statut
+      end
+
+      def charger
+        r = A2M::DessinMurs.murs_du_modele[@id]
+        if r
+          @pts = r[:pts].map { |q| Geom::Point3d.new(q.x, q.y, q.z) }
+          @ferme = r[:ferme]
+        else
+          Sketchup.active_model.select_tool(nil)
+        end
+      end
+
+      def maj_statut
+        Sketchup.status_text = 'Tracé du mur : cliquez un point puis son nouvel emplacement ; cliquez sur un tronçon pour ajouter un point ; Suppr sur un point le retire ; Échap pour terminer.'
+      end
+
+      def deactivate(view) view.invalidate end
+
+      def segments
+        n = @pts.size
+        (0...(@ferme ? n : n - 1)).map { |i| [i, @pts[i], @pts[(i + 1) % n]] }
+      end
+
+      def ecran(pt, view) q = view.screen_coords(pt); [q.x, q.y] end
+
+      def survol(x, y, view)
+        @pts.each_with_index do |q, i|
+          a = ecran(q, view)
+          return [:point, i] if Math.hypot(a[0] - x, a[1] - y) < PRISE
+        end
+        segments.each do |i, a, b|
+          sa = ecran(a, view); sb = ecran(b, view)
+          d = A2M::DessinMurs.distance_segment(Geom::Point3d.new(x, y, 0), Geom::Point3d.new(sa[0], sa[1], 0), Geom::Point3d.new(sb[0], sb[1], 0))
+          return [:segment, i, x, y] if d < PRISE
+        end
+        nil
+      end
+
+      def onMouseMove(_flags, x, y, view)
+        if @sel
+          @ip.pick(view, x, y)
+          q = @ip.position
+          @cur = Geom::Point3d.new(q.x, q.y, @pts[@sel].z)
+        else
+          @surv = survol(x, y, view)
+        end
+        view.invalidate
+      end
+
+      def onLButtonDown(_flags, x, y, view)
+        if @sel
+          return unless @cur
+          @pts[@sel] = @cur
+          appliquer(view)
+        else
+          s = survol(x, y, view) or return
+          if s[0] == :point
+            @sel = s[1]
+          else
+            i = s[1]
+            a = @pts[i]; b = @pts[(i + 1) % @pts.size]
+            pk = view.pickray(x, y)
+            plan = [a, Geom::Vector3d.new(0, 0, 1)]
+            q = Geom.intersect_line_plane(pk, plan) || a
+            q = Geom::Point3d.new(q.x, q.y, a.z)
+            @pts.insert(i + 1, q)
+            @sel = i + 1
+          end
+          @cur = @pts[@sel]
+        end
+        view.invalidate
+      end
+
+      def onKeyDown(key, _rpt, _flags, view)
+        return false unless key == 46 && @surv && @surv[0] == :point && @pts.size > 2 # Suppr
+        @pts.delete_at(@surv[1]); @surv = nil
+        appliquer(view)
+        true
+      end
+
+      def onCancel(_reason, view)
+        if @sel
+          charger; @sel = nil; view.invalidate
+        else
+          Sketchup.active_model.select_tool(nil)
+        end
+      end
+
+      def appliquer(view)
+        @sel = nil
+        A2M::DessinMurs.refaire_trace(@id, @pts.map { |q| Geom::Point3d.new(q.x, q.y, q.z) })
+        charger
+        view.invalidate
+      end
+
+      def draw(view)
+        return unless @pts
+        pts = @pts.each_with_index.map { |q, i| i == @sel && @cur ? @cur : q }
+        pts += [pts[0]] if @ferme
+        view.line_width = 2
+        view.drawing_color = 'orange'
+        view.draw(GL_LINE_STRIP, pts)
+        @pts.each_with_index do |q, i|
+          c = i == @sel ? 'red' : (@surv && @surv[0] == :point && @surv[1] == i ? 'blue' : 'orange')
+          view.draw_points([i == @sel && @cur ? @cur : q], 10, 2, c)
+        end
+      end
+
+      def getExtents
+        bb = Geom::BoundingBox.new
+        (@pts || []).each { |q| bb.add(q) }
+        bb.add(@cur) if @cur
+        bb
+      end
     end
 
     class OutilModifier
