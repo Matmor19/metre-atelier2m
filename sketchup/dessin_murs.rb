@@ -169,7 +169,14 @@ module A2M
       if p[:couches]
         # 0 : couches à droite du tracé ; 1 : à gauche ; 2 : tracé dans l'axe de l'épaisseur totale (couches de gauche à droite)
         sg = p[:cote] == 1 ? 1.0 : -1.0
-        s = p[:cote] == 2 ? -p[:couches].sum { |c| (c[:e] / 100.0).m } / 2.0 : 0.0
+        ref = p[:ref]
+        if ref
+          # Couche d'insertion : le tracé est sa face extérieure ; les couches qui la précèdent (enduit…) sont de l'autre côté du tracé
+          avant = p[:couches][0...ref].sum { |c| (c[:e] / 100.0).m }
+          s = p[:cote] == 2 ? -avant - (p[:couches][ref][:e] / 100.0).m / 2.0 : -avant
+        else
+          s = p[:cote] == 2 ? -p[:couches].sum { |c| (c[:e] / 100.0).m } / 2.0 : 0.0
+        end
         p[:couches].map do |c|
           e = (c[:e] / 100.0).m
           d1, d2 = sg * s, sg * (s + e)
@@ -243,36 +250,113 @@ module A2M
       end
     end
 
-    COMPO_DEFAUT = [['Mur périphérique', 20.0, 2.50], ['Doublage : isolant', 14.0, 2.50], ['Doublage : plaque de plâtre', 1.3, 2.50]]
+    COMPO_DEFAUT = [['Enduit extérieur', 1.8, 2.50], ['Mur périphérique', 20.0, 2.50], ['Doublage : isolant', 14.0, 2.50], ['Doublage : plaque de plâtre', 1.3, 2.50], ['Cloison', 7.2, 2.50]]
+
+    CORPS_COMPOSE = <<~'HTML'
+      <h2>Nombre de couches (de l'extérieur vers l'intérieur)</h2>
+      <div class="puces" id="nb"></div>
+      <h2>Le tracé et la couche d'insertion</h2>
+      <div class="petit" style="margin-bottom:6px">Cliquez la couche par laquelle vous insérez le mur : <b>le tracé en est la face extérieure</b>. Les couches qui la précèdent (enduit…) se placent à l'extérieur du tracé.</div>
+      <div id="coupe" style="background:#fff;border:2px solid #d8d0c6;border-radius:8px;margin-bottom:8px"></div>
+      <div class="puces" id="cotes"></div>
+      <h2>Couches</h2>
+      <div id="lignes"></div>
+      <div id="bas"><div id="msg" style="flex:1;color:#6f665e"></div><button id="annuler" type="button" class="puce">Annuler</button><button id="go" type="button">Dessiner le mur</button></div>
+    HTML
+
+    SCRIPT_COMPOSE = <<~'JS'
+      var D = __DONNEES__;
+      function el(i) { return document.getElementById(i); }
+      function num(v) { var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : 0; }
+      var etat = { n: D.n, cote: D.cote, ref: D.ref, c: D.couches };
+      function couleur(nom) { return D.couleurs[nom] || [190, 190, 190]; }
+      function ajuster() {
+        while (etat.c.length < etat.n) { var d = D.defaut[Math.min(etat.c.length, D.defaut.length - 1)]; etat.c.push({ type: d[0], e: d[1], h: d[2] }); }
+        etat.c.length = etat.n; if (etat.ref >= etat.n) etat.ref = etat.n - 1;
+      }
+      function rendre() {
+        ajuster();
+        var nb = el('nb'); nb.innerHTML = '';
+        [1, 2, 3, 4, 5].forEach(function (k) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.n === k ? ' rempli' : ''); b.textContent = k;
+          b.addEventListener('click', function () { etat.n = k; rendre(); }); nb.appendChild(b);
+        });
+        var co = el('cotes'); co.innerHTML = '';
+        D.cotes.forEach(function (t, i) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.cote === i ? ' rempli' : ''); b.textContent = t;
+          b.addEventListener('click', function () { etat.cote = i; rendre(); }); co.appendChild(b);
+        });
+        // coupe en plan : le tracé (trait orange) est la face extérieure de la couche d'insertion
+        var tot = etat.c.reduce(function (a, k) { return a + Math.max(k.e, 0.1); }, 0), W = 560, x = 10, lar = W - 20, svg = '', xtrace = 10;
+        etat.c.forEach(function (k, i) {
+          var w = Math.max(lar * Math.max(k.e, 0.1) / tot, 6);
+          if (i === etat.ref) xtrace = etat.cote === 2 ? x + w / 2 : x;
+          svg += '<rect x="' + x + '" y="22" width="' + w + '" height="46" fill="rgb(' + couleur(k.type).join(',') + ')" stroke="' + (i === etat.ref ? '#e07838' : '#3C3C3C') + '" stroke-width="' + (i === etat.ref ? 2.5 : .8) + '"/>';
+          x += w;
+        });
+        svg += '<line x1="' + xtrace + '" y1="10" x2="' + xtrace + '" y2="80" stroke="#e07838" stroke-width="2" stroke-dasharray="4 3"/><text x="' + (xtrace + 4) + '" y="16" font-size="11" fill="#c9672f">tracé</text>';
+        svg += '<text x="12" y="92" font-size="10.5" fill="#6f665e">extérieur</text><text x="' + (W - 12) + '" y="92" font-size="10.5" fill="#6f665e" text-anchor="end">intérieur</text>';
+        el('coupe').innerHTML = '<svg viewBox="0 0 ' + W + ' 98" width="100%" height="98">' + svg + '</svg>';
+        var L = el('lignes'); L.innerHTML = '';
+        etat.c.forEach(function (k, i) {
+          var r = i === etat.ref;
+          var l = document.createElement('div');
+          l.style.cssText = 'display:grid;grid-template-columns:96px 1fr 64px 64px;gap:6px;align-items:center;margin-bottom:6px;padding:6px;border-radius:10px;border:2px solid ' + (r ? '#e07838' : 'transparent') + ';background:' + (r ? '#fdeedd' : 'transparent');
+          var bi = document.createElement('button'); bi.type = 'button'; bi.className = 'puce' + (r ? ' rempli' : ''); bi.textContent = r ? '★ Insertion' : 'Insérer ici';
+          bi.addEventListener('click', function () { etat.ref = i; rendre(); });
+          var sb = document.createElement('select'); sb.style.cssText = 'padding:7px;border:2px solid #d8d0c6;border-radius:8px;background:#fff;min-width:0';
+          D.types.forEach(function (t) { var o = document.createElement('option'); o.value = t[0]; o.textContent = t[0]; sb.appendChild(o); }); sb.value = k.type;
+          sb.addEventListener('change', function () { k.type = sb.value; var d = D.types.filter(function (t) { return t[0] === sb.value; })[0]; if (d) { k.e = d[1]; k.h = d[2]; } rendre(); });
+          var ep = document.createElement('input'); ep.type = 'text'; ep.value = k.e; ep.title = 'Épaisseur (cm)'; ep.style.cssText = 'font-size:13px;padding:6px;text-align:center'; ep.addEventListener('input', function () { k.e = num(ep.value); });
+          ep.addEventListener('change', rendre);
+          var hh = document.createElement('input'); hh.type = 'text'; hh.value = k.h; hh.title = 'Hauteur (m)'; hh.style.cssText = 'font-size:13px;padding:6px;text-align:center'; hh.addEventListener('input', function () { k.h = num(hh.value); });
+          [bi, sb, ep, hh].forEach(function (n) { l.appendChild(n); }); L.appendChild(l);
+        });
+        var cap = document.createElement('div'); cap.className = 'petit'; cap.textContent = 'Colonnes : insertion · type · épaisseur (cm) · hauteur (m).'; L.appendChild(cap);
+        el('msg').textContent = 'Insertion par la couche « ' + etat.c[etat.ref].type + ' ».';
+      }
+      el('go').addEventListener('click', function () {
+        for (var i = 0; i < etat.c.length; i++) if (!(etat.c[i].e > 0 && etat.c[i].h > 0)) { el('msg').textContent = 'Couche ' + (i + 1) + ' : épaisseur et hauteur doivent être supérieures à 0.'; return; }
+        sketchup.ok(JSON.stringify(etat));
+      });
+      el('annuler').addEventListener('click', function () { sketchup.annuler(''); });
+      rendre();
+    JS
+
+    def self.index_insertion(types)
+      i = types.index { |t| t.to_s.start_with?('Mur ') && t != 'Mur de soubassement' }
+      i || 0
+    end
+
     def self.lancer_compose
+      return @fen_compose.bring_to_front if @fen_compose && (@fen_compose.visible? rescue false)
       r = @reglages[:compose] || {}
-      rep = UI.inputbox(['Nombre de couches (de l\'extérieur vers l\'intérieur)', 'Le tracé est la face extérieure ; les couches partent'],
-                        [(r[:n] || 3).to_s, r[:cote] || 'à droite du tracé'],
-                        ['1|2|3|4|5', COTES_COMPOSE.join('|')], 'Mur composé (Métré Atelier 2M)')
-      return unless rep
-      n = rep[0].to_i
-      prec = r[:couches] || []
-      lib = []; val = []; lst = []
-      n.times do |i|
-        d = prec[i] || COMPO_DEFAUT[i] || COMPO_DEFAUT[-1]
-        lib += ["Couche #{i + 1} : type", "Couche #{i + 1} : épaisseur (cm)", "Couche #{i + 1} : hauteur (m)"]
-        val += [d[0], d[1].to_s, d[2].to_s]
-        lst += [TYPES.map(&:first).join('|'), '', '']
+      prec = r[:couches] || [COMPO_DEFAUT[0], COMPO_DEFAUT[1], COMPO_DEFAUT[2], COMPO_DEFAUT[3]]
+      cs = prec.map { |t, e, h| { 'type' => t, 'e' => e, 'h' => h } }
+      n = [[r[:n] || cs.size, 1].max, 5].min
+      ref = r[:ref] || index_insertion(cs.map { |c| c['type'] })
+      couleurs = {}
+      TYPES.each { |t| couleurs[t[0]] = A2M::Compositions::COULEURS[t[1]] || [190, 190, 190] }
+      donnees = { 'n' => n, 'cote' => COTES_COMPOSE.index(r[:cote]) || 0, 'ref' => [ref, n - 1].min, 'couches' => cs, 'couleurs' => couleurs,
+                  'types' => TYPES.map { |t| [t[0], t[3], t[2]] }, 'defaut' => COMPO_DEFAUT,
+                  'cotes' => ['Intérieur à droite du tracé', 'Intérieur à gauche du tracé', 'Tracé dans l\'axe de la couche d\'insertion'] }
+      html = A2M::Panneau.page('Mur composé', 'Choisissez les couches et celle par laquelle le mur est inséré', CORPS_COMPOSE, SCRIPT_COMPOSE, donnees)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : mur composé', 'A2M_Panneau_Compose', html, 620, 700)
+      @fen_compose = dlg
+      dlg.add_action_callback('ok') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        next unless d
+        couches = d['c'].map { |c| { type: TYPES.find { |x| x[0] == c['type'] } || TYPES[0], e: c['e'].to_f, h: c['h'].to_f } }
+        cote = d['cote'].to_i
+        ref = [[d['ref'].to_i, 0].max, couches.size - 1].min
+        @reglages[:compose] = { n: couches.size, cote: COTES_COMPOSE[cote], ref: ref, couches: couches.map { |c| [c[:type][0], c[:e], c[:h]] } }
+        p = { couches: couches, cote: cote, ref: ref, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: couches.sum { |c| c[:e] }.round(1) }
+        dlg.close
+        UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(p)) }
       end
-      rep2 = UI.inputbox(lib, val, lst, "Mur composé : #{n} couche(s), de l'extérieur vers l'intérieur")
-      return unless rep2
-      couches = []
-      n.times do |i|
-        type = TYPES.find { |x| x[0] == rep2[i * 3] }
-        e = rep2[i * 3 + 1].to_s.tr(',', '.').to_f; h = rep2[i * 3 + 2].to_s.tr(',', '.').to_f
-        return UI.messagebox("Couche #{i + 1} : l'épaisseur et la hauteur doivent être supérieures à 0.") if e <= 0 || h <= 0
-        couches << { type: type, e: e, h: h }
-      end
-      cote = COTES_COMPOSE.index(rep[1]) || 0
-      @reglages[:compose] = { n: n, cote: rep[1], couches: couches.map { |c| [c[:type][0], c[:e], c[:h]] } }
-      tot = couches.sum { |c| c[:e] }
-      p = { couches: couches, cote: cote, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: tot.round(1) }
-      Sketchup.active_model.select_tool(Outil.new(p))
+      dlg.add_action_callback('annuler') { |_ctx, _x| dlg.close }
+      dlg.set_on_closed { @fen_compose = nil }
+      dlg.show
     end
 
     # ---- L'outil : clics successifs ; Entrée ou double-clic termine ; clic sur le premier point ferme le tour ----

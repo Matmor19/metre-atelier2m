@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.80.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.81.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -80,6 +80,11 @@ Mur, doublage ou cloison : hauteur, épaisseur et tracé (axe ou face), posé su
 
 ### Dessiner un mur composé
 Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise
+
+- Dessine un mur de 1 à 5 couches (enduit, mur, isolant, plaque de plâtre…), chaque couche étant un objet sur sa propre balise.
+- 1. Choisissez le nombre de couches, puis le type, l'épaisseur et la hauteur de chacune (de l'extérieur vers l'intérieur).
+- 2. Couche d'insertion (★, en surbrillance) : c'est elle que vous tracez. Par défaut le mur périphérique. Le tracé en est la face extérieure ; l'enduit se place à l'extérieur du tracé, les doublages à l'intérieur. L'aperçu en coupe montre le tracé en orange.
+- 3. Choisissez le côté (intérieur à droite ou à gauche du tracé, ou tracé dans l'axe de la couche d'insertion) puis « Dessiner le mur » : cliquez les points ; Tab change de côté, Entrée termine.
 
 ### Dalle, chape, plafond depuis les murs
 Sélectionnez les murs : dalle béton sous l'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d'un coup avec leurs épaisseurs
@@ -245,6 +250,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
 - Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le pivotent de 90°, Échap annule. Sur le Plan 2D, l'image 2D de l'objet (couleur) apparaît toute seule à sa place et le suit quand on le déplace ; clic droit sur l'objet : « image 2D du plan » en version couleur ou blanche (ou sur le groupe des symboles : tous les objets d'un coup)
 - Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau dossier », pièce) à la place de la longue liste de questions. Les détails de menuiserie (vantaux, matériau, vitrage…) ne sont demandés que pour les fenêtres et portes
@@ -264,4 +270,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Correction : planelles — la planelle se pose maintenant SUR le mur de soubassement (qui n'est plus abaissé) ; la dalle se cale ensuite sur le haut de la planelle (elle monte ou descend de la différence) puis épouse le profil de la planelle jusqu'au dessus du soubassement
 - Correction : planelles — après avoir abaissé le mur de soubassement, sa hachure de coupe et ses textures A2M_ sont reposées (il apparaissait en noir en coupe)
 - Planelles : garde-fou — si la dalle devait disparaître ou perdre l'essentiel de son volume, toute la pose est annulée avec un message ; un journal de la dernière pose est écrit dans Documents/Atelier 2M/planelles_journal.txt
-- Nouveau : enduit extérieur (balise A2M_ENDUIT_EXT, 1,8 cm par défaut, épaisseur modifiable) dans les murs : outil « Dessiner un mur » et « Mur composé », et trois compositions de vignettes (brique ou parpaing avec enduit extérieur) ; sa surface est donnée à l'extraction (infos : enduit_ext_m2)

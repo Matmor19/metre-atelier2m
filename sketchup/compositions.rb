@@ -118,7 +118,8 @@ module A2M
           { type: t, e: k['e'].to_f, h: (k['h'] || (r['h'].to_s.empty? ? t[2] : h)).to_f }
         end
         cote = r['cote'].to_i
-        p = { couches: cs, cote: cote, type: ['Mur composé'], h: cs.map { |c| c[:h] }.max, e: cs.sum { |c| c[:e] }.round(1) }
+        ref = [[r['ref'].to_i, 0].max, cs.size - 1].min
+        p = { couches: cs, cote: cote, ref: ref, type: ['Mur composé'], h: cs.map { |c| c[:h] }.max, e: cs.sum { |c| c[:e] }.round(1) }
         if r['mode'] == 'selection'
           edges = Sketchup.active_model.selection.grep(Sketchup::Edge)
           return UI.messagebox('Sélectionnez d\'abord les lignes (ou arêtes) le long desquelles poser le mur.') if edges.empty?
@@ -166,7 +167,8 @@ module A2M
 
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
-      var fam = D.familles[0], sel = null, e = [], etat = { cote: 0, niveau: 'RDC', mode: null };
+      var fam = D.familles[0], sel = null, e = [], etat = { cote: 0, niveau: 'RDC', mode: null, ref: 0 };
+      function defref(x) { for (var i = 0; i < x.couches.length; i++) if (/^A2M_MUR_/.test(x.couches[i].balise) && x.couches[i].balise !== 'A2M_MUR_SOUB') return i; return 0; }
       var edit = null;
       function el(i) { return document.getElementById(i); }
       function num(v) { return parseFloat(String(v).replace(',', '.')); }
@@ -199,7 +201,7 @@ module A2M
           var tot = x.couches.reduce(function (a, k) { return a + k.e; }, 0);
           b.innerHTML = '<div class="vignette" style="height:64px;background:#fff">' + vignette(x, murs(x.famille)) + '</div><span></span><div class="petit" style="margin:2px 0 0"></div>';
           b.querySelector('span').textContent = x.nom; b.querySelector('.petit').textContent = (Math.round(tot * 10) / 10) + ' cm' + (x.integre ? '' : ' · à vous');
-          b.addEventListener('click', function () { sel = x; e = x.couches.map(function (k) { return k.e; }); rendre(); }); g.appendChild(b);
+          b.addEventListener('click', function () { sel = x; e = x.couches.map(function (k) { return k.e; }); etat.ref = defref(x); rendre(); }); g.appendChild(b);
         });
         el('aide').textContent = D.liste.filter(function (x) { return x.famille === fam; }).length ? 'Cliquez une vignette pour régler les épaisseurs et poser.' : 'Aucune composition ici : créez-en une avec « Nouvelle composition ».';
         var det = el('detail'); det.style.display = sel ? '' : 'none';
@@ -210,13 +212,19 @@ module A2M
           var l = document.createElement('div'); l.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
           l.innerHTML = '<div style="width:18px;height:18px;border-radius:4px;border:1px solid #3C3C3C;background:rgb(' + k.couleur.join(',') + ')"></div><div style="flex:1;font-size:12.5px"></div><input type="text" style="width:70px;font-size:14px;padding:5px;text-align:center"><span>cm</span>';
           l.children[1].textContent = k.nom; var inp = l.querySelector('input'); inp.value = e[i];
+          if (murs(sel.famille) && sel.couches.length > 1) {
+            var isr = (etat.ref === i);
+            l.style.cssText += ';padding:4px 6px;border-radius:8px;cursor:pointer;border:2px solid ' + (isr ? '#e07838' : 'transparent') + ';background:' + (isr ? '#fdeedd' : 'transparent');
+            if (isr) l.children[1].textContent = k.nom + '  ★ couche d\'insertion (le tracé est sa face extérieure)';
+            l.addEventListener('click', function (ev) { if (ev.target.tagName !== 'INPUT') { etat.ref = i; rendre(); } });
+          }
           inp.addEventListener('input', function () { e[i] = num(inp.value); tot(); }); c.appendChild(l);
         });
         tot();
         var m = murs(sel.famille);
         el('hbloc').style.display = m ? '' : 'none'; if (m && !el('h').value) el('h').value = '2.5';
         var co = el('cotes'); co.innerHTML = '';
-        if (m && sel.couches.length > 1) ['Couches à droite du tracé', 'Couches à gauche', 'Tracé dans l\'axe'].forEach(function (t, i) {
+        if (m && sel.couches.length > 1) ['Intérieur à droite du tracé', 'Intérieur à gauche du tracé', 'Tracé dans l\'axe de la couche d\'insertion'].forEach(function (t, i) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.cote === i ? ' rempli' : ''); b.textContent = t;
           b.addEventListener('click', function () { etat.cote = i; rendre(); }); co.appendChild(b);
         });
@@ -228,7 +236,7 @@ module A2M
         acts.forEach(function (a) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce rempli'; b.style.fontWeight = '600'; b.textContent = a[1];
           b.addEventListener('click', function () {
-            var h = el('hsp'); sketchup.poser(JSON.stringify({ id: sel.id, e: e, h: el('h').value, cote: etat.cote, mode: a[0], niveau: etat.niveau, hsp: h ? h.value : '' }));
+            var h = el('hsp'); sketchup.poser(JSON.stringify({ id: sel.id, e: e, h: el('h').value, cote: etat.cote, ref: etat.ref, mode: a[0], niveau: etat.niveau, hsp: h ? h.value : '' }));
           }); ac.appendChild(b);
         });
       }
