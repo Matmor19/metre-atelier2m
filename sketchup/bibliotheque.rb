@@ -1223,6 +1223,80 @@ module A2M
     end
 
     # Pose l'objet à la taille voulue (cm) à l'origine du modèle, puis lance l'outil Déplacer
+
+    # Outil « Placer » : l'objet à poser suit la souris (emprise en orange), un clic le pose, ← → le pivotent, Échap annule
+    class OutilPlacer
+      def initialize(inst, model)
+        @inst = inst; @model = model; @ip = Sketchup::InputPoint.new; @rot = 0.0; @fait = false; @pos = nil
+        @bb = inst.definition.bounds
+      end
+
+      def activate
+        Sketchup.status_text = 'Cliquez l\'endroit où poser l\'objet · flèches ← → : pivoter de 90° · Échap : annuler'
+      end
+
+      def transfo(pt)
+        c = @bb.center
+        Geom::Transformation.translation(Geom::Vector3d.new(pt.x, pt.y, pt.z)) * Geom::Transformation.rotation(ORIGIN, Z_AXIS, @rot) *
+          Geom::Transformation.translation(Geom::Vector3d.new(-c.x, -c.y, -@bb.min.z))
+      end
+
+      def onMouseMove(_f, x, y, view)
+        @ip.pick(view, x, y)
+        @pos = @ip.position if @ip.valid?
+        view.tooltip = @ip.tooltip
+        view.invalidate
+      end
+
+      def onKeyDown(key, _rep, _f, view)
+        if key == VK_RIGHT then @rot -= 90.degrees
+        elsif key == VK_LEFT then @rot += 90.degrees
+        else return
+        end
+        view.invalidate
+      end
+
+      def onLButtonDown(_f, _x, _y, _view)
+        return unless @pos && @inst.valid?
+        @fait = true
+        @model.start_operation('Poser un objet de la bibliothèque', true)
+        @inst.transformation = transfo(@pos)
+        @inst.visible = true
+        @model.commit_operation
+        @model.selection.clear
+        @model.selection.add(@inst)
+        @model.select_tool(nil)
+        Sketchup.status_text = 'Objet posé. Sur le plan 2D, son image apparaît toute seule ; clic droit sur l\'objet : version couleur ou blanche.'
+      end
+
+      def onCancel(_raison, _view)
+        @model.select_tool(nil)
+      end
+
+      def deactivate(view)
+        unless @fait
+          @fait = true
+          if @inst.valid?
+            @model.start_operation('Annuler la pose', true)
+            @inst.erase!
+            @model.commit_operation
+          end
+        end
+        view.invalidate
+      end
+
+      def draw(view)
+        @ip.draw(view) if @ip.valid?
+        return unless @pos
+        t = transfo(@pos)
+        z = @bb.min.z
+        pts = [[@bb.min.x, @bb.min.y], [@bb.max.x, @bb.min.y], [@bb.max.x, @bb.max.y], [@bb.min.x, @bb.max.y], [@bb.min.x, @bb.min.y]].map { |x, y| Geom::Point3d.new(x, y, z).transform(t) }
+        view.line_width = 3
+        view.drawing_color = Sketchup::Color.new(224, 120, 56)
+        view.draw_polyline(pts)
+      end
+    end
+
     def self.poser_objet(obj, l, h)
       model = Sketchup.active_model
       model.start_operation('Poser un objet de la bibliothèque', true)
@@ -1230,14 +1304,16 @@ module A2M
         opts = demander_options(obj, model)
         raise Interrupt if opts.nil?
         inst = instance_pour(model.active_entities, obj, l, h, ORIGIN, X_AXIS, Y_AXIS, ->(_ep) { 0 }, model, opts)
+        # Marque l'objet : le plan 2D y met automatiquement son image (couleur par défaut, blanche au clic droit)
+        inst.set_attribute('a2m_biblio', 'fichier', obj['fichier'])
+        inst.set_attribute('a2m_biblio', 'vue2d', 'couleur')
+        inst.visible = false   # caché le temps de choisir l'endroit
         model.commit_operation
         a = alerte!
         UI.messagebox(a) if a
-        # L'objet est posé à l'origine et sélectionné : l'outil Déplacer le met où vous voulez
+        # L'objet suit la souris : un clic le pose (flèches ← → : pivoter de 90°, Échap : annuler)
         model.selection.clear
-        model.selection.add(inst)
-        model.select_tool(nil)
-        Sketchup.send_action(21048) rescue nil
+        model.select_tool(OutilPlacer.new(inst, model))
       rescue Interrupt
         model.abort_operation
       rescue StandardError => ex

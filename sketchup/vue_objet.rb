@@ -165,6 +165,34 @@ module A2M
       grp
     end
 
+    # Image « dessus » d'un objet de la bibliothèque posé dans le modèle, à sa place (transformation absolue t) et à la hauteur z.
+    # Choix de la version : attribut a2m_biblio / vue2d de l'objet (« couleur » ou « blanc »). Renvoie le groupe, ou nil.
+    def self.image_sur_plan(ents, e, t, z)
+      fichier = e.get_attribute('a2m_biblio', 'fichier').to_s
+      return nil if fichier.empty?
+      blanc = e.get_attribute('a2m_biblio', 'vue2d') == 'blanc'
+      base = File.join(A2M::Bibliotheque.dossier, fichier).sub(/\.skp\z/, '')
+      f = "#{base}_dessus#{blanc ? '_blanc' : ''}.png"
+      dim = f.sub(/\.png\z/, '.dim')
+      return nil unless File.exist?(f) && File.exist?(dim)
+      w, h, ew, eh = File.read(dim).split.map(&:to_f)
+      return nil unless w && h && w > 0 && h > 0
+      bb = (e.is_a?(Sketchup::Group) ? e.entities.parent : e.definition).bounds
+      kx = ew.to_f > 0 ? bb.width / ew : 1.0
+      ky = eh.to_f > 0 ? bb.height / eh : 1.0
+      c = bb.center
+      pc = Geom::Point3d.new(c.x, c.y, 0).transform(t)
+      angle = Math.atan2(t.xaxis.y, t.xaxis.x)
+      g = ents.add_group
+      g.name = "Image 2D #{File.basename(base)}"
+      img = g.entities.add_image(f, ORIGIN, w * kx, h * ky)
+      img.transform!(Geom::Transformation.translation([-w * kx / 2, -h * ky / 2, 0]))
+      g.transform!(Geom::Transformation.translation(Geom::Vector3d.new(pc.x, pc.y, z)) * Geom::Transformation.rotation(ORIGIN, Z_AXIS, angle))
+      g
+    rescue StandardError
+      nil
+    end
+
     # Commande : l'élément sélectionné (groupe ou composant) → deux images dans Documents/Atelier 2M/Vues 2D
     def self.lancer
       model = Sketchup.active_model

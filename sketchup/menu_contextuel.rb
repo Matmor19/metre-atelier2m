@@ -78,10 +78,47 @@ module A2M
       end
     end
 
+    # Objets de la bibliothèque : choix de l'image 2D du plan (couleur ou blanche)
+    def self.objets_biblio(sel)
+      sel.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.get_attribute('a2m_biblio', 'fichier') }
+    end
+
+    def self.choisir_2d(lst, version)
+      model = Sketchup.active_model
+      model.start_operation('Image 2D de l\'objet', true)
+      begin
+        lst.each { |e| e.set_attribute('a2m_biblio', 'vue2d', version) }
+        A2M::Plan2D.rafraichir rescue nil
+        model.commit_operation
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("Modification impossible : #{ex.message}")
+      end
+    end
+
     def self.installer
       return if @ok
       @ok = true
       UI.add_context_menu_handler do |menu|
+        ob = objets_biblio(Sketchup.active_model.selection.to_a)
+        unless ob.empty?
+          menu.add_separator
+          sous = menu.add_submenu('Atelier 2M : image 2D du plan')
+          actuel = ob.map { |e| e.get_attribute('a2m_biblio', 'vue2d') == 'blanc' ? 'blanc' : 'couleur' }.uniq
+          sous.add_item((actuel == ['couleur'] ? '✓ ' : '') + 'Version couleur') { choisir_2d(ob, 'couleur') }
+          sous.add_item((actuel == ['blanc'] ? '✓ ' : '') + 'Version blanche') { choisir_2d(ob, 'blanc') }
+        end
+        # Sur le plan, l'image couvre l'objet : un clic droit tombe sur le groupe des symboles 2D → toutes les images d'un coup
+        if Sketchup.active_model.selection.any? { |e| e.is_a?(Sketchup::Group) && e.name.to_s.start_with?('Symboles 2D') }
+          tous = []
+          A2M::Plan2D.parcourir(Sketchup.active_model.entities, Geom::Transformation.new) { |e, _t| tous << e if e.get_attribute('a2m_biblio', 'fichier') }
+          unless tous.empty?
+            menu.add_separator
+            sous = menu.add_submenu('Atelier 2M : objets sur le plan')
+            sous.add_item('Tous en version couleur') { choisir_2d(tous, 'couleur') }
+            sous.add_item('Tous en version blanche') { choisir_2d(tous, 'blanc') }
+          end
+        end
         lst = portes(Sketchup.active_model.selection.to_a)
         next if lst.empty?
         menu.add_separator

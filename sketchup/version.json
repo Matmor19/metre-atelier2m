@@ -1,12 +1,12 @@
 {
- "version": "2.79.0",
+ "version": "2.80.0",
  "notes": [
+  "Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le…",
   "Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau…",
   "Nouveau bouton « Contrôler et préparer un objet » (Bibliothèque) : pour un objet déjà dans le modèle, il le réunit en un…",
   "Bibliothèque d'objets : nouveau bouton « Poser l'image 2D » (dessus ou face, couleur ou blanc) qui place l'image de l'objet sur…",
   "Vues 2D d'un objet : en plus des images aux couleurs d'origine (dessus et face), la même image en version blanche (fichiers «…",
   "Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène…",
-  "Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)",
-  "… et 65 autres nouveautés plus anciennes."
+  "… et 66 autres nouveautés plus anciennes."
  ]
 }

@@ -151,6 +151,21 @@ module A2M
     end
 
     # Reconstruit le groupe de symboles d'un niveau (arcs de portes, noms et surfaces)
+    # Objets de la bibliothèque (chaise, meuble…) : leur image 2D (couleur ou blanche) posée à leur place, sous le plan de coupe
+    def self.symboles_objets(ents, zs, zmin, zmax)
+      n = 0
+      parcourir(Sketchup.active_model.entities, Geom::Transformation.new) do |e, t|
+        next unless e.get_attribute('a2m_biblio', 'fichier')
+        next if !e.visible? || e.layer.name.start_with?('A2M_PORTE', 'A2M_FENETRE')
+        cs = coins(e, t)
+        next if cs.map(&:z).max < zmin || cs.map(&:z).min > zmax
+        n += 1 if A2M::VueObjet.image_sur_plan(ents, e, t, zs)
+      end
+      n
+    rescue StandardError
+      0
+    end
+
     def self.symboles(model, nom, sol, zcut, o, tag)
       sans_ancien(model, nom)
       g = model.entities.add_group
@@ -160,6 +175,7 @@ module A2M
       np = o['arcs'] ? symboles_portes(g.entities, zs, sol, zcut) : 0
       nt = (o['noms'] || o['surfaces']) ? textes_pieces(g.entities, zs, sol, zcut, o['noms'], o['surfaces']) : 0
       cotes_pieces(g.entities, zs, sol, zcut) if o['cotes']
+      symboles_objets(g.entities, zs, sol, zcut)
       g.entities.grep(Sketchup::Text).each { |t| t.layer = tag }
       [np, nt]
     end
