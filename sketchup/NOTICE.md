@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.84.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.84.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -256,6 +256,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour l'activer
 - Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la texture, qui est posée sur tous les objets de la couche et sur les prochains dessinés ; bouton pour la retirer
 - Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la main), SketchUp les recharge tout seul en quelques secondes, sans redémarrer
 - Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre couche) descende sous le pied du mur périphérique
@@ -275,4 +276,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Nouveau bouton « Contrôler et préparer un objet » (Bibliothèque) : pour un objet déjà dans le modèle, il le réunit en un composant, retire les éléments parasites, retourne les faces à l'envers, vérifie la taille (propose la mise à l'échelle si elle est douteuse), le poids et le nom, purge le modèle, puis propose de le ranger dans la bibliothèque avec ses images 2D
 - Bibliothèque d'objets : nouveau bouton « Poser l'image 2D » (dessus ou face, couleur ou blanc) qui place l'image de l'objet sur le plan, à l'échelle de la largeur/hauteur indiquée, sur le tag A2M_SYMBOLES_2D. Les objets rangés avant cette version voient leurs images recréées automatiquement au premier usage
 - Vues 2D d'un objet : en plus des images aux couleurs d'origine (dessus et face), la même image en version blanche (fichiers « …_blanc.png »), créée en même temps au rangement dans la bibliothèque
-- Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène coupe 3D, au choix par coupe) et le bouton « Inverser toutes les coupes »

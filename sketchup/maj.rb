@@ -125,7 +125,7 @@ module A2M
     def self.recharger(v = nil)
       ici = File.dirname(__FILE__)
       main = File.read(File.join(ici, 'main.rb'), encoding: 'UTF-8')
-      liste = %w[hachures_moteur hachures_fr hachures_onde hachures_dessin] + main[/%w\[(.*?)\]/m, 1].to_s.split
+      liste = %w[hachures_moteur hachures_fr hachures_onde hachures_dessin] + main[/%w\[([^\]]*)\]\.each \{ \|f\| require/, 1].to_s.split
       ok = 0
       ko = []
       verb = $VERBOSE

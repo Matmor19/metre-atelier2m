@@ -1,12 +1,12 @@
 {
- "version": "2.84.0",
+ "version": "2.84.1",
  "notes": [
+  "Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour…",
   "Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la…",
   "Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la…",
   "Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre…",
   "Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses…",
   "Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux…",
-  "Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans…",
-  "… et 80 autres nouveautés plus anciennes."
+  "… et 81 autres nouveautés plus anciennes."
  ]
 }
