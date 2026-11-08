@@ -93,29 +93,45 @@ module A2M
       dirs.compact.map { |d| d.tr('\\', '/') }.select { |d| File.directory?(d) }.uniq.flat_map { |d| Dir.glob(File.join(d, '**', '*.skh')) }.uniq.sort
     end
 
-    # Les hachures de SketchUp sont recopiées une fois en fichiers .pat (pour les dessiner avec nos réglages)
+    # Les hachures de SketchUp sont recopiées en fichiers .pat (pour les dessiner avec nos réglages) :
+    # fichiers .skh des dossiers de SketchUp, puis hachures présentes dans le modèle (celles que vous avez créées vous-même).
+    # À chaque ouverture, seules les nouvelles (ou modifiées) sont recopiées.
     def self.exporter_sketchup(model)
       dest = File.join(dossier, 'SketchUp')
-      marque = File.join(dest, 'fait.txt')
-      return if File.exist?(marque)
+      FileUtils.mkdir_p(dest)
       hp = model.hatch_patterns
+      ecrire = lambda do |motif, nom, sortie|
+        motif.save_fill_pattern_to_file(sortie)
+        t = A2M::MotifPat.texte_fichier(sortie)
+        t = t =~ /^\s*\*/ ? t.sub(/^\s*\*[^,\n]*/, "*#{nom}") : "*#{nom}, #{nom}\n#{t}"
+        File.write(sortie, t, encoding: 'UTF-8')
+      end
       bibliotheque_sketchup.each_with_index do |f, i|
         nom = File.basename(f, '.skh')
         sortie = File.join(dest, "#{nom}.pat")
+        next if File.exist?(sortie) && File.size(sortie) > 0 && File.mtime(sortie) >= File.mtime(f)
         m = nil
         begin
           m = hp.add("A2M export #{i}", f)
-          m.save_fill_pattern_to_file(sortie)
-          t = A2M::MotifPat.texte_fichier(sortie)
-          t = t =~ /^\s*\*/ ? t.sub(/^\s*\*[^,\n]*/, "*#{nom}") : "*#{nom}, #{nom}\n#{t}"
-          File.write(sortie, t, encoding: 'UTF-8')
+          ecrire.call(m, nom, sortie)
         rescue StandardError
           File.delete(sortie) if File.exist?(sortie) && File.size(sortie).zero?
         ensure
           hp.remove(m) if m && m.valid?
         end
       end
-      File.write(marque, Time.now.to_s)
+      hp.to_a.each do |h|
+        nom = h.name.to_s.strip
+        next if nom.empty? || nom.start_with?(PREFIXE, 'A2M export')
+        sortie = File.join(dest, "#{nom.gsub(%r{[\\/:*?"<>|]}, '-')}.pat")
+        next if File.exist?(sortie) && File.size(sortie) > 0
+        begin
+          ecrire.call(h, nom, sortie)
+        rescue StandardError
+          File.delete(sortie) if File.exist?(sortie) && File.size(sortie).zero?
+        end
+      end
+      File.write(File.join(dest, 'fait.txt'), Time.now.to_s)
     end
 
     # Hachures des logiciels de DAO installés sur ce poste (ZWCAD, AutoCAD) : fichiers métriques et motifs personnels

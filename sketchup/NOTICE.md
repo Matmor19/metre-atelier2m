@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.81.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.81.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -250,6 +250,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
 - Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
 - Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur l'objet : « Version couleur / Version blanche » pour cet objet seulement
 - Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le pivotent de 90°, Échap annule. Sur le Plan 2D, l'image 2D de l'objet (couleur) apparaît toute seule à sa place et le suit quand on le déplace ; clic droit sur l'objet : « image 2D du plan » en version couleur ou blanche (ou sur le groupe des symboles : tous les objets d'un coup)
@@ -269,4 +270,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Planelles : l'aspect de ton dessin est repris — matière 3D de ses faces et hachure de coupe de son groupe sont rangées avec le profil (« Ranger le profil dessiné ») et reposées sur chaque planelle
 - Correction : planelles — la planelle se pose maintenant SUR le mur de soubassement (qui n'est plus abaissé) ; la dalle se cale ensuite sur le haut de la planelle (elle monte ou descend de la différence) puis épouse le profil de la planelle jusqu'au dessus du soubassement
 - Correction : planelles — après avoir abaissé le mur de soubassement, sa hachure de coupe et ses textures A2M_ sont reposées (il apparaissait en noir en coupe)
-- Planelles : garde-fou — si la dalle devait disparaître ou perdre l'essentiel de son volume, toute la pose est annulée avec un message ; un journal de la dernière pose est écrit dans Documents/Atelier 2M/planelles_journal.txt

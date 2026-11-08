@@ -1,12 +1,12 @@
 {
- "version": "2.81.0",
+ "version": "2.81.1",
  "notes": [
+  "Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans…",
   "Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face…",
   "Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur…",
   "Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le…",
   "Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau…",
   "Nouveau bouton « Contrôler et préparer un objet » (Bibliothèque) : pour un objet déjà dans le modèle, il le réunit en un…",
-  "Bibliothèque d'objets : nouveau bouton « Poser l'image 2D » (dessus ou face, couleur ou blanc) qui place l'image de l'objet sur…",
-  "… et 68 autres nouveautés plus anciennes."
+  "… et 69 autres nouveautés plus anciennes."
  ]
 }
