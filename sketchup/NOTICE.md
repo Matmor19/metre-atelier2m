@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.82.3)
+# Métré Atelier 2M — notice d'utilisation (version 2.82.4)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -130,6 +130,7 @@ Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée
 - Planelle : « Planelles en rive de dalle » = la coque, « Isolant dans la planelle » = les vides.
 - Votre propre dessin : dessinez la cellule (rectangle de 14 cm de large + traits/courbes, hauteur au choix, haut et bas qui se raccordent), sélectionnez-la, puis « Hachure depuis ma sélection… » : elle est rangée dans le groupe « Mes dessins » et s'applique comme les autres motifs (se répète à la verticale et à l'horizontale). Les traits du bord du rectangle ne sont pas retenus ; le fond de couleur se règle dans la fenêtre.
 - Pour une hachure « Mes dessins » : les curseurs « Déplacer » décalent la cellule dans le mur (gauche-droite et haut-bas, en cm) ; cliquez « Appliquer » pour voir l'effet dans SketchUp.
+- Les réglages s'appliquent tout seuls dans SketchUp dès que vous bougez un curseur ou changez une valeur (le bouton « Appliquer » sert encore à tout reposer d'un coup).
 
 ### Textures extérieures
 Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d'un élément pour la présentation client (hors métré)
@@ -252,6 +253,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)
 - Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur
 - Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection) ; meilleur centrage de la cellule sur tous les murs d'un même groupe
 - Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
@@ -271,4 +273,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Correction : planelles — retrait du nettoyage d'arêtes (pouvait vider la planelle) ; en cas d'erreur, le message indique l'endroit précis
 - Planelles : la coque est refaite creuse, comme ton dessin — les cavités du profil sont des trous de l'anneau au lieu d'être posées sur une coque pleine (plus de traits en trop ni de faces superposées) ; la dalle est coupée avec la coque pleine puis la coque creuse la remplace
 - Planelles : la planelle est maintenant UN SEUL objet (groupe A2M_PLANELLE contenant la coque et l'isolant, chacun avec sa texture) ; les traits inutiles du profil (points alignés, arêtes dans le même plan) sont supprimés à la pose sans modifier la forme ; les textures et hachures de chaque rôle sont posées sans recréer le tag « Isolant de planelle »
-- Correction : « Dessiner un sol » sur les murs sélectionnés — les murs de soubassement sont maintenant reconnus (message « Aucun mur balisé trouvé ») ; avec « Au-dessus du tracé », la dalle repose sur le dessus des murs sélectionnés
