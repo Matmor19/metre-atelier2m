@@ -78,9 +78,15 @@ module A2M
       end
     end
 
-    # Objets de la bibliothèque : choix de l'image 2D du plan (couleur ou blanche)
+    # Objets de la bibliothèque (ou leur image 2D sur le plan) : choix de l'image 2D du plan (couleur ou blanche)
     def self.objets_biblio(sel)
-      sel.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.get_attribute('a2m_biblio', 'fichier') }
+      m = Sketchup.active_model
+      sel.map do |e|
+        next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+        # image 2D du plan : on agit sur l'objet qu'elle représente
+        e = m.find_entity_by_persistent_id(e.get_attribute('a2m_biblio', 'source').to_i) if e.get_attribute('a2m_biblio', 'jumeau')
+        e if e && e.valid? && e.get_attribute('a2m_biblio', 'fichier')
+      end.compact.uniq
     end
 
     def self.choisir_2d(lst, version)

@@ -81,7 +81,10 @@ module A2M
     end
 
     def self.sans_ancien(model, nom)
-      model.entities.grep(Sketchup::Group).each { |g| g.erase! if g.name == nom && g.valid? }
+      model.entities.grep(Sketchup::Group).each do |g|
+        next unless g.valid?
+        g.erase! if g.name == nom || (g.get_attribute('a2m_biblio', 'jumeau') && g.get_attribute('a2m_biblio', 'niveau') == nom)
+      end
     end
 
     # Polyligne dessinée dans le groupe (arc de 90° : charnière c, direction du battant ferme b, direction d'ouverture o)
@@ -152,14 +155,21 @@ module A2M
 
     # Reconstruit le groupe de symboles d'un niveau (arcs de portes, noms et surfaces)
     # Objets de la bibliothèque (chaise, meuble…) : leur image 2D (couleur ou blanche) posée à leur place, sous le plan de coupe
-    def self.symboles_objets(ents, zs, zmin, zmax)
+    def self.symboles_objets(model, nom, tag, zs, zmin, zmax)
       n = 0
       parcourir(Sketchup.active_model.entities, Geom::Transformation.new) do |e, t|
         next unless e.get_attribute('a2m_biblio', 'fichier')
         next if !e.visible? || e.layer.name.start_with?('A2M_PORTE', 'A2M_FENETRE')
         cs = coins(e, t)
         next if cs.map(&:z).max < zmin || cs.map(&:z).min > zmax
-        n += 1 if A2M::VueObjet.image_sur_plan(ents, e, t, zs)
+        # Image posée au premier niveau (pas dans le groupe des symboles) : un clic droit dessus la sélectionne seule
+        j = A2M::VueObjet.image_sur_plan(model.entities, e, t, zs)
+        next unless j
+        j.layer = tag
+        j.set_attribute('a2m_biblio', 'jumeau', true)
+        j.set_attribute('a2m_biblio', 'niveau', nom)
+        j.set_attribute('a2m_biblio', 'source', e.persistent_id)
+        n += 1
       end
       n
     rescue StandardError
@@ -175,7 +185,7 @@ module A2M
       np = o['arcs'] ? symboles_portes(g.entities, zs, sol, zcut) : 0
       nt = (o['noms'] || o['surfaces']) ? textes_pieces(g.entities, zs, sol, zcut, o['noms'], o['surfaces']) : 0
       cotes_pieces(g.entities, zs, sol, zcut) if o['cotes']
-      symboles_objets(g.entities, zs, sol, zcut)
+      symboles_objets(model, nom, tag, zs, sol, zcut)
       g.entities.grep(Sketchup::Text).each { |t| t.layer = tag }
       [np, nt]
     end
