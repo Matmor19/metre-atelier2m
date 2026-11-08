@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.82.5)
+# Métré Atelier 2M — notice d'utilisation (version 2.83.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -253,6 +253,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)
 - Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)
 - Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)
 - Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur
@@ -272,4 +273,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)
 - Hachures de coupe : la dalle béton (rez-de-chaussée) et le plancher d'étage sont maintenant dans la liste des couches, pour leur donner une hachure de coupe comme aux autres
 - Correction : planelles — retrait du nettoyage d'arêtes (pouvait vider la planelle) ; en cas d'erreur, le message indique l'endroit précis
-- Planelles : la coque est refaite creuse, comme ton dessin — les cavités du profil sont des trous de l'anneau au lieu d'être posées sur une coque pleine (plus de traits en trop ni de faces superposées) ; la dalle est coupée avec la coque pleine puis la coque creuse la remplace

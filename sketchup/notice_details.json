@@ -69,5 +69,11 @@
   "1. Choisissez le nombre de couches, puis le type, l'épaisseur et la hauteur de chacune (de l'extérieur vers l'intérieur).",
   "2. Couche d'insertion (★, en surbrillance) : c'est elle que vous tracez. Par défaut le mur périphérique. Le tracé en est la face extérieure ; l'enduit se place à l'extérieur du tracé, les doublages à l'intérieur. L'aperçu en coupe montre le tracé en orange.",
   "3. Choisissez le côté (intérieur à droite ou à gauche du tracé, ou tracé dans l'axe de la couche d'insertion) puis « Dessiner le mur » : cliquez les points ; Tab change de côté, Entrée termine."
+ ],
+ "modifier_mur": [
+  "Rouvre les réglages d'un mur déjà dessiné. Cliquez le bouton puis le mur (ou sélectionnez un mur : clic droit > « Atelier 2M : modifier ce mur »).",
+  "La fenêtre est celle du mur composé, déjà remplie : changez les couches, leur épaisseur ou hauteur, la couche d'insertion et le côté.",
+  "« Appliquer à ce mur » refait le mur sélectionné ; « Appliquer aux murs reliés de même composition » refait aussi tous les murs qui se touchent de proche en proche et ont la même composition, chacun gardant son tracé.",
+  "Attention : le mur est refait, donc les ouvertures déjà percées dedans sont à refaire. Les murs dessinés avant cette version sont à retracer une fois pour garder leurs réglages."
  ]
 }

@@ -106,6 +106,11 @@ module A2M
       return if @ok
       @ok = true
       UI.add_context_menu_handler do |menu|
+        mur = Sketchup.active_model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id') }
+        if mur
+          menu.add_separator
+          menu.add_item('Atelier 2M : modifier ce mur') { A2M::DessinMurs.modifier(mur) }
+        end
         ob = objets_biblio(Sketchup.active_model.selection.to_a)
         unless ob.empty?
           menu.add_separator

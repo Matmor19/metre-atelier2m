@@ -1,4 +1,5 @@
 [
+ "Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)",
  "Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)",
  "Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)",
  "Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur",

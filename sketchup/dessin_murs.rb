@@ -217,17 +217,208 @@ module A2M
       grp
     end
 
+    # Mémoire du mur : chaque couche garde le tracé et les réglages pour pouvoir être modifiée plus tard
+    def self.p_vers_json(p)
+      if p[:couches]
+        { 'compose' => true, 'cote' => p[:cote], 'ref' => p[:ref], 'couches' => p[:couches].map { |c| [c[:type][0], c[:e], c[:h]] } }
+      else
+        { 'compose' => false, 'type' => p[:type][0], 'h' => p[:h], 'e' => p[:e], 'trace' => p[:trace] }
+      end
+    end
+
+    def self.type_nomme(nom) TYPES.find { |x| x[0] == nom } || TYPES[0] end
+
+    # Réglages mémorisés → forme « mur composé » (un mur simple devient un mur à une couche)
+    def self.p_compose(j)
+      if j['compose']
+        { couches: j['couches'].map { |t, e, h| { type: type_nomme(t), e: e.to_f, h: h.to_f } }, cote: j['cote'].to_i, ref: j['ref'].to_i }
+      else
+        { couches: [{ type: type_nomme(j['type']), e: j['e'].to_f, h: j['h'].to_f }], cote: [2, 0, 1][j['trace'].to_i] || 2, ref: 0 }
+      end
+    end
+
+    def self.marquer(grp, id, pts, ferme, p, i)
+      d = 'a2m_mur'
+      grp.set_attribute(d, 'id', id)
+      grp.set_attribute(d, 'pts', JSON.generate(pts.map { |q| [q.x.to_f, q.y.to_f, q.z.to_f] }))
+      grp.set_attribute(d, 'ferme', ferme ? true : false)
+      grp.set_attribute(d, 'p', JSON.generate(p_vers_json(p)))
+      grp.set_attribute(d, 'i', i)
+    end
+
     def self.construire(pts, ferme, p)
       model = Sketchup.active_model
       model.start_operation(p[:couches] ? 'Dessiner un mur composé (métré)' : 'Dessiner un mur (métré)', true)
       begin
-        noms = couches_de(p).map { |type, hm, dg, dd, ecm| g = construire_couche(pts, ferme, type, hm, dg, dd); "#{g.name} (#{ecm} cm)" }
+        id = "#{Time.now.to_i}#{rand(100_000)}"
+        noms = couches_de(p).each_with_index.map do |(type, hm, dg, dd, ecm), i|
+          g = construire_couche(pts, ferme, type, hm, dg, dd)
+          marquer(g, id, pts, ferme, p, i)
+          "#{g.name} (#{ecm} cm)"
+        end
         model.commit_operation
         Sketchup.status_text = "Créé : #{noms.join(' + ')}"
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Le mur n'a pas pu être créé (#{ex.message}). Vérifiez que le tracé ne se recoupe pas.")
       end
+    end
+
+    # ---- Modifier un mur déjà dessiné ----
+    # Tous les murs mémorisés du modèle : { id => { id:, pts:, ferme:, p:, groupes: [] } }
+    def self.murs_du_modele(model = Sketchup.active_model)
+      res = {}
+      model.entities.grep(Sketchup::Group).each do |g|
+        id = g.get_attribute('a2m_mur', 'id') or next
+        r = (res[id] ||= { id: id, groupes: [] })
+        r[:groupes] << g
+        next if r[:pts]
+        begin
+          r[:pts] = JSON.parse(g.get_attribute('a2m_mur', 'pts')).map { |x, y, z| Geom::Point3d.new(x, y, z) }
+          r[:ferme] = g.get_attribute('a2m_mur', 'ferme') ? true : false
+          r[:j] = JSON.parse(g.get_attribute('a2m_mur', 'p'))
+        rescue StandardError
+          r[:pts] = nil
+        end
+      end
+      res.select { |_, r| r[:pts] }
+    end
+
+    def self.mur_de(ent, murs)
+      return nil unless ent.respond_to?(:get_attribute)
+      id = ent.get_attribute('a2m_mur', 'id')
+      id && murs[id]
+    end
+
+    def self.distance_segment(q, a, b)
+      dx = b.x - a.x; dy = b.y - a.y
+      l2 = dx * dx + dy * dy
+      t = l2 < 1e-12 ? 0.0 : [[((q.x - a.x) * dx + (q.y - a.y) * dy) / l2, 0.0].max, 1.0].min
+      Math.hypot(q.x - (a.x + t * dx), q.y - (a.y + t * dy))
+    end
+
+    def self.relies?(a, b, tol = 0.4)
+      touche = lambda do |u, v|
+        segs = v[:pts].each_cons(2).to_a
+        segs << [v[:pts][-1], v[:pts][0]] if v[:ferme]
+        u[:pts].any? { |q| segs.any? { |s, e| distance_segment(q, s, e) < tol } }
+      end
+      touche.call(a, b) || touche.call(b, a)
+    end
+
+    def self.signature(r)
+      (r[:j]['compose'] ? r[:j]['couches'].map { |t, e, _h| [t, e.to_f] } : [[r[:j]['type'], r[:j]['e'].to_f]]).inspect
+    end
+
+    # Le mur et, si demandé, tous ceux qui lui sont reliés (de proche en proche) avec la même composition
+    def self.famille(depart, murs)
+      sig = signature(depart)
+      vus = { depart[:id] => depart }
+      file = [depart]
+      until file.empty?
+        cour = file.shift
+        murs.each_value do |m|
+          next if vus[m[:id]] || signature(m) != sig || !relies?(cour, m)
+          vus[m[:id]] = m
+          file << m
+        end
+      end
+      vus.values
+    end
+
+    # Reconstruit un mur avec de nouveaux réglages (mêmes tracé, même emplacement)
+    def self.reconstruire(r, p)
+      r[:groupes].each { |g| g.erase! if g.valid? }
+      nv = []
+      couches_de(p).each_with_index do |(type, hm, dg, dd, _e), i|
+        g = construire_couche(r[:pts], r[:ferme], type, hm, dg, dd)
+        marquer(g, r[:id], r[:pts], r[:ferme], p, i)
+        nv << g
+      end
+      nv
+    end
+
+    def self.modifier(ent)
+      murs = murs_du_modele
+      r = mur_de(ent, murs)
+      unless r
+        UI.messagebox("Ce mur n'a pas gardé ses réglages en mémoire (il a été dessiné avec une version plus ancienne).\n\nRetracez-le une fois avec « Dessiner un mur » : il pourra ensuite être modifié ici.")
+        return
+      end
+      return @fen_modif.bring_to_front if @fen_modif && (@fen_modif.visible? rescue false)
+      c = p_compose(r[:j])
+      cs = c[:couches].map { |x| { 'type' => x[:type][0], 'e' => x[:e], 'h' => x[:h] } }
+      couleurs = {}
+      TYPES.each { |t| couleurs[t[0]] = A2M::Compositions::COULEURS[t[1]] || [190, 190, 190] }
+      nb = famille(r, murs).size
+      donnees = { 'n' => cs.size, 'cote' => c[:cote], 'ref' => c[:ref], 'couches' => cs, 'couleurs' => couleurs,
+                  'types' => TYPES.map { |t| [t[0], t[3], t[2]] }, 'defaut' => COMPO_DEFAUT,
+                  'cotes' => ['Intérieur à droite du tracé', 'Intérieur à gauche du tracé', 'Tracé dans l\'axe de la couche d\'insertion'] }
+      corps = CORPS_COMPOSE.sub('Dessiner le mur', 'Appliquer à ce mur')
+                           .sub('<button id="go"', "<button id=\"tous\" type=\"button\" class=\"puce\">Appliquer aux #{nb} murs reliés de même composition</button><button id=\"go\"")
+      js = SCRIPT_COMPOSE + "\nel('tous').addEventListener('click', function () { etat.tous = true; el('go').click(); etat.tous = false; });\n"
+      html = A2M::Panneau.page('Modifier le mur', 'Changez les couches, la couche d’insertion ou le côté, puis appliquez', corps, js, donnees)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : modifier le mur', 'A2M_Panneau_Modif', html, 640, 720)
+      @fen_modif = dlg
+      dlg.add_action_callback('ok') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        next unless d
+        couches = d['c'].map { |x| { type: type_nomme(x['type']), e: x['e'].to_f, h: x['h'].to_f } }
+        ref = [[d['ref'].to_i, 0].max, couches.size - 1].min
+        p = { couches: couches, cote: d['cote'].to_i, ref: ref, type: ['Mur composé'], h: couches.map { |x| x[:h] }.max, e: couches.sum { |x| x[:e] }.round(1) }
+        dlg.close
+        UI.start_timer(0.1, false) do
+          m = Sketchup.active_model
+          cibles = d['tous'] ? famille(r, murs_du_modele(m)) : [murs_du_modele(m)[r[:id]]].compact
+          m.start_operation('Modifier un mur (métré)', true)
+          begin
+            nouveaux = cibles.flat_map { |x| reconstruire(x, p) }
+            m.commit_operation
+            m.selection.clear
+            nouveaux.each { |g| m.selection.add(g) }
+            Sketchup.status_text = "#{cibles.size} mur(s) modifié(s)."
+          rescue StandardError => ex
+            m.abort_operation
+            UI.messagebox("Le mur n'a pas pu être modifié (#{ex.message}).")
+          end
+        end
+      end
+      dlg.add_action_callback('annuler') { |_ctx, _x| dlg.close }
+      dlg.set_on_closed { @fen_modif = nil }
+      dlg.show
+    end
+
+    # Commande : un mur est déjà sélectionné → sa fenêtre s'ouvre ; sinon on clique le mur à modifier
+    def self.modifier_mur
+      model = Sketchup.active_model
+      murs = murs_du_modele(model)
+      sel = model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id') }
+      return modifier(sel) if sel
+      model.select_tool(OutilModifier.new)
+    end
+
+    class OutilModifier
+      def activate
+        Sketchup.status_text = 'Modifier un mur : cliquez sur le mur à modifier (Échap pour quitter).'
+      end
+
+      def onSetCursor() false end
+
+      def onLButtonDown(_flags, x, y, view)
+        ph = view.pick_helper
+        ph.do_pick(x, y)
+        e = ph.best_picked
+        e = ph.all_picked.find { |q| q.respond_to?(:get_attribute) && q.get_attribute('a2m_mur', 'id') } unless e && e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id')
+        if e && e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id')
+          Sketchup.active_model.select_tool(nil)
+          UI.start_timer(0, false) { A2M::DessinMurs.modifier(e) }
+        else
+          UI.beep
+          Sketchup.status_text = 'Ce n\'est pas un mur dessiné par l\'outil de mur (ou il date d\'avant la modification possible) : retracez-le une fois.'
+        end
+      end
+
+      def onCancel(_r, _v) Sketchup.active_model.select_tool(nil) end
     end
 
     # ---- Mur composé : nombre de couches, puis type, épaisseur et hauteur de chacune ----
