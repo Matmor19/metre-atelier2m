@@ -1,4 +1,5 @@
 [
+ "Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur",
  "Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection) ; meilleur centrage de la cellule sur tous les murs d'un même groupe",
  "Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre",
  "Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.",

@@ -140,12 +140,13 @@ module A2M
       sx = w / pas_cm; sy = hh / h
       cov = Array.new(w * hh, 0.0)
       r = [o['ep'].to_f / 100.0 * l * sx / 4.0, 0.7].max
-      x0 = phi * pas_cm - l / 2.0
+      x0 = phi * pas_cm - l / 2.0 + o['dx'].to_f          # déplacement réglé par l'utilisateur (cm)
+      dy = o['dy'].to_f
       [-1, 0, 1].each do |ox|
         [-1, 0, 1].each do |oy|
           d['segments'].each do |a, b, c, e|
             xa = (x0 + a * k + ox * pas_cm) * sx; xb = (x0 + c * k + ox * pas_cm) * sx
-            A2M::MotifPat.trait(cov, w, hh, xa, (h - (b * k + oy * h)) * sy, xb, (h - (e * k + oy * h)) * sy, r)
+            A2M::MotifPat.trait(cov, w, hh, xa, (h - (b * k + dy + oy * h)) * sy, xb, (h - (e * k + dy + oy * h)) * sy, r)
           end
         end
       end

@@ -184,10 +184,12 @@ function reglage(){
    (m&&m.onde?
    '<label>Largeur</label><div class="lig"><input type="range" id="largeur" min="30" max="100" step="5" value="'+(cours.largeur||80)+'"><output id="o_largeur"></output><span style="color:#a99;font-size:11.5px">de l\'épaisseur de la couche · ligne centrée dans chaque mur, en coupe verticale</span></div>'
    :'<label>Taille</label><div class="lig">écartement <input type="number" id="taille" min="0.2" step="0.5" value="'+cours.taille+'"> cm &nbsp; angle <input type="number" id="angle" step="15" value="'+cours.angle+'"> °</div>')+
+   (m&&m.dessin?
+   '<label>Déplacer</label><div class="lig">← → <input type="range" id="dx" min="-8" max="8" step="0.1" value="'+(cours.dx||0)+'"><output id="o_dx"></output> &nbsp; ↑ ↓ <input type="range" id="dy" min="-10" max="10" step="0.1" value="'+(cours.dy||0)+'"><output id="o_dy"></output><span style="color:#a99;font-size:11.5px">en cm, dans le mur</span></div>':'')+
    '<span></span><div class="lig"><button class="p" id="appliquer">Appliquer la hachure</button><span id="note"></span><span style="flex:1"></span><button id="retirer">Retirer la hachure</button></div></div>';
-  var maj=function(){['trait_op','fond_op','largeur'].forEach(function(k){var o=document.getElementById('o_'+k); if(o) o.textContent=(cours[k]==null?80:cours[k])+' %'}); document.getElementById('o_ep').textContent=cours.ep+' %';
+  var maj=function(){['trait_op','fond_op','largeur'].forEach(function(k){var o=document.getElementById('o_'+k); if(o) o.textContent=(cours[k]==null?80:cours[k])+' %'}); ['dx','dy'].forEach(function(k){var o=document.getElementById('o_'+k); if(o) o.textContent=(cours[k]||0)+' cm'}); document.getElementById('o_ep').textContent=cours.ep+' %';
     dessiner(document.getElementById('grand'),m,cours,18); galerie(true); boutons();};
-  ['trait','trait_op','ep','fond','fond_op','taille','angle','largeur'].forEach(function(k){
+  ['trait','trait_op','ep','fond','fond_op','taille','angle','largeur','dx','dy'].forEach(function(k){
     var i=document.getElementById(k); if(!i) return;
     i.oninput=i.onchange=function(){cours[k]=i.type==='color'?i.value:parseFloat(i.value)||0; maj();};
   });

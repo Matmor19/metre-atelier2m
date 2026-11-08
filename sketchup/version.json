@@ -1,12 +1,12 @@
 {
- "version": "2.82.2",
+ "version": "2.82.3",
  "notes": [
+  "Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur",
   "Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection)…",
   "Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur…",
   "Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec…",
   "Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont…",
   "Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans…",
-  "Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face…",
-  "… et 73 autres nouveautés plus anciennes."
+  "… et 74 autres nouveautés plus anciennes."
  ]
 }
