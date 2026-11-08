@@ -68,7 +68,7 @@ module A2M
           f = File.join(Sketchup.temp_dir, "a2m_metre_#{v}.rbz")
           File.binwrite(f, rep.body)
           Sketchup.install_from_archive(f)
-          UI.messagebox("Version #{v} installée.\n\nFermez SketchUp puis rouvrez-le pour l'utiliser.")
+          apres_installation(v)
         rescue StandardError => ex
           UI.messagebox("La mise à jour n'a pas pu être installée (#{ex.message}).\n" \
                         'Vous pouvez toujours l\'installer à la main : Extensions > Gestionnaire d\'extensions > Installer l\'extension.')
@@ -118,11 +118,47 @@ module A2M
       meilleur
     end
 
+    # Fichiers qui créent menus, barres d'outils ou observateurs : les recharger les doublerait, ils attendent le redémarrage
+    SANS_RECHARGE = %w[menu_contextuel palette plan2d suivi tableau variantes maj].freeze
+
+    # Recharge les fichiers de l'extension tout juste installée, sans fermer SketchUp ; renvoie [rechargés, échecs]
+    def self.recharger(v = nil)
+      ici = File.dirname(__FILE__)
+      main = File.read(File.join(ici, 'main.rb'), encoding: 'UTF-8')
+      liste = %w[hachures_moteur hachures_fr hachures_onde hachures_dessin] + main[/%w\[(.*?)\]/m, 1].to_s.split
+      ok = 0
+      ko = []
+      verb = $VERBOSE
+      $VERBOSE = nil
+      liste.each do |f|
+        next if SANS_RECHARGE.include?(f)
+        begin
+          load File.join(ici, "#{f}.rb")
+          ok += 1
+        rescue Exception => ex
+          ko << "#{f} (#{ex.message[0, 60]})"
+        end
+      end
+      $VERBOSE = verb
+      A2M::Metre::EXT.version = v if v && ko.empty?
+      A2M::Hachures.catalogue(true) rescue nil
+      [ok, ko]
+    end
+
+    def self.apres_installation(v)
+      ok, ko = recharger(v)
+      if ko.empty?
+        UI.messagebox("Version #{v} installée et déjà chargée : vous pouvez l'utiliser tout de suite.\n\n(Si un nouveau bouton ou un nouveau menu a été ajouté, il apparaîtra au prochain démarrage de SketchUp.)")
+      else
+        UI.messagebox("Version #{v} installée, mais certaines parties n'ont pas pu être rechargées : #{ko.join(', ')}.\n\nFermez SketchUp puis rouvrez-le pour tout utiliser.")
+      end
+    end
+
     def self.installer_local(v, f)
       q = UI.messagebox("Métré Atelier 2M : le fichier\n#{f}\ncontient la version #{v} (installée : #{installee}).\n\nL'installer maintenant ?", MB_YESNO)
       return unless q == IDYES
       Sketchup.install_from_archive(f)
-      UI.messagebox("Version #{v} installée.\n\nFermez SketchUp puis rouvrez-le pour l'utiliser.")
+      apres_installation(v)
     rescue StandardError => ex
       UI.messagebox("Installation impossible (#{ex.message}).")
     end
