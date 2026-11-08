@@ -142,6 +142,7 @@ module A2M
           (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, [p.z, q.z].min + 8.cm, [p.z, q.z].max + hauteur - 6.cm, 2.cm, [190, 150, 100]) }
         end
       end
+      A2M::Modif.noter(g, 'garde_corps', { 'r' => r.reject { |k, _| k == 'replacer' }, 'pts' => A2M::Modif.pts_vers(pts) })
       g.set_attribute('a2m', 'garde_corps', JSON.generate('type' => cle, 'ml' => (ml.to_f * 0.0254).round(2), 'hauteur' => (hauteur.to_f * 2.54).round(0)))
       ml * 0.0254
     end
@@ -177,10 +178,13 @@ module A2M
 
     def self.poser(r)
       model = Sketchup.active_model
-      chs = r['cible'] == 'esc' ? chemins_escaliers(model) : chemins_selection(model)
+      reprise = @modif && !r['replacer']
+      chs = reprise ? [@modif[:pts]] : (r['cible'] == 'esc' ? chemins_escaliers(model) : chemins_selection(model))
       return UI.messagebox(r['cible'] == 'esc' ? 'Aucun escalier de l\'outil Escalier dans le modèle.' : 'Sélectionnez d\'abord des arêtes (le tracé du garde-corps).') if chs.empty?
       model.start_operation('Garde-corps', true)
       begin
+        @modif[:grp].erase! if @modif && @modif[:grp] && @modif[:grp].valid?
+        @modif = nil
         ml = chs.sum { |c| poser_chemin(model, c, r) }
         model.commit_operation
         UI.messagebox("Garde-corps posé : #{format('%.2f', ml).tr('.', ',')} ml.")
@@ -190,13 +194,22 @@ module A2M
       end
     end
 
-    def self.ouvrir
+    # Rouvre un garde-corps posé : mêmes réglages, même tracé (ou nouveau tracé sur les arêtes sélectionnées)
+    def self.modifier(grp, d)
+      return UI.messagebox('Ce garde-corps n\'a pas gardé son tracé : reposez-le une fois.') unless d && d['r'] && d['pts']
+      @fen.close if @fen && (@fen.visible? rescue false)
+      ouvrir(d['r'], { grp: grp, pts: A2M::Modif.pts_de(d['pts']) })
+    end
+
+    def self.ouvrir(pre = nil, modif = nil)
+      @modif = modif
       if @fen && (@fen.visible? rescue false)
         @fen.bring_to_front
         return
       end
       d = { 'rempl' => REMPLISSAGES.map { |k, l, a| { 'cle' => k, 'libelle' => l, 'aide' => a } }, 'mat' => MATIERES.keys }
-      html = A2M::Panneau.page('Garde-corps', 'Poteaux, main courante et remplissage le long d\'un tracé', CORPS, SCRIPT, d)
+      html = A2M::Panneau.page(modif ? 'Modifier le garde-corps' : 'Garde-corps', 'Poteaux, main courante et remplissage le long d\'un tracé', CORPS,
+                               modif ? SCRIPT + A2M::Modif.js_prerempli(pre, 'Appliquer la modification', 'Prendre un nouveau tracé : arêtes sélectionnées (ou escalier)') : SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : garde-corps', 'A2M_Panneau_GC', html, 460, 760)
       @fen = dlg
       dlg.add_action_callback('poser') do |_c, json|

@@ -136,6 +136,7 @@ module A2M
       f.followme(chemin) rescue nil
       grp.entities.grep(Sketchup::Edge).each { |e| e.erase! if e.valid? && e.faces.empty? }
       grp.entities.grep(Sketchup::Face).each { |x| x.material = Sketchup::Color.new(150, 160, 168); x.back_material = Sketchup::Color.new(150, 160, 168) }
+      A2M::Modif.noter(grp, 'zinguerie', { 'r' => @r_en_cours }) if @r_en_cours
       grp.set_attribute('a2m', 'zinguerie', JSON.generate('type' => g[1], 'ml' => (l.to_f * 0.0254).round(2)))
       [grp, (l.to_f * 0.0254)]
     end
@@ -156,6 +157,7 @@ module A2M
       f.reverse! if f.normal.z > 0
       f.pushpull(zhaut - zsol)
       grp.entities.grep(Sketchup::Face).each { |x| x.material = Sketchup::Color.new(120, 130, 140); x.back_material = Sketchup::Color.new(120, 130, 140) }
+      A2M::Modif.noter(grp, 'zinguerie', { 'r' => @r_en_cours }) if @r_en_cours
       grp.set_attribute('a2m', 'zinguerie', JSON.generate('type' => de[1], 'ml' => ((zhaut - zsol).to_f * 0.0254).round(2)))
       grp
     end
@@ -170,6 +172,7 @@ module A2M
       model = Sketchup.active_model
       g = GOUTTIERES.find { |x| x[0] == r['g'] } or return
       de = DESCENTES.find { |x| x[0] == r['d'] } || DESCENTES[0]
+      @r_en_cours = r.reject { |k, _| k == 'cible' }
       lst = egouts(model, r['cible'])
       return UI.messagebox('Aucun égout trouvé. Générez d\'abord la toiture, ou sélectionnez des arêtes horizontales en bas de pan.') if lst.empty?
       model.start_operation('Zinguerie Atelier 2M', true)
@@ -192,14 +195,22 @@ module A2M
       end
     end
 
-    def self.ouvrir
+    # Rouvre la zinguerie posée : mêmes réglages, refaite sur tous les égouts
+    def self.modifier(_grp, d)
+      return UI.messagebox('Cette zinguerie n\'a pas gardé ses réglages : reposez-la une fois.') unless d && d['r']
+      @fen.close if @fen && (@fen.visible? rescue false)
+      ouvrir(d['r'].merge('cible' => 'tout'))
+    end
+
+    def self.ouvrir(pre = nil)
       if @fen && (@fen.visible? rescue false)
         @fen.bring_to_front
         return
       end
       d = { 'gout' => GOUTTIERES.map { |k, l, a, _r, f| { 'cle' => k, 'libelle' => l, 'aide' => a, 'forme' => f.to_s } },
             'desc' => DESCENTES.map { |k, l, _r| { 'cle' => k, 'libelle' => l } } }
-      html = A2M::Panneau.page('Zinguerie', 'Gouttières et descentes posées sur les égouts de la toiture', CORPS, SCRIPT, d)
+      html = A2M::Panneau.page(pre ? 'Modifier la zinguerie' : 'Zinguerie', 'Gouttières et descentes posées sur les égouts de la toiture', CORPS,
+                               pre ? SCRIPT + A2M::Modif.js_prerempli(pre, 'Appliquer la modification') : SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : zinguerie', 'A2M_Panneau_Zinguerie', html, 460, 680)
       @fen = dlg
       dlg.add_action_callback('poser') do |_c, json|

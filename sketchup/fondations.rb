@@ -29,6 +29,26 @@ module A2M
       lc = rep[0].tr(',', '.').to_f; hc = rep[1].tr(',', '.').to_f
       return UI.messagebox('Largeur et hauteur supérieures à 0.') if lc <= 0 || hc <= 0
       @r = { l: lc, h: hc }
+      construire(murs, lc, hc)
+    end
+
+    # Rouvre des semelles posées : largeur et hauteur ; elles sont refaites sous les mêmes murs (ou sous les murs sélectionnés avec elles)
+    def self.modifier(grp, d)
+      return UI.messagebox('Ces semelles n\'ont pas gardé leurs murs : refaites-les une fois.') unless d && d['murs']
+      model = Sketchup.active_model
+      rep = UI.inputbox(['Largeur de la semelle (cm)', 'Hauteur de la semelle (cm)'], [d['l'].to_s, d['h'].to_s], "Modifier : #{grp.name}")
+      return unless rep
+      lc = rep[0].tr(',', '.').to_f; hc = rep[1].tr(',', '.').to_f
+      return UI.messagebox('Largeur et hauteur supérieures à 0.') if lc <= 0 || hc <= 0
+      murs = d['murs'].map { |pid| model.find_entity_by_persistent_id(pid) }.compact.select { |e| e.valid? && (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e != grp }
+      sel = model.selection.to_a.select { |e| (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e != grp }
+      murs = sel unless sel.empty?
+      return UI.messagebox('Les murs de ces semelles ne sont plus dans le modèle : sélectionnez les murs avec les semelles, puis relancez.') if murs.empty?
+      construire(murs, lc, hc, grp)
+    end
+
+    def self.construire(murs, lc, hc, ancien = nil)
+      model = Sketchup.active_model
       model.start_operation('Semelles filantes (métré)', true)
       begin
         zbas = murs.map { |g| g.bounds.min.z }.min
@@ -62,6 +82,8 @@ module A2M
         grp.layer = lb
         A2M::Hachures.poser(grp, model)
         grp.name = "Semelles filantes #{lc.round} × #{hc.round}"
+        ancien.erase! if ancien && ancien.valid?
+        A2M::Modif.noter(grp, 'semelle', { 'l' => lc, 'h' => hc, 'murs' => murs.map(&:persistent_id) })
         model.commit_operation
         msg = "#{grp.name} créées sous #{murs.size - manque.size} mur(s), balise A2M_SEMELLE."
         msg += "\nSans dessus lisible : #{manque.join(', ')}" if manque.any?

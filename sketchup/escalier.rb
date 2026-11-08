@@ -130,6 +130,10 @@ module A2M
       lat = Z_AXIS.cross(dir); lat.normalize!        # gauche
       model.start_operation('Escalier', true)
       begin
+        if @modif && @modif[:grp] && @modif[:grp].valid?
+          @modif[:grp].erase!
+        end
+        @modif = nil
         tag, _ = A2M::Balises.balise(model, TAG, [176, 140, 96])
         grp = model.entities.add_group
         grp.layer = tag
@@ -174,6 +178,7 @@ module A2M
         end
         grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |a, b| [a.to_a, b.to_a] }))
         grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0)))
+        A2M::Modif.noter(grp, 'escalier', { 'r' => r.reject { |k, _| k == 'replacer' }, 'o' => o.to_a, 'dir' => dir.to_a })
         model.commit_operation
         Sketchup.status_text = "Escalier posé : #{n} marches de #{(h.to_f * 2.54).round(1)} cm, giron #{(g.to_f * 2.54).round(1)} cm."
       rescue StandardError => ex
@@ -213,18 +218,32 @@ module A2M
       end
     end
 
-    def self.ouvrir
+    # Rouvre un escalier posé : mêmes réglages ; l'escalier est refait au même endroit (ou replacé en 2 clics)
+    def self.modifier(grp, d)
+      return UI.messagebox('Cet escalier n\'a pas gardé ses réglages : reposez-le une fois avec l\'outil.') unless d && d['r']
+      @fen.close if @fen && (@fen.visible? rescue false)
+      ouvrir(d['r'], { grp: grp, o: Geom::Point3d.new(*d['o']), dir: Geom::Vector3d.new(*d['dir']) })
+    end
+
+    def self.ouvrir(pre = nil, modif = nil)
+      @modif = modif
       if @fen && (@fen.visible? rescue false)
         @fen.bring_to_front
         return
       end
       d = { 'types' => TYPES.map { |k, l, a| { 'cle' => k, 'libelle' => l, 'aide' => a } }, 'mat' => MATIERES.keys }
-      html = A2M::Panneau.page('Escalier', 'Droit, quart tournant ou demi-tournant, calculé avec la loi de Blondel', CORPS, SCRIPT, d)
+      html = A2M::Panneau.page(modif ? 'Modifier l\'escalier' : 'Escalier', 'Droit, quart tournant ou demi-tournant, calculé avec la loi de Blondel', CORPS,
+                               modif ? SCRIPT + A2M::Modif.js_prerempli(pre, 'Appliquer la modification', 'Replacer l\'escalier (2 clics) au lieu de le garder où il est') : SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : escalier', 'A2M_Panneau_Esc', html, 470, 780)
       @fen = dlg
       dlg.add_action_callback('poser') do |_c, json|
         r = (JSON.parse(json.to_s) rescue nil)
-        UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(r)) } if r
+        if r && @modif && !r['replacer']
+          m = @modif
+          UI.start_timer(0, false) { poser(r, m[:o], m[:dir]) }
+        elsif r
+          UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(r)) }
+        end
       end
       dlg.set_on_closed { @fen = nil }
       dlg.show

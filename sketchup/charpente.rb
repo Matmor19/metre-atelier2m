@@ -119,6 +119,7 @@ module A2M
       end
       c = Sketchup::Color.new(214, 178, 130)
       e.grep(Sketchup::Face).each { |f| f.material = c; f.back_material = c }
+      A2M::Modif.noter(g, 'charpente', { 'r' => r.reject { |k, _| k == 'cible' } })
       g.set_attribute('a2m', 'charpente', JSON.generate('chevrons' => nc, 'ml_chevrons' => ml_ch.round(1), 'ml_liteaux' => ml_lit.round(1), 'ml_contre_liteaux' => ml_ctr.round(1), 'section' => r['sec'], 'entraxe' => ent))
       [nc, ml_ch, ml_lit, ml_ctr]
     end
@@ -140,12 +141,20 @@ module A2M
       end
     end
 
-    def self.ouvrir
+    # Rouvre la charpente posée : mêmes réglages, refaite sous tous les pans
+    def self.modifier(_grp, d)
+      return UI.messagebox('Cette charpente n\'a pas gardé ses réglages : reposez-la une fois.') unless d && d['r']
+      @fen.close if @fen && (@fen.visible? rescue false)
+      ouvrir(d['r'].merge('cible' => 'tout'))
+    end
+
+    def self.ouvrir(pre = nil)
       if @fen && (@fen.visible? rescue false)
         @fen.bring_to_front
         return
       end
-      html = A2M::Panneau.page('Charpente', 'Chevrons, contre-liteaux, liteaux, faîtière et sablière sous les pans', CORPS, SCRIPT, { 'sec' => SECTIONS.keys })
+      html = A2M::Panneau.page(pre ? 'Modifier la charpente' : 'Charpente', 'Chevrons, contre-liteaux, liteaux, faîtière et sablière sous les pans', CORPS,
+                               pre ? SCRIPT + A2M::Modif.js_prerempli(pre, 'Appliquer la modification') : SCRIPT, { 'sec' => SECTIONS.keys })
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : charpente', 'A2M_Panneau_Charp', html, 460, 640)
       @fen = dlg
       dlg.add_action_callback('poser') do |_c, json|

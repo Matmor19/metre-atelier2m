@@ -185,6 +185,7 @@ module A2M
       end
       m2 = face.area * 2.54**2 / 10000.0 * ((t.xscale * t.yscale) rescue 1)
       g.set_attribute('a2m', 'sur', face.persistent_id)
+      A2M::Modif.noter(g, 'couverture', { 'r' => @r_en_cours }) if @r_en_cours
       g.set_attribute('a2m', 'couverture', JSON.generate('type' => lib, 'm2' => m2.round(2), 'elements' => elements, 'pureau' => pur, 'pas' => pas))
       m2
     end
@@ -197,6 +198,7 @@ module A2M
       pas = 1.0 if pas <= 0
       cibles = pans(model, r['cible'])
       return UI.messagebox('Aucun pan trouvé. Sélectionnez des pans de toiture (ou choisissez « Tous les pans »).') if cibles.empty?
+      @r_en_cours = r.reject { |k, _| k == 'cible' }
       model.start_operation('Couverture Atelier 2M', true)
       begin
         total = 0.0
@@ -209,13 +211,21 @@ module A2M
       end
     end
 
-    def self.ouvrir
+    # Rouvre la couverture posée : mêmes réglages, appliqués à tous les pans (la couverture déjà posée est remplacée)
+    def self.modifier(_grp, d)
+      return UI.messagebox('Cette couverture n\'a pas gardé ses réglages : reposez-la une fois.') unless d && d['r']
+      @fen.close if @fen && (@fen.visible? rescue false)
+      ouvrir(d['r'].merge('cible' => 'tout'))
+    end
+
+    def self.ouvrir(pre = nil)
       if @fen && (@fen.visible? rescue false)
         @fen.bring_to_front
         return
       end
       d = { 'types' => TYPES.map { |k, l, a, r, _e, c, n, _d| { 'cle' => k, 'libelle' => l, 'aide' => a, 'pur' => r[0], 'pas' => r[1], 'pur_zero' => r[0] == 0, 'rgb' => c[0].join(','), 'motif' => MOTIFS[k] } } }
-      html = A2M::Panneau.page('Couverture', 'Ardoise, tuiles, zinc et bac acier posés sur les pans', CORPS, SCRIPT, d)
+      html = A2M::Panneau.page(pre ? 'Modifier la couverture' : 'Couverture', 'Ardoise, tuiles, zinc et bac acier posés sur les pans', CORPS,
+                               pre ? SCRIPT + A2M::Modif.js_prerempli(pre, 'Appliquer la modification') : SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : couverture', 'A2M_Panneau_Couverture', html, 460, 760)
       @fen = dlg
       dlg.add_action_callback('poser') do |_c, json|

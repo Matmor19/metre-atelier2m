@@ -68,7 +68,30 @@ module A2M
       grp.layer = l
       grp.name = nom
       A2M::Hachures.poser(grp, model)
+      A2M::Modif.noter(grp, 'solmur', { 'nom' => nom, 'tag' => tag, 'z' => z.to_f, 'e' => epaisseur_cm, 'bas' => vers_le_bas ? true : false,
+                                        'surfaces' => surfaces.map { |ext, trous| [ext.map { |q| [q.x.to_f, q.y.to_f] }, (trous || []).map { |t| t.map { |q| [q.x.to_f, q.y.to_f] } }] } })
       grp
+    end
+
+    # Rouvre une dalle, chape ou plafond posé depuis les murs : épaisseur et sens (le contour suit les murs : modifiez les murs puis refaites la pose)
+    def self.modifier(grp, d)
+      return UI.messagebox('Cette surface n\'a pas gardé ses réglages : refaites-la une fois.') unless d && d['surfaces']
+      rep = UI.inputbox(['Épaisseur (cm)', 'Sens'], [d['e'].to_s, d['bas'] ? 'Vers le bas' : 'Vers le haut'], ['', 'Vers le haut|Vers le bas'], "Modifier : #{grp.name}")
+      return unless rep
+      e = rep[0].to_s.tr(',', '.').to_f
+      return UI.messagebox('L\'épaisseur doit être supérieure à 0.') if e <= 0
+      model = Sketchup.active_model
+      model.start_operation('Modifier une surface (métré)', true)
+      begin
+        surf = d['surfaces'].map { |ext, trous| [ext.map { |x, y| Geom::Point3d.new(x, y, 0) }, trous.map { |t| t.map { |x, y| Geom::Point3d.new(x, y, 0) } }] }
+        nv = groupe(model, d['nom'], d['tag'], surf, d['z'].to_f, e, rep[1] == 'Vers le bas')
+        grp.erase!
+        model.commit_operation
+        model.selection.clear; model.selection.add(nv)
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("La surface n'a pas pu être modifiée (#{ex.message}).")
+      end
     end
 
     # Couches du panneau « Dalle, chape, plafond » : mêmes données que les compositions

@@ -98,5 +98,12 @@
   "Sélectionnez la menuiserie (ou la réservation) de l'ouverture, puis lancez « Modifier une ouverture ».",
   "Changez la largeur, la hauteur, la hauteur du linteau ou décalez-la le long du mur.",
   "Le mur est rebouché et repercé ; la menuiserie, l'appui ou le seuil sont refaits avec les mêmes choix."
+ ],
+ "modifier": [
+  "Cliquez sur « Modifier ce que j'ai dessiné », puis sur l'objet (ou sélectionnez-le avant).",
+  "Fonctionne pour : murs et cloisons, toiture, ouvertures, sols, dalles, chapes, plafonds, escalier, garde-corps, couverture, charpente, zinguerie, semelles.",
+  "Les réglages sont rouverts ; pour un sol dessiné, choisissez « Déplacer les points du contour » ; pour un escalier ou un garde-corps, cochez « Replacer » pour le redessiner ailleurs.",
+  "Un objet créé avant la version 2.92 doit être refait une fois avec son outil pour garder ses réglages.",
+  "Planelles : pas de modification possible (elles recoupent la dalle et le soubassement) : annulez (Ctrl+Z) puis reposez-les avec les nouveaux réglages."
  ]
 }

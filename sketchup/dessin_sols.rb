@@ -70,7 +70,7 @@ module A2M
       A2M::SolMurs.poser_couches([{ 'nom' => "#{base} #{num}", 'balise' => tag, 'e' => p[:e] }], (p[:alt].to_f * 100.0), nil, nil, p[:sens] == 0)
     end
 
-    def self.construire(pts, p)
+    def self.construire(pts, p, ancien = nil)
       model = Sketchup.active_model
       model.start_operation('Dessiner un sol ou un plafond (métré)', true)
       begin
@@ -92,11 +92,43 @@ module A2M
           num = model.active_entities.grep(Sketchup::Group).count { |g| g.name.start_with?(base) }
           grp.name = "#{base} #{num}"
         end
+        if ancien && ancien.valid?
+          grp.name = ancien.name if ancien.name.to_s.start_with?(type[5].to_s) && !p[:nom]
+          ancien.erase!
+        end
+        A2M::Modif.noter(grp, 'sol', { 'pts' => A2M::Modif.pts_vers(pts), 'type' => type[0], 'etage' => p[:etage] ? true : false,
+                                       'e' => p[:e], 'sens' => p[:sens], 'alt' => p[:alt].to_f, 'nom' => p[:nom] })
         model.commit_operation
         Sketchup.status_text = "#{grp.name} créé : épaisseur #{p[:e]} cm, balise #{tag}"
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("La surface n'a pas pu être créée (#{ex.message}). Vérifiez que le contour ne se recoupe pas.")
+      end
+    end
+
+    # Rouvre une dalle, chape, plafond ou revêtement dessiné : réglages et contour
+    def self.modifier(grp, d)
+      return UI.messagebox('Ce sol n\'a pas gardé son contour : redessinez-le une fois avec l\'outil.') unless d && d['pts']
+      type = TYPES.find { |x| x[0] == d['type'] } || TYPES[0]
+      rep = UI.inputbox(['Type', 'Niveau', 'Épaisseur (cm)', 'Pose', 'Hauteur au-dessus du tracé (m)', 'Nom (revêtement de sol, terrasse)', 'Contour'],
+                        [type[0], d['etage'] ? NIVEAUX[1] : NIVEAUX[0], d['e'].to_s, SENS[d['sens'].to_i] || SENS[0], d['alt'].to_f.to_s, d['nom'].to_s, 'Garder le contour'],
+                        [TYPES.map(&:first).join('|'), NIVEAUX.join('|'), '', SENS.join('|'), '', '', 'Garder le contour|Déplacer les points du contour'], "Modifier : #{grp.name}")
+      return unless rep
+      nt = TYPES.find { |x| x[0] == rep[0] } || type
+      e = rep[2].to_s.tr(',', '.').to_f
+      return UI.messagebox('L\'épaisseur doit être supérieure à 0.') if e <= 0
+      nom = rep[5].to_s.strip
+      nom = nil if nom.empty? || !nt[5].nil?
+      p = { type: nt, etage: rep[1] == 'Étage', e: e, sens: SENS.index(rep[3]) || 0, alt: rep[4].to_s.tr(',', '.').to_f, nom: nom }
+      pts = A2M::Modif.pts_de(d['pts'])
+      if rep[6].start_with?('Déplacer')
+        courant = grp
+        Sketchup.active_model.select_tool(A2M::Modif::Points.new(pts, true) do |np|
+          construire(np, p, courant)
+          courant = Sketchup.active_model.active_entities.grep(Sketchup::Group).last
+        end)
+      else
+        construire(pts, p, grp)
       end
     end
 

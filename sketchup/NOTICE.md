@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.91.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.92.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -261,6 +261,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture, toujours dans le menu Extensions) : cliquez un mur, une toiture, une ouverture, un sol ou plafond, un escalier, un garde-corps, la couverture, la charpente, la zinguerie ou des semelles → l'outil se rouvre avec ses réglages. Sols et plafonds dessinés : les points du contour se déplacent. Escalier et garde-corps : on peut les replacer. Les objets créés avant cette version doivent être refaits une fois. Planelles : pas de modification (voir la notice)
 - Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur, hauteur du linteau et position le long du mur se changent ; le mur est rebouché puis repercé, la menuiserie et l'appui refaits avec les mêmes choix. Les ouvertures percées avant cette version peuvent déjà changer de taille, mais sans retrouver leur menuiserie de bibliothèque (une réservation est posée)
 - Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente, débord, épaisseur, faîtage) et refait la toiture ; on peut aussi reprendre le contour sur d'autres murs sélectionnés avec elle. Les toitures déjà créées avant cette version doivent être refaites une fois
 - Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un seul solide ; tous les tracés sont gardés en mémoire (Modifier un mur → Modifier le tracé montre et déplace les points de chacun). Si SketchUp refuse l'union, les morceaux restent côte à côte mais toujours liés au même mur
@@ -280,4 +281,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)
 - Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur
 - Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection) ; meilleur centrage de la cellule sur tous les murs d'un même groupe
-- Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
