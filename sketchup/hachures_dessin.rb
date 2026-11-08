@@ -109,6 +109,43 @@ module A2M
       [A2M::MotifPat.encoder(w, hh, brut), l, h]
     end
 
+    # Image pour un objet : tuile de largeur pas_cm (calée sur les murs), hauteur = celle de la cellule ;
+    # la cellule (échelle k) est centrée à phi·pas ; le fond couvre toute la tuile. Renvoie [png, hauteur_cm]
+    def self.png_objet(m, o, pas_cm, phi, k)
+      d = m['dessin']
+      l = d['l'].to_f * k; h = d['h'].to_f * k
+      s = [[512.0 / pas_cm, 700.0 / h].min, 40.0].min
+      w = [(pas_cm * s).round, 4].max; hh = [(h * s).round, 4].max
+      sx = w / pas_cm; sy = hh / h
+      cov = Array.new(w * hh, 0.0)
+      r = [o['ep'].to_f / 100.0 * l * sx / 4.0, 0.7].max
+      x0 = phi * pas_cm - l / 2.0
+      [-1, 0, 1].each do |ox|
+        [-1, 0, 1].each do |oy|
+          d['segments'].each do |a, b, c, e|
+            xa = (x0 + a * k + ox * pas_cm) * sx; xb = (x0 + c * k + ox * pas_cm) * sx
+            A2M::MotifPat.trait(cov, w, hh, xa, (h - (b * k + oy * h)) * sy, xb, (h - (e * k + oy * h)) * sy, r)
+          end
+        end
+      end
+      lc = A2M::MotifPat.hex(o['trait']); la = o['trait_op'].to_f / 100.0
+      fc = A2M::MotifPat.hex(o['fond']); fa = o['fond_op'].to_f / 100.0
+      brut = Array.new(hh) do |y|
+        rang = "\0".b
+        w.times do |x|
+          c = cov[y * w + x] * la
+          al = c + fa * (1 - c)
+          if al <= 0 then rang << "\0\0\0\0".b
+          else
+            px = (0..2).map { |i| ((lc[i] * c + fc[i] * fa * (1 - c)) / al).round.clamp(0, 255) }
+            rang << [px[0], px[1], px[2], (al * 255).round].pack('C4')
+          end
+        end
+        rang
+      end.join
+      [A2M::MotifPat.encoder(w, hh, brut), h]
+    end
+
     # Commande : crée la hachure à partir de la sélection ; renvoie le motif (ou lève une erreur lisible)
     def self.creer(model, nom)
       d = lire(model.selection.to_a)

@@ -246,14 +246,45 @@ module A2M
       nil
     end
 
-    def self.onde?(x) x.is_a?(Hash) && x['motif'] == A2M::Onde::ID end
+    # Hachures posées objet par objet (centrées sur chaque mur) : isolant ondulé et dessins personnels
+    def self.dessin_de(x) x.is_a?(Hash) && x['motif'] && (catalogue[x['motif']] || {})['dessin'] ? catalogue[x['motif']] : nil end
+    def self.onde?(x) x.is_a?(Hash) && (x['motif'] == A2M::Onde::ID || !dessin_de(x).nil?) end
 
     # Isolant ondulé centré : hachure propre à ce groupe, onde au milieu de chacun de ses murs (coupes verticales)
     def self.onde_objet(model, e, x)
       ents = e.respond_to?(:definition) ? e.definition.entities : e.entities
       bd = A2M::Onde.bandes(e.is_a?(Sketchup::Group) ? e : Struct.new(:transformation, :entities).new(e.transformation, ents))
+      md = dessin_de(x)
+      if md && bd.empty?                                   # pas un mur (sol, dalle…) : hachure ordinaire de la couche
+        h = construire(model, e.layer.name) or return nil
+        e.hatch_pattern = h
+        return h
+      end
       return nil if bd.empty?
       o = DEFAUT.merge(x)
+      if md
+        pas, phi, = A2M::Onde.pas(bd)
+        k = o['taille'].to_f / md['ref']
+        png, haut = A2M::Dessin.png_objet(md, o, pas, phi, k)
+        id = e.persistent_id rescue e.entityID
+        tex = File.join(dossier, 'textures')
+        Dir.glob(File.join(tex, "dessin_#{id}_*.png")).each { |f| File.delete(f) rescue nil }
+        f = File.join(tex, "dessin_#{id}_#{Time.now.to_i}#{rand(1000)}.png")
+        File.binwrite(f, png)
+        hp = model.hatch_patterns
+        nom = "#{PREFIXE}dessin #{id}"
+        h = hp[nom]
+        unless h
+          base = bibliotheque_sketchup.first or raise 'bibliothèque de hachures de SketchUp introuvable'
+          h = hp.add(nom, base)
+        end
+        h.clear_fill_pattern rescue nil
+        h.set_fill_texture_image_and_file_name(Sketchup::ImageRep.new(f), f)
+        h.set_uv_scale(pas / 2.54, haut / 2.54)
+        h.rotation_angle = 0
+        e.hatch_pattern = h
+        return h
+      end
       pas, phi, = A2M::Onde.pas(bd)
       largeur = o['largeur'].to_f / 100.0 * bd.map(&:last).min
       png, boucle = A2M::Onde.png(pas, phi, largeur, o)

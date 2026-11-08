@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.82.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.82.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -251,6 +251,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
 - Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.
 - Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
 - Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
@@ -270,4 +271,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Correction : « Dessiner un sol » sur les murs sélectionnés — les murs de soubassement sont maintenant reconnus (message « Aucun mur balisé trouvé ») ; avec « Au-dessus du tracé », la dalle repose sur le dessus des murs sélectionnés
 - Planelles : un seul tag A2M_PLANELLE pour toute la planelle (plus de tag « Isolant de planelle ») ; les deux aspects (planelle, isolant de planelle) ne sont que des textures posées selon le rôle de chaque partie — la plus grande partie du profil est la planelle, les autres l'isolant ; le linéaire n'est compté qu'une fois au métré
 - Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la version et si la planelle a été posée sur le soubassement (la dalle monte alors de la différence) ou, à défaut, calée sur la dalle
-- Planelles : l'aspect de ton dessin est repris — matière 3D de ses faces et hachure de coupe de son groupe sont rangées avec le profil (« Ranger le profil dessiné ») et reposées sur chaque planelle
