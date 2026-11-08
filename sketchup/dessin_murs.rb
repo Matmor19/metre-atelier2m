@@ -181,19 +181,19 @@ module A2M
           e = (c[:e] / 100.0).m
           d1, d2 = sg * s, sg * (s + e)
           s += e
-          [c[:type], c[:h], [d1, d2].max, [d1, d2].min, c[:e]]
+          [c[:type], c[:h], [d1, d2].max, [d1, d2].min, c[:e], (c[:b].to_f / 100.0).m]
         end
       else
         e = (p[:e] / 100.0).m
         dg, dd = [[e / 2.0, -e / 2.0], [0.0, -e], [e, 0.0]][p[:trace]]
-        [[p[:type], p[:h], dg, dd, p[:e]]]
+        [[p[:type], p[:h], dg, dd, p[:e], 0.0]]
       end
     end
 
     # Une couche : empreinte entre deux décalages du tracé, extrudée sur la hauteur, dans un groupe sur la balise du type
-    def self.construire_couche(pts, ferme, type, hm, dg, dd)
+    def self.construire_couche(pts, ferme, type, hm, dg, dd, bas = 0.0)
       model = Sketchup.active_model
-      z = pts[0].z
+      z = pts[0].z - bas      # « bas » : la couche descend plus bas que le tracé (ex. enduit sous le mur)
       grp = model.active_entities.add_group
       ents = grp.entities
       a = decale(pts, dg, ferme); b = decale(pts, dd, ferme)
@@ -208,7 +208,7 @@ module A2M
         f = ents.add_face(p3.call(a + b.reverse))
       end
       f.reverse! if f.normal.z < 0
-      f.pushpull(hm.m)
+      f.pushpull(hm.m + bas)
       l, _ = A2M::Balises.balise(model, type[1], (A2M::Balises::LISTE.find { |n, _, _| n == type[1] } || [])[2])
       grp.layer = l
       A2M::Hachures.poser(grp, model)
@@ -220,7 +220,7 @@ module A2M
     # Mémoire du mur : chaque couche garde le tracé et les réglages pour pouvoir être modifiée plus tard
     def self.p_vers_json(p)
       if p[:couches]
-        { 'compose' => true, 'cote' => p[:cote], 'ref' => p[:ref], 'couches' => p[:couches].map { |c| [c[:type][0], c[:e], c[:h]] } }
+        { 'compose' => true, 'cote' => p[:cote], 'ref' => p[:ref], 'couches' => p[:couches].map { |c| [c[:type][0], c[:e], c[:h], c[:b].to_f] } }
       else
         { 'compose' => false, 'type' => p[:type][0], 'h' => p[:h], 'e' => p[:e], 'trace' => p[:trace] }
       end
@@ -231,7 +231,7 @@ module A2M
     # Réglages mémorisés → forme « mur composé » (un mur simple devient un mur à une couche)
     def self.p_compose(j)
       if j['compose']
-        { couches: j['couches'].map { |t, e, h| { type: type_nomme(t), e: e.to_f, h: h.to_f } }, cote: j['cote'].to_i, ref: j['ref'].to_i }
+        { couches: j['couches'].map { |t, e, h, b| { type: type_nomme(t), e: e.to_f, h: h.to_f, b: b.to_f } }, cote: j['cote'].to_i, ref: j['ref'].to_i }
       else
         { couches: [{ type: type_nomme(j['type']), e: j['e'].to_f, h: j['h'].to_f }], cote: [2, 0, 1][j['trace'].to_i] || 2, ref: 0 }
       end
@@ -251,8 +251,8 @@ module A2M
       model.start_operation(p[:couches] ? 'Dessiner un mur composé (métré)' : 'Dessiner un mur (métré)', true)
       begin
         id = "#{Time.now.to_i}#{rand(100_000)}"
-        noms = couches_de(p).each_with_index.map do |(type, hm, dg, dd, ecm), i|
-          g = construire_couche(pts, ferme, type, hm, dg, dd)
+        noms = couches_de(p).each_with_index.map do |(type, hm, dg, dd, ecm, bas), i|
+          g = construire_couche(pts, ferme, type, hm, dg, dd, bas.to_f)
           marquer(g, id, pts, ferme, p, i)
           "#{g.name} (#{ecm} cm)"
         end
@@ -330,8 +330,8 @@ module A2M
     def self.reconstruire(r, p)
       r[:groupes].each { |g| g.erase! if g.valid? }
       nv = []
-      couches_de(p).each_with_index do |(type, hm, dg, dd, _e), i|
-        g = construire_couche(r[:pts], r[:ferme], type, hm, dg, dd)
+      couches_de(p).each_with_index do |(type, hm, dg, dd, _e, bas), i|
+        g = construire_couche(r[:pts], r[:ferme], type, hm, dg, dd, bas.to_f)
         marquer(g, r[:id], r[:pts], r[:ferme], p, i)
         nv << g
       end
@@ -347,7 +347,7 @@ module A2M
       end
       return @fen_modif.bring_to_front if @fen_modif && (@fen_modif.visible? rescue false)
       c = p_compose(r[:j])
-      cs = c[:couches].map { |x| { 'type' => x[:type][0], 'e' => x[:e], 'h' => x[:h] } }
+      cs = c[:couches].map { |x| { 'type' => x[:type][0], 'e' => x[:e], 'h' => x[:h], 'b' => x[:b].to_f } }
       couleurs = {}
       TYPES.each { |t| couleurs[t[0]] = A2M::Compositions::COULEURS[t[1]] || [190, 190, 190] }
       nb = famille(r, murs).size
@@ -363,7 +363,7 @@ module A2M
       dlg.add_action_callback('ok') do |_ctx, json|
         d = (JSON.parse(json.to_s) rescue nil)
         next unless d
-        couches = d['c'].map { |x| { type: type_nomme(x['type']), e: x['e'].to_f, h: x['h'].to_f } }
+        couches = d['c'].map { |x| { type: type_nomme(x['type']), e: x['e'].to_f, h: x['h'].to_f, b: x['b'].to_f } }
         ref = [[d['ref'].to_i, 0].max, couches.size - 1].min
         p = { couches: couches, cote: d['cote'].to_i, ref: ref, type: ['Mur composé'], h: couches.map { |x| x[:h] }.max, e: couches.sum { |x| x[:e] }.round(1) }
         dlg.close
@@ -462,7 +462,7 @@ module A2M
       var etat = { n: D.n, cote: D.cote, ref: D.ref, c: D.couches };
       function couleur(nom) { return D.couleurs[nom] || [190, 190, 190]; }
       function ajuster() {
-        while (etat.c.length < etat.n) { var d = D.defaut[Math.min(etat.c.length, D.defaut.length - 1)]; etat.c.push({ type: d[0], e: d[1], h: d[2] }); }
+        while (etat.c.length < etat.n) { var d = D.defaut[Math.min(etat.c.length, D.defaut.length - 1)]; etat.c.push({ type: d[0], e: d[1], h: d[2], b: 0 }); }
         etat.c.length = etat.n; if (etat.ref >= etat.n) etat.ref = etat.n - 1;
       }
       function rendre() {
@@ -492,7 +492,7 @@ module A2M
         etat.c.forEach(function (k, i) {
           var r = i === etat.ref;
           var l = document.createElement('div');
-          l.style.cssText = 'display:grid;grid-template-columns:96px 1fr 64px 64px;gap:6px;align-items:center;margin-bottom:6px;padding:6px;border-radius:10px;border:2px solid ' + (r ? '#e07838' : 'transparent') + ';background:' + (r ? '#fdeedd' : 'transparent');
+          l.style.cssText = 'display:grid;grid-template-columns:96px 1fr 60px 60px 60px;gap:6px;align-items:center;margin-bottom:6px;padding:6px;border-radius:10px;border:2px solid ' + (r ? '#e07838' : 'transparent') + ';background:' + (r ? '#fdeedd' : 'transparent');
           var bi = document.createElement('button'); bi.type = 'button'; bi.className = 'puce' + (r ? ' rempli' : ''); bi.textContent = r ? '★ Insertion' : 'Insérer ici';
           bi.addEventListener('click', function () { etat.ref = i; rendre(); });
           var sb = document.createElement('select'); sb.style.cssText = 'padding:7px;border:2px solid #d8d0c6;border-radius:8px;background:#fff;min-width:0';
@@ -501,9 +501,10 @@ module A2M
           var ep = document.createElement('input'); ep.type = 'text'; ep.value = k.e; ep.title = 'Épaisseur (cm)'; ep.style.cssText = 'font-size:13px;padding:6px;text-align:center'; ep.addEventListener('input', function () { k.e = num(ep.value); });
           ep.addEventListener('change', rendre);
           var hh = document.createElement('input'); hh.type = 'text'; hh.value = k.h; hh.title = 'Hauteur (m)'; hh.style.cssText = 'font-size:13px;padding:6px;text-align:center'; hh.addEventListener('input', function () { k.h = num(hh.value); });
-          [bi, sb, ep, hh].forEach(function (n) { l.appendChild(n); }); L.appendChild(l);
+          var bb = document.createElement('input'); bb.type = 'text'; bb.value = k.b || 0; bb.title = 'Descend plus bas que le tracé de (cm)'; bb.style.cssText = 'font-size:13px;padding:6px;text-align:center'; bb.addEventListener('input', function () { k.b = num(bb.value); });
+          [bi, sb, ep, hh, bb].forEach(function (n) { l.appendChild(n); }); L.appendChild(l);
         });
-        var cap = document.createElement('div'); cap.className = 'petit'; cap.textContent = 'Colonnes : insertion · type · épaisseur (cm) · hauteur (m).'; L.appendChild(cap);
+        var cap = document.createElement('div'); cap.className = 'petit'; cap.textContent = 'Colonnes : insertion · type · épaisseur (cm) · hauteur (m) · descend plus bas (cm, ex. enduit sous le mur).'; L.appendChild(cap);
         el('msg').textContent = 'Insertion par la couche « ' + etat.c[etat.ref].type + ' ».';
       }
       el('go').addEventListener('click', function () {
@@ -523,7 +524,7 @@ module A2M
       return @fen_compose.bring_to_front if @fen_compose && (@fen_compose.visible? rescue false)
       r = @reglages[:compose] || {}
       prec = r[:couches] || [COMPO_DEFAUT[0], COMPO_DEFAUT[1], COMPO_DEFAUT[2], COMPO_DEFAUT[3]]
-      cs = prec.map { |t, e, h| { 'type' => t, 'e' => e, 'h' => h } }
+      cs = prec.map { |t, e, h, b| { 'type' => t, 'e' => e, 'h' => h, 'b' => b.to_f } }
       n = [[r[:n] || cs.size, 1].max, 5].min
       ref = r[:ref] || index_insertion(cs.map { |c| c['type'] })
       couleurs = {}
@@ -537,10 +538,10 @@ module A2M
       dlg.add_action_callback('ok') do |_ctx, json|
         d = (JSON.parse(json.to_s) rescue nil)
         next unless d
-        couches = d['c'].map { |c| { type: TYPES.find { |x| x[0] == c['type'] } || TYPES[0], e: c['e'].to_f, h: c['h'].to_f } }
+        couches = d['c'].map { |c| { type: TYPES.find { |x| x[0] == c['type'] } || TYPES[0], e: c['e'].to_f, h: c['h'].to_f, b: c['b'].to_f } }
         cote = d['cote'].to_i
         ref = [[d['ref'].to_i, 0].max, couches.size - 1].min
-        @reglages[:compose] = { n: couches.size, cote: COTES_COMPOSE[cote], ref: ref, couches: couches.map { |c| [c[:type][0], c[:e], c[:h]] } }
+        @reglages[:compose] = { n: couches.size, cote: COTES_COMPOSE[cote], ref: ref, couches: couches.map { |c| [c[:type][0], c[:e], c[:h], c[:b]] } }
         p = { couches: couches, cote: cote, ref: ref, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: couches.sum { |c| c[:e] }.round(1) }
         dlg.close
         UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(p)) }

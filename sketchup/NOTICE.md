@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.83.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.83.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -85,6 +85,7 @@ Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise
 - 1. Choisissez le nombre de couches, puis le type, l'épaisseur et la hauteur de chacune (de l'extérieur vers l'intérieur).
 - 2. Couche d'insertion (★, en surbrillance) : c'est elle que vous tracez. Par défaut le mur périphérique. Le tracé en est la face extérieure ; l'enduit se place à l'extérieur du tracé, les doublages à l'intérieur. L'aperçu en coupe montre le tracé en orange.
 - 3. Choisissez le côté (intérieur à droite ou à gauche du tracé, ou tracé dans l'axe de la couche d'insertion) puis « Dessiner le mur » : cliquez les points ; Tab change de côté, Entrée termine.
+- Dernière colonne de chaque couche : « descend plus bas (cm) ». Exemple : 30 pour l'enduit = il descend 30 cm sous le pied du mur (même sommet, plus haut de 30 cm). 0 = au niveau du tracé. Réglable aussi dans « Modifier un mur ».
 
 ### Dalle, chape, plafond depuis les murs
 Sélectionnez les murs : dalle béton sous l'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d'un coup avec leurs épaisseurs
@@ -253,6 +254,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre couche) descende sous le pied du mur périphérique
 - Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)
 - Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)
 - Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)
@@ -272,4 +274,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène coupe 3D, au choix par coupe) et le bouton « Inverser toutes les coupes »
 - Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)
 - Hachures de coupe : la dalle béton (rez-de-chaussée) et le plancher d'étage sont maintenant dans la liste des couches, pour leur donner une hachure de coupe comme aux autres
-- Correction : planelles — retrait du nettoyage d'arêtes (pouvait vider la planelle) ; en cas d'erreur, le message indique l'endroit précis
