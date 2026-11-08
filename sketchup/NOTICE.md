@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.81.2)
+# Métré Atelier 2M — notice d'utilisation (version 2.82.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -128,6 +128,7 @@ Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée
 
 - Choisit, par couche (balise), la hachure ou la couleur unie vue en coupe. Liste en français ; une couleur = trait d'opacité 0 + fond coloré. « Appliquer » ne touche que les objets portant la balise ; une nouvelle pose utilise les réglages du moment.
 - Planelle : « Planelles en rive de dalle » = la coque, « Isolant dans la planelle » = les vides.
+- Votre propre dessin : dessinez la cellule (rectangle de 14 cm de large + traits/courbes, hauteur au choix, haut et bas qui se raccordent), sélectionnez-la, puis « Hachure depuis ma sélection… » : elle est rangée dans le groupe « Mes dessins » et s'applique comme les autres motifs (se répète à la verticale et à l'horizontale). Les traits du bord du rectangle ne sont pas retenus ; le fond de couleur se règle dans la fenêtre.
 
 ### Textures extérieures
 Enduits, RAL des menuiseries, tuiles, zinguerie, appuis… : texture visuelle d'un élément pour la présentation client (hors métré)
@@ -250,6 +251,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.
 - Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
 - Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
 - Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions
@@ -269,4 +271,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Planelles : un seul tag A2M_PLANELLE pour toute la planelle (plus de tag « Isolant de planelle ») ; les deux aspects (planelle, isolant de planelle) ne sont que des textures posées selon le rôle de chaque partie — la plus grande partie du profil est la planelle, les autres l'isolant ; le linéaire n'est compté qu'une fois au métré
 - Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la version et si la planelle a été posée sur le soubassement (la dalle monte alors de la différence) ou, à défaut, calée sur la dalle
 - Planelles : l'aspect de ton dessin est repris — matière 3D de ses faces et hachure de coupe de son groupe sont rangées avec le profil (« Ranger le profil dessiné ») et reposées sur chaque planelle
-- Correction : planelles — la planelle se pose maintenant SUR le mur de soubassement (qui n'est plus abaissé) ; la dalle se cale ensuite sur le haut de la planelle (elle monte ou descend de la différence) puis épouse le profil de la planelle jusqu'au dessus du soubassement

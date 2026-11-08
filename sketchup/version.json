@@ -1,12 +1,12 @@
 {
- "version": "2.81.2",
+ "version": "2.82.0",
  "notes": [
+  "Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec…",
   "Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont…",
   "Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans…",
   "Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face…",
   "Plan 2D : chaque objet de la bibliothèque a maintenant son image 2D indépendante ; clic droit sur l'image (sur le plan) ou sur…",
   "Bibliothèque : « Poser » ne dépose plus l'objet à l'origine : il suit la souris (emprise orange), un clic le pose, ← → le…",
-  "Ranger un objet dans la bibliothèque : nouvelle fenêtre « Ranger » (nom, dossier existant avec son nombre d'objets ou « + Nouveau…",
-  "… et 70 autres nouveautés plus anciennes."
+  "… et 71 autres nouveautés plus anciennes."
  ]
 }

@@ -12,6 +12,7 @@ require 'fileutils'
 require File.join(File.dirname(__FILE__), 'hachures_moteur')
 require File.join(File.dirname(__FILE__), 'hachures_fr')
 require File.join(File.dirname(__FILE__), 'hachures_onde')
+require File.join(File.dirname(__FILE__), 'hachures_dessin')
 
 module A2M
   module Hachures
@@ -174,6 +175,7 @@ module A2M
         end
       end
       @cat = { A2M::Onde::ID => A2M::Onde::MOTIF.dup }
+      A2M::Dessin.tous.each { |m| @cat[m['id']] = m }
       sources.each do |groupe, d, ajout|
         (File.file?(d) ? [d] : Dir.glob(File.join(d, '*.pat')).sort).each do |f|
           begin
@@ -213,7 +215,7 @@ module A2M
       m = catalogue[x['motif']] || catalogue(true)[x['motif']]
       return nil unless m
       o = DEFAUT.merge(x)
-      png, tx, ty = A2M::MotifPat.png(m, o)
+      png, tx, ty = m['dessin'] ? A2M::Dessin.png(m, o) : A2M::MotifPat.png(m, o)
       tex = File.join(dossier, 'textures')
       Dir.glob(File.join(tex, "#{b}_*.png")).each { |f| File.delete(f) rescue nil }
       f = File.join(tex, "#{b}_#{Time.now.to_i}#{rand(1000)}.png")
@@ -379,7 +381,7 @@ module A2M
     end
 
     def self.motifs_pour_page
-      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'], 'origine' => m['origine'], 'onde' => m['onde'] } }
+      catalogue.values.map { |m| { 'id' => m['id'], 'nom' => m['nom'], 'desc' => m['description'], 'groupe' => m['groupe'], 'fam' => m['familles'], 'ref' => m['ref'], 'ajout' => m['ajout'], 'origine' => m['origine'], 'onde' => m['onde'], 'dessin' => m['dessin'] } }
     end
 
     def self.regler
@@ -451,6 +453,22 @@ module A2M
         catalogue(true)
         envoyer.call('motifs', motifs_pour_page)
         envoyer.call('etat', etat(Sketchup.active_model))
+      end
+      @dlg.add_action_callback('depuis_dessin') do |_c|
+        m = Sketchup.active_model
+        defaut = (m.selection.first.name.to_s rescue '')
+        defaut = 'Isolant 140' if defaut.empty?
+        nom = UI.inputbox(['Nom de la hachure'], [defaut], 'Hachure depuis ma sélection')
+        next unless nom
+        begin
+          mo = A2M::Dessin.creer(m, nom[0].to_s.strip.empty? ? defaut : nom[0].to_s.strip)
+          catalogue(true)
+          envoyer.call('motifs', motifs_pour_page)
+          envoyer.call('groupe', 'Mes dessins')
+          UI.messagebox("Hachure « #{mo['nom']} » créée (#{mo['dessin']['l']} × #{mo['dessin']['h']} cm). Elle est dans le groupe « Mes dessins » : choisissez la couche, cliquez-la, puis « Appliquer ».")
+        rescue StandardError => ex
+          UI.messagebox("Hachure non créée : #{ex.message}")
+        end
       end
       @dlg.add_action_callback('fermer') { |_c| @dlg.close }
       @dlg.show

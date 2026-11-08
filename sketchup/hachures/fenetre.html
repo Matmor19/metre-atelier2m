@@ -58,6 +58,7 @@ button:disabled{opacity:.5;cursor:default}
       <span id="prog"></span>
       <span style="flex:1"></span>
       <button id="btnRet" style="display:none">Retirer ce dossier</button>
+      <button id="btnDes" title="Sélectionnez d'abord votre dessin dans SketchUp (cellule rectangulaire de traits)">Hachure depuis ma sélection…</button>
       <button id="btnAjout">Ajouter un dossier de hachures…</button>
       <button id="btnNet">Télécharger sur internet</button>
       <button id="btnDos" title="Ouvre le dossier où déposer vos fichiers .pat">Dossier des motifs</button>
@@ -101,6 +102,13 @@ function ondeDessin(ctx,w,h,r){
   for(var s=-2*Math.PI;s<=2*Math.PI*n;s+=Math.PI/40){var u=cx+a*Math.cos(s), v=rr*s-bb*Math.sin(s); if(s===-2*Math.PI) ctx.moveTo(u,v); else ctx.lineTo(u,v);}
   ctx.stroke();
 }
+function dessinDessin(ctx,w,h,r,m,pas){
+  var d=m.dessin, s=Math.min(w/d.l,h/d.h)*0.9*(pas/9); s=Math.min(s,Math.max(w/d.l,h/d.h)); var ox=(w-d.l*s)/2, oy=(h+d.h*s)/2;
+  ctx.fillStyle=rgba(r.fond,r.fond_op); ctx.fillRect(ox,oy-d.h*s,d.l*s,d.h*s);
+  ctx.strokeStyle=rgba(r.trait,r.trait_op); ctx.lineWidth=Math.max(r.ep/100*d.l*s,0.8); ctx.lineCap='round'; ctx.beginPath();
+  d.segments.forEach(function(q){ctx.moveTo(ox+q[0]*s,oy-q[1]*s);ctx.lineTo(ox+q[2]*s,oy-q[3]*s);});
+  ctx.stroke();
+}
 // pas : nombre de pixels pour un écartement de référence
 function dessiner(cv,m,r,pas){
   var dpr=window.devicePixelRatio||1, w=cv.clientWidth||cv.width, h=cv.clientHeight||cv.height;
@@ -110,6 +118,7 @@ function dessiner(cv,m,r,pas){
   if(!m){ctx.fillStyle='#a99';ctx.font='10px Segoe UI';ctx.textAlign='center';ctx.fillText('aucune',w/2,h/2+3);return;}
   r=r||DEF;
   if(m.onde){ondeDessin(ctx,w,h,r);return;}
+  if(m.dessin){dessinDessin(ctx,w,h,r,m,pas);return;}
   ctx.fillStyle=rgba(r.fond,r.fond_op); ctx.fillRect(0,0,w,h);
   var s=pas/m.ref, ang=-(r.angle||0)*Math.PI/180;
   ctx.save(); ctx.translate(w/2,h/2); ctx.rotate(ang); ctx.scale(s,-s);
@@ -228,6 +237,7 @@ function recevoir(q,d){
 document.getElementById('filtre').oninput=function(){galerie()};
 document.getElementById('groupe').onchange=function(){galerie()};
 document.getElementById('btnStyle').onclick=function(){sketchup.style()};
+document.getElementById('btnDes').onclick=function(){sketchup.depuis_dessin()};
 document.getElementById('btnDos').onclick=function(){sketchup.dossier()};
 document.getElementById('btnAjout').onclick=function(){sketchup.ajouter_dossier()};
 document.getElementById('btnRet').onclick=function(){var d=this.dataset.d; if(d&&confirm('Retirer ce dossier de la galerie ? (les fichiers restent sur votre ordinateur)')) sketchup.retirer_dossier(d)};
