@@ -25,6 +25,23 @@ module A2M
       DEFAUT.merge(perso.is_a?(Hash) ? perso : {})
     end
 
+    # Mémorise la matière choisie pour une couche (balise) : les prochains objets la reçoivent aussi
+    def self.enregistrer(couche, nom)
+      perso = (JSON.parse(File.read(fichier, encoding: 'UTF-8')) rescue {})
+      perso = {} unless perso.is_a?(Hash)
+      perso[couche] = nom ? { 'cotes' => nom } : {}
+      FileUtils.mkdir_p(File.dirname(fichier))
+      File.write(fichier, JSON.generate(perso), encoding: 'UTF-8')
+    end
+
+    def self.nom_couche(couche) (table[couche] || {})['cotes'].to_s end
+
+    # Retire la matière des faces d'un groupe ou composant
+    def self.effacer(ent)
+      ents = ent.is_a?(Sketchup::ComponentInstance) ? ent.definition.entities : ent.entities
+      ents.grep(Sketchup::Face).each { |f| f.material = nil }
+    end
+
     def self.cle(n) A2M::MesElements.nom_tex(n).downcase end
 
     # Matière du modèle (nom tolérant : espaces, #1, majuscules), sinon chargée depuis Mes éléments > Textures

@@ -100,13 +100,17 @@ module A2M
       end
     end
 
-    def self.appliquer(index, dossier, nom)
+    def self.appliquer(index, dossier, nom, couche = nil)
       model = Sketchup.active_model
+      couche = nil if couche.to_s.empty?
       cat = CATEGORIES[index]
       return unless cat && cat[1].include?(dossier) && nom =~ /\A[a-z0-9_]+\z/
       sel = model.selection.to_a.select { |e| e.respond_to?(:material=) }
+      if couche && !MENUISERIES.include?(couche)
+        return appliquer_couche(model, couche, dossier, nom)
+      end
       # Menuiseries : la couleur RAL reprend aussi les tapées d'isolation
-      cibles = sel.empty? ? balises_trouves(model.entities, cat[2], [], dossier == 'ral') : sel
+      cibles = couche ? A2M::Hachures.objets(model, couche) : (sel.empty? ? balises_trouves(model.entities, cat[2], [], dossier == 'ral') : sel)
       if cibles.empty?
         UI.messagebox('Rien à texturer. Sélectionnez les éléments (zinguerie, appuis, seuils…), ou balisez-les avec les balises du métré.')
         return
@@ -142,6 +146,34 @@ module A2M
       Sketchup.status_text = "#{nb} face(s) ou élément(s) : #{nom_affiche(nom)}"
     end
 
+    # Une couche (balise) reçoit la texture : tous ses objets, et les prochains qui seront dessinés
+    def self.appliquer_couche(model, couche, dossier, nom)
+      mat = materiau(model, dossier, nom)
+      A2M::TexturesAuto.enregistrer(couche, mat.name)
+      cibles = A2M::Hachures.objets(model, couche)
+      model.start_operation('Texture de la couche (métré)', true)
+      n = cibles.sum { |e| A2M::TexturesAuto.appliquer(e, model, true) }
+      model.commit_operation
+      Sketchup.status_text = cibles.empty? ? "#{nom_affiche(nom)} : aucun objet pour l'instant, elle sera posée sur les prochains." : "#{cibles.size} objet(s) : #{nom_affiche(nom)}"
+      n
+    end
+
+    def self.retirer_couche(couche)
+      model = Sketchup.active_model
+      A2M::TexturesAuto.enregistrer(couche, nil)
+      model.start_operation('Retirer la texture de la couche (métré)', true)
+      A2M::Hachures.objets(model, couche).each { |e| A2M::TexturesAuto.effacer(e) }
+      model.commit_operation
+    end
+
+    # Couches proposées : nom, libellé, nombre d'objets dans le modèle, texture actuelle
+    def self.couches_page(model = Sketchup.active_model)
+      (A2M::Hachures::BALISES + MENUISERIES).uniq.map do |b|
+        t = A2M::TexturesAuto.nom_couche(b)
+        { 'b' => b, 'lib' => A2M::Hachures.libelle(b), 'nb' => (A2M::Hachures.objets(model, b).size rescue 0), 'tex' => t.sub(/\AA2M_Tex_[a-z_]+?_/, '') }
+      end
+    end
+
     def self.html
       onglets = CATEGORIES.each_with_index.map { |c, i| "<button class=\"onglet\" data-i=\"#{i}\">#{c[0]}</button>" }.join
       sections = CATEGORIES.each_with_index.map do |cat, i|
@@ -157,6 +189,8 @@ module A2M
         :root{--o:#E07838;--g:#3C3C3C;--f:#F6F3EF}
         *{box-sizing:border-box}
         body{margin:0;padding:10px;font:12px "Segoe UI",Arial,sans-serif;background:var(--f);color:var(--g);user-select:none}
+        .couche{margin-bottom:10px;padding:8px;background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+        .couche select{padding:6px;border:1px solid #d6cdc3;border-radius:8px;font:inherit;max-width:60%}
         .onglets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
         .onglet{border:1px solid #d6cdc3;background:#fff;border-radius:16px;padding:5px 11px;cursor:pointer;font:inherit}
         .onglet.actif{background:var(--o);border-color:var(--o);color:#fff}
@@ -169,9 +203,25 @@ module A2M
         .grille img{width:100px;height:100px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 5px}
         .grille span{font-size:11px;line-height:1.25;display:block}
         </style></head><body>
+        <div class="couche"><label>Couche concernée</label><select id="couche"></select> <button id="retirer" type="button" class="onglet" style="display:none">Retirer la texture de cette couche</button><div id="ccouche" class="aide"></div></div>
         <div class="onglets">#{onglets}</div>
         #{sections}
         <script>
+        var COUCHES=#{JSON.generate(couches_page).gsub('</', '<\\/')};
+        function remplir(){
+          var s=document.getElementById('couche'), v=s.value;
+          s.innerHTML='<option value="">Sélection, ou toutes les couches de la catégorie</option>'+COUCHES.map(function(c){return '<option value="'+c.b+'">'+c.lib+' ('+c.nb+')'+(c.tex?' — '+c.tex:'')+'</option>'}).join('');
+          s.value=v; info();
+        }
+        function info(){
+          var v=document.getElementById('couche').value, c=COUCHES.filter(function(x){return x.b===v})[0];
+          document.getElementById('retirer').style.display=c&&c.tex?'':'none';
+          document.getElementById('ccouche').textContent=c?('Cliquez une texture : elle est posée sur les '+c.nb+' objet(s) de cette couche et sur les prochains que vous dessinerez.'):'Sans couche choisie : texture posée sur la sélection ou sur les éléments balisés de la catégorie.';
+        }
+        document.getElementById('couche').onchange=info;
+        document.getElementById('retirer').onclick=function(){var v=document.getElementById('couche').value; if(v) sketchup.retirer(v)};
+        function majCouches(d){COUCHES=d; remplir()}
+        remplir();
         function montrer(i){
           document.querySelectorAll('.onglet').forEach(function(b){b.classList.toggle('actif', b.dataset.i==i)});
           document.querySelectorAll('section').forEach(function(s){s.classList.toggle('actif', s.dataset.i==i)});
@@ -179,7 +229,7 @@ module A2M
         document.querySelectorAll('.onglet').forEach(function(b){b.addEventListener('click',function(){montrer(b.dataset.i)})});
         document.querySelectorAll('.grille button').forEach(function(b){
           b.addEventListener('click',function(){
-            sketchup.appliquer(JSON.stringify({i:b.dataset.i,d:b.dataset.d,n:b.dataset.n}));
+            sketchup.appliquer(JSON.stringify({i:b.dataset.i,d:b.dataset.d,n:b.dataset.n,c:document.getElementById('couche').value}));
           });
         });
         montrer(0);
@@ -199,7 +249,16 @@ module A2M
       @dlg.add_action_callback('appliquer') do |_ctx, json|
         d = JSON.parse(json) rescue nil
         if d
-          UI.start_timer(0, false) { appliquer(d['i'].to_i, d['d'], d['n']) }
+          UI.start_timer(0, false) do
+            appliquer(d['i'].to_i, d['d'], d['n'], d['c'])
+            @dlg.execute_script("majCouches(#{JSON.generate(couches_page)})") rescue nil
+          end
+        end
+      end
+      @dlg.add_action_callback('retirer') do |_ctx, couche|
+        UI.start_timer(0, false) do
+          retirer_couche(couche.to_s)
+          @dlg.execute_script("majCouches(#{JSON.generate(couches_page)})") rescue nil
         end
       end
       @dlg.show
