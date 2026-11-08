@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.82.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.82.2)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -251,6 +251,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection) ; meilleur centrage de la cellule sur tous les murs d'un même groupe
 - Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
 - Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.
 - Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
@@ -270,4 +271,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Planelles : la planelle est maintenant UN SEUL objet (groupe A2M_PLANELLE contenant la coque et l'isolant, chacun avec sa texture) ; les traits inutiles du profil (points alignés, arêtes dans le même plan) sont supprimés à la pose sans modifier la forme ; les textures et hachures de chaque rôle sont posées sans recréer le tag « Isolant de planelle »
 - Correction : « Dessiner un sol » sur les murs sélectionnés — les murs de soubassement sont maintenant reconnus (message « Aucun mur balisé trouvé ») ; avec « Au-dessus du tracé », la dalle repose sur le dessus des murs sélectionnés
 - Planelles : un seul tag A2M_PLANELLE pour toute la planelle (plus de tag « Isolant de planelle ») ; les deux aspects (planelle, isolant de planelle) ne sont que des textures posées selon le rôle de chaque partie — la plus grande partie du profil est la planelle, les autres l'isolant ; le linéaire n'est compté qu'une fois au métré
-- Planelles : la détection du mur de soubassement est plus large (groupes et composants imbriqués) et le message de fin indique la version et si la planelle a été posée sur le soubassement (la dalle monte alors de la différence) ou, à défaut, calée sur la dalle

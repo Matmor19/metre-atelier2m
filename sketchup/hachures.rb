@@ -263,7 +263,7 @@ module A2M
       return nil if bd.empty?
       o = DEFAUT.merge(x)
       if md
-        pas, phi, = A2M::Onde.pas(bd)
+        pas, phi, = A2M::Dessin.pas(bd)
         k = o['taille'].to_f / md['ref']
         png, haut = A2M::Dessin.png_objet(md, o, pas, phi, k)
         id = e.persistent_id rescue e.entityID

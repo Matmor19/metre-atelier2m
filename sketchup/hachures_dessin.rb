@@ -48,9 +48,12 @@ module A2M
       end
       l = u1 - u0; h = v1 - v0
       e = 0.02
+      # Seuls les côtés du rectangle (traits droits sur toute la longueur d'un bord) sont écartés ; les courbes qui frôlent le bord restent
       segs.reject! do |s|
-        (s[0] < e && s[2] < e) || (s[0] > l - e && s[2] > l - e) || (s[1] < e && s[3] < e) || (s[1] > h - e && s[3] > h - e) ||
-          (Math.hypot(s[2] - s[0], s[3] - s[1]) < 1e-6)
+        long = Math.hypot(s[2] - s[0], s[3] - s[1])
+        (long < 1e-6) ||
+          ((s[0] < e && s[2] < e || s[0] > l - e && s[2] > l - e) && long > 0.5 * h) ||
+          ((s[1] < e && s[3] < e || s[1] > h - e && s[3] > h - e) && long > 0.5 * l)
       end
       raise 'Je ne trouve aucun trait à l’intérieur du rectangle.' if segs.empty?
       { 'l' => l.round(3), 'h' => h.round(3), 'segments' => segs.map { |s| s.map { |v| v.round(3) } } }
@@ -109,12 +112,30 @@ module A2M
       [A2M::MotifPat.encoder(w, hh, brut), l, h]
     end
 
+    # Pas de la tuile (cm) et position de la cellule pour que son centre tombe au milieu de tous les murs :
+    # [pas, phi (centre à phi·pas), écart maximal en cm]
+    def self.pas(bandes)
+      t = bandes.map(&:last).max
+      cs = bandes.map(&:first)
+      meilleur = nil
+      p = t
+      while p <= 3.5 * t
+        sx = cs.sum { |c| Math.cos(2 * Math::PI * c / p) }; sy = cs.sum { |c| Math.sin(2 * Math::PI * c / p) }
+        phi = (Math.atan2(sy, sx) / (2 * Math::PI)) % 1.0
+        e = cs.map { |c| d = (c / p - phi) % 1.0; [d, 1 - d].min * p }.max
+        meilleur = [p, phi, e] if meilleur.nil? || e < meilleur[2] - 1e-9
+        break if e < 0.03
+        p += 0.002
+      end
+      meilleur
+    end
+
     # Image pour un objet : tuile de largeur pas_cm (calée sur les murs), hauteur = celle de la cellule ;
     # la cellule (échelle k) est centrée à phi·pas ; le fond couvre toute la tuile. Renvoie [png, hauteur_cm]
     def self.png_objet(m, o, pas_cm, phi, k)
       d = m['dessin']
       l = d['l'].to_f * k; h = d['h'].to_f * k
-      s = [[512.0 / pas_cm, 700.0 / h].min, 40.0].min
+      s = [[1024.0 / pas_cm, 700.0 / h].min, 40.0].min
       w = [(pas_cm * s).round, 4].max; hh = [(h * s).round, 4].max
       sx = w / pas_cm; sy = hh / h
       cov = Array.new(w * hh, 0.0)
