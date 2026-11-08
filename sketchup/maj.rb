@@ -119,7 +119,7 @@ module A2M
     end
 
     # Fichiers qui créent menus, barres d'outils ou observateurs : les recharger les doublerait, ils attendent le redémarrage
-    SANS_RECHARGE = %w[menu_contextuel palette plan2d suivi tableau variantes maj].freeze
+    SANS_RECHARGE = %w[menu_contextuel palette plan2d suivi tableau variantes].freeze
 
     # Recharge les fichiers de l'extension tout juste installée, sans fermer SketchUp ; renvoie [rechargés, échecs]
     def self.recharger(v = nil)

@@ -1,12 +1,12 @@
 {
- "version": "2.84.2",
+ "version": "2.84.3",
  "notes": [
+  "Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp",
   "Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures »…",
   "Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour…",
   "Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la…",
   "Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la…",
   "Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre…",
-  "Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses…",
-  "… et 82 autres nouveautés plus anciennes."
+  "… et 83 autres nouveautés plus anciennes."
  ]
 }
