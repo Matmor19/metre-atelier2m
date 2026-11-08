@@ -338,6 +338,56 @@ module A2M
       nv
     end
 
+    # Un groupe de mur (balise d'un type de mur) qu'on peut proposer à la modification, même sans mémoire
+    def self.mur_possible?(e)
+      return false unless e.is_a?(Sketchup::Group) && e.valid? && e.layer
+      return true if e.get_attribute('a2m_mur', 'id')
+      TYPES.any? { |t| t[1] == e.layer.name }
+    end
+
+    # Mur dessiné avant la mémoire des réglages : si c'est un mur droit (rectangle en plan, ouvertures éventuelles comprises),
+    # on retrouve son tracé (axe), son épaisseur et sa hauteur. Renvoie true si la mémoire a été posée.
+    def self.adopter(g)
+      return true if g.get_attribute('a2m_mur', 'id')
+      type = TYPES.find { |t| t[1] == g.layer.name } or return false
+      tr = g.transformation
+      faces = g.entities.grep(Sketchup::Face)
+      zmin = faces.map { |f| f.vertices.map { |v| (tr * v.position).z }.min }.min or return false
+      bas = faces.select { |f| (tr * f.normal).z < -0.99 && f.vertices.all? { |v| ((tr * v.position).z - zmin).abs < 0.05 } }
+      return false if bas.empty?
+      pts = bas.flat_map { |f| f.vertices.map { |v| tr * v.position } }
+      boucles = bas.map { |f| f.outer_loop.vertices.map { |v| tr * v.position } }
+      # direction principale : le plus long côté
+      longest = boucles.flat_map { |b| b.each_with_index.map { |q, i| [q, b[(i + 1) % b.size]] } }.max_by { |a, b| a.distance(b) }
+      d = longest[1] - longest[0]
+      d.z = 0
+      return false if d.length < 0.1
+      d.normalize!
+      perp = Geom::Vector3d.new(-d.y, d.x, 0)
+      ok = boucles.all? do |b|
+        b.each_with_index.all? do |q, i|
+          e = b[(i + 1) % b.size] - q
+          e.z = 0
+          e.length < 0.01 || e.normalize.dot(d).abs > 0.995 || e.normalize.dot(perp).abs > 0.995
+        end
+      end
+      return false unless ok
+      us = pts.map { |q| (q - pts[0]).dot(d) }; vs = pts.map { |q| (q - pts[0]).dot(perp) }
+      u0, u1 = us.minmax; v0, v1 = vs.minmax
+      ep = (v1 - v0).to_f * 2.54
+      return false if ep < 0.5 || ep > 80 || (u1 - u0) < (v1 - v0)
+      haut = (g.bounds.max.z - g.bounds.min.z).to_f * 0.0254
+      vm = (v0 + v1) / 2.0
+      a = pts[0].offset(d, u0).offset(perp, vm); b = pts[0].offset(d, u1).offset(perp, vm)
+      a.z = zmin; b.z = zmin
+      id = "#{Time.now.to_i}#{rand(100_000)}"
+      p = { type: type, h: haut.round(3), e: ep.round(1), trace: 0 }
+      marquer(g, id, [a, b], false, p, 0)
+      true
+    rescue StandardError
+      false
+    end
+
     # Réglages mémorisés → paramètres complets pour couches_de
     def self.p_de(j)
       if j['compose']
@@ -367,8 +417,13 @@ module A2M
     def self.modifier(ent)
       murs = murs_du_modele
       r = mur_de(ent, murs)
+      if r.nil? && mur_possible?(ent) && adopter(ent)
+        murs = murs_du_modele
+        r = mur_de(ent, murs)
+        Sketchup.status_text = 'Mur ancien repris comme un mur droit simple (son tracé est son axe).'
+      end
       unless r
-        UI.messagebox("Ce mur n'a pas gardé ses réglages en mémoire (il a été dessiné avec une version plus ancienne).\n\nRetracez-le une fois avec « Dessiner un mur » : il pourra ensuite être modifié ici.")
+        UI.messagebox("Ce mur ne peut pas être repris automatiquement : il n'est pas droit (angle, tour fermé…) ou n'a pas gardé ses réglages.\n\nRetracez-le une fois avec « Dessiner un mur » : il pourra ensuite être modifié ici, tracé compris.")
         return
       end
       return @fen_modif.bring_to_front if @fen_modif && (@fen_modif.visible? rescue false)
@@ -423,7 +478,7 @@ module A2M
     def self.modifier_mur
       model = Sketchup.active_model
       murs = murs_du_modele(model)
-      sel = model.selection.to_a.find { |e| e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id') }
+      sel = model.selection.to_a.find { |e| mur_possible?(e) }
       return modifier(sel) if sel
       model.select_tool(OutilModifier.new)
     end
@@ -568,13 +623,13 @@ module A2M
         ph = view.pick_helper
         ph.do_pick(x, y)
         e = ph.best_picked
-        e = ph.all_picked.find { |q| q.respond_to?(:get_attribute) && q.get_attribute('a2m_mur', 'id') } unless e && e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id')
-        if e && e.respond_to?(:get_attribute) && e.get_attribute('a2m_mur', 'id')
+        e = ph.all_picked.find { |q| A2M::DessinMurs.mur_possible?(q) } unless A2M::DessinMurs.mur_possible?(e)
+        if A2M::DessinMurs.mur_possible?(e)
           Sketchup.active_model.select_tool(nil)
           UI.start_timer(0, false) { A2M::DessinMurs.modifier(e) }
         else
           UI.beep
-          Sketchup.status_text = 'Ce n\'est pas un mur dessiné par l\'outil de mur (ou il date d\'avant la modification possible) : retracez-le une fois.'
+          Sketchup.status_text = 'Cet objet n\'est pas un mur (balise de mur, cloison, doublage…).'
         end
       end
 

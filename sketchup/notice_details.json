@@ -76,7 +76,7 @@
   "La fenêtre est celle du mur composé, déjà remplie : changez les couches, leur épaisseur ou hauteur, la couche d'insertion et le côté.",
   "« Appliquer à ce mur » refait le mur sélectionné ; « Appliquer aux murs reliés de même composition » refait aussi tous les murs qui se touchent de proche en proche et ont la même composition, chacun gardant son tracé.",
   "Attention : le mur est refait, donc les ouvertures déjà percées dedans sont à refaire. Les murs dessinés avant cette version sont à retracer une fois pour garder leurs réglages.",
-  "« Modifier le tracé… » (dans la même fenêtre) : cliquez un point du tracé puis son nouvel emplacement (accrochages SketchUp) ; cliquez sur un tronçon pour y ajouter un point ; Suppr sur un point le retire ; Échap termine. Le mur (toutes ses couches) est refait à chaque geste."
+  "Les murs et cloisons droits dessinés avant cette fonction sont repris automatiquement (tracé = axe du mur, épaisseur et hauteur mesurées) ; pour un mur à angle ou un tour fermé, retracez-le une fois. Attention : le mur est refait, donc les ouvertures déjà percées dedans sont à refaire."
  ],
  "textures": [
   "À gauche, choisissez la couche (mur périphérique, enduit, doublage…) ; à droite, cliquez la texture : elle est posée sur tous les objets de cette couche et sur ceux que vous dessinerez ensuite. « Retirer la texture de cette couche » l'enlève. Sans couche (« Sélection »), la texture va sur la sélection ou sur les éléments balisés de la catégorie. L'onglet « Mes textures » montre vos matières A2M_ (rangées dans Mes éléments > Textures, ou présentes dans le modèle).",
