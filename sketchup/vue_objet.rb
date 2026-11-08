@@ -49,7 +49,11 @@ module A2M
         f = "#{base}_#{cle}#{suffixe}.png"
         FileUtils.mkdir_p(File.dirname(f))
         ok = view.write_image(filename: f, width: larg, height: haut, antialias: true, transparent: true)
-        ecrits << f if ok && File.exist?(f)
+        if ok && File.exist?(f)
+          ecrits << f
+          # Taille réelle de l'image (pouces) : permet de la reposer à l'échelle exacte de l'objet
+          File.write(f.sub(/\.png\z/, '.dim'), "#{(hauteur * aspect).round(4)} #{hauteur.round(4)} #{ew.round(4)} #{eh.round(4)}") rescue nil
+        end
       end
       ecrits
     end
@@ -139,6 +143,26 @@ module A2M
     rescue StandardError => ex
       Sketchup.status_text = "Vue 2D impossible : #{ex.message}"
       []
+    end
+
+    # Pose l'image 2D d'un objet de la bibliothèque sur le plan, à l'échelle de l'objet.
+    # base : chemin sans extension (…/objet) ; cle : 'dessus' ou 'face' ; blanc : version blanche ;
+    # echelle_x / echelle_z : rapport taille voulue / taille d'origine. Renvoie le groupe posé, ou nil.
+    def self.poser_image(model, base, cle, blanc, echelle_x = 1.0, echelle_z = 1.0)
+      f = "#{base}_#{cle}#{blanc ? '_blanc' : ''}.png"
+      dim = f.sub(/\.png\z/, '.dim')
+      return nil unless File.exist?(f) && File.exist?(dim)
+      w, h = File.read(dim).split.map(&:to_f)
+      return nil unless w && h && w > 0 && h > 0
+      sx = echelle_x.to_f > 0 ? echelle_x.to_f : 1.0
+      sz = cle == 'dessus' ? sx : (echelle_z.to_f > 0 ? echelle_z.to_f : sx)
+      grp = model.active_entities.add_group
+      grp.name = "Image 2D #{File.basename(base)} (#{cle}#{blanc ? ', blanc' : ''})"
+      img = grp.entities.add_image(f, ORIGIN, w * sx, h * sz)
+      img.transform!(Geom::Transformation.translation([-w * sx / 2, -h * sz / 2, 0]))
+      grp.transform!(Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)) if cle != 'dessus'
+      grp.layer = model.layers[A2M::Plan2D::TAG] || model.layers.add(A2M::Plan2D::TAG) if defined?(A2M::Plan2D::TAG)
+      grp
     end
 
     # Commande : l'élément sélectionné (groupe ou composant) → deux images dans Documents/Atelier 2M/Vues 2D

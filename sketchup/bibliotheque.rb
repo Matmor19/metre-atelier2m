@@ -881,6 +881,12 @@ module A2M
           <div><label for="l">Largeur</label><input type="text" id="l" inputmode="decimal" autocomplete="off"></div><div class="x">×</div>
           <div><label for="h">Hauteur</label><input type="text" id="h" inputmode="decimal" autocomplete="off"></div>
         </div>
+        <div style="flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="petit">Image 2D sur le plan :</span>
+          <button type="button" class="puce rempli" data-v="dessus">Dessus</button><button type="button" class="puce" data-v="face">Face</button>
+          <button type="button" class="puce rempli" data-c="0">Couleur</button><button type="button" class="puce" data-c="1">Blanc</button>
+          <button id="go2d" type="button" class="puce" style="margin-left:auto">Poser l'image 2D</button>
+        </div>
         <button id="retirer" type="button" class="puce" style="align-self:flex-end">Retirer</button>
         <button id="go" type="button" style="align-self:flex-end">Poser</button>
       </div>
@@ -940,6 +946,10 @@ module A2M
       el('q').addEventListener('input', function () { etat.q = this.value; rendre(); });
       el('l').addEventListener('input', rendre); el('h').addEventListener('input', rendre);
       el('go').addEventListener('click', poser);
+      var v2d = 'dessus', c2d = 0;
+      document.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('click', function () { v2d = b.getAttribute('data-v'); document.querySelectorAll('[data-v]').forEach(function (x) { x.classList.toggle('rempli', x === b); }); }); });
+      document.querySelectorAll('[data-c]').forEach(function (b) { b.addEventListener('click', function () { c2d = parseInt(b.getAttribute('data-c'), 10); document.querySelectorAll('[data-c]').forEach(function (x) { x.classList.toggle('rempli', x === b); }); }); });
+      el('go2d').addEventListener('click', function () { var o = etat.sel ? trouver(etat.sel) : null; if (o) sketchup.poser2d(JSON.stringify({ nom: o.nom, l: nombre(el('l').value), h: nombre(el('h').value), vue: v2d, blanc: c2d })); else el('msg').textContent = 'Cliquez d\'abord un objet.'; });
       el('retirer').addEventListener('click', function () { if (etat.sel) sketchup.retirer(etat.sel); });
       document.querySelectorAll('[data-a]').forEach(function (b) { b.addEventListener('click', function () { sketchup.action(b.getAttribute('data-a')); }); });
       function maj(nouveau) { D = nouveau; if (etat.sel && !trouver(etat.sel)) etat.sel = null; rendre(); }
@@ -950,6 +960,35 @@ module A2M
       liste = objets.select { |o| o['fichier'] }
       { 'objets' => liste.map { |o| { 'nom' => o['nom'].to_s, 'type' => o['type'].to_s, 'img' => A2M::Panneau.vignette(o), 'piece' => o['piece'].to_s, 'l' => cm(o['l0']), 'h' => cm(o['h0']) } },
         'types' => types.map(&:first), 'pieces' => PIECES, 'dossier' => dossier }
+    end
+
+    # Image 2D (dessus ou face, couleur ou blanc) de l'objet, posée sur le plan à l'échelle voulue
+    def self.poser_image_2d(obj, l_cm, h_cm, vue, blanc)
+      model = Sketchup.active_model
+      base = File.join(dossier, obj['fichier']).sub(/\.skp\z/, '')
+      vue = 'dessus' unless %w[dessus face].include?(vue)
+      f = "#{base}_#{vue}#{blanc ? '_blanc' : ''}"
+      unless File.exist?("#{f}.png") && File.exist?("#{f}.dim")
+        defn = charger(obj, model)
+        A2M::VueObjet.generer(defn, base)
+      end
+      model.start_operation('Poser l\'image 2D d\'un objet', true)
+      ex = l_cm > 0 && obj['l0'].to_f > 0 ? l_cm / cm(obj['l0']) : 1.0
+      ez = h_cm > 0 && obj['h0'].to_f > 0 ? h_cm / cm(obj['h0']) : ex
+      g = A2M::VueObjet.poser_image(model, base, vue, blanc, ex, ez)
+      if g
+        model.commit_operation
+        model.selection.clear
+        model.selection.add(g)
+        Sketchup.send_action('selectMoveTool:') rescue nil
+        Sketchup.status_text = 'Image 2D posée : déplacez-la où vous voulez.'
+      else
+        model.abort_operation
+        UI.messagebox('L\'image 2D de cet objet n\'a pas pu être créée.')
+      end
+    rescue StandardError => e
+      model.abort_operation rescue nil
+      UI.messagebox("Image 2D impossible : #{e.message}")
     end
 
     def self.gerer
@@ -965,6 +1004,11 @@ module A2M
         d = (JSON.parse(json.to_s) rescue nil)
         obj = d && objets.find { |o| o['fichier'] && o['nom'] == d['nom'] }
         UI.start_timer(0, false) { poser_objet(obj, d['l'].to_f, d['h'].to_f) } if obj && d['l'].to_f > 0 && d['h'].to_f > 0
+      end
+      dlg.add_action_callback('poser2d') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        obj = d && objets.find { |o| o['fichier'] && o['nom'] == d['nom'] }
+        UI.start_timer(0, false) { poser_image_2d(obj, d['l'].to_f, d['h'].to_f, d['vue'].to_s, d['blanc'].to_i == 1) } if obj
       end
       dlg.add_action_callback('retirer') do |_ctx, nom|
         UI.start_timer(0, false) do
