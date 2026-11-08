@@ -324,12 +324,104 @@ module A2M
         lots = [sel]
       end
       faits = []
-      lots.each do |ents|
-        r = parametrer_lot(model, ents)
-        break if r.nil?
-        faits << r if r.is_a?(String)
+      fin = -> { UI.messagebox("Objets rangés dans la bibliothèque :\n" + faits.join("\n") + "\n\nDossier : #{dossier}") if faits.any? }
+      suivant = nil
+      suivant = lambda do |i|
+        next fin.call if i >= lots.size
+        ents = lots[i]
+        demander_rangement(model, ents) do |pre|
+          next fin.call if pre.nil?
+          r = parametrer_lot(model, ents, pre)
+          next fin.call if r.nil?
+          faits << r if r.is_a?(String)
+          UI.start_timer(0, false) { suivant.call(i + 1) }
+        end
       end
-      UI.messagebox("Objets rangés dans la bibliothèque :\n" + faits.join("\n") + "\n\nDossier : #{dossier}") if faits.any?
+      suivant.call(0)
+    end
+
+    # ---- Fenêtre « Ranger dans la bibliothèque » : nom, dossier (existant ou nouveau), pièce ----
+    MENUISERIES = %w[A2M_FENETRE A2M_PORTE_FENETRE A2M_PORTE_ENTREE A2M_PORTE_INT].freeze
+
+    CORPS_RANGER = <<~'HTML'
+      <h2>Nom de l'objet</h2>
+      <input type="text" id="nom" autocomplete="off" style="width:100%;box-sizing:border-box;font:14px 'Segoe UI',Arial,sans-serif;text-align:left;padding:8px 12px">
+      <h2>Où le ranger ?</h2>
+      <div class="puces" id="dossiers"></div>
+      <div id="nouv" style="display:none;margin-top:8px">
+        <input type="text" id="nn" placeholder="Nom du nouveau dossier (ex. : Luminaires, Escalier, Poêle…)" autocomplete="off" style="width:100%;box-sizing:border-box;font:13px 'Segoe UI',Arial,sans-serif;text-align:left;padding:8px 12px">
+      </div>
+      <h2>Pièce (pour le retrouver)</h2>
+      <div class="puces" id="pieces"></div>
+      <div id="bas">
+        <div id="msg" style="flex:1;color:#6f665e"></div>
+        <button id="annuler" type="button" class="puce">Annuler</button>
+        <button id="go" type="button">Ranger</button>
+      </div>
+    HTML
+
+    SCRIPT_RANGER = <<~'JS'
+      var D = __DONNEES__;
+      function el(id) { return document.getElementById(id); }
+      var etat = { type: D.type, nouveau: false, piece: D.piece };
+      el('nom').value = D.nom;
+      function rendre() {
+        var t = el('dossiers'); t.innerHTML = '';
+        D.types.forEach(function (ty) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (!etat.nouveau && etat.type === ty.nom ? ' rempli' : '');
+          b.textContent = ty.nom + ' (' + ty.n + ')';
+          b.addEventListener('click', function () { etat.type = ty.nom; etat.nouveau = false; rendre(); }); t.appendChild(b);
+        });
+        var nv = document.createElement('button'); nv.type = 'button'; nv.className = 'puce' + (etat.nouveau ? ' rempli' : ''); nv.textContent = '+ Nouveau dossier';
+        nv.addEventListener('click', function () { etat.nouveau = true; rendre(); el('nn').focus(); }); t.appendChild(nv);
+        el('nouv').style.display = etat.nouveau ? 'block' : 'none';
+        var p = el('pieces'); p.innerHTML = '';
+        [D.sans_piece].concat(D.pieces).forEach(function (pc) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.piece === pc ? ' rempli' : ''); b.textContent = pc;
+          b.addEventListener('click', function () { etat.piece = pc; rendre(); }); p.appendChild(b);
+        });
+        var ok = el('nom').value.trim() && (!etat.nouveau || el('nn').value.trim());
+        el('go').disabled = !ok; el('go').style.opacity = ok ? 1 : .5;
+        el('msg').textContent = etat.nouveau ? 'Le nouveau dossier est créé dans la bibliothèque.' : 'Rangé dans « ' + etat.type + ' ».';
+      }
+      el('nom').addEventListener('input', rendre); el('nn').addEventListener('input', rendre);
+      el('go').addEventListener('click', function () { if (el('go').disabled) return; sketchup.ok(JSON.stringify({ nom: el('nom').value.trim(), type: etat.type, nouveau: etat.nouveau ? el('nn').value.trim() : '', piece: etat.piece })); });
+      el('annuler').addEventListener('click', function () { sketchup.annuler(''); });
+      rendre();
+    JS
+
+    # Montre l'objet, ouvre la fenêtre, puis rappelle le bloc avec [nom, type, pièce] (nil si annulé)
+    def self.demander_rangement(model, ents, &suite)
+      model.selection.clear
+      model.selection.add(ents)
+      model.active_view.zoom(model.selection) rescue nil
+      nom0 = nom_par_defaut(ents)
+      prec = @fiche || []
+      noms = types.map(&:first)
+      tdef = type_d_apres(nom0) || (noms.include?(prec[1]) ? prec[1] : nil) || TYPES[0][0]
+      liste = objets
+      donnees = { 'nom' => nom0, 'type' => tdef, 'piece' => prec[8] || PAS_DE_PIECE, 'sans_piece' => PAS_DE_PIECE, 'pieces' => PIECES,
+                  'types' => noms.map { |n| { 'nom' => n, 'n' => liste.count { |o| o['type'] == n } } } }
+      html = A2M::Panneau.page('Ranger dans la bibliothèque', 'Nom, dossier et pièce : l\'objet est rangé avec ses vignettes 2D', CORPS_RANGER, SCRIPT_RANGER, donnees)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : ranger un objet', 'A2M_Panneau_Ranger', html, 520, 620)
+      rendu = false
+      dlg.add_action_callback('ok') do |_ctx, json|
+        d = (JSON.parse(json.to_s) rescue nil)
+        next unless d && !rendu
+        rendu = true
+        tn = d['nouveau'].to_s.strip.empty? ? d['type'].to_s : d['nouveau'].to_s.strip
+        ajouter_type(tn) unless noms.include?(tn)
+        dlg.close
+        UI.start_timer(0, false) { suite.call([d['nom'].to_s, tn, d['piece'].to_s]) }
+      end
+      dlg.add_action_callback('annuler') { |_ctx, _x| dlg.close }
+      dlg.set_on_closed { UI.start_timer(0, false) { suite.call(nil) } unless rendu; rendu = true }
+      dlg.show
+    end
+
+    def self.nom_par_defaut(ents)
+      inst0 = ents.size == 1 && (ents[0].is_a?(Sketchup::Group) || ents[0].is_a?(Sketchup::ComponentInstance)) ? ents[0] : nil
+      inst0 ? (inst0.name.to_s.empty? ? (inst0.respond_to?(:definition) ? inst0.definition.name : 'Objet') : inst0.name) : 'Objet'
     end
 
     # Géométrie libre d'une balise : morceaux reliés, puis morceaux dont les boîtes se touchent réunis (dormant + vitrage + poignée…)
@@ -380,7 +472,7 @@ module A2M
     PAS_DE_PIECE = '(toutes pièces)'
     PIECES = ['Entrée', 'Séjour', 'Cuisine', 'Chambre', 'Salle de bain', 'WC', 'Cellier / buanderie', 'Garage', 'Extérieur'].freeze
 
-    def self.fiche(defaut_nom)
+    def self.fiche(defaut_nom, pre = nil)
       me = A2M::Ouvertures::CHOIX_ME
       ac = A2M::Ouvertures::A_CHOISIR
       prec = @fiche || {}
@@ -391,7 +483,19 @@ module A2M
                 ([ac] + me['vantaux'].map(&:last)).join('|'), ([ac] + me['mat'].map(&:last)).join('|'),
                 ([ac] + me['ouvrant'].map(&:last)).join('|'), ([ac] + me['vitrage'].map(&:last)).join('|'),
                 ([ac, 'Aucune'] + me['ferm'].map(&:last)).join('|'), ([PAS_DE_PIECE] + PIECES).join('|')]
-      rep = UI.inputbox(libs, defs, listes, 'Paramétrer l\'objet sélectionné (bibliothèque Atelier 2M)')
+      if pre
+        # Nom, dossier et pièce viennent de la fenêtre « Ranger » ; les détails de menuiserie ne sont demandés que pour les menuiseries
+        tt = types.find { |t| t[0] == pre[1] }
+        if tt && MENUISERIES.include?(tt[1])
+          r2 = UI.inputbox(libs[2..7], defs[2..7], listes[2..7], "#{pre[0]} : détails de la menuiserie")
+          return nil unless r2
+        else
+          r2 = [EXT_VERS_MOI, ac, ac, ac, ac, ac]
+        end
+        rep = [pre[0], pre[1]] + r2 + [pre[2]]
+      else
+        rep = UI.inputbox(libs, defs, listes, 'Paramétrer l\'objet sélectionné (bibliothèque Atelier 2M)')
+      end
       return nil unless rep
       if rep[1] == NOUVEAU_TYPE
         rn = UI.inputbox(['Nom du nouveau type (ex. : Escalier, Garde-corps, Poêle…)'], [''], 'Nouveau type d\'objet')
@@ -422,14 +526,14 @@ module A2M
     end
 
     # Un objet : retourne son nom (rangé), :passe (laissé de côté) ou nil (arrêt demandé)
-    def self.parametrer_lot(model, ents)
+    def self.parametrer_lot(model, ents, pre = nil)
       view = model.active_view
       model.selection.clear
       model.selection.add(ents)
       view.zoom(model.selection) rescue nil
       inst0 = ents.size == 1 && (ents[0].is_a?(Sketchup::Group) || ents[0].is_a?(Sketchup::ComponentInstance)) ? ents[0] : nil
       nom0 = inst0 ? (inst0.name.to_s.empty? ? (inst0.respond_to?(:definition) ? inst0.definition.name : 'Objet') : inst0.name) : 'Objet'
-      f = fiche(nom0)
+      f = fiche(nom0, pre)
       return nil unless f
       return parametrer_plinthe(model, ents, f) if %w[A2M_PLINTHE A2M_PLANELLE].include?(f[:type][1])
       return parametrer_dynamique(model, inst0, f) if inst0.is_a?(Sketchup::ComponentInstance) && dynamique?(inst0)
