@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.87.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.88.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -98,7 +98,11 @@ Planelles sur tout le pourtour de la dalle : votre profil dessiné (en L…, ave
 - Le profil vient de « Bibliothèque de profils » : dessiné par vous, respecté tel quel.
 
 ### Créer la toiture
-Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente, débord et épaisseur
+Toiture 2 pans, 4 pans, monopente ou « Suit les murs » (épouse exactement le contour des murs, y compris en L ou en T) : pente, débord et épaisseur
+
+- Sélectionnez les murs (groupes), puis lancez « Créer la toiture ».
+- Choisissez le type : 2 pans, 4 pans, Monopente (sur le rectangle des murs) ou « Suit les murs » (la toiture épouse exactement le contour, par exemple une maison en L).
+- Réglez la pente, le débord et l'épaisseur : tous les pans ont la même pente. « Faîtage parallèle » et « côté haut » ne servent pas pour « Suit les murs ».
 
 ### Charpente (chevrons, liteaux)
 Chevrons à l'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, faîtière et sablière sous chaque pan, avec les linéaires pour le métré
@@ -256,6 +260,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en U…), tous les pans ont la même pente, avec faîtages, noues et arêtiers calculés ; débord et épaisseur comme pour les autres types
 - Modifier un mur : les murs et cloisons déjà dessinés (droits) sont repris automatiquement : leur axe, épaisseur et hauteur sont retrouvés, ils peuvent donc être modifiés sans les retracer ; un mur non droit (angle, tour fermé) demande encore d'être retracé une fois
 - Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles, compositions) ; boutons en double retirés de la palette (contrôle du modèle = tableau de bord, textures A2M_ automatiques = fenêtre Textures, extraire = envoyer au métré, baliser les pièces = pièce en un clic), toujours disponibles dans le menu Extensions
 - Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits, Isolants…) ; elle y apparaît aussitôt. À l'enregistrement d'une nouvelle texture A2M_, la catégorie est proposée. Miniatures de tes textures corrigées
@@ -275,4 +280,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.
 - Hachures de coupe : les fichiers de hachures SketchUp (.skh) placés dans « Dossier des motifs » ou dans un dossier ajouté sont maintenant repris dans la liste, comme les .pat
 - Hachures de coupe : tes propres hachures SketchUp (ex. « A2M_Isolant 140 », créées après la première ouverture, ou présentes dans le modèle) apparaissent maintenant dans la liste, groupe « SketchUp » ; la liste se met à jour à chaque ouverture
-- Mur composé : nouvelle fenêtre avec couche d'insertion (★, en surbrillance, par défaut le mur périphérique). Le tracé est la face extérieure de cette couche ; l'enduit extérieur se place de l'autre côté du tracé, les doublages à l'intérieur. Aperçu en coupe dans la fenêtre. Même choix dans la bibliothèque de compositions

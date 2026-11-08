@@ -1,10 +1,12 @@
 # encoding: UTF-8
-# Métré Atelier 2M : toiture générée sur les murs sélectionnés (monopente, 2 pans, 4 pans)
+# Métré Atelier 2M : toiture générée sur les murs sélectionnés (monopente, 2 pans, 4 pans, ou toiture qui suit exactement le contour des murs)
 require 'sketchup.rb'
+require File.join(File.dirname(__FILE__), 'squelette')
 
 module A2M
   module Toiture
-    TYPES = ['2 pans', '4 pans', 'Monopente']
+    TYPES = ['2 pans', '4 pans', 'Monopente', 'Suit les murs']
+    SUIT = 'Suit les murs'
     @r = {}
 
     # Pans dans le repère du rectangle des murs : u le long du faîtage (longueur L), v en travers (largeur W), z depuis le haut des murs.
@@ -51,6 +53,47 @@ module A2M
       lu >= lv ? [o, u, v, lu, lv, ztop] : [o.offset(u, (lu).m), v, u.reverse, lv, lu, ztop]
     end
 
+
+    # Contour extérieur des murs (liste de [x, y] en mètres) : on réunit les faces du dessus des murs
+    # dans un groupe provisoire, on efface les arêtes intérieures, et on lit le contour de la plus grande face.
+    def self.contour(groupes, model)
+      faces = []
+      marche = lambda do |ents, tr|
+        ents.each do |e|
+          case e
+          when Sketchup::Face
+            faces << e.outer_loop.vertices.map { |vx| tr * vx.position } if e.normal.transform(tr).z > 0.99
+          when Sketchup::Group then marche.call(e.entities, tr * e.transformation)
+          when Sketchup::ComponentInstance then marche.call(e.definition.entities, tr * e.transformation)
+          end
+        end
+      end
+      groupes.each do |g|
+        ents = g.is_a?(Sketchup::Group) ? g.entities : g.definition.entities
+        marche.call(ents, g.transformation)
+      end
+      return nil if faces.empty?
+      ztop = faces.flatten.map(&:z).max
+      hautes = faces.select { |f| f.all? { |q| q.z > ztop - 0.4.m } }
+      tmp = model.active_entities.add_group
+      begin
+        hautes.each do |pts|
+          begin
+            tmp.entities.add_face(pts.map { |q| Geom::Point3d.new(q.x, q.y, 0) })
+          rescue StandardError
+            nil
+          end
+        end
+        tmp.entities.grep(Sketchup::Edge).select { |e| e.faces.size == 2 }.each(&:erase!)
+        grande = tmp.entities.grep(Sketchup::Face).max_by(&:area)
+        return nil unless grande
+        pts = grande.outer_loop.vertices.map { |vx| [vx.position.x.to_m, vx.position.y.to_m] }
+        [pts, ztop]
+      ensure
+        tmp.erase! if tmp.valid?
+      end
+    end
+
     # Épaisseur : sous-face parallèle aux pans (toutes les pentes sont égales, la sous-face est le dessus descendu
     # d'une même hauteur), chants verticaux à l'égout et aux rives. Le métré ne lit que le dessus des pans
     # (sous-face et chants verticaux sont ignorés à l'extraction) : surface et linéaires inchangés.
@@ -79,7 +122,7 @@ module A2M
       model = Sketchup.active_model
       murs = model.selection.to_a.select { |e| e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) }
       if murs.empty?
-        UI.messagebox('Sélectionnez les murs (groupes) sur lesquels poser la toiture. Elle couvre le rectangle de ces murs.')
+        UI.messagebox('Sélectionnez les murs (groupes) sur lesquels poser la toiture. Elle couvre le rectangle de ces murs, ou suit exactement leur contour (type « Suit les murs »).')
         return
       end
       rep = UI.inputbox(['Type de toiture', 'Pente (%)', 'Débord (m)', 'Épaisseur de la toiture (cm), perpendiculaire au pan (0 = simple face)',
@@ -92,24 +135,44 @@ module A2M
       return UI.messagebox('La pente doit être supérieure à 0.') if pente <= 0
       return UI.messagebox('L\'épaisseur ne peut pas être négative.') if ep < 0
       @r = { type: type, pente: pente, d: d, ep: ep, sens: sens, haut: haut, num: num }
-      rc = rectangle(murs)
-      return UI.messagebox('Aucune géométrie trouvée dans la sélection.') unless rc
-      o, u, v, l, w, ztop = rc
-      if sens == 'petit côté'
+      suit = (type == SUIT)
+      if suit
+        ztop = nil
+      else
+        rc = rectangle(murs)
+        return UI.messagebox('Aucune géométrie trouvée dans la sélection.') unless rc
+        o, u, v, l, w, ztop = rc
+      end
+      if !suit && sens == 'petit côté'
         o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l
       end
-      if type == 'Monopente' && haut == 'côté de l\'origine'
+      if !suit && type == 'Monopente' && haut == 'côté de l\'origine'
         o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse
       end
       tag = num == '1' ? 'A2M_TOITURE' : "A2M_TOITURE_#{num}"
       model.start_operation('Toiture (métré)', true)
       begin
-        # Avec une épaisseur, la sous-face repose sur le haut des murs (au nu extérieur) : le dessus est remonté d'autant
-        ztop += (ep / 100.0 * Math.sqrt(1 + (pente / 100.0)**2)).m if ep > 0
-        grp = model.active_entities.add_group
-        polys = pans(type, l, w, pente / 100.0, d).map do |poly|
-          poly.map { |pu, pv, pz| o.offset(u, pu.m).offset(v, pv.m).offset(Z_AXIS, ztop + pz.m) }
+        s = pente / 100.0
+        if suit
+          c = contour(murs, model)
+          unless c
+            model.abort_operation
+            return UI.messagebox('Je ne trouve pas le dessus des murs dans la sélection (faces horizontales en haut des murs).')
+          end
+          cpts, ztop = c
+          ztop += (ep / 100.0 * Math.sqrt(1 + s * s)).m if ep > 0
+          ext = A2M::Squelette.decaler(A2M::Squelette.nettoyer(cpts), d)
+          pans3 = A2M::Squelette.toit(ext, s)
+          polys = pans3.map { |poly| poly.map { |x, y, z| Geom::Point3d.new(x.m, y.m, ztop + (z - s * d).m) } }
+          l = w = 0
+        else
+          # Avec une épaisseur, la sous-face repose sur le haut des murs (au nu extérieur) : le dessus est remonté d'autant
+          ztop += (ep / 100.0 * Math.sqrt(1 + s * s)).m if ep > 0
+          polys = pans(type, l, w, s, d).map do |poly|
+            poly.map { |pu, pv, pz| o.offset(u, pu.m).offset(v, pv.m).offset(Z_AXIS, ztop + pz.m) }
+          end
         end
+        grp = model.active_entities.add_group
         polys.each do |pts|
           f = grp.entities.add_face(pts)
           f.reverse! if f && f.normal.z < 0
@@ -120,7 +183,7 @@ module A2M
         A2M::Hachures.poser(grp, model)
         grp.name = "Toiture #{num} – #{type} #{pente.round}%#{ep > 0 ? ", ép. #{ep.round(1)} cm" : ''}"
         model.commit_operation
-        Sketchup.status_text = "#{grp.name} créée sur #{l.round(2)} × #{w.round(2)} m, débord #{d} m, balise #{tag}"
+        Sketchup.status_text = suit ? "#{grp.name} créée (suit les murs), débord #{d} m, balise #{tag}" : "#{grp.name} créée sur #{l.round(2)} × #{w.round(2)} m, débord #{d} m, balise #{tag}"
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("La toiture n'a pas pu être créée (#{ex.message}).")

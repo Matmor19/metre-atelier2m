@@ -26,7 +26,7 @@ unless file_loaded?(__FILE__)
     ['compositions','Compositions de parois (vignettes)','Murs, cloisons, dalles, planchers, plafonds : choisissez une vignette, réglez les épaisseurs des couches, puis posez au clic ou sur la sélection', -> { A2M::Compositions.ouvrir }, false],
     ['sol_murs',    'Dalle, chape, plafond depuis les murs', 'Sélectionnez les murs : dalle béton sous l\'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d\'un coup avec leurs épaisseurs', -> { A2M::SolMurs.ouvrir }, false],
     ['sol',         'Dessiner un sol ou un plafond',       'Dalle, plancher, isolant de sol, chape, revêtement, terrasse, allée ou plafond : tracé au clic, ou en un clic sur les murs sélectionnés', -> { A2M::DessinSols.lancer }, false],
-    ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans ou monopente sur les murs sélectionnés : pente, débord et épaisseur', -> { A2M::Toiture.lancer }, false],
+    ['toiture',     'Créer la toiture',                    'Toiture 2 pans, 4 pans, monopente ou « Suit les murs » (épouse exactement le contour des murs, y compris en L ou en T) : pente, débord et épaisseur', -> { A2M::Toiture.lancer }, false],
     ['planelle',    'Poser les planelles en rive de dalle', 'Planelles sur tout le pourtour de la dalle : votre profil dessiné (en L…, avec isolant), un profil de la bibliothèque ou un rectangle ; dans l\'épaisseur (dalle recoupée) ou à l\'extérieur', -> { A2M::Planelles.lancer }, false],
     ['hachures',    'Hachures de coupe par couche',        'Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l\'appliquer au modèle déjà dessiné', -> { A2M::Hachures.regler }, false],
     ['textures_auto', 'Textures A2M_ automatiques',     'Pose sur les éléments dessinés (murs de soubassement, semelles…) les matières A2M_ de leur type, sur les murs existants ou la sélection', -> { A2M::TexturesAuto.tout_le_modele }, false],
@@ -171,7 +171,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'hachures_moteur', 'hachures_fr', 'hachures_onde', 'hachures_dessin', 'planelles', 'profils'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
-    for f in ('controle', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
+    for f in ('controle', 'squelette', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in sorted(os.listdir(os.path.join(ici, 'hachures'))):
         z.write(os.path.join(ici, 'hachures', f), 'a2m_metre/hachures/' + f)

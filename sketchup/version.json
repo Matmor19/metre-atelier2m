@@ -1,12 +1,12 @@
 {
- "version": "2.87.1",
+ "version": "2.88.0",
  "notes": [
+  "Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en…",
   "Modifier un mur : les murs et cloisons déjà dessinés (droits) sont repris automatiquement : leur axe, épaisseur et hauteur sont…",
   "Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles,…",
   "Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits,…",
   "Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon,…",
   "Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp",
-  "Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures »…",
-  "… et 87 autres nouveautés plus anciennes."
+  "… et 88 autres nouveautés plus anciennes."
  ]
 }
