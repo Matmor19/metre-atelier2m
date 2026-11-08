@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.83.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.83.2)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -254,6 +254,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la main), SketchUp les recharge tout seul en quelques secondes, sans redémarrer
 - Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre couche) descende sous le pied du mur périphérique
 - Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)
 - Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)
@@ -273,4 +274,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Vues 2D d'un objet : en plus des images aux couleurs d'origine (dessus et face), la même image en version blanche (fichiers « …_blanc.png »), créée en même temps au rangement dans la bibliothèque
 - Coupes automatiques : chaque coupe a maintenant son nom modifiable (Entrée), ses boutons 2D et 3D (scène élévation et/ou scène coupe 3D, au choix par coupe) et le bouton « Inverser toutes les coupes »
 - Renommé : « Isolant derrière les planelles » devient « Isolant dans la planelle » (c'est la partie à l'intérieur de la planelle)
-- Hachures de coupe : la dalle béton (rez-de-chaussée) et le plancher d'étage sont maintenant dans la liste des couches, pour leur donner une hachure de coupe comme aux autres

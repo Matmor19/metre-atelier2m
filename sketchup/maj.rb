@@ -145,6 +145,36 @@ module A2M
       [ok, ko]
     end
 
+    # Veille : quand les fichiers de l'extension changent sur le disque (installation par le Gestionnaire d'extensions,
+    # par la mise à jour intégrée ou à la main), ils sont rechargés tout seuls au bout de quelques secondes
+    def self.veille
+      return if @veille
+      main = File.join(File.dirname(__FILE__), 'main.rb')
+      @vu = (File.mtime(main) rescue nil)
+      @veille = UI.start_timer(3, true) do
+        begin
+          t = (File.mtime(main) rescue nil)
+          next if t.nil? || t == @vu || @attente
+          @vu = t
+          @attente = true
+          UI.start_timer(4, false) do                       # on laisse finir l'installation avant de recharger
+            @attente = false
+            ok, ko = recharger(version_disque)
+            Sketchup.status_text = ko.empty? ? "Métré Atelier 2M : version #{installee} rechargée." : "Métré Atelier 2M : rechargement incomplet (#{ko.join(', ')}) — redémarrez SketchUp."
+          end
+        rescue StandardError
+          nil
+        end
+      end
+    end
+
+    def self.version_disque
+      f = File.join(File.dirname(__FILE__), '..', 'a2m_metre_chargeur.rb')
+      File.read(f, encoding: 'UTF-8')[/EXT\.version = '([^']+)'/, 1]
+    rescue StandardError
+      nil
+    end
+
     def self.apres_installation(v)
       ok, ko = recharger(v)
       if ko.empty?
@@ -174,6 +204,7 @@ module A2M
 
     # Au démarrage : d'abord un .rbz plus récent dans vos dossiers, sinon la version publiée en ligne
     def self.au_demarrage
+      veille
       UI.start_timer(8, false) do
         l = rbz_local
         l ? installer_local(*l) : verifier(false)
