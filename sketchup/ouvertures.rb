@@ -572,10 +572,65 @@ module A2M
       { couches: recs, echecs: echecs, prof: prof, nb: cibles.size }
     end
 
+    # Modifier une ouverture déjà percée : largeur, hauteur, linteau, position le long du mur.
+    # Le mur est rebouché, la menuiserie (et son appui) refaits à la nouvelle taille, avec les mêmes choix qu'à la création.
+    def self.modifier(r = nil)
+      model = Sketchup.active_model
+      r ||= model.selection.to_a.find { |e| A2M::Suivi.suivie?(e) }
+      return UI.messagebox('Sélectionnez la porte, la fenêtre ou l\'ouverture à modifier (posée avec l\'outil Ouverture), puis relancez « Modifier l\'ouverture ».') unless r
+      d = A2M::Suivi.donnees(r) or return
+      pr = d['p']; pp = d['pp'] || {}
+      t = r.transformation
+      bas = Geom::Point3d.new(d['o']['bas']).transform(t)
+      u = Geom::Vector3d.new(d['o']['u']).transform(t); u = Geom::Vector3d.new(u.x, u.y, 0).normalize
+      n = Geom::Vector3d.new(d['o']['n']).transform(t); n = Geom::Vector3d.new(n.x, n.y, 0).normalize
+      ur = Z_AXIS.cross(n).normalize
+      noms = ['Largeur (cm)', 'Hauteur (cm)']; vals = [pr['l'].to_f.round(1).to_s, pr['h'].to_f.round(1).to_s]
+      if pp['lin']
+        noms << 'Hauteur du linteau (cm, depuis le bas du mur)'; vals << pp['lin'].to_f.round(1).to_s
+      end
+      noms << 'Décaler le long du mur (cm ; + = vers la droite vue de l\'extérieur)'; vals << '0'
+      rep = UI.inputbox(noms, vals, noms.map { '' }, "Modifier : #{r.name}")
+      return unless rep
+      f = rep.map { |x| x.to_s.tr(',', '.').to_f }
+      l1, h1 = f[0], f[1]
+      lin1 = pp['lin'] ? f[2] : nil
+      dec = f.last
+      return UI.messagebox('La largeur et la hauteur doivent être supérieures à 0.') if l1 <= 0 || h1 <= 0
+      l0, h0 = pr['l'].to_f, pr['h'].to_f
+      ouvert = pr['tag'] ? (TYPES.find { |x| x[1] == pr['tag'] && x[0] == pr['lib'] } || TYPES.find { |x| x[1] == pr['tag'] }) : nil
+      type = ouvert || TYPES.find { |x| x[0] == pr['lib'] }
+      return UI.messagebox('Type d\'ouverture inconnu : refaites-la avec l\'outil Ouverture.') unless type
+      # Nouveau bord gauche (vu de l'extérieur) : la largeur varie autour du centre
+      gauche = u.dot(ur) > 0 ? bas : bas.offset(u, (l0 / 100.0).m)
+      gauche = gauche.offset(ur, ((dec - (l1 - l0) / 2.0) / 100.0).m)
+      nb = u.dot(ur) > 0 ? gauche : gauche.offset(ur, (l1 / 100.0).m)
+      dz = pp['lin'] ? ((lin1 - h1) - (pp['lin'].to_f - h0)) : 0.0
+      nb = Geom::Point3d.new(nb.x, nb.y, bas.z + (dz / 100.0).m)
+      o = { bas: nb, u: u, n: n, centre: nb.offset(u, (l1 / 200.0).m).offset(Z_AXIS, (h1 / 200.0).m) }
+      p = { type: type, l: l1, h: h1, lin: lin1 || pp['lin'], n: pr['n'], contigu: pr['contigu'], res: pr['tag'], obj: pp['obj'],
+            opts: pp['opts'] || {}, appui: pr['appui'].to_f, piece: pp['piece'], me: pp['me'], as_obj: pp['as_obj'], debord: pp['debord'].to_f,
+            tapee: pp['tapee'], tapee_prof: pp['tapee_prof'] }
+      p[:tapee] = nil unless pp.key?('tapee')
+      p.delete(:tapee) unless pp.key?('tapee')
+      p.delete(:tapee_prof) unless pp.key?('tapee')
+      begin
+        A2M::Suivi.operation(model, 'Modifier l\'ouverture') do
+          A2M::Suivi.annexes(model, d).each { |a| a.erase! if a.valid? }
+          A2M::Suivi.reboucher(model, d)
+          A2M::Suivi.oublier(r)
+          r.erase!
+        end
+      rescue StandardError => ex
+        return UI.messagebox("L'ouverture n'a pas pu être rebouchée avant modification (#{ex.message}). Rien n'a été modifié.")
+      end
+      percer(o, p)
+    end
+
     # Perce : boîte de découpe (largeur × hauteur, 3 m de profondeur) soustraite de chaque couche ; nom et balise conservés
     def self.percer(o, p, essai = 0)
       model = Sketchup.active_model
-      p[:tapee], p[:tapee_prof] = A2M::Tapee.demander if p[:res]   # tapée d'isolation : épaisseur, profondeur (0 = aucune ; profondeur 0 = égale à l'isolant)
+      p[:tapee], p[:tapee_prof] = A2M::Tapee.demander if p[:res] && !p.key?(:tapee)   # tapée d'isolation : épaisseur, profondeur (0 = aucune ; profondeur 0 = égale à l'isolant)
       model.start_operation('Créer une ouverture (métré)', true)
       begin
         ents = model.active_entities

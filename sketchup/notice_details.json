@@ -93,5 +93,10 @@
   "Sélectionnez la toiture (ou faites un clic droit dessus → « modifier cette toiture »), puis lancez « Modifier la toiture ».",
   "Changez le type, la pente, le débord, l'épaisseur ou le faîtage : la toiture est refaite au même endroit.",
   "Pour changer le contour : choisissez « Reprendre sur les murs sélectionnés avec la toiture » après avoir sélectionné les murs en plus de la toiture."
+ ],
+ "modifier_ouverture": [
+  "Sélectionnez la menuiserie (ou la réservation) de l'ouverture, puis lancez « Modifier une ouverture ».",
+  "Changez la largeur, la hauteur, la hauteur du linteau ou décalez-la le long du mur.",
+  "Le mur est rebouché et repercé ; la menuiserie, l'appui ou le seuil sont refaits avec les mêmes choix."
  ]
 }

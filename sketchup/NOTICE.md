@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.90.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.91.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -261,6 +261,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur, hauteur du linteau et position le long du mur se changent ; le mur est rebouché puis repercé, la menuiserie et l'appui refaits avec les mêmes choix. Les ouvertures percées avant cette version peuvent déjà changer de taille, mais sans retrouver leur menuiserie de bibliothèque (une réservation est posée)
 - Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente, débord, épaisseur, faîtage) et refait la toiture ; on peut aussi reprendre le contour sur d'autres murs sélectionnés avec elle. Les toitures déjà créées avant cette version doivent être refaites une fois
 - Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un seul solide ; tous les tracés sont gardés en mémoire (Modifier un mur → Modifier le tracé montre et déplace les points de chacun). Si SketchUp refuse l'union, les morceaux restent côte à côte mais toujours liés au même mur
 - Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en U…), tous les pans ont la même pente, avec faîtages, noues et arêtiers calculés ; débord et épaisseur comme pour les autres types
@@ -280,4 +281,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur
 - Hachure depuis un dessin : les courbes qui frôlent le bord de la cellule ne perdent plus de trait (à recréer depuis ta sélection) ; meilleur centrage de la cellule sur tous les murs d'un même groupe
 - Hachure depuis un dessin : sur les murs, la cellule est maintenant posée objet par objet, centrée sur l'épaisseur de chaque mur (comme l'isolant ondulé), à sa vraie largeur (14 cm) et sans coupure d'un mur à l'autre
-- Hachures de coupe : nouveau bouton « Hachure depuis ma sélection… ». Tu dessines une cellule (rectangle de 14 cm de large avec ses traits et courbes), tu la sélectionnes, et elle devient une vraie hachure (groupe « Mes dessins »), utilisable sur « Doublage : isolant ». Couleurs, épaisseur et taille réglables comme les autres.

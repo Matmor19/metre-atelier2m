@@ -94,6 +94,12 @@ module A2M
       @registre[d['id']] = r
     end
 
+    # Retire une menuiserie du suivi sans reboucher (elle va être effacée et refaite)
+    def self.oublier(r)
+      d = @cache.delete(r)
+      @registre.delete(d['id']) if d && @registre[d['id']] == r
+    end
+
     def self.donnees(r) JSON.parse(r.get_attribute('a2m', 'ouv').to_s) rescue nil end
 
     def self.ecrire(r, d)
@@ -194,6 +200,11 @@ module A2M
             'empreinte' => empreinte.map(&:to_a), 'annexes' => annexes.map(&:persistent_id),
             'o' => { 'bas' => o[:bas].transform(inv).to_a, 'u' => o[:u].transform(inv).to_a, 'n' => o[:n].transform(inv).to_a },
             'p' => { 'l' => p[:l], 'h' => p[:h], 'n' => p[:n], 'appui' => p[:appui], 'tag' => p[:type][1], 'lib' => p[:type][0], 'contigu' => p[:contigu] } }
+      # Choix faits à la création, gardés pour pouvoir refaire l'ouverture (Modifier l'ouverture)
+      pp = { 'lin' => p[:lin], 'obj' => p[:obj], 'opts' => p[:opts], 'piece' => p[:piece], 'me' => p[:me], 'as_obj' => p[:as_obj], 'debord' => p[:debord] }
+      if p.key?(:tapee) then pp['tapee'] = p[:tapee]; pp['tapee_prof'] = p[:tapee_prof] end
+      d['pp'] = (JSON.parse(JSON.generate(pp)) rescue nil)
+      d.delete('pp') unless d['pp']
       ecrire(r, d)
       attacher(r)
     end

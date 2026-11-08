@@ -35,6 +35,7 @@ unless file_loaded?(__FILE__)
     ['fondation',   'Créer les semelles',                  'Semelles filantes sous les murs sélectionnés : largeur et hauteur', -> { A2M::Fondations.lancer }, true],
     ['axes',        'Axes verrouillés / tracé libre',      'Par défaut les murs, sols et tracés suivent l\'axe rouge ou vert. Cette commande (ou la touche Ctrl, ou le clic droit, pendant le tracé ; vous pouvez aussi lui donner votre propre raccourci) passe en tracé libre et revient', -> { A2M::Pointeur.basculer }, false],
     ['ouverture',   'Créer une ouverture',                 'Largeur et hauteur suffisent : porte ou fenêtre reconnue, menuiserie et appui ou seuil proposés ; perce toutes les couches, suit la menuiserie déplacée', -> { A2M::Ouvertures.lancer }, false],
+    ['modifier_ouverture','Modifier une ouverture', 'Sélectionnez une porte, fenêtre ou ouverture déjà percée : largeur, hauteur, linteau et position se changent ; le mur est rebouché et repercé, la menuiserie et l\'appui refaits', -> { A2M::Ouvertures.modifier }, false],
     ['porte',       'Poser une porte intérieure',          'Bloc-porte de passage (63 à 103 × 204) dans une cloison ou un refend : réservation, toute l\'épaisseur, centré, sens au Tab, choix du configurateur', -> { A2M::PortesInt.lancer }, false],
     ['plinthe',     'Poser les plinthes',                  'Plinthes le long du revêtement sélectionné, avec votre profil ou un profil de la bibliothèque, coupées aux portes', -> { A2M::Plinthes.lancer }, false],
     ['objet',       'Paramétrer un objet pour la bibliothèque', 'Menuiserie, porte, appui, seuil, façade de placard, plinthe, mobilier… : objet dessiné, éclaté ou composant dynamique (gardé entier), rangé dans la bibliothèque', -> { A2M::Bibliotheque.parametrer }, false],
@@ -99,6 +100,7 @@ unless file_loaded?(__FILE__)
     sm.add_item('Poser les plinthes…') { A2M::Plinthes.lancer }
     sm.add_item('Paramétrer pour la bibliothèque…') { A2M::Bibliotheque.parametrer }
     sm.add_item('Poser une menuiserie de la bibliothèque sur l\'ouverture…') { A2M::Suivi.poser_sur }
+    sm.add_item('Modifier cette ouverture…') { A2M::Ouvertures.modifier }
     sm.add_item('Recaler l\'ouverture sur la menuiserie') { A2M::Suivi.recaler }
     sm.add_item('Créer la toiture sur ces murs…') { A2M::Toiture.lancer }
     sm.add_item('Créer les semelles sous ces murs…') { A2M::Fondations.lancer }
