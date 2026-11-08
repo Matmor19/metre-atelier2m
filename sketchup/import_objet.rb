@@ -93,6 +93,100 @@ module A2M
       n
     end
 
+    # ---- Contrôler et préparer un objet déjà dans le modèle (sans passer par un fichier) ----
+    def self.faces_de(defn, vus = {}, acc = [])
+      return acc if vus[defn]
+      vus[defn] = true
+      defn.entities.each do |e|
+        if e.is_a?(Sketchup::Face) then acc << e
+        elsif e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance) then faces_de(e.definition, vus, acc)
+        end
+      end
+      acc
+    end
+
+    def self.controler
+      model = Sketchup.active_model
+      sel = model.selection.to_a
+      return UI.messagebox('Sélectionnez l\'objet à contrôler (groupe ou composant, ou ses morceaux), puis relancez la commande.') if sel.empty?
+      rapport = []; alertes = []
+      model.start_operation('Contrôler et préparer un objet', true)
+      begin
+        # 1. Un seul objet : les morceaux sélectionnés sont réunis dans un composant
+        inst = sel.size == 1 && (sel[0].is_a?(Sketchup::Group) || sel[0].is_a?(Sketchup::ComponentInstance)) ? sel[0] : nil
+        if inst.nil?
+          g = model.active_entities.add_group(sel)
+          inst = g.to_component
+          rapport << "#{sel.size} morceaux réunis en un seul composant"
+        elsif inst.is_a?(Sketchup::Group)
+          inst = inst.to_component
+          rapport << 'Groupe transformé en composant'
+        end
+        if inst.definition.count_instances > 1
+          inst.make_unique
+          rapport << 'Copie indépendante créée (les autres exemplaires ne sont pas touchés)'
+        end
+        d = inst.definition
+        # 2. Nettoyage (mêmes réglages que l'import)
+        o = { 'balises' => true, 'cache' => true, 'parasites' => true, 'aretes' => true, 'inutiles' => true }
+        inst.layer = model.layers[0]
+        n = nettoyer(d, o)
+        rapport << "#{n} élément(s) parasite(s) retiré(s) (masqués, cotes, textes, guides, arêtes isolées)" if n > 0
+        # 3. Faces : la face colorée doit être à l'extérieur
+        retournees = 0
+        faces = faces_de(d)
+        faces.each do |f|
+          next unless f.valid?
+          if f.material.nil? && f.back_material
+            f.reverse!; retournees += 1
+          end
+        end
+        rapport << "#{retournees} face(s) retournée(s) (la couleur était à l'envers)" if retournees > 0
+        # 4. Taille réelle
+        bb = d.bounds
+        dims = [bb.width, bb.height, bb.depth].map { |x| (x.to_f * 2.54).round(1) }
+        plus_grand = dims.max
+        if plus_grand > 600 || plus_grand < 3
+          rep = UI.inputbox(["Taille douteuse : #{dims[0]} × #{dims[1]} × #{dims[2]} cm. Plus grande dimension réelle (cm)"], [plus_grand.round], 'Mettre l\'objet à l\'échelle')
+          if rep && rep[0].to_f > 0 && rep[0].to_f != plus_grand
+            k = rep[0].to_f / plus_grand
+            inst.transform!(Geom::Transformation.scaling(inst.bounds.center, k))
+            rapport << "Mis à l'échelle (× #{k.round(3)})"
+            bb = d.bounds
+            dims = [bb.width, bb.height, bb.depth].map { |x| (x.to_f * 2.54 * k).round(1) }
+          end
+        end
+        rapport << "Dimensions : #{dims[0]} × #{dims[1]} × #{dims[2]} cm (largeur × profondeur × hauteur)"
+        # 5. Poids du modèle
+        nf = faces.size
+        alertes << "Objet lourd (#{nf} faces) : le modèle risque de ramer. Cherchez une version plus légère ou simplifiez-le." if nf > 60_000
+        rapport << "#{nf} faces"
+        # 6. Échelle non uniforme sur l'instance
+        sc = inst.transformation.to_a
+        ex = Math.sqrt(sc[0]**2 + sc[1]**2 + sc[2]**2); ey = Math.sqrt(sc[4]**2 + sc[5]**2 + sc[6]**2); ez = Math.sqrt(sc[8]**2 + sc[9]**2 + sc[10]**2)
+        if [ex, ey, ez].max - [ex, ey, ez].min > 0.001
+          alertes << 'L\'objet a été étiré de façon inégale (déformé). Vérifiez ses proportions.'
+        end
+        # 7. Nom
+        nom = d.name.to_s
+        if nom.empty? || nom =~ /\A(#|sprite|component|composant)/i
+          alertes << "Nom peu clair (« #{nom} ») : renommez la définition dans « Infos sur l'entité » avant de la ranger."
+        end
+        purger(model)
+        rapport << 'Matières, composants et styles inutilisés purgés'
+        model.commit_operation
+      rescue StandardError => ex
+        model.abort_operation
+        return UI.messagebox("Contrôle impossible : #{ex.message}")
+      end
+      model.selection.clear
+      model.selection.add(inst)
+      txt = "Objet contrôlé et préparé :\n\n- " + rapport.join("\n- ")
+      txt += "\n\nÀ vérifier vous-même :\n- " + alertes.join("\n- ") if alertes.any?
+      txt += "\n\nLe ranger maintenant dans la bibliothèque (avec ses images 2D) ?"
+      A2M::Bibliotheque.parametrer if UI.messagebox(txt, MB_YESNO) == IDYES
+    end
+
     def self.purger(model)
       model.definitions.purge_unused
       model.materials.purge_unused
