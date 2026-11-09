@@ -173,6 +173,12 @@ module A2M
     # car les ailes de recouvrement débordent sur les plaques de chaque côté. Largeur et hauteur du corps = plus petite section
     # trouvée sur l'épaisseur ; hors-tout = la plus grande. Renvoie [corps_l, corps_h, total_l, total_h] en cm, ou nil.
     def self.corps_cadre(inst, vl = 0)
+      analyser_cadre(inst.definition.entities, inst.transformation, vl)
+    end
+
+    # Renvoie [corps_l, corps_h, total_l, total_h, y_milieu_corps] en cm (y du corps du cadre, dans le repère de l'objet), ou nil.
+    # Corps = la plus grande largeur qui reste nettement plus étroite que les ailes (la plus grande de toutes).
+    def self.analyser_cadre(ents0, t0, vl = 0)
       boites = []
       rec = lambda do |ents, t|
         ents.each do |e|
@@ -187,10 +193,10 @@ module A2M
           end
         end
       end
-      rec.call(inst.definition.entities, inst.transformation)
+      rec.call(ents0, t0)
       return nil if boites.size < 4
       ys = boites.flat_map { |b| [b[2], b[3]] }.map { |q| q.round(2) }.uniq.sort
-      ls = []; hs = []
+      tr = []   # tranches : [largeur, hauteur, y0, y1]
       ys.each_cons(2) do |y0, y1|
         next if y1 - y0 < 0.05
         mid = (y0 + y1) / 2.0
@@ -198,11 +204,17 @@ module A2M
         next if bs.empty?
         l = bs.map { |b| b[1] }.max - bs.map { |b| b[0] }.min
         next if l < vl + 0.3      # tranches plus étroites que le vantail (poignée, panneau) : ignorées
-        ls << l
-        hs << bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min
+        tr << [l, bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min, y0, y1]
       end
-      return nil if ls.size < 2
-      [ls.min, hs.min, ls.max, hs.max]
+      return nil if tr.size < 2
+      lmax = tr.map { |x| x[0] }.max
+      hmax = tr.map { |x| x[1] }.max
+      corps = tr.select { |x| x[0] < lmax - 0.5 }
+      corps = tr if corps.empty?
+      lc = corps.map { |x| x[0] }.max
+      sel = corps.select { |x| x[0] >= lc - 0.05 }
+      hc = sel.map { |x| x[1] }.min
+      [lc, hc, lmax, hmax, (sel.map { |x| x[2] }.min + sel.map { |x| x[3] }.max) / 2.0]
     rescue StandardError
       nil
     end
@@ -243,7 +255,11 @@ module A2M
     # tourné vers le côté poussant, retourné en miroir si ses paumelles ne sont pas du côté voulu
     def self.transfo(defn, obj, base, v_pousse, paumelles)
       bv = A2M::Bibliotheque.boite_visible(defn)
-      t = Geom::Transformation.translation(Geom::Vector3d.new(-bv.center.x, -bv.center.y, -bv.min.z))
+      ym = bv.center.y
+      cf = (analyser_cadre(defn.entities, Geom::Transformation.new, 0.0) rescue nil)
+      ym = cf[4] / 2.54 if cf && cf[2] - cf[0] >= 0.3      # centré sur le CORPS du cadre (pas sur les ailes ni la poignée)
+      A2M::Suivi.journal("porte : centre y boite=#{(bv.center.y * 2.54).round(2)} corps=#{cf ? cf[4].round(2) : 'nil'}") rescue nil
+      t = Geom::Transformation.translation(Geom::Vector3d.new(-bv.center.x, -ym, -bv.min.z))
       # Repère commun : côté regardé à la paramétrisation vers -Y (celui qui pousse)
       t = Geom::Transformation.rotation(ORIGIN, Z_AXIS, Math::PI) * t if (obj && obj['ext_y']) == 'max'
       t = Geom::Transformation.scaling(-1, 1, 1) * t if obj && (obj['paumelles'] || 'droite') != paumelles

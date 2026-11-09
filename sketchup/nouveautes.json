@@ -1,4 +1,5 @@
 [
+ "Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est centrée sur le corps du cadre dans l'épaisseur de la cloison, pas sur son hors-tout (plus de décalage de quelques cm)",
  "Fusion des cloisons : tolérance portée à 5 cm (plus la demi-épaisseur) entre deux cloisons de mêmes réglages qui se suivent ou se touchent presque",
  "Pièces automatiques : à la fin, la vue revient sur l'ensemble du modèle au lieu de rester zoomée sur la dernière pièce",
  "Pièces : un petit jeu (jusqu'à 10 cm) entre le bout d'une cloison et le mur voisin n'empêche plus la séparation des pièces",
