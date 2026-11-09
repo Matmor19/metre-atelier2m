@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.31)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.32)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Portes animées : relevé de diagnostic dans le journal (position du panneau animé juste après la pose) pour corriger son placement
 - Portes animées : l'animation travaille maintenant sur une copie propre de la porte (avant, elle modifiait la définition partagée : la porte suivante naissait déjà déplacée, ce qui expliquait le panneau hors du cadre et « Panneau introuvable »)
 - Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre après refermeture (il garde sa propre orientation au lieu de la perdre à la première animation)
 - Porte intérieure : une menuiserie à taille fixe (ex. B.P 103x204) prend automatiquement sa propre taille, même si une autre case de dimension est cochée (fin du message « n'a pas de ligne d'étirement dans ce sens »)
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est centrée sur le corps du cadre dans l'épaisseur de la cloison, pas sur son hors-tout (plus de décalage de quelques cm)
 - Fusion des cloisons : tolérance portée à 5 cm (plus la demi-épaisseur) entre deux cloisons de mêmes réglages qui se suivent ou se touchent presque
 - Pièces automatiques : à la fin, la vue revient sur l'ensemble du modèle au lieu de rester zoomée sur la dernière pièce
-- Pièces : un petit jeu (jusqu'à 10 cm) entre le bout d'une cloison et le mur voisin n'empêche plus la séparation des pièces

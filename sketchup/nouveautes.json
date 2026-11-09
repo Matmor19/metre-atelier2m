@@ -1,4 +1,5 @@
 [
+ "Portes animées : relevé de diagnostic dans le journal (position du panneau animé juste après la pose) pour corriger son placement",
  "Portes animées : l'animation travaille maintenant sur une copie propre de la porte (avant, elle modifiait la définition partagée : la porte suivante naissait déjà déplacée, ce qui expliquait le panneau hors du cadre et « Panneau introuvable »)",
  "Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre après refermeture (il garde sa propre orientation au lieu de la perdre à la première animation)",
  "Porte intérieure : une menuiserie à taille fixe (ex. B.P 103x204) prend automatiquement sa propre taille, même si une autre case de dimension est cochée (fin du message « n'a pas de ligne d'étirement dans ce sens »)",

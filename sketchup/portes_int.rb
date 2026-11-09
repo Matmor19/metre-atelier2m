@@ -499,6 +499,12 @@ module A2M
         'rotz' => '0.0', '_rotz_label' => 'RotZ', '_rotz_formula' => ''
       }
       [env, env.definition].each { |o| att.each { |k, val| o.set_attribute('dynamic_attributes', k, val) } }
+      lg = lambda do |q|
+        t = env.transformation; o = t.origin
+        A2M::Suivi.journal("anim diag #{q} : env origine=(#{(o.x*2.54).round(1)};#{(o.y*2.54).round(1)};#{(o.z*2.54).round(1)}) x=#{t.xaxis.to_a.map { |z| z.round(2) }} y=#{t.yaxis.to_a.map { |z| z.round(2) }} bornes=#{(env.bounds.min.x*2.54).round(1)}..#{(env.bounds.max.x*2.54).round(1)} / #{(env.bounds.min.y*2.54).round(1)}..#{(env.bounds.max.y*2.54).round(1)} ; attrs=#{(env.attribute_dictionary('dynamic_attributes') || {}).keys.join(',')} ; rotz=#{env.get_attribute('dynamic_attributes','rotz')}")
+      end
+      lg.call('t0')
+      UI.start_timer(1.5, false) { (lg.call('t+1.5s') rescue nil) }
       A2M::Suivi.journal("animation : panneau animé, axe de charnière à (#{(axe.x * 2.54).round(2)} ; #{(axe.y * 2.54).round(2)}) cm, rotation #{angle}° (arc : #{sx > 0 ? '+' : '-'}x, #{sy > 0 ? '+' : '-'}y)")
     rescue StandardError => ex
       A2M::Suivi.journal("ERREUR animation : #{ex.message} #{ex.backtrace.first}") rescue nil
