@@ -1020,6 +1020,7 @@ module A2M
           <button type="button" class="puce rempli" data-c="0">Couleur</button><button type="button" class="puce" data-c="1">Blanc</button>
           <button id="go2d" type="button" class="puce" style="margin-left:auto">Poser l'image 2D</button>
         </div></details>
+        <button id="vig" type="button" class="puce" style="align-self:flex-end" title="Dans le modèle : pose l'objet, règle ta vue comme tu veux, sélectionne-le, puis clique ici">Vignette (vue actuelle)</button>
         <button id="retirer" type="button" class="puce" style="align-self:flex-end">Retirer</button>
         <button id="go" type="button" style="align-self:flex-end">Poser</button>
       </div>
@@ -1072,7 +1073,7 @@ module A2M
         var o = etat.sel ? trouver(etat.sel) : null, l1 = nombre(el('l').value), h1 = nombre(el('h').value);
         el('l').classList.toggle('ok', l1 > 0); el('h').classList.toggle('ok', h1 > 0);
         el('msg').textContent = o ? '« ' + o.nom + ' » sélectionné : posé à la taille indiquée, puis déplacé où vous voulez.' : 'Cliquez un objet pour le poser (ou double-cliquez : taille d\'origine).';
-        el('go').disabled = !(o && l1 > 0 && h1 > 0); el('retirer').disabled = !o;
+        el('go').disabled = !(o && l1 > 0 && h1 > 0); el('retirer').disabled = !o; el('vig').disabled = !o; el('vig').style.opacity = o ? 1 : .5;
         el('retirer').style.opacity = o ? 1 : .5;
       }
       function poser() { var o = etat.sel ? trouver(etat.sel) : null; if (o && nombre(el('l').value) > 0 && nombre(el('h').value) > 0) sketchup.poser(JSON.stringify({ nom: o.nom, l: nombre(el('l').value), h: nombre(el('h').value) })); }
@@ -1084,6 +1085,7 @@ module A2M
       document.querySelectorAll('[data-c]').forEach(function (b) { b.addEventListener('click', function () { c2d = parseInt(b.getAttribute('data-c'), 10); document.querySelectorAll('[data-c]').forEach(function (x) { x.classList.toggle('rempli', x === b); }); }); });
       el('go2d').addEventListener('click', function () { var o = etat.sel ? trouver(etat.sel) : null; if (o) sketchup.poser2d(JSON.stringify({ nom: o.nom, l: nombre(el('l').value), h: nombre(el('h').value), vue: v2d, blanc: c2d })); else el('msg').textContent = 'Cliquez d\'abord un objet.'; });
       el('retirer').addEventListener('click', function () { if (etat.sel) sketchup.retirer(etat.sel); });
+      el('vig').addEventListener('click', function () { if (etat.sel) sketchup.vignette(etat.sel); else el('msg').textContent = 'Cliquez d\'abord un objet de la liste.'; });
       document.querySelectorAll('[data-a]').forEach(function (b) { b.addEventListener('click', function () { sketchup.action(b.getAttribute('data-a')); }); });
       function maj(nouveau) { D = nouveau; if (etat.sel && !trouver(etat.sel)) etat.sel = null; rendre(); }
       rendre();
@@ -1093,6 +1095,40 @@ module A2M
       liste = objets.select { |o| o['fichier'] }
       { 'objets' => liste.map { |o| { 'nom' => o['nom'].to_s, 'type' => o['type'].to_s, 'img' => A2M::Panneau.vignette(o), 'piece' => o['piece'].to_s, 'l' => cm(o['l0']), 'h' => cm(o['h0']) } },
         'types' => types.map(&:first), 'pieces' => PIECES, 'dossier' => dossier }
+    end
+
+    # Nouvelle vignette d'un objet : prise dans la vue actuelle de SketchUp, sur l'exemplaire sélectionné dans le modèle.
+    # L'objet est isolé le temps de la photo (le reste du modèle est masqué), cadré dans la vue réglée, puis tout est remis comme avant.
+    def self.vignette_depuis_vue(obj)
+      model = Sketchup.active_model
+      view = model.active_view
+      sel = model.selection.to_a.select { |e| e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group) }
+      if sel.size != 1 || model.active_path
+        UI.messagebox("Pour refaire la vignette de « #{obj['nom']} » :\n1. posez l'objet dans le modèle,\n2. réglez la vue comme vous la voulez sur la vignette,\n3. sélectionnez l'objet (un seul, sans être entré dedans),\n4. cliquez de nouveau sur « Vignette (vue actuelle) ».")
+        return
+      end
+      inst = sel[0]
+      png = File.join(dossier, obj['fichier']).sub(/\.skp\z/, '.png')
+      cam = view.camera
+      avant = [cam.eye, cam.target, cam.up, cam.perspective?, cam.perspective? ? cam.fov : cam.height]
+      ro = model.rendering_options
+      cachait = ro['InactiveHidden']
+      begin
+        ro['InactiveHidden'] = true
+        model.active_path = [inst]
+        view.zoom(inst)
+        view.write_image(filename: png, width: 256, height: 256, antialias: true, transparent: true)
+      ensure
+        (model.close_active while model.active_path) rescue nil
+        ro['InactiveHidden'] = cachait
+        c = Sketchup::Camera.new(avant[0], avant[1], avant[2], avant[3])
+        c.perspective? ? (c.fov = avant[4]) : (c.height = avant[4]) rescue nil
+        view.camera = c
+        model.selection.clear; model.selection.add(inst)
+      end
+      UI.messagebox("Vignette de « #{obj['nom']} » mise à jour.")
+    rescue StandardError => ex
+      UI.messagebox("Vignette impossible : #{ex.message}")
     end
 
     # Image 2D (dessus ou face, couleur ou blanc) de l'objet, posée sur le plan à l'échelle voulue
@@ -1142,6 +1178,13 @@ module A2M
         d = (JSON.parse(json.to_s) rescue nil)
         obj = d && objets.find { |o| o['fichier'] && o['nom'] == d['nom'] }
         UI.start_timer(0, false) { poser_image_2d(obj, d['l'].to_f, d['h'].to_f, d['vue'].to_s, d['blanc'].to_i == 1) } if obj
+      end
+      dlg.add_action_callback('vignette') do |_ctx, nom|
+        UI.start_timer(0, false) do
+          o = objets.find { |x| x['nom'] == nom.to_s && x['fichier'] }
+          vignette_depuis_vue(o) if o
+          rafraichir.call
+        end
       end
       dlg.add_action_callback('retirer') do |_ctx, nom|
         UI.start_timer(0, false) do
