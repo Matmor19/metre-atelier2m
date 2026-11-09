@@ -1,5 +1,5 @@
 {
- "version": "2.97.27",
+ "version": "2.97.28",
  "notes": [
   "Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic…",
   "Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque…",

@@ -443,9 +443,18 @@ module A2M
       pan = ents.grep(Sketchup::Group).find { |g| g.name == 'Panneau' }
       return A2M::Suivi.journal('animation : pas de « Panneau » dans cette porte, animation non posée') unless pan
       arc = pan.entities.grep(Sketchup::Group).find { |g| g.name.to_s =~ /sens ouverture/i }
-      cb = arc && arc.entities.grep(Sketchup::Edge).map(&:curve).compact.find { |k| k.respond_to?(:center) }
-      return A2M::Suivi.journal('animation : arc « sens ouverture 2D » introuvable, animation non posée') unless cb
-      c = arc.transformation * cb.center                        # axe de la charnière, repère du panneau
+      return A2M::Suivi.journal('animation : groupe « sens ouverture 2D » introuvable, animation non posée') unless arc
+      # Axe de la charnière = centre de l'arc. Dans la porte posée l'arc est décomposé en arêtes (étirement) : on retrouve
+      # son centre par son encombrement (quart de cercle de 0 à 90° : le centre est le coin minimal)
+      cb = arc.entities.grep(Sketchup::Edge).map(&:curve).compact.find { |k| k.respond_to?(:center) }
+      if cb
+        c = arc.transformation * cb.center
+      else
+        b = arc.bounds
+        dx = b.max.x - b.min.x; dy = b.max.y - b.min.y
+        return A2M::Suivi.journal("animation : l'arc 2D n'est pas un quart de cercle (#{(dx * 2.54).round(1)} × #{(dy * 2.54).round(1)} cm), animation non posée") if dx < 1 || (dx - dy).abs > 0.4
+        c = Geom::Point3d.new(b.min.x, b.min.y, 0)
+      end
       # l'arc sort du panneau (il ne doit pas tourner)
       t_pan = pan.transformation
       nom_arc = arc.name; tag_arc = arc.layer
