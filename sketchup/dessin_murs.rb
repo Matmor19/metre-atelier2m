@@ -309,6 +309,20 @@ module A2M
 
     def self.chemins_de(r) r[:chemins] || [[r[:pts], r[:ferme]]] end
 
+    # Épaisseur totale d'un mur mémorisé, en pouces
+    def self.epaisseur_po(r)
+      j = r[:j]
+      (j['compose'] ? j['couches'].sum { |c| c[1].to_f } : j['e'].to_f) / 2.54
+    rescue StandardError
+      0.0
+    end
+
+    # Comme relies?, mais une cloison qui s'arrête contre la FACE d'une autre (et non sur son axe) compte aussi :
+    # la tolérance est la demi-épaisseur de la cloison touchée + 1 cm
+    def self.relies_large?(a, b, marge = 0.4)
+      relies?(a, b, marge + epaisseur_po(b) / 2.0) || relies?(b, a, marge + epaisseur_po(a) / 2.0)
+    end
+
     def self.relies?(a, b, tol = 0.4)
       touche = lambda do |u, v|
         segs = chemins_de(v).flat_map do |cp, cf|
@@ -376,13 +390,32 @@ module A2M
     def self.fusionner(id)
       murs = murs_du_modele
       nv = murs[id] or return 0
-      voisins = murs.values.select { |m| m[:id] != id && m[:j] == nv[:j] && relies?(nv, m) }
+      voisins = murs.values.select { |m| m[:id] != id && m[:j] == nv[:j] && relies_large?(nv, m) }
       return 0 if voisins.empty?
       tout = { id: id, groupes: nv[:groupes] + voisins.flat_map { |m| m[:groupes] }, j: nv[:j],
                chemins: chemins_de(nv) + voisins.flat_map { |m| chemins_de(m) } }
       tout[:pts], tout[:ferme] = tout[:chemins][0]
       reconstruire(tout, p_de(nv[:j]))
       voisins.size
+    end
+
+    def self.resume_j(j)
+      j['compose'] ? 'composée ' + j['couches'].map { |c| "#{c[0].sub('Doublage : plaque de plâtre', 'plaque').sub('Doublage : isolant', 'isolant')} #{c[1]}" }.join(' + ') + " (h #{j['couches'].map { |c| c[2].to_f }.max} m, côté #{j['cote']}, réf #{j['ref']})" : "#{j['type']} ép. #{j['e']} cm, h #{j['h']} m, tracé #{j['trace']}"
+    end
+
+    # Explique pourquoi des cloisons proches ne fusionnent pas
+    def self.diagnostic_cloisons(cand)
+      lignes = []
+      cand.combination(2).each do |a, b|
+        next unless relies_large?(a, b, 12.0)   # à moins de ~30 cm l'une de l'autre
+        if a[:j] != b[:j]
+          lignes << "• Réglages différents : [#{resume_j(a[:j])}] / [#{resume_j(b[:j])}]"
+        elsif !relies_large?(a, b)
+          lignes << '• Réglage identique mais trop éloignées (écart de plus de ~1 cm à la face)'
+        end
+      end
+      return "Aucune paire de cloisons proches (moins de 30 cm) n'a été trouvée entre les cloisons reconnues.\nLes autres cloisons ne sont peut-être pas reconnues : seules les cloisons droites (balise A2M_CLOISON) ou dessinées avec les outils le sont." if lignes.empty?
+      lignes.uniq.first(5).join("\n")
     end
 
     TYPES_CLOISON = ['Cloison', 'Doublage : plaque de plâtre', 'Doublage : isolant']
@@ -421,7 +454,7 @@ module A2M
           until file.empty?
             c = file.shift
             cand.each do |x|
-              next if vus[x[:id]] || x[:j] != dep[:j] || !relies?(c, x)
+              next if vus[x[:id]] || x[:j] != dep[:j] || !relies_large?(c, x)
               vus[x[:id]] = true; fam << x; file << x
             end
           end
@@ -435,7 +468,7 @@ module A2M
         end
         m.commit_operation
         msg = if compo.zero?
-          "Aucune cloison ne se touche avec un réglage identique (même type, même épaisseur, même hauteur).\nSi elles se touchent à l'écran, c'est qu'elles n'ont pas exactement le même réglage."
+          "Aucune cloison à fusionner (#{cand.size} cloisons reconnues).\n" + diagnostic_cloisons(cand)
         else
           "#{fusionnees} cloisons réunies en #{compo} ensemble(s)."
         end
