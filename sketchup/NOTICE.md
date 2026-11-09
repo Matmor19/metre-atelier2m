@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.29)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.30)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre après refermeture (il garde sa propre orientation au lieu de la perdre à la première animation)
 - Porte intérieure : une menuiserie à taille fixe (ex. B.P 103x204) prend automatiquement sa propre taille, même si une autre case de dimension est cochée (fin du message « n'a pas de ligne d'étirement dans ce sens »)
 - Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic (outil Interagir), comme la porte moulurée. Il tourne autour de l'axe de la charnière = centre de ton arc 2D ; la géométrie et les dimensions ne changent pas, l'arc 2D reste en place
 - Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque est écrit dans Documents\Atelier 2M\diag_portes.txt (rien n'est modifié dans ton modèle)
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Pièces automatiques : à la fin, la vue revient sur l'ensemble du modèle au lieu de rester zoomée sur la dernière pièce
 - Pièces : un petit jeu (jusqu'à 10 cm) entre le bout d'une cloison et le mur voisin n'empêche plus la séparation des pièces
 - Porte intérieure : la mesure du corps du cadre ignore maintenant les éléments plus étroits que le vantail (poignée, panneaux), qui faussaient le résultat
-- Porte intérieure : traces détaillées de la mesure du cadre dans le journal des ouvertures, pour comprendre pourquoi la réservation reste à la taille hors-tout

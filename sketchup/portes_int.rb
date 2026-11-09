@@ -442,9 +442,13 @@ module A2M
       [l0 + p[:vl] - obj['vl0'].to_f, h0 + p[:vh] - obj['vh0'].to_f]
     end
 
-    # Ouverture animée au clic (comme une porte moulurée) : le panneau devient un composant dynamique qui tourne autour de
-    # l'axe de la charnière = centre de l'arc 2D « sens ouverture 2D » dessiné dans le panneau. Rien n'est changé à la
-    # géométrie ; l'arc 2D reste en place (il sort du panneau) ; chaque porte posée a sa propre définition.
+    # Ouverture animée au clic (comme une porte moulurée) : le panneau est enveloppé dans un composant dynamique qui tourne
+    # autour de l'axe de la charnière = centre de l'arc 2D « sens ouverture 2D » dessiné dans le panneau.
+    # - Le panneau d'origine garde sa propre transformation (il est retourné en Y dans les fichiers de la bibliothèque : un
+    #   composant dynamique perd ce retournement à la première animation, d'où une porte qui sort du cadre) ; seule
+    #   l'enveloppe, sans retournement, est animée.
+    # - Le sens de rotation est lu sur l'arc 2D lui-même (de quel côté il se dessine), donc il suit le schéma.
+    # - Rien n'est changé à la géométrie ; l'arc 2D reste en place ; chaque porte posée a sa propre définition.
     def self.animer(r)
       d = r.definition
       r.make_unique if d.instances.size > 1
@@ -453,8 +457,6 @@ module A2M
       return A2M::Suivi.journal('animation : pas de « Panneau » dans cette porte, animation non posée') unless pan
       arc = pan.entities.grep(Sketchup::Group).find { |g| g.name.to_s =~ /sens ouverture/i }
       return A2M::Suivi.journal('animation : groupe « sens ouverture 2D » introuvable, animation non posée') unless arc
-      # Axe de la charnière = centre de l'arc. Dans la porte posée l'arc est décomposé en arêtes (étirement) : on retrouve
-      # son centre par son encombrement (quart de cercle de 0 à 90° : le centre est le coin minimal)
       cb = arc.entities.grep(Sketchup::Edge).map(&:curve).compact.find { |k| k.respond_to?(:center) }
       if cb
         c = arc.transformation * cb.center
@@ -464,27 +466,33 @@ module A2M
         return A2M::Suivi.journal("animation : l'arc 2D n'est pas un quart de cercle (#{(dx * 2.54).round(1)} × #{(dy * 2.54).round(1)} cm), animation non posée") if dx < 1 || (dx - dy).abs > 0.4
         c = Geom::Point3d.new(b.min.x, b.min.y, 0)
       end
-      # l'arc sort du panneau (il ne doit pas tourner)
       t_pan = pan.transformation
+      axe = t_pan * c                                           # axe de la charnière dans le repère de la porte
+      # l'arc sort du panneau (il ne doit pas tourner)
       nom_arc = arc.name; tag_arc = arc.layer
       sortie = ents.add_instance(arc.definition, t_pan * arc.transformation)
       sortie.name = nom_arc; sortie.layer = tag_arc
       arc.erase!
+      # sens : le vantail fermé part de l'axe vers le milieu de l'arc en X ; il s'ouvre vers le milieu de l'arc en Y
+      bb = sortie.bounds
+      sx = bb.center.x > axe.x ? 1 : -1
+      sy = bb.center.y > axe.y ? 1 : -1
+      angle = sx * sy > 0 ? 90 : -90                            # + = sens trigonométrique
       nom = pan.name; tag = pan.layer
-      pc = pan.to_component
-      pc.name = nom; pc.layer = tag
-      pc.make_unique if pc.definition.instances.size > 1
-      # origine du composant sur l'axe de la charnière, sans bouger la géométrie
-      v = Geom::Vector3d.new(c.x, c.y, 0)
-      pc.definition.entities.transform_entities(Geom::Transformation.translation(v.reverse), pc.definition.entities.to_a)
-      pc.transformation = t_pan * Geom::Transformation.translation(v)
+      grp = ents.add_group(pan)                                 # enveloppe : le panneau y garde sa transformation
+      env = grp.to_component
+      env.name = nom; env.layer = tag
+      env.make_unique if env.definition.instances.size > 1
+      v = Geom::Vector3d.new(axe.x, axe.y, axe.z)
+      env.definition.entities.transform_entities(Geom::Transformation.translation(v.reverse), env.definition.entities.to_a)
+      env.transformation = env.transformation * Geom::Transformation.translation(v)
       att = {
         '_has_movetool_behaviors' => '1.0', '_hasbehaviors' => '1.0', '_name' => 'panneau',
-        '_onclick_label' => 'onClick', '_onclick_state1' => '0', 'onclick' => 'ANIMATE("RotZ",0,90)',
+        '_onclick_label' => 'onClick', '_onclick_state1' => '0', 'onclick' => "ANIMATE(\"RotZ\",0,#{angle})",
         'rotz' => '0.0', '_rotz_label' => 'RotZ', '_rotz_formula' => ''
       }
-      [pc, pc.definition].each { |o| att.each { |k, val| o.set_attribute('dynamic_attributes', k, val) } }
-      A2M::Suivi.journal("animation : panneau animé, axe de charnière à (#{(c.x * 2.54).round(2)} ; #{(c.y * 2.54).round(2)}) cm dans le panneau")
+      [env, env.definition].each { |o| att.each { |k, val| o.set_attribute('dynamic_attributes', k, val) } }
+      A2M::Suivi.journal("animation : panneau animé, axe de charnière à (#{(axe.x * 2.54).round(2)} ; #{(axe.y * 2.54).round(2)}) cm, rotation #{angle}° (arc : #{sx > 0 ? '+' : '-'}x, #{sy > 0 ? '+' : '-'}y)")
     rescue StandardError => ex
       A2M::Suivi.journal("ERREUR animation : #{ex.message} #{ex.backtrace.first}") rescue nil
     end
