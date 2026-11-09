@@ -1,5 +1,5 @@
 {
- "version": "2.97.11",
+ "version": "2.97.12",
  "notes": [
   "Porte intérieure : le corps du cadre est maintenant repéré comme la largeur qui occupe le plus d'épaisseur (et non plus la plus…",
   "Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est…",

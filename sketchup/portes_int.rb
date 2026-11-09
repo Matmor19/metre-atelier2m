@@ -403,3 +403,22 @@ module A2M
     end
   end
 end
+
+# Le journal s'affiche dans une fenêtre lisible (redéfini ici pour s'appliquer sans redémarrer SketchUp)
+module A2M
+  module Suivi
+    def self.afficher_journal
+      f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'journal_ouvertures.txt')
+      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(30).map { |l| l.strip[0, 220] } : ['(journal vide)']
+      esc = ->(t) { t.to_s.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;') }
+      html = "<html><body style='font-family:Consolas,monospace;font-size:17px;margin:12px;background:#fff;color:#222'>" \
+             "<h3 style='margin:0 0 8px 0'>Suivi des ouvertures : #{@cache.size} menuiserie(s) suivie(s), #{@attente.size} en attente</h3>" \
+             "<pre style='white-space:pre-wrap;line-height:1.35'>#{esc.call(lignes.join("\n"))}</pre></body></html>"
+      dlg = UI::HtmlDialog.new(dialog_title: 'Journal des ouvertures', width: 900, height: 620, resizable: true, style: UI::HtmlDialog::STYLE_DIALOG)
+      dlg.set_html(html)
+      dlg.show
+    rescue StandardError
+      UI.messagebox("Suivi des ouvertures : #{@cache.size} menuiserie(s) suivie(s)\n\n#{lignes.to_a.last(14).join("\n")}")
+    end
+  end
+end
