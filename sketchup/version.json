@@ -1,12 +1,12 @@
 {
- "version": "2.97.26",
+ "version": "2.97.27",
  "notes": [
+  "Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic…",
   "Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque…",
   "Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la…",
   "Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la…",
   "Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à…",
   "Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré),…",
-  "Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du…",
-  "… et 117 autres nouveautés plus anciennes."
+  "… et 118 autres nouveautés plus anciennes."
  ]
 }

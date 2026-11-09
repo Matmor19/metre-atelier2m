@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.26)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.27)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic (outil Interagir), comme la porte moulurée. Il tourne autour de l'axe de la charnière = centre de ton arc 2D ; la géométrie et les dimensions ne changent pas, l'arc 2D reste en place
 - Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque est écrit dans Documents\Atelier 2M\diag_portes.txt (rien n'est modifié dans ton modèle)
 - Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la cloison refaite pleine recouvrait les portes)
 - Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Porte intérieure : la mesure du corps du cadre ignore maintenant les éléments plus étroits que le vantail (poignée, panneaux), qui faussaient le résultat
 - Porte intérieure : traces détaillées de la mesure du cadre dans le journal des ouvertures, pour comprendre pourquoi la réservation reste à la taille hors-tout
 - Pièces : si une pièce existe déjà à cet endroit, l'outil (clic ou Pièces automatiques) ouvre « Modifier » et met à jour son revêtement, son nom et ses plinthes, au lieu de créer un deuxième sol par-dessus
-- Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il est vraiment impossible, un message explique pourquoi au lieu de ne rien faire. Chaque suppression est notée dans le journal Documents\\Atelier 2M\\journal_ouvertures.txt

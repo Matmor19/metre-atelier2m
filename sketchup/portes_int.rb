@@ -433,6 +433,44 @@ module A2M
       [l0 + p[:vl] - obj['vl0'].to_f, h0 + p[:vh] - obj['vh0'].to_f]
     end
 
+    # Ouverture animée au clic (comme une porte moulurée) : le panneau devient un composant dynamique qui tourne autour de
+    # l'axe de la charnière = centre de l'arc 2D « sens ouverture 2D » dessiné dans le panneau. Rien n'est changé à la
+    # géométrie ; l'arc 2D reste en place (il sort du panneau) ; chaque porte posée a sa propre définition.
+    def self.animer(r)
+      d = r.definition
+      r.make_unique if d.instances.size > 1
+      ents = r.definition.entities
+      pan = ents.grep(Sketchup::Group).find { |g| g.name == 'Panneau' }
+      return A2M::Suivi.journal('animation : pas de « Panneau » dans cette porte, animation non posée') unless pan
+      arc = pan.entities.grep(Sketchup::Group).find { |g| g.name.to_s =~ /sens ouverture/i }
+      cb = arc && arc.entities.grep(Sketchup::Edge).map(&:curve).compact.find { |k| k.respond_to?(:center) }
+      return A2M::Suivi.journal('animation : arc « sens ouverture 2D » introuvable, animation non posée') unless cb
+      c = arc.transformation * cb.center                        # axe de la charnière, repère du panneau
+      # l'arc sort du panneau (il ne doit pas tourner)
+      t_pan = pan.transformation
+      nom_arc = arc.name; tag_arc = arc.layer
+      sortie = ents.add_instance(arc.definition, t_pan * arc.transformation)
+      sortie.name = nom_arc; sortie.layer = tag_arc
+      arc.erase!
+      nom = pan.name; tag = pan.layer
+      pc = pan.to_component
+      pc.name = nom; pc.layer = tag
+      pc.make_unique if pc.definition.instances.size > 1
+      # origine du composant sur l'axe de la charnière, sans bouger la géométrie
+      v = Geom::Vector3d.new(c.x, c.y, 0)
+      pc.definition.entities.transform_entities(Geom::Transformation.translation(v.reverse), pc.definition.entities.to_a)
+      pc.transformation = t_pan * Geom::Transformation.translation(v)
+      att = {
+        '_has_movetool_behaviors' => '1.0', '_hasbehaviors' => '1.0', '_name' => 'panneau',
+        '_onclick_label' => 'onClick', '_onclick_state1' => '0', 'onclick' => 'ANIMATE("RotZ",0,90)',
+        'rotz' => '0.0', '_rotz_label' => 'RotZ', '_rotz_formula' => ''
+      }
+      [pc, pc.definition].each { |o| att.each { |k, val| o.set_attribute('dynamic_attributes', k, val) } }
+      A2M::Suivi.journal("animation : panneau animé, axe de charnière à (#{(c.x * 2.54).round(2)} ; #{(c.y * 2.54).round(2)}) cm dans le panneau")
+    rescue StandardError => ex
+      A2M::Suivi.journal("ERREUR animation : #{ex.message} #{ex.backtrace.first}") rescue nil
+    end
+
     def self.poser(o, p, sens, essai = 0)
       model = Sketchup.active_model
       model.start_operation('Poser une porte intérieure (métré)', true)
@@ -456,6 +494,7 @@ module A2M
           alerte = A2M::Bibliotheque.alerte!
           r.transformation = transfo(r.definition, p[:obj], base, v_pousse, sens[1])
           verif_pose(r, base, n, prof)
+          animer(r) if p[:obj]['balise'] == 'A2M_PORTE_INT' && p[:obj]['mode'] != 'dynamique'
         elsif p[:res]
           # Huisserie de réservation : cadre à la taille du trou, sur toute l'épaisseur percée
           r = ents.add_group
