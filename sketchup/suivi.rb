@@ -83,6 +83,14 @@ module A2M
         end
       end
       fouiller.call(model.entities, 0)
+      journal("surveillance du modèle : #{@cache.size} menuiserie(s) suivie(s)")
+    end
+
+    # Affiche la fin du journal (Documents\\Atelier 2M\\journal_ouvertures.txt) et l'état du suivi : pour comprendre un souci
+    def self.afficher_journal
+      f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'journal_ouvertures.txt')
+      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(14).map { |l| l.strip[0, 120] } : ['(journal vide)']
+      UI.messagebox("Suivi des ouvertures : #{@cache.size} menuiserie(s) suivie(s), #{@attente.size} en attente.\n\n#{lignes.join("\n")}")
     end
 
     def self.attacher(r)
@@ -211,12 +219,14 @@ module A2M
 
     # ---- Traitement différé (on ne modifie jamais le modèle pendant un observateur) ----
     def self.plus_tard(e, quoi)
+      journal("noté : #{quoi}#{@occupe ? ' (ignoré : traitement en cours)' : ''}") if quoi == :efface
       return if @occupe
       return if quoi == :change && @attente[e] == :ajout
       @attente[e] = quoi unless @attente[e] == :efface
     end
 
     def self.apres_action
+      journal("transaction validée : #{@attente.size} changement(s) en attente") unless @attente.empty?
       return if @occupe || @attente.empty? || @minuteur
       @minuteur = UI.start_timer(0, false) { @minuteur = nil; traiter }
     end
@@ -224,6 +234,7 @@ module A2M
     def self.traiter
       lot = @attente; @attente = {}
       return if lot.empty?
+      journal("traitement : #{lot.values.inspect}")
       model = Sketchup.active_model
       lot.each do |e, quoi|
         begin
