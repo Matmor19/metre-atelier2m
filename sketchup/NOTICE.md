@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.43)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.44)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)
 - Niveaux : « Caler le zéro sur un point cliqué » ne plante plus SketchUp au deuxième recalage. Le déplacement du modèle se fait maintenant après la fin du clic et la fermeture de l'outil, plus pendant l'événement du clic
 - Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au lieu de provoquer une erreur « reference to deleted Group » qui pouvait déstabiliser SketchUp
 - Niveaux : « Caler le zéro sur un point cliqué » ne casse plus les murs percés (des bouchons apparaissaient au-dessus des portes). Le suivi des ouvertures est suspendu pendant le déplacement et leurs altitudes mémorisées sont décalées du même montant
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque est écrit dans Documents\Atelier 2M\diag_portes.txt (rien n'est modifié dans ton modèle)
 - Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la cloison refaite pleine recouvrait les portes)
 - Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens
-- Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé

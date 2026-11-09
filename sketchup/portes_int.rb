@@ -751,3 +751,35 @@ module A2M
   end
 end
 UI.start_timer(2, false) { A2M::DiagPortes.releve }
+
+# ---- Entretien provisoire des portes Chauvat de la bibliothèque (relevé de structure) ----
+module A2M
+  module EntretienPortes
+    def self.releve
+      cible = File.join(File.dirname(A2M::Bibliotheque.dossier), 'diag_portes_chauvat.txt')
+      model = Sketchup.active_model
+      sortie = ["Relevé portes Chauvat (cm) – #{Time.now}"]
+      [73, 63, 83, 93].each do |w|
+        f = File.join(A2M::Bibliotheque.dossier, 'Portes interieures', "B.P #{w}x204 Chauvat.skp")
+        sortie << '' << "=== #{w}"
+        begin
+          model.start_operation('Relevé porte', true)
+          d = model.definitions.load(f)
+          sortie << "définition : #{d.name.inspect} bornes=#{A2M::DiagPortes.pt(d.bounds.min)}..#{A2M::DiagPortes.pt(d.bounds.max)}"
+          A2M::DiagPortes.attrs(d, 1, sortie)
+          A2M::DiagPortes.arbre(d.entities, 1, sortie)
+        rescue StandardError => ex
+          sortie << "ERREUR : #{ex.message}"
+        ensure
+          model.abort_operation
+        end
+      end
+      File.write(cible, sortie.join("\n"), encoding: 'UTF-8')
+      UI.messagebox("Relevé écrit : #{cible}")
+    end
+  end
+end
+if !$a2m_entretien_portes
+  $a2m_entretien_portes = true
+  UI.menu('Extensions').add_item('Métré A2M (provisoire) : relevé des portes Chauvat') { A2M::EntretienPortes.releve }
+end
