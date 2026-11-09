@@ -1,4 +1,5 @@
 [
+ "Portes dont le panneau est déjà dynamique : l'animation automatique ne fait plus de copie de la porte (elle cassait l'ouverture au clic de la 73)",
  "Portes de la bibliothèque dont le panneau est déjà un composant dynamique (fait à la main) : elles sont posées entières, sans copie éclatée, donc l'ouverture au clic fonctionne pour toutes les largeurs (avant, seule la porte enregistrée « dynamique » marchait) ; l'animation automatique n'intervient plus sur elles",
  "Portes animées : l'axe de rotation est maintenant posé exactement sur la charnière (l'enveloppe du panneau n'avait pas son origine au bon endroit, d'où un vantail décalé hors du cadre)",
  "Portes animées : relevé de diagnostic dans le journal (position du panneau animé juste après la pose) pour corriger son placement",

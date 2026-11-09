@@ -452,6 +452,8 @@ module A2M
     def self.animer(r)
       # Copie propre de la définition : celle de la pose est partagée (réutilisée pour les portes de même taille) et ne doit
       # surtout pas être modifiée, sinon la porte suivante hérite d'un panneau déjà déplacé
+      # Panneau déjà dynamique (fait à la main) ou absent : on ne touche à rien
+      return unless r.definition.entities.grep(Sketchup::Group).any? { |g| g.name == 'Panneau' }
       mod = r.model
       cp = mod.definitions.add("#{r.definition.name} animée")
       ii = cp.entities.add_instance(r.definition, Geom::Transformation.new)
