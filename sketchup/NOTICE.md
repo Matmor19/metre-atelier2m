@@ -90,7 +90,7 @@ Cloison à vos couches : plaque + ossature (rail, montant) + plaque, par exemple
 - Le tracé suit par défaut l'axe de la couche choisie (la Tab change de côté). Cliquez les points puis Entrée.
 - Chaque couche est sur sa balise : plaques = A2M_DOUBLAGE, ossature = A2M_CLOISON.
 - Les cloisons composées reliées fusionnent entre elles ; tout se rouvre avec « Modifier ce que j'ai dessiné ».
-- Placer un point à une distance d'un repère : pendant le tracé, appuyez sur R, cliquez le point de référence, visez la direction (flèche droite = axe rouge, flèche gauche = axe vert), tapez la distance puis Entrée. Le point est posé là (premier point compris). Échap annule le repère. Pareil avec l'outil mur.
+- Placer un point à une distance d'un repère : pendant le tracé, appuyez sur la flèche haut (ou clic droit > Partir d'un repère), cliquez le point de référence, visez la direction (flèche droite = axe rouge, flèche gauche = axe vert), tapez la distance puis Entrée. Le point est posé là (premier point compris). Échap annule le repère. Pareil avec l'outil mur.
 
 ### Dalle, chape, plafond depuis les murs
 Sélectionnez les murs : dalle béton sous l'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d'un coup avec leurs épaisseurs
