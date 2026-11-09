@@ -120,6 +120,7 @@ module A2M
     end
 
     ATTR = 'a2m_toiture'
+    class << self; attr_reader :polys_dernier; end
 
     # Fenêtre de réglages ; avec modif = true, une question de plus sur le contour. Retourne un Hash ou nil.
     def self.saisir(prm, modif = false)
@@ -234,6 +235,7 @@ module A2M
           poly.map { |pu, pv, pz| o.offset(u, pu.m).offset(v, pv.m).offset(Z_AXIS, ztop + pz.m) }
         end
       end
+      @polys_dernier = polys
       grp = model.active_entities.add_group
       polys.each do |pts|
         f = grp.entities.add_face(pts)
