@@ -174,7 +174,12 @@ module A2M
       f = index_chemin
       return [] unless File.exist?(f)
       liste = (JSON.parse(File.read(f, encoding: 'UTF-8')) rescue [])
-      reparer(liste)
+      reparer(liste).sort_by { |o| [o['type'].to_s, cle_nom(o['nom'])] }
+    end
+
+    # Tri « naturel » des noms : B.P 63 avant B.P 73 … avant B.P 103 (et non l'ordre alphabétique 103, 63, 73…)
+    def self.cle_nom(nom)
+      nom.to_s.scan(/\d+|\D+/).map { |t| t =~ /\A\d/ ? [0, t.to_i, ''] : [1, 0, t.downcase] }
     end
 
     # Appuis et seuils rangés par erreur sous un autre type (nom « Appuis 100 », « Seuil 90 »… mais type Fenêtre) :
@@ -630,7 +635,7 @@ module A2M
       (A2M::VueObjet.generer(d, chemin.sub(/\.skp\z/, '')) if defined?(A2M::VueObjet)) rescue nil   # vues 2D : dessus et face, couleurs d'origine
       pc = (@fiche || [])[8].to_s
       liste << info.merge('fichier' => rel, 'piece' => (pc.empty? || pc == PAS_DE_PIECE ? nil : pc)).compact
-      sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
+      sauver_index(liste.sort_by { |o| [o['type'].to_s, cle_nom(o['nom'])] })
       return "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, composant dynamique : #{info['attr_l'] ? 'largeur réglable' : 'largeur fixe'}, #{info['attr_h'] ? 'hauteur réglable' : 'hauteur fixe'})" if info['mode'] == 'dynamique'
       "#{nom} (#{type[0]}, #{cm(info['l0'])} × #{cm(info['h0'])} cm, #{info['lx'].size} ligne(s) en largeur, #{info['lz'].size} en hauteur)"
     end
@@ -667,7 +672,7 @@ module A2M
         liste.reject! { |o| o['nom'] == f[:nom] }
       end
       liste << { 'nom' => f[:nom], 'type' => f[:type][0], 'balise' => f[:type][1], 'profil' => profil.map { |w, z| [w.to_f, z.to_f] }, 'h0' => h.to_f, 'l0' => e.to_f, 'version' => 1 }
-      sauver_index(liste.sort_by { |o| [o['type'].to_s, o['nom'].to_s] })
+      sauver_index(liste.sort_by { |o| [o['type'].to_s, cle_nom(o['nom'])] })
       "#{f[:nom]} (profil de plinthe #{cm(h)} × #{cm(e)} cm)"
     end
 
@@ -979,6 +984,14 @@ module A2M
     # ---- Commande : la bibliothèque (poser un objet hors d'un mur, ouvrir ou changer le dossier) ----
     # ---- Fenêtre « Bibliothèque d'objets » : vignettes rangées par type, recherche, pose à la taille voulue ----
     CORPS_GERER = <<~'HTML'
+      <style>
+        /* Vignettes plus grandes (les portes sont hautes et fines), alignées en rangées régulières, noms centrés sur 2 lignes */
+        #liste .grille{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px;align-items:stretch}
+        #liste .carte{align-items:stretch}
+        #liste .carte .vignette{height:150px;background:#fff}
+        #liste .carte span{text-align:center;font-weight:600;min-height:2.5em;display:flex;align-items:center;justify-content:center;word-break:break-word}
+        #liste h2{margin:14px 0 8px;position:sticky;top:0;background:var(--fond,#fff);padding:4px 0;z-index:1}
+      </style>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
         <input type="text" id="q" placeholder="Rechercher un objet…" autocomplete="off" style="flex:1;font:13px 'Segoe UI',Arial,sans-serif;text-align:left;padding:8px 12px">
       </div>
@@ -1116,7 +1129,7 @@ module A2M
         return
       end
       html = A2M::Panneau.page('Bibliothèque d\'objets', 'Cliquez un objet, réglez sa taille, puis « Poser »', CORPS_GERER, SCRIPT_GERER, donnees_gerer)
-      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : bibliothèque d\'objets', 'A2M_Panneau_Biblio', html, 560, 780)
+      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : bibliothèque d\'objets', 'A2M_Panneau_Biblio', html, 660, 800)
       @fen_gerer = dlg
       rafraichir = -> { dlg.execute_script("maj(#{JSON.generate(donnees_gerer).gsub('</', '<\/')})") }
       dlg.add_action_callback('poser') do |_ctx, json|

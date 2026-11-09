@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.37)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.38)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Bibliothèque : portes triées dans l'ordre naturel (63, 73, 83, 93, 103), vignettes plus grandes et alignées en rangées régulières dans la fenêtre de la bibliothèque et dans le choix de la porte ; l'ancienne version non animée des portes 83, 93 et 103 est mise de côté et les versions animées portent le nom propre « B.P 83x204 Chauvat »
 - Rangement d'un objet dans la bibliothèque : un composant dynamique (ex. panneau de porte qui s'ouvre au clic) n'est plus éclaté à la préparation, il garde son animation une fois rangé (c'était la cause de la porte 73 qui ne s'ouvrait plus après rangement)
 - Bibliothèque : un objet enregistré à nouveau (ex. une porte rendue dynamique) est rechargé à la pose au lieu de réutiliser son ancienne version gardée dans le modèle
 - Portes dont le panneau est déjà dynamique : l'animation automatique ne fait plus de copie de la porte (elle cassait l'ouverture au clic de la 73)
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Fusion des cloisons : deux cloisons qui ne diffèrent que par le côté du tracé (couches à droite ou à gauche) se fusionnent maintenant quand leur composition est symétrique (plaque + cloison + plaque) : leur emplacement ne bouge pas
 - Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le dessous de la dalle est le zéro, les semelles sont en négatif ; tracé des niveaux dans le modèle et recalage du zéro sur un point cliqué
 - Porte intérieure : le journal contrôle après chaque pose la position des ailes et du corps du cadre par rapport au plan milieu de la cloison
-- Porte intérieure : le cadre est maintenant mesuré sur ses faces exactes : le corps du cadre (ex. 86,1 × 204 cm) est centré dans l'épaisseur de la cloison et les ailes de recouvrement tombent de part et d'autre des plaques ; la réservation prend la taille du corps ; la hauteur du trou prend aussi celle du corps (204 cm pour une porte 83×204)

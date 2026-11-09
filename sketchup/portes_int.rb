@@ -33,6 +33,11 @@ module A2M
 
     # ---- Fenêtre « Porte intérieure » : vignettes, aperçu, choix en un clic (codes couleur : jaune = choisi, bleu pâle = aucun, blanc = à choisir) ----
     CORPS_PANNEAU = <<~'HTML'
+      <style>
+        #menus{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
+        #menus .carte .vignette{height:130px;background:#fff}
+        #menus .carte span{text-align:center;min-height:2.5em;display:flex;align-items:center;justify-content:center;word-break:break-word}
+      </style>
       <h2>Bloc-porte (vantail)</h2>
       <div class="puces" id="dims"></div>
       <div class="dims" id="autre" style="margin-top:10px;display:none">
