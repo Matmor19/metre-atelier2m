@@ -888,6 +888,7 @@ module A2M
         end
       else
         inst = ents.add_instance(definition_etiree(obj, l_cm, h_cm, model), Geom::Transformation.new)
+        inst.make_unique if inst.definition.count_instances > 1 && inst.definition.get_attribute(DICO, 'source')   # chaque porte animée a son propre état ouvert/fermé
       end
       # Contrôle de la taille réelle : un objet qui dépasse (seuil, rejingot ou formule comprise dans le composant)
       # est réglé à nouveau pour faire exactement la largeur et la hauteur de l'ouverture
@@ -918,6 +919,13 @@ module A2M
     def self.definition_etiree(obj, l_cm, h_cm, model = Sketchup.active_model)
       chemin = File.join(dossier, obj['fichier'])
       l = pouces(l_cm); h = pouces(h_cm)
+      # Objet à taille fixe qui contient déjà un composant dynamique animé (ex. panneau de porte qui s'ouvre au clic) :
+      # on le garde entier (pas de copie éclatée, qui casserait l'animation) ; chaque pose en reçoit sa propre copie
+      if (obj['lx'] || []).empty? && (obj['lz'] || []).empty?
+        b0 = charger(obj, model)
+        anime = b0.entities.any? { |e| e.is_a?(Sketchup::ComponentInstance) && (e.get_attribute('dynamic_attributes', 'onclick') || e.definition.get_attribute('dynamic_attributes', 'onclick')) }
+        return b0 if anime
+      end
       cle = "v3|#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
       deja = model.definitions.find { |d| d.get_attribute(DICO, 'cle') == cle }
       return deja if deja
