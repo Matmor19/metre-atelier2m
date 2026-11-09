@@ -49,3 +49,18 @@
 - Vérifier l'écartement réel en cm et le sens de l'angle des hachures ordinaires.
 - Anciennes propositions sans réponse : ligne de métré pour les planelles ; recul du sol quand une porte intérieure est déplacée.
 - archweb.com : ses .pat demandent un compte → Mathieu les télécharge et les met dans son dossier Texture PAT.
+
+## Feuille de route « fenêtres à coupe / vue de dessus » (09/11/2026, à dérouler dans l'ordre avec Mathieu)
+Principe (modèle : zinguerie 2.97.48) : une fenêtre avec dessin en direct (coupe, plan ou élévation à l'échelle) + curseurs/cases qui modifient le 3D à la volée (debounce 70 ms, opération transparente), objet rouvrable par « Modifier ce que j'ai dessiné », mesures renvoyées par Ruby (`etat(p, m)`), pièces provisoires remplacées par les objets de la bibliothèque. À faire d'abord : extraire le socle commun (champ curseur+case, échelle SVG, envoi différé) dans panneau.rb pour que chaque fenêtre soit rapide à écrire.
+1. Toiture : plan (pans, débords, faîtage/arêtiers, poignées) + coupe (pente, épaisseur, débord). Faîtages/arêtiers avec objets de Mathieu (tuile demi-ronde, about) ; ardoise : profil extrudé.
+2. Escalier : plan (marches, tournants, côté mur, trémie) + coupe (hauteur, giron, Blondel, échappée, limons).
+3. Garde-corps : élévation (poteaux, lisses/barreaux, division régulière avec cases de départ/arrivée) + plan du tracé.
+4. Ouverture : élévation (largeur, hauteur, allège, linteau) + coupe (tableau, feuillure, appui, seuil).
+5. Fondations/semelles : coupe (largeur, hauteur, niveau, béton de propreté), liée aux Niveaux.
+6. Charpente : coupe (chevron, entraxe, pannes, sablière) + plan des chevrons.
+7. Couverture : élévation du pan (rangs, pas de latte, recouvrement) ; faîtages/arêtiers via objets.
+8. Parois et sols/dalles : coupe de composition avec épaisseurs en curseurs (existe en vignettes).
+9. Relevé de côtes : plan de la pièce qui se dessine en direct pendant la saisie.
+10. Porte intérieure : plan (sens, côté, charnières) ; Électricité : élévation de pièce avec hauteurs réglementaires.
+11. Zinguerie : suite (objets coudes/colliers/crochets/naissances/regard, gouttières sur la coupe, vue de dessus des descentes).
+Sans intérêt pour une fenêtre dessinée : balises, textures, hachures, export, cartouches, feuille, dossier, variantes, phases, contrôle, tableau.
