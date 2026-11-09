@@ -812,10 +812,16 @@ module A2M
     end
 
     def self.charger(obj, model)
-      base = model.definitions.find { |d| d.get_attribute(DICO, 'source') == obj['fichier'] }
+      chemin = File.join(dossier, obj['fichier'])
+      mt = (File.mtime(chemin).to_i rescue 0)
+      # Le fichier de la bibliothèque est rechargé s'il a été enregistré à nouveau depuis son chargement dans le modèle
+      # (sinon on poserait une ancienne version, ex. une porte sans son animation)
+      base = model.definitions.find { |d| d.get_attribute(DICO, 'source') == obj['fichier'] && d.get_attribute(DICO, 'mtime').to_i == mt }
       return base if base
-      base = model.definitions.load(File.join(dossier, obj['fichier']))
+      model.definitions.each { |d| d.delete_attribute(DICO, 'source') if d.get_attribute(DICO, 'source') == obj['fichier'] }
+      base = model.definitions.load(chemin)
       base.set_attribute(DICO, 'source', obj['fichier'])
+      base.set_attribute(DICO, 'mtime', mt)
       base
     end
 
@@ -926,7 +932,7 @@ module A2M
         anime = b0.entities.any? { |e| e.is_a?(Sketchup::ComponentInstance) && (e.get_attribute('dynamic_attributes', 'onclick') || e.definition.get_attribute('dynamic_attributes', 'onclick')) }
         return b0 if anime
       end
-      cle = "v3|#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
+      cle = "v4|#{obj['fichier']}|#{(File.mtime(chemin).to_i rescue 0)}|#{l_cm.round(1)}|#{h_cm.round(1)}"
       deja = model.definitions.find { |d| d.get_attribute(DICO, 'cle') == cle }
       return deja if deja
       base = charger(obj, model)

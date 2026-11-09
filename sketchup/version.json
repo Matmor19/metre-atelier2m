@@ -1,12 +1,12 @@
 {
- "version": "2.97.35",
+ "version": "2.97.36",
  "notes": [
+  "Bibliothèque : un objet enregistré à nouveau (ex. une porte rendue dynamique) est rechargé à la pose au lieu de réutiliser son…",
   "Portes dont le panneau est déjà dynamique : l'animation automatique ne fait plus de copie de la porte (elle cassait l'ouverture…",
   "Portes de la bibliothèque dont le panneau est déjà un composant dynamique (fait à la main) : elles sont posées entières, sans…",
   "Portes animées : l'axe de rotation est maintenant posé exactement sur la charnière (l'enveloppe du panneau n'avait pas son…",
   "Portes animées : relevé de diagnostic dans le journal (position du panneau animé juste après la pose) pour corriger son placement",
   "Portes animées : l'animation travaille maintenant sur une copie propre de la porte (avant, elle modifiait la définition partagée…",
-  "Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre…",
-  "… et 125 autres nouveautés plus anciennes."
+  "… et 126 autres nouveautés plus anciennes."
  ]
 }
