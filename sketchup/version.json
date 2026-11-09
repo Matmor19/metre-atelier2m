@@ -1,12 +1,12 @@
 {
- "version": "2.97.0",
+ "version": "2.97.1",
  "notes": [
+  "Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il…",
   "Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans…",
   "Fusion des cloisons plus tolérante : une cloison qui s'arrête contre la face d'une autre (et non sur son axe) est maintenant…",
   "Murs et cloisons : flèche HAUT (ou clic droit > « Partir d'un repère ») pendant le tracé (la touche R est prise par SketchUp) = «…",
   "Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la…",
   "Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons :…",
-  "Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture,…",
-  "… et 97 autres nouveautés plus anciennes."
+  "… et 98 autres nouveautés plus anciennes."
  ]
 }

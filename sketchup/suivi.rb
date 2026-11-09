@@ -229,14 +229,8 @@ module A2M
         begin
           case quoi
           when :efface
-            d = @cache.delete(e)
-            # Rien à reboucher si aucun mur n'a ce trou (annulation d'un perçage, par exemple)
-            if d && murs_avec(model, d).any?
-              operation(model, 'Reboucher l\'ouverture') do
-                annexes(model, d).each { |a| a.erase! if a.valid? }   # appui ou seuil supprimés avec la menuiserie
-                reboucher(model, d)
-              end
-            end
+            d = @cache.delete(e) || (cle = @cache.keys.find { |k| !(k.valid? rescue false) }) && @cache.delete(cle)
+            effacee(model, d)
           when :change then changer(model, e) if e.valid?
           when :ajout then ajout(model, e) if e.valid?
           end
@@ -244,6 +238,25 @@ module A2M
           journal("ERREUR #{quoi} : #{ex.class} #{ex.message} — #{ex.backtrace.to_a.first(3).join(' | ')}")
           UI.messagebox("L'ouverture n'a pas pu suivre la menuiserie (#{ex.message}).\nRien n'a été modifié. Clic droit sur la menuiserie > ◆ Métré Atelier 2M > Recaler l'ouverture.")
         end
+      end
+    end
+
+    # Menuiserie supprimée : le mur est rebouché. Si la liste des trous du mur est perdue, on rebouche quand même
+    # dans le mur de même identifiant (un bouchon dans un mur plein ne change rien) ; sinon on le dit au lieu de se taire.
+    def self.effacee(model, d)
+      return unless d && d['couches'] && d['couches'].any?
+      journal("menuiserie supprimée (#{d['id']}) : #{murs_avec(model, d).size} mur(s) avec ce trou")
+      avec = murs_avec(model, d).any?
+      ids = d['couches'].map { |c| c['mur'] }
+      par_id = murs(model).select { |m| ids.include?(m.get_attribute('a2m', 'mur_id')) }
+      if !avec && par_id.empty?
+        journal('  aucun mur retrouvé : la cloison a été refaite depuis la pose de la porte ?')
+        UI.messagebox("La porte a été supprimée mais l'ouverture n'a pas pu être rebouchée : la cloison ne garde plus la mémoire de ce trou (elle a sans doute été refaite ou fusionnée depuis la pose de la porte).\nSolution : refaire la cloison avec « Modifier ce que j'ai dessiné » (Appliquer sans rien changer) ; les ouvertures sont alors à refaire.")
+        return
+      end
+      operation(model, 'Reboucher l\'ouverture') do
+        annexes(model, d).each { |a| a.erase! if a.valid? }   # appui ou seuil supprimés avec la menuiserie
+        reboucher(model, d, !avec)
       end
     end
 
@@ -323,10 +336,10 @@ module A2M
     end
 
     # Rebouche : un bloc à la taille exacte du trou (entre les faces de la couche) réuni au mur
-    def self.reboucher(model, d)
+    def self.reboucher(model, d, lache = false)
       tous = murs(model)
       d['couches'].each do |c|
-        g = tous.find { |m| m.valid? && m.get_attribute('a2m', 'mur_id') == c['mur'] && trous(m).include?(d['id']) }
+        g = tous.find { |m| m.valid? && m.get_attribute('a2m', 'mur_id') == c['mur'] && (lache || trous(m).include?(d['id'])) }
         next unless g
         n = Geom::Vector3d.new(c['n'])
         rect = c['rect'].map { |q| Geom::Point3d.new(q).offset(n, -c['e0']) }
