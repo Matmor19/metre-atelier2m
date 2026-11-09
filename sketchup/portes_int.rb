@@ -153,9 +153,18 @@ module A2M
         next if vl <= 0 || vh <= 0 || d['menu'].nil?
         choix = (d['choix'] || {}).select { |k, v| CHOIX.any? { |c, _, vals| c == k && vals.include?(v) } }
         piece = d['piece'].to_s.empty? ? nil : d['piece'].to_s
-        @r = { dim: d['dim'], vl: vl, vh: vh, jl: jl, jh: jh, menu: d['menu'], piece: piece, choix: choix }
         obj = d['menu'].to_s.start_with?('obj:') ? objs.find { |o| "obj:#{o['nom']}" == d['menu'] } : nil
-        dim = d['dim'] == 'autre' ? "#{vl.round}×#{vh.round}" : d['dim']
+        d_dim = d['dim']
+        # Menuiserie à taille fixe (sans ligne d'étirement) : la porte prend la taille de l'objet choisi, quelle que soit la
+        # case de dimension cochée (sinon « n'a pas de ligne d'étirement dans ce sens »)
+        if obj && obj['vl0'] && Array(obj['lx']).empty? && Array(obj['lz']).empty? && (obj['vl0'].to_f - vl).abs > 0.4 || obj && obj['vh0'] && Array(obj['lz']).empty? && (obj['vh0'].to_f - vh).abs > 0.4
+          vl = obj['vl0'].to_f if obj['vl0']
+          vh = obj['vh0'].to_f if obj['vh0']
+          d_dim = DIMS.include?("#{vl.round}×#{vh.round}") ? "#{vl.round}×#{vh.round}" : 'autre'
+          Sketchup.status_text = "Dimensions reprises de la menuiserie choisie : #{vl.round} × #{vh.round} cm"
+        end
+        @r = { dim: d_dim, vl: vl, vh: vh, jl: jl, jh: jh, menu: d['menu'], piece: piece, choix: choix }
+        dim = d_dim == 'autre' ? "#{vl.round}×#{vh.round}" : d_dim
         dlg.close
         UI.start_timer(0, false) do
           opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
