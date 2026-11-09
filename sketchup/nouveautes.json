@@ -1,4 +1,5 @@
 [
+ "Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque est écrit dans Documents\\Atelier 2M\\diag_portes.txt (rien n'est modifié dans ton modèle)",
  "Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la cloison refaite pleine recouvrait les portes)",
  "Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens",
  "Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé",

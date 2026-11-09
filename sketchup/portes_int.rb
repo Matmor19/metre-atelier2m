@@ -595,3 +595,72 @@ module A2M
     end
   end
 end
+
+# ---- Relevé (une seule fois) de la structure des portes de la bibliothèque : prépare l'animation d'ouverture ----
+module A2M
+  module DiagPortes
+    FICHIERS = ['Portes interieures/B.P 83x204 Chauvat.skp', 'Portes interieures/B.P 63x204 Chauvat.skp',
+                'Portes interieures/porte molurée.skp'].freeze
+
+    def self.cm(v) (v.to_f * 2.54).round(2) end
+
+    def self.pt(p) p.to_a.map { |v| cm(v) }.inspect end
+
+    def self.attrs(e, niv, sortie)
+      return unless e.attribute_dictionaries
+      e.attribute_dictionaries.each do |dic|
+        dic.each_pair { |k, v| sortie << "#{'  ' * niv}@#{dic.name}.#{k} = #{v.to_s[0, 160].inspect}" }
+      end
+    end
+
+    def self.arbre(ents, niv, sortie)
+      pre = '  ' * niv
+      ents.each do |e|
+        next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+        d = e.definition
+        b = e.bounds
+        sortie << "#{pre}#{e.is_a?(Sketchup::Group) ? 'GROUPE' : 'COMPOSANT'} nom=#{e.name.inspect} def=#{d.name.inspect} tag=#{e.layer.name} " \
+                  "min=#{pt(b.min)} max=#{pt(b.max)} origine=#{pt(e.transformation.origin)}"
+        attrs(e, niv + 1, sortie)
+        attrs(d, niv + 1, sortie) unless e.is_a?(Sketchup::Group)
+        arbre(d.entities, niv + 1, sortie)
+      end
+      courbes = ents.grep(Sketchup::Edge).map(&:curve).compact.uniq
+      courbes.each do |c|
+        if c.respond_to?(:center)
+          sortie << "#{pre}ARC centre=#{pt(c.center)} rayon=#{cm(c.radius)} angles=#{c.start_angle.radians.round(1)}..#{c.end_angle.radians.round(1)}"
+        else
+          sortie << "#{pre}COURBE #{c.class} #{c.vertices.size} points"
+        end
+      end
+      sortie << "#{pre}(#{ents.grep(Sketchup::Edge).size} arêtes, #{ents.grep(Sketchup::Face).size} faces à ce niveau)"
+    end
+
+    def self.releve
+      cible = File.join(File.dirname(A2M::Bibliotheque.dossier), 'diag_portes.txt')
+      return if File.exist?(cible)
+      model = Sketchup.active_model
+      sortie = ["Relevé des portes (cm) – version #{A2M::EXT.version rescue '?'}"]
+      FICHIERS.each do |f|
+        chemin = File.join(A2M::Bibliotheque.dossier, f)
+        sortie << ''
+        sortie << "=== #{f}"
+        begin
+          model.start_operation('Relevé porte', true)
+          d = model.definitions.load(chemin)
+          sortie << "définition : #{d.name.inspect}"
+          attrs(d, 1, sortie)
+          arbre(d.entities, 1, sortie)
+        rescue StandardError => ex
+          sortie << "ERREUR : #{ex.message}"
+        ensure
+          model.abort_operation   # rien ne reste dans le modèle
+        end
+      end
+      File.write(cible, sortie.join("\n"), encoding: 'UTF-8')
+    rescue StandardError
+      nil
+    end
+  end
+end
+UI.start_timer(2, false) { A2M::DiagPortes.releve }
