@@ -450,8 +450,15 @@ module A2M
     # - Le sens de rotation est lu sur l'arc 2D lui-même (de quel côté il se dessine), donc il suit le schéma.
     # - Rien n'est changé à la géométrie ; l'arc 2D reste en place ; chaque porte posée a sa propre définition.
     def self.animer(r)
-      d = r.definition
-      r.make_unique if d.instances.size > 1
+      # Copie propre de la définition : celle de la pose est partagée (réutilisée pour les portes de même taille) et ne doit
+      # surtout pas être modifiée, sinon la porte suivante hérite d'un panneau déjà déplacé
+      mod = r.model
+      cp = mod.definitions.add("#{r.definition.name} animée")
+      ii = cp.entities.add_instance(r.definition, Geom::Transformation.new)
+      ii.explode
+      (r.definition.attribute_dictionary(A2M::Bibliotheque::DICO) || {}).each_pair { |k, v| cp.set_attribute(A2M::Bibliotheque::DICO, k, v) }
+      cp.delete_attribute(A2M::Bibliotheque::DICO, 'cle')
+      r.definition = cp
       ents = r.definition.entities
       pan = ents.grep(Sketchup::Group).find { |g| g.name == 'Panneau' }
       return A2M::Suivi.journal('animation : pas de « Panneau » dans cette porte, animation non posée') unless pan

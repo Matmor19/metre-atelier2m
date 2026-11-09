@@ -1,12 +1,12 @@
 {
- "version": "2.97.30",
+ "version": "2.97.31",
  "notes": [
+  "Portes animées : l'animation travaille maintenant sur une copie propre de la porte (avant, elle modifiait la définition partagée…",
   "Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre…",
   "Porte intérieure : une menuiserie à taille fixe (ex. B.P 103x204) prend automatiquement sa propre taille, même si une autre case…",
   "Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic…",
   "Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque…",
   "Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la…",
-  "Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la…",
-  "… et 120 autres nouveautés plus anciennes."
+  "… et 121 autres nouveautés plus anciennes."
  ]
 }

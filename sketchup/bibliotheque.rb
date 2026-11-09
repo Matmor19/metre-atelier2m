@@ -918,7 +918,7 @@ module A2M
     def self.definition_etiree(obj, l_cm, h_cm, model = Sketchup.active_model)
       chemin = File.join(dossier, obj['fichier'])
       l = pouces(l_cm); h = pouces(h_cm)
-      cle = "v2|#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
+      cle = "v3|#{obj['fichier']}|#{l_cm.round(1)}|#{h_cm.round(1)}"
       deja = model.definitions.find { |d| d.get_attribute(DICO, 'cle') == cle }
       return deja if deja
       base = charger(obj, model)
