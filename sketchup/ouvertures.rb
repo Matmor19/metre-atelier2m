@@ -519,6 +519,15 @@ module A2M
       id
     end
 
+    # Les autres mémoires du groupe (tracé du mur dessiné, réglages…) : une découpe ou un rebouchage ne doivent pas les perdre
+    def self.autres_dicts(g)
+      (g.attribute_dictionaries || []).select { |d| d.name != 'a2m' && !d.name.start_with?('GSU_') }.map { |d| h = {}; d.each_pair { |k, v| h[k] = v }; [d.name, h] }
+    end
+
+    def self.restaurer_dicts(res, dicts)
+      dicts.each { |nom, h| h.each { |k, v| res.set_attribute(nom, k, v) if res.get_attribute(nom, k).nil? } }
+    end
+
     def self.attributs(g)
       h = {}
       (g.attribute_dictionary('a2m') || {}).each_pair { |k, v| h[k] = v }
@@ -544,6 +553,7 @@ module A2M
         rect = [bas_i, bas_i.offset(u, l), bas_i.offset(u, l).offset(Z_AXIS, haut_i), bas_i.offset(Z_AXIS, haut_i)]
         mid = mur_id(g)
         att = attributs(g)
+        autres = autres_dicts(g)
         cut = ents.add_group
         f = cut.entities.add_face(rect)
         f.reverse! if f.normal.dot(n) > 0     # la normale vers l'intérieur du mur
@@ -560,6 +570,7 @@ module A2M
           raise SensInverse if dehors || (vol > 0 && (res.volume rescue 0) > vol + 1)
           res.name = nom; res.layer = tag
           att.each { |k, v| res.set_attribute('a2m', k, v) }
+          restaurer_dicts(res, autres)
           trous = (JSON.parse(att['trous'] || '[]') rescue [])
           res.set_attribute('a2m', 'trous', JSON.generate((trous + [id]).uniq)) if id
           e0, e1 = bornes[i].map { |d| d - 0.5.cm + 5.cm }   # profondeurs d'entrée et de sortie depuis le plan de découpe

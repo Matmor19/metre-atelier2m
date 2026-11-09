@@ -223,6 +223,9 @@ module A2M
       return if @occupe
       return if quoi == :change && @attente[e] == :ajout
       @attente[e] = quoi unless @attente[e] == :efface
+      if quoi == :efface && !@minuteur
+        @minuteur = UI.start_timer(0.4, false) { @minuteur = nil; traiter }
+      end
     end
 
     def self.apres_action
@@ -267,7 +270,7 @@ module A2M
       end
       operation(model, 'Reboucher l\'ouverture') do
         annexes(model, d).each { |a| a.erase! if a.valid? }   # appui ou seuil supprimés avec la menuiserie
-        reboucher(model, d, !avec)
+        reboucher(model, d, true)
       end
     end
 
@@ -350,7 +353,9 @@ module A2M
     def self.reboucher(model, d, lache = false)
       tous = murs(model)
       d['couches'].each do |c|
-        g = tous.find { |m| m.valid? && m.get_attribute('a2m', 'mur_id') == c['mur'] && (lache || trous(m).include?(d['id'])) }
+        g = tous.find { |m| m.valid? && m.get_attribute('a2m', 'mur_id') == c['mur'] && trous(m).include?(d['id']) }
+        g ||= tous.find { |m| m.valid? && m.get_attribute('a2m', 'mur_id') == c['mur'] } if lache
+        journal("  couche #{c['mur']} : #{g ? 'mur trouvé' : 'AUCUN mur'}")
         next unless g
         n = Geom::Vector3d.new(c['n'])
         rect = c['rect'].map { |q| Geom::Point3d.new(q).offset(n, -c['e0']) }
@@ -359,6 +364,7 @@ module A2M
         f.reverse! if f.normal.dot(n) > 0
         f.pushpull(c['e1'] - c['e0'])
         att = A2M::Ouvertures.attributs(g)
+        autres = A2M::Ouvertures.autres_dicts(g)
         nom = g.name; tag = g.layer; mat = g.material
         res = g.union(bloc)
         unless res
@@ -369,6 +375,7 @@ module A2M
         journal("  rebouché : « #{nom} »")
         res.name = nom; res.layer = tag; res.material = mat if mat
         att.each { |k, v| res.set_attribute('a2m', k, v) }
+        A2M::Ouvertures.restaurer_dicts(res, autres)
         res.set_attribute('a2m', 'trous', JSON.generate(trous(res) - [d['id']]))
         nettoyer(res.entities)
       end

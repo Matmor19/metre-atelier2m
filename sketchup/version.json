@@ -1,5 +1,5 @@
 {
- "version": "2.97.2",
+ "version": "2.97.3",
  "notes": [
   "Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il…",
   "Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans…",
