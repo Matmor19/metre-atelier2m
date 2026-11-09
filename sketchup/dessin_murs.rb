@@ -262,7 +262,7 @@ module A2M
           marquer(g, id, pts, ferme, p, i)
           "#{g.name} (#{ecm} cm)"
         end
-        fus = (!p[:couches] && p[:type] && p[:type][0] == 'Cloison') ? fusionner(id) : 0
+        fus = ((!p[:couches] && p[:type] && p[:type][0] == 'Cloison') || p[:cloison]) ? fusionner(id) : 0
         noms << "fusionnée avec #{fus} cloison(s) reliée(s)" if fus > 0
         model.commit_operation
         Sketchup.status_text = "Créé : #{noms.join(' + ')}"
@@ -705,7 +705,7 @@ module A2M
     def self.cote_suivant(p)
       if p[:couches]
         p[:cote] = (p[:cote] + 1) % 3
-        (@reglages[:compose] ||= {})[:cote] = COTES_COMPOSE[p[:cote]]
+        (@reglages[p[:cle] || :compose] ||= {})[:cote] = COTES_COMPOSE[p[:cote]]
       else
         p[:trace] = (p[:trace] + 1) % 3
         @reglages[:trace] = TRACES[p[:trace]]
@@ -791,34 +791,44 @@ module A2M
       i || 0
     end
 
-    def self.lancer_compose
-      return @fen_compose.bring_to_front if @fen_compose && (@fen_compose.visible? rescue false)
-      r = @reglages[:compose] || {}
-      prec = r[:couches] || [COMPO_DEFAUT[0], COMPO_DEFAUT[1], COMPO_DEFAUT[2], COMPO_DEFAUT[3]]
+    # Cloison composée : plaque + ossature (rail et montant) + plaque, par exemple 13 + 48 + 13 mm = 74 mm
+    COMPO_CLOISON = [['Doublage : plaque de plâtre', 1.3, 2.50], ['Cloison', 4.8, 2.50], ['Doublage : plaque de plâtre', 1.3, 2.50]]
+
+    def self.lancer_cloison() lancer_compose(true) end
+
+    def self.lancer_compose(cloison = false)
+      cle = cloison ? :cloison : :compose
+      fen = cloison ? @fen_cloison : @fen_compose
+      return fen.bring_to_front if fen && (fen.visible? rescue false)
+      r = @reglages[cle] || {}
+      prec = r[:couches] || (cloison ? COMPO_CLOISON : [COMPO_DEFAUT[0], COMPO_DEFAUT[1], COMPO_DEFAUT[2], COMPO_DEFAUT[3]])
       cs = prec.map { |t, e, h, b| { 'type' => t, 'e' => e, 'h' => h, 'b' => b.to_f } }
       n = [[r[:n] || cs.size, 1].max, 5].min
-      ref = r[:ref] || index_insertion(cs.map { |c| c['type'] })
+      ref = r[:ref] || (cloison ? 1 : index_insertion(cs.map { |c| c['type'] }))
+      r = { cote: COTES_COMPOSE[2] }.merge(r) if cloison
       couleurs = {}
       TYPES.each { |t| couleurs[t[0]] = A2M::Compositions::COULEURS[t[1]] || [190, 190, 190] }
       donnees = { 'n' => n, 'cote' => COTES_COMPOSE.index(r[:cote]) || 0, 'ref' => [ref, n - 1].min, 'couches' => cs, 'couleurs' => couleurs,
                   'types' => TYPES.map { |t| [t[0], t[3], t[2]] }, 'defaut' => COMPO_DEFAUT,
                   'cotes' => ['Intérieur à droite du tracé', 'Intérieur à gauche du tracé', 'Tracé dans l\'axe de la couche d\'insertion'] }
-      html = A2M::Panneau.page('Mur composé', 'Choisissez les couches et celle par laquelle le mur est inséré', CORPS_COMPOSE, SCRIPT_COMPOSE, donnees)
-      dlg = A2M::Panneau.fenetre('Métré Atelier 2M : mur composé', 'A2M_Panneau_Compose', html, 620, 700)
-      @fen_compose = dlg
+      html = A2M::Panneau.page(cloison ? 'Cloison composée' : 'Mur composé',
+                               cloison ? 'Choisissez vos couches (plaque, ossature, isolant…) : le tracé suit l\'axe de la couche choisie' : 'Choisissez les couches et celle par laquelle le mur est inséré',
+                               CORPS_COMPOSE.sub('Dessiner le mur', cloison ? 'Dessiner la cloison' : 'Dessiner le mur'), SCRIPT_COMPOSE, donnees)
+      dlg = A2M::Panneau.fenetre(cloison ? 'Métré Atelier 2M : cloison composée' : 'Métré Atelier 2M : mur composé', cloison ? 'A2M_Panneau_Cloison' : 'A2M_Panneau_Compose', html, 620, 700)
+      cloison ? (@fen_cloison = dlg) : (@fen_compose = dlg)
       dlg.add_action_callback('ok') do |_ctx, json|
         d = (JSON.parse(json.to_s) rescue nil)
         next unless d
         couches = d['c'].map { |c| { type: TYPES.find { |x| x[0] == c['type'] } || TYPES[0], e: c['e'].to_f, h: c['h'].to_f, b: c['b'].to_f } }
         cote = d['cote'].to_i
         ref = [[d['ref'].to_i, 0].max, couches.size - 1].min
-        @reglages[:compose] = { n: couches.size, cote: COTES_COMPOSE[cote], ref: ref, couches: couches.map { |c| [c[:type][0], c[:e], c[:h], c[:b]] } }
-        p = { couches: couches, cote: cote, ref: ref, type: ['Mur composé'], h: couches.map { |c| c[:h] }.max, e: couches.sum { |c| c[:e] }.round(1) }
+        @reglages[cle] = { n: couches.size, cote: COTES_COMPOSE[cote], ref: ref, couches: couches.map { |c| [c[:type][0], c[:e], c[:h], c[:b]] } }
+        p = { couches: couches, cote: cote, ref: ref, cle: cle, cloison: cloison, type: [cloison ? 'Cloison composée' : 'Mur composé'], h: couches.map { |c| c[:h] }.max, e: couches.sum { |c| c[:e] }.round(1) }
         dlg.close
         UI.start_timer(0, false) { Sketchup.active_model.select_tool(Outil.new(p)) }
       end
       dlg.add_action_callback('annuler') { |_ctx, _x| dlg.close }
-      dlg.set_on_closed { @fen_compose = nil }
+      dlg.set_on_closed { cloison ? (@fen_cloison = nil) : (@fen_compose = nil) }
       dlg.show
     end
 

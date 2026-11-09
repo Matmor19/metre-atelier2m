@@ -105,5 +105,12 @@
   "Les réglages sont rouverts ; pour un sol dessiné, choisissez « Déplacer les points du contour » ; pour un escalier ou un garde-corps, cochez « Replacer » pour le redessiner ailleurs.",
   "Un objet créé avant la version 2.92 doit être refait une fois avec son outil pour garder ses réglages.",
   "Planelles : pas de modification possible (elles recoupent la dalle et le soubassement) : annulez (Ctrl+Z) puis reposez-les avec les nouveaux réglages."
+ ],
+ "cloison": [
+  "Cliquez « Dessiner une cloison » : choisissez le nombre de couches (jusqu'à 5) et, pour chacune, son type et son épaisseur.",
+  "Par défaut : plaque de plâtre 1,3 cm + ossature (type « Cloison ») 4,8 cm + plaque 1,3 cm = 7,4 cm. Changez-les à volonté (isolant dans l'ossature, double plaque…).",
+  "Le tracé suit par défaut l'axe de la couche choisie (la Tab change de côté). Cliquez les points puis Entrée.",
+  "Chaque couche est sur sa balise : plaques = A2M_DOUBLAGE, ossature = A2M_CLOISON.",
+  "Les cloisons composées reliées fusionnent entre elles ; tout se rouvre avec « Modifier ce que j'ai dessiné »."
  ]
 }
