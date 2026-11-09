@@ -160,11 +160,73 @@ module A2M
         UI.start_timer(0, false) do
           opts = obj ? A2M::Bibliotheque.demander_options(obj) : {}
           next if opts.nil?
-          suite.call({ type: ['Porte intérieure', 'A2M_PORTE_INT'], l: vl + jl, h: vh + jh, lin: vh + jh, vl: vl, vh: vh, n: 6, contigu: true,
-                       appui: 0, res: d['menu'] != 'aucune' ? 'A2M_PORTE_INT' : nil, obj: obj, opts: opts, piece: piece, bp: choix.merge('dim' => dim) })
+          pp = { type: ['Porte intérieure', 'A2M_PORTE_INT'], l: vl + jl, h: vh + jh, lin: vh + jh, vl: vl, vh: vh, n: 6, contigu: true,
+                 appui: 0, res: d['menu'] != 'aucune' ? 'A2M_PORTE_INT' : nil, obj: obj, opts: opts, piece: piece, bp: choix.merge('dim' => dim) }
+          mesurer_cadre(pp)
+          suite.call(pp)
         end
       end
       dlg.show
+    end
+
+    # Géométrie du bloc-porte de la bibliothèque : le CORPS du cadre (ce qui entre dans la cloison) est plus étroit que le hors-tout,
+    # car les ailes de recouvrement débordent sur les plaques de chaque côté. Largeur et hauteur du corps = plus petite section
+    # trouvée sur l'épaisseur ; hors-tout = la plus grande. Renvoie [corps_l, corps_h, total_l, total_h] en cm, ou nil.
+    def self.corps_cadre(inst)
+      boites = []
+      rec = lambda do |ents, t|
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            pts = e.vertices.map { |v| t * v.position }
+            xs = pts.map(&:x); ys = pts.map(&:y); zs = pts.map(&:z)
+            boites << [xs.min, xs.max, ys.min, ys.max, zs.min, zs.max].map { |q| q.to_f * 2.54 }
+          elsif e.is_a?(Sketchup::Group)
+            rec.call(e.entities, t * e.transformation)
+          elsif e.is_a?(Sketchup::ComponentInstance)
+            rec.call(e.definition.entities, t * e.transformation)
+          end
+        end
+      end
+      rec.call(inst.definition.entities, inst.transformation)
+      return nil if boites.size < 4
+      ys = boites.flat_map { |b| [b[2], b[3]] }.map { |q| q.round(2) }.uniq.sort
+      ls = []; hs = []
+      ys.each_cons(2) do |y0, y1|
+        next if y1 - y0 < 0.05
+        mid = (y0 + y1) / 2.0
+        bs = boites.select { |b| b[2] <= mid && b[3] >= mid && b[3] - b[2] > 0.02 }
+        next if bs.empty?
+        ls << bs.map { |b| b[1] }.max - bs.map { |b| b[0] }.min
+        hs << bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min
+      end
+      return nil if ls.size < 2
+      [ls.min, hs.min, ls.max, hs.max]
+    rescue StandardError
+      nil
+    end
+
+    # Réservation = corps du cadre quand la porte a des ailes de recouvrement (sinon le vantail + jeu saisi, comme avant)
+    def self.mesurer_cadre(p)
+      obj = p[:obj] or return
+      return unless obj['mode'] == 'dynamique' || obj['vl0']
+      model = Sketchup.active_model
+      model.start_operation('Mesure du cadre', true)
+      begin
+        a, c = cotes(obj, p)
+        r = A2M::Bibliotheque.instance_pour(model.active_entities, obj, a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
+        m = r && corps_cadre(r)
+        if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
+          p[:l] = m[0].round(1)
+          h = m[1] >= p[:vh] && m[3] - m[1] >= 0.3 ? m[1].round(1) : nil
+          p[:h] = h if h
+          p[:lin] = p[:h]
+          p[:note_cadre] = "réservation prise sur le corps du cadre (#{p[:l]} × #{p[:h].round(1)} cm), ailes de recouvrement exclues (hors-tout #{m[2].round(1)} × #{m[3].round(1)})"
+        end
+      rescue StandardError
+        nil
+      ensure
+        model.abort_operation
+      end
     end
 
     def self.lancer
@@ -243,6 +305,7 @@ module A2M
         A2M::Suivi.lier(r, o, p, id, dec[:couches], empreinte, 'porte') if r
         model.commit_operation
         msg = "Porte #{p[:bp]['dim']} : réservation #{p[:l].round} × #{p[:h].round} cm percée dans #{dec[:nb] - dec[:echecs].size} couche(s) (#{(prof.to_f * 2.54).round(1)} cm)."
+        msg += "\n#{p[:note_cadre].capitalize rescue p[:note_cadre]}" if p[:note_cadre]
         msg += "\nRevêtements prolongés jusqu'à l'axe de la porte : #{sols.join(', ')}" if sols.any?
         msg += "\nPlinthes recoupées : #{plin.join(', ')}" if plin.any?
         msg += "\n#{alerte}" if alerte
