@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.15)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.16)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -271,6 +271,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Porte intérieure : le cadre est maintenant mesuré sur ses faces exactes : le corps du cadre (ex. 86,1 × 204 cm) est centré dans l'épaisseur de la cloison et les ailes de recouvrement tombent de part et d'autre des plaques ; la réservation prend la taille du corps
 - Porte intérieure : le journal note maintenant les faces exactes du cadre (positions en épaisseur) pour caler précisément la porte dans la cloison
 - Porte intérieure : le corps du cadre est maintenant repéré comme la largeur qui occupe le plus d'épaisseur (et non plus la plus étroite) ; le journal des ouvertures s'ouvre dans une fenêtre lisible avec les mesures détaillées
 - Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est centrée sur le corps du cadre dans l'épaisseur de la cloison, pas sur son hors-tout (plus de décalage de quelques cm)
@@ -290,4 +291,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur, hauteur du linteau et position le long du mur se changent ; le mur est rebouché puis repercé, la menuiserie et l'appui refaits avec les mêmes choix. Les ouvertures percées avant cette version peuvent déjà changer de taille, mais sans retrouver leur menuiserie de bibliothèque (une réservation est posée)
 - Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente, débord, épaisseur, faîtage) et refait la toiture ; on peut aussi reprendre le contour sur d'autres murs sélectionnés avec elle. Les toitures déjà créées avant cette version doivent être refaites une fois
 - Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un seul solide ; tous les tracés sont gardés en mémoire (Modifier un mur → Modifier le tracé montre et déplace les points de chacun). Si SketchUp refuse l'union, les morceaux restent côte à côte mais toujours liés au même mur
-- Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en U…), tous les pans ont la même pente, avec faîtages, noues et arêtiers calculés ; débord et épaisseur comme pour les autres types

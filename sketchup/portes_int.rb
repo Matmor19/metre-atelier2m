@@ -176,6 +176,44 @@ module A2M
       analyser_cadre(inst.definition.entities, inst.transformation, vl)
     end
 
+    # Mesure EXACTE du cadre par ses faces planes (cm, repère de l'objet) :
+    #  - faces perpendiculaires à X, hautes (>= 98 % de la plus haute) et profondes (> 5 cm) = les deux côtés du corps du cadre
+    #    -> largeur et hauteur du corps, centre en X ;
+    #  - faces perpendiculaires à Y, hautes (> 150 cm) et larges (>= la plus large - 3 cm) = les ailes de recouvrement et le corps
+    #    -> épaisseur hors-tout, dont le milieu est le milieu du corps (ailes symétriques). La poignée et le vantail sont ignorés.
+    # Renvoie { l:, h:, xc:, yc:, tot_l:, tot_h: } ou nil.
+    def self.corps_faces(ents0, t0)
+      px = []; py = []
+      rec = lambda do |ents, t|
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            nrm = (t * e.normal) rescue e.normal
+            pts = e.vertices.map { |v| t * v.position }
+            xs = pts.map { |q| q.x.to_f * 2.54 }; ys = pts.map { |q| q.y.to_f * 2.54 }; zs = pts.map { |q| q.z.to_f * 2.54 }
+            dx = xs.max - xs.min; dy = ys.max - ys.min; dz = zs.max - zs.min
+            if nrm.x.abs > 0.99 && dy > 5 && dz > 100 then px << [xs.min, dy, dz, ys.min, ys.max]
+            elsif nrm.y.abs > 0.99 && dx > 40 && dz > 150 then py << [ys.min, dx, dz, xs.min, xs.max]
+            end
+          elsif e.is_a?(Sketchup::Group) then rec.call(e.entities, t * e.transformation)
+          elsif e.is_a?(Sketchup::ComponentInstance) then rec.call(e.definition.entities, t * e.transformation)
+          end
+        end
+      end
+      rec.call(ents0, t0)
+      return nil if px.size < 2 || py.size < 2
+      hmax = px.map { |f| f[2] }.max
+      cotes = px.select { |f| f[2] >= hmax * 0.98 }
+      return nil if cotes.size < 2
+      xmin = cotes.map { |f| f[0] }.min; xmax = cotes.map { |f| f[0] }.max
+      wmax = py.map { |f| f[1] }.max
+      grandes = py.select { |f| f[1] >= wmax - 3.0 }
+      y0 = grandes.map { |f| f[0] }.min; y1 = grandes.map { |f| f[0] }.max
+      return nil if xmax - xmin < 30 || y1 - y0 < 1
+      { l: xmax - xmin, h: hmax, xc: (xmin + xmax) / 2.0, yc: (y0 + y1) / 2.0, tot_l: wmax, tot_h: py.map { |f| f[2] }.max }
+    rescue StandardError
+      nil
+    end
+
     # Diagnostic : faces perpendiculaires à Y (y, largeur, hauteur) et à X (étendue y) du cadre, en cm, dans le repère de l'objet
     def self.diag_faces(ents0, t0)
       py = []; px = []
@@ -270,7 +308,9 @@ module A2M
       begin
         a, c = cotes(obj, p)
         r = A2M::Bibliotheque.instance_pour(model.active_entities, obj, a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
-        m = r && corps_cadre(r, p[:vl])
+        cf = r && corps_faces(r.definition.entities, r.transformation)
+        m = cf ? [cf[:l], cf[:h], cf[:tot_l], cf[:tot_h]] : (r && corps_cadre(r, p[:vl]))
+        A2M::Suivi.journal("cadre : faces=#{cf ? cf.map { |k, v| "#{k}=#{v.round(2)}" }.join(' ') : 'nil'}")
         diag_faces(r.definition.entities, r.transformation) if r
         A2M::Suivi.journal("cadre : instance=#{r ? 'ok' : 'nil'} mesure=#{m ? m.map { |q| q.round(1) }.inspect : 'nil'}")
         if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
@@ -296,11 +336,13 @@ module A2M
     # tourné vers le côté poussant, retourné en miroir si ses paumelles ne sont pas du côté voulu
     def self.transfo(defn, obj, base, v_pousse, paumelles)
       bv = A2M::Bibliotheque.boite_visible(defn)
-      ym = bv.center.y
-      cf = (analyser_cadre(defn.entities, Geom::Transformation.new, 0.0) rescue nil)
-      ym = cf[4] / 2.54 if cf && cf[2] - cf[0] >= 0.3      # centré sur le CORPS du cadre (pas sur les ailes ni la poignée)
-      A2M::Suivi.journal("porte : centre y boite=#{(bv.center.y * 2.54).round(2)} corps=#{cf ? cf[4].round(2) : 'nil'}") rescue nil
-      t = Geom::Transformation.translation(Geom::Vector3d.new(-bv.center.x, -ym, -bv.min.z))
+      xm = bv.center.x; ym = bv.center.y
+      cf = (corps_faces(defn.entities, Geom::Transformation.new) rescue nil)
+      if cf   # centré sur le CORPS du cadre (largeur et épaisseur), ni les ailes, ni le vantail, ni la poignée
+        xm = cf[:xc] / 2.54; ym = cf[:yc] / 2.54
+      end
+      A2M::Suivi.journal("porte : centre boite=(#{(bv.center.x * 2.54).round(2)}, #{(bv.center.y * 2.54).round(2)}) corps=#{cf ? "(#{cf[:xc].round(2)}, #{cf[:yc].round(2)})" : 'nil'}") rescue nil
+      t = Geom::Transformation.translation(Geom::Vector3d.new(-xm, -ym, -bv.min.z))
       # Repère commun : côté regardé à la paramétrisation vers -Y (celui qui pousse)
       t = Geom::Transformation.rotation(ORIGIN, Z_AXIS, Math::PI) * t if (obj && obj['ext_y']) == 'max'
       t = Geom::Transformation.scaling(-1, 1, 1) * t if obj && (obj['paumelles'] || 'droite') != paumelles
