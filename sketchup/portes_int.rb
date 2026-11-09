@@ -214,6 +214,32 @@ module A2M
       nil
     end
 
+    # Vérification après pose : distance (cm) des faces du cadre au plan milieu de la cloison, mesurée le long de la normale n
+    def self.verif_pose(r, base, n, prof)
+      ds_ailes = []; ds_corps = []
+      rec = lambda do |ents, t|
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            nl = (t * e.normal) rescue e.normal
+            pl = e.vertices.map { |v| t * v.position }
+            dz = pl.map(&:z).max - pl.map(&:z).min; dx = pl.map(&:x).max - pl.map(&:x).min
+            full = pl.map { |q| (r.transformation * q - base).dot(n).to_f * 2.54 }
+            if nl.y.abs > 0.99 && dx * 2.54 > 40 && dz * 2.54 > 150 then ds_ailes << [dx * 2.54, full.first]
+            elsif nl.x.abs > 0.99 && dz * 2.54 > 200 then ds_corps.concat(full)
+            end
+          elsif e.is_a?(Sketchup::Group) then rec.call(e.entities, t * e.transformation)
+          elsif e.is_a?(Sketchup::ComponentInstance) then rec.call(e.definition.entities, t * e.transformation)
+          end
+        end
+      end
+      rec.call(r.definition.entities, Geom::Transformation.new)
+      wmax = ds_ailes.map(&:first).max
+      ail = ds_ailes.select { |w, _| w >= wmax - 3 }.map(&:last)
+      A2M::Suivi.journal("verif pose (cm, 0 = milieu cloison, cloison = ±#{(prof * 2.54 / 2).round(2)}) : ailes #{ail.min.round(2)}..#{ail.max.round(2)} | corps (faces cote) #{ds_corps.min.round(2)}..#{ds_corps.max.round(2)}")
+    rescue StandardError => ex
+      A2M::Suivi.journal("verif pose ERREUR #{ex.message}") rescue nil
+    end
+
     # Diagnostic : faces perpendiculaires à Y (y, largeur, hauteur) et à X (étendue y) du cadre, en cm, dans le repère de l'objet
     def self.diag_faces(ents0, t0)
       py = []; px = []
@@ -380,6 +406,7 @@ module A2M
           r = A2M::Bibliotheque.instance_pour(ents, p[:obj], a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
           alerte = A2M::Bibliotheque.alerte!
           r.transformation = transfo(r.definition, p[:obj], base, v_pousse, sens[1])
+          verif_pose(r, base, n, prof)
         elsif p[:res]
           # Huisserie de réservation : cadre à la taille du trou, sur toute l'épaisseur percée
           r = ents.add_group
