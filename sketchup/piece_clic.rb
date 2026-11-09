@@ -49,6 +49,7 @@ module A2M
         te.add_face([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map { |a| Geom::Point3d.new(*a) })
         emp.each { |loops| loops.each { |lp| te.add_edges((lp + [lp[0]]).map { |x, y| Geom::Point3d.new(x, y, z) }) } }
         A2M::Separateur.ajouter_a(te, z, model)
+        prolonger_cloisons(te, emp, z)
         te.intersect_with(false, Geom::Transformation.new, te, Geom::Transformation.new, true, te.to_a)
         te.grep(Sketchup::Edge).each { |e| e.find_faces if e.valid? }
         bord = ->(f) { f.vertices.any? { |v| p = v.position; (p.x - x0).abs < 0.1 || (p.x - x1).abs < 0.1 || (p.y - y0).abs < 0.1 || (p.y - y1).abs < 0.1 } }
@@ -359,6 +360,28 @@ module A2M
     end
 
     # Toutes les pièces fermées du modèle (ou des murs sélectionnés), une par une : nom, sol, plinthes, plafond
+    TOLERANCE_JEU = 10.cm   # petit jeu toléré entre le bout d'une cloison et le mur voisin : la pièce est quand même séparée
+
+    # Prolonge l'axe de chaque mur rectangulaire allongé de TOLERANCE_JEU à chaque bout (ligne sans épaisseur qui ferme le jeu)
+    def self.prolonger_cloisons(te, emp, z)
+      emp.each do |loops|
+        lp = loops[0]
+        next unless lp && lp.size == 4
+        a, b, c, d = lp
+        l1 = Math.hypot(b[0] - a[0], b[1] - a[1]); l2 = Math.hypot(c[0] - b[0], c[1] - b[1])
+        next if [l1, l2].min < 1e-3 || [l1, l2].max < 2 * [l1, l2].min
+        if l1 >= l2
+          p0 = [(a[0] + d[0]) / 2.0, (a[1] + d[1]) / 2.0]; p1 = [(b[0] + c[0]) / 2.0, (b[1] + c[1]) / 2.0]
+        else
+          p0 = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0]; p1 = [(c[0] + d[0]) / 2.0, (c[1] + d[1]) / 2.0]
+        end
+        dd = Math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        ux = (p1[0] - p0[0]) / dd; uy = (p1[1] - p0[1]) / dd
+        t = TOLERANCE_JEU.to_f
+        te.add_line(Geom::Point3d.new(p0[0] - ux * t, p0[1] - uy * t, z), Geom::Point3d.new(p1[0] + ux * t, p1[1] + uy * t, z))
+      end
+    end
+
     def self.detecter_toutes(model, smin = 1.0)
       ms = A2M::PiecesAuto.murs(model)
       return [] if ms.empty?
@@ -375,6 +398,7 @@ module A2M
         te.add_face([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]].map { |a| Geom::Point3d.new(*a) })
         emp.each { |loops| loops.each { |lp| te.add_edges((lp + [lp[0]]).map { |x, y| Geom::Point3d.new(x, y, z) }) } }
         A2M::Separateur.ajouter_a(te, z, model)
+        prolonger_cloisons(te, emp, z)
         te.intersect_with(false, Geom::Transformation.new, te, Geom::Transformation.new, true, te.to_a)
         te.grep(Sketchup::Edge).each { |e| e.find_faces if e.valid? }
         bord = ->(f) { f.vertices.any? { |v| q = v.position; (q.x - x0).abs < 0.1 || (q.x - x1).abs < 0.1 || (q.y - y0).abs < 0.1 || (q.y - y1).abs < 0.1 } }
