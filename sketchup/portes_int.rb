@@ -315,7 +315,7 @@ module A2M
         A2M::Suivi.journal("cadre : instance=#{r ? 'ok' : 'nil'} mesure=#{m ? m.map { |q| q.round(1) }.inspect : 'nil'}")
         if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
           p[:l] = m[0].round(1)
-          h = m[1] >= p[:vh] && m[3] - m[1] >= 0.3 ? m[1].round(1) : nil
+          h = m[1] >= p[:vh] - 0.3 && m[3] - m[1] >= 0.3 ? m[1].round(1) : nil
           p[:h] = h if h
           p[:lin] = p[:h]
           p[:note_cadre] = "réservation prise sur le corps du cadre (#{p[:l]} × #{p[:h].round(1)} cm), ailes de recouvrement exclues (hors-tout #{m[2].round(1)} × #{m[3].round(1)})"
