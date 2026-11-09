@@ -172,7 +172,7 @@ module A2M
     # Géométrie du bloc-porte de la bibliothèque : le CORPS du cadre (ce qui entre dans la cloison) est plus étroit que le hors-tout,
     # car les ailes de recouvrement débordent sur les plaques de chaque côté. Largeur et hauteur du corps = plus petite section
     # trouvée sur l'épaisseur ; hors-tout = la plus grande. Renvoie [corps_l, corps_h, total_l, total_h] en cm, ou nil.
-    def self.corps_cadre(inst)
+    def self.corps_cadre(inst, vl = 0)
       boites = []
       rec = lambda do |ents, t|
         ents.each do |e|
@@ -196,7 +196,9 @@ module A2M
         mid = (y0 + y1) / 2.0
         bs = boites.select { |b| b[2] <= mid && b[3] >= mid && b[3] - b[2] > 0.02 }
         next if bs.empty?
-        ls << bs.map { |b| b[1] }.max - bs.map { |b| b[0] }.min
+        l = bs.map { |b| b[1] }.max - bs.map { |b| b[0] }.min
+        next if l < vl + 0.3      # tranches plus étroites que le vantail (poignée, panneau) : ignorées
+        ls << l
         hs << bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min
       end
       return nil if ls.size < 2
@@ -216,7 +218,7 @@ module A2M
       begin
         a, c = cotes(obj, p)
         r = A2M::Bibliotheque.instance_pour(model.active_entities, obj, a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
-        m = r && corps_cadre(r)
+        m = r && corps_cadre(r, p[:vl])
         A2M::Suivi.journal("cadre : instance=#{r ? 'ok' : 'nil'} mesure=#{m ? m.map { |q| q.round(1) }.inspect : 'nil'}")
         if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
           p[:l] = m[0].round(1)
