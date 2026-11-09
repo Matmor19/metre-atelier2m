@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vue_objet vues tableau nomenclature phases plan2d miniplan coupes coupe_brisee couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client modif dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture toiture_fenetre pieces_auto fondations electricite envoi ngf niveaux textures textures_auto tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vue_objet vues tableau nomenclature phases plan2d miniplan coupes coupe_brisee couverture zinguerie gardecorps escalier escalier_fenetre charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client modif dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture toiture_fenetre pieces_auto fondations electricite envoi ngf niveaux textures textures_auto tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -175,6 +175,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'plan2d.rb'), 'a2m_metre/plan2d.rb')
     z.write(os.path.join(ici, 'gardecorps.rb'), 'a2m_metre/gardecorps.rb')
     z.write(os.path.join(ici, 'escalier.rb'), 'a2m_metre/escalier.rb')
+    z.write(os.path.join(ici, 'escalier_fenetre.rb'), 'a2m_metre/escalier_fenetre.rb')
     z.write(os.path.join(ici, 'charpente.rb'), 'a2m_metre/charpente.rb')
     z.write(os.path.join(ici, 'export_cao.rb'), 'a2m_metre/export_cao.rb')
     z.write(os.path.join(ici, 'reglementaire.rb'), 'a2m_metre/reglementaire.rb')

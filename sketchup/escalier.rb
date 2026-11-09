@@ -73,6 +73,8 @@ module A2M
       rendre();
     JS
 
+    class << self; attr_reader :dernier; attr_accessor :transparent; end
+
     def self.nombre(v, d) (Float(v.to_s.tr(',', '.')) rescue d) end
 
     # Bloc : origine + dir × [x0,x1] + lat × [y0,y1] + Z × [z0,z1]
@@ -121,14 +123,14 @@ module A2M
     def self.poser(r, o, dir)
       model = Sketchup.active_model
       hauteur = nombre(r['h'], 270).cm; w = nombre(r['w'], 90).cm; g = nombre(r['g'], 25).cm
-      n = [(hauteur / 17.5.cm).round, 2].max
+      n = r['nm'].to_i > 1 ? r['nm'].to_i : [(hauteur / 17.5.cm).round, 2].max
       h = hauteur / n
       ep = 4.cm
       treads = n - 1
       couleur = MATIERES[r['mat']] || MATIERES['Chêne']
       dir = dir.clone; dir.z = 0; dir.normalize!
       lat = Z_AXIS.cross(dir); lat.normalize!        # gauche
-      model.start_operation('Escalier', true)
+      model.start_operation('Escalier', true, false, !!@transparent)
       begin
         if @modif && @modif[:grp] && @modif[:grp].valid?
           @modif[:grp].erase!
@@ -179,6 +181,7 @@ module A2M
         grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |a, b| [a.to_a, b.to_a] }))
         grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0)))
         A2M::Modif.noter(grp, 'escalier', { 'r' => r.reject { |k, _| k == 'replacer' }, 'o' => o.to_a, 'dir' => dir.to_a })
+        @dernier = grp
         model.commit_operation
         Sketchup.status_text = "Escalier posé : #{n} marches de #{(h.to_f * 2.54).round(1)} cm, giron #{(g.to_f * 2.54).round(1)} cm."
       rescue StandardError => ex
@@ -186,6 +189,8 @@ module A2M
         UI.messagebox("Escalier impossible : #{ex.message}\n#{ex.backtrace.first}")
       end
     end
+
+    def self.pose_initiale(r, o, dir) poser(r, o, dir) end
 
     class Outil
       def initialize(r) @r = r; @pts = []; @pt = A2M::Pointeur.new end
@@ -205,7 +210,7 @@ module A2M
           a, b = @pts
           Sketchup.active_model.select_tool(nil)
           r = @r
-          UI.start_timer(0, false) { A2M::Escalier.poser(r, a, b - a) }
+          UI.start_timer(0, false) { A2M::Escalier.pose_initiale(r, a, b - a) }
         end
         view.invalidate
       end
