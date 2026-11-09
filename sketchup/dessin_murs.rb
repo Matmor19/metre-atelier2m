@@ -385,6 +385,69 @@ module A2M
       voisins.size
     end
 
+    TYPES_CLOISON = ['Cloison', 'Doublage : plaque de plâtre', 'Doublage : isolant']
+
+    def self.cloison?(j)
+      if j['compose']
+        j['couches'].any? { |c| c[0] == 'Cloison' } && j['couches'].all? { |c| TYPES_CLOISON.include?(c[0]) }
+      else
+        j['type'] == 'Cloison'
+      end
+    end
+
+    # Fusionne après coup les cloisons qui se touchent (celles de la sélection, ou toutes si rien n'est sélectionné).
+    # Les anciennes cloisons droites sont reprises au passage. Dit franchement ce qui a été fait ou refusé.
+    def self.fusionner_cloisons
+      m = Sketchup.active_model
+      sel = m.selection.grep(Sketchup::Group)
+      m.start_operation('Fusionner les cloisons (métré)', true)
+      begin
+        (sel.empty? ? m.entities.grep(Sketchup::Group) : sel).each do |g|
+          adopter(g) if g.valid? && g.layer && g.layer.name == 'A2M_CLOISON'
+        end
+        murs = murs_du_modele(m)
+        ids_sel = sel.map { |g| g.get_attribute('a2m_mur', 'id') }.compact
+        cand = murs.values.select { |r| cloison?(r[:j]) && (sel.empty? || ids_sel.include?(r[:id])) }
+        if cand.size < 2
+          m.abort_operation
+          UI.messagebox("Moins de deux cloisons trouvées#{sel.empty? ? '' : ' dans la sélection'}. Rien à fusionner.\n(Seules les cloisons droites ou dessinées avec les outils sont reconnues.)")
+          return
+        end
+        vus = {}
+        fusionnees = 0; compo = 0; refus = 0
+        cand.each do |dep|
+          next if vus[dep[:id]]
+          fam = [dep]; vus[dep[:id]] = true; file = [dep]
+          until file.empty?
+            c = file.shift
+            cand.each do |x|
+              next if vus[x[:id]] || x[:j] != dep[:j] || !relies?(c, x)
+              vus[x[:id]] = true; fam << x; file << x
+            end
+          end
+          next if fam.size < 2
+          tout = { id: dep[:id], groupes: fam.flat_map { |x| x[:groupes] }, j: dep[:j], chemins: fam.flat_map { |x| chemins_de(x) } }
+          tout[:pts], tout[:ferme] = tout[:chemins][0]
+          nb = reconstruire(tout, p_de(dep[:j]))
+          compo += 1
+          fusionnees += fam.size
+          refus += 1 if nb.size > couches_de(p_de(dep[:j])).size
+        end
+        m.commit_operation
+        msg = if compo.zero?
+          "Aucune cloison ne se touche avec un réglage identique (même type, même épaisseur, même hauteur).\nSi elles se touchent à l'écran, c'est qu'elles n'ont pas exactement le même réglage."
+        else
+          "#{fusionnees} cloisons réunies en #{compo} ensemble(s)."
+        end
+        msg += "\n\nAttention : dans #{refus} ensemble(s), SketchUp a refusé l'union des volumes : les cloisons restent côte à côte (liées, modifiables ensemble)." if refus > 0
+        msg += "\n\nLes ouvertures percées dans ces cloisons sont à refaire." if compo > 0
+        UI.messagebox(msg)
+      rescue StandardError => ex
+        m.abort_operation
+        UI.messagebox("La fusion n'a pas pu se faire (#{ex.message}).")
+      end
+    end
+
     # Un groupe de mur (balise d'un type de mur) qu'on peut proposer à la modification, même sans mémoire
     def self.mur_possible?(e)
       return false unless e.is_a?(Sketchup::Group) && e.valid? && e.layer

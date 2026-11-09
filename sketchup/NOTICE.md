@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.93.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.94.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -270,6 +270,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la sélection, ou toutes si rien n'est sélectionné), reprend les anciennes cloisons droites, garde les tracés en mémoire et vous dit clairement si SketchUp refuse l'union. La fusion automatique ne s'appliquait qu'aux cloisons dessinées après la 2.89 et de réglage strictement identique
 - Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons : jusqu'à 5 couches de votre choix. Par défaut plaque 13 mm + ossature 48 mm (rail et montant) + plaque 13 mm = 74 mm, tracée dans son axe. Les cloisons composées qui se touchent fusionnent comme les autres cloisons, et se modifient avec « Modifier ce que j'ai dessiné »
 - Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture, toujours dans le menu Extensions) : cliquez un mur, une toiture, une ouverture, un sol ou plafond, un escalier, un garde-corps, la couverture, la charpente, la zinguerie ou des semelles → l'outil se rouvre avec ses réglages. Sols et plafonds dessinés : les points du contour se déplacent. Escalier et garde-corps : on peut les replacer. Les objets créés avant cette version doivent être refaits une fois. Planelles : pas de modification (voir la notice)
 - Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur, hauteur du linteau et position le long du mur se changent ; le mur est rebouché puis repercé, la menuiserie et l'appui refaits avec les mêmes choix. Les ouvertures percées avant cette version peuvent déjà changer de taille, mais sans retrouver leur menuiserie de bibliothèque (une réservation est posée)
@@ -289,4 +290,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)
 - Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)
 - Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)
-- Hachure depuis un dessin : deux curseurs « Déplacer » (gauche-droite et haut-bas, en cm) pour caler la cellule dans le mur
