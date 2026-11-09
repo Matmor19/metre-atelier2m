@@ -5,7 +5,7 @@ s = open(os.path.join(ici, 'a2m_extraction.rb'), encoding='utf-8').read().rstrip
 assert s.endswith('A2M::Extraction.lancer')
 s = s[:-len('A2M::Extraction.lancer')].replace("require 'json'", "require 'json'\nrequire 'sketchup.rb'", 1)
 s += r'''
-%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vue_objet vues tableau nomenclature phases plan2d miniplan coupes coupe_brisee couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client modif dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf textures textures_auto tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
+%w[panneau balises hachures planelles profils pointage palette suivi maj bibliotheque import_objet vue_objet vues tableau nomenclature phases plan2d miniplan coupes coupe_brisee couverture zinguerie gardecorps escalier charpente calage reglementaire export_cao fiche_piece releve variantes cartouches feuille dossier_client modif dessin_murs dessin_sols ouvertures portes_int menu_contextuel piece_clic separateur sol_murs compositions cotation_auto styles mes_elements plinthes controle toiture pieces_auto fondations electricite envoi ngf niveaux textures textures_auto tapee objets_menuiseries].each { |f| require File.join(File.dirname(__FILE__), f) }
 
 # Menus : Extensions > Métré Atelier 2M, clic droit, barre d'outils
 unless file_loaded?(__FILE__)
@@ -20,6 +20,7 @@ unless file_loaded?(__FILE__)
     ['pieces_auto', 'Pièces automatiques',                 'Trouve toutes les pièces fermées entre murs et cloisons et vous les présente une par une (en surbrillance) : nom, sol en texture, plinthes, plafond, surface et ml ; scènes 2D et 3D à la fin', -> { A2M::PieceClic.toutes }, false],
     ['tableau',     'Tableau de bord du modèle',           'Contrôle du modèle et métré en direct dans une seule fenêtre : points à vérifier cliquables, surfaces, linéaires et menuiseries par pièce, envoi au métré', -> { A2M::Tableau.ouvrir }, false],
     ['controle',    'Contrôle du modèle',                  'Vérifie balises, solides, chevauchements, pièces et menuiseries avant l\'extraction', -> { A2M::Controle.lancer }, true],
+    ['niveaux',     'Niveaux du bâtiment',                 'Liste des niveaux (code, nom, altitude) avec un schéma en coupe : le dessous de la dalle est le zéro, ce qui est dessous est négatif ; ajoutez, modifiez ou supprimez les niveaux, tracez-les dans le modèle ou calez le zéro sur un point cliqué', -> { A2M::Niveaux.ouvrir }, false],
     ['mur',         'Dessiner un mur',                     'Mur, doublage ou cloison : hauteur, épaisseur et tracé (axe ou face), posé sur sa balise', -> { A2M::DessinMurs.lancer }, false],
     ['compose',     'Dessiner un mur composé',             'Plusieurs couches en une fois (mur, isolant, plaque…), chacune sur sa balise', -> { A2M::DessinMurs.lancer_compose }, false],
     ['cloison',     'Dessiner une cloison',               'Cloison à vos couches : plaque + ossature (rail, montant) + plaque, par exemple 13 + 48 + 13 = 74 mm, chacune sur sa balise', -> { A2M::DessinMurs.lancer_cloison }, false],
@@ -178,7 +179,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'hachures_moteur', 'hachures_fr', 'hachures_onde', 'hachures_dessin', 'planelles', 'profils'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
-    for f in ('controle', 'modif', 'squelette', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
+    for f in ('controle', 'modif', 'squelette', 'toiture', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'niveaux', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in sorted(os.listdir(os.path.join(ici, 'hachures'))):
         z.write(os.path.join(ici, 'hachures', f), 'a2m_metre/hachures/' + f)

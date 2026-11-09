@@ -119,5 +119,12 @@
   "Seules les cloisons de même réglage (type, épaisseur, hauteur) qui se touchent sont réunies ; leurs tracés restent en mémoire pour « Modifier ».",
   "Les anciennes cloisons droites sont reprises ; les ouvertures percées dedans sont à refaire.",
   "Si SketchUp refuse l'union des volumes, un message le dit : les cloisons restent côte à côte mais liées."
+ ],
+ "niveaux": [
+  "La liste commence par des niveaux types (haut des murs, plafond, fini du sol, dessus et dessous de la dalle, semelles) : changez les noms, les codes et les altitudes dans le tableau.",
+  "Le bouton « + Ajouter un niveau » en ajoute un ; la croix à droite d'une ligne le supprime. Le schéma en coupe à droite suit chaque frappe, sans bouton « Appliquer ».",
+  "Le zéro est le dessous de la dalle : en dessous, les altitudes sont négatives (−0,60) ; au-dessus, positives (+0,15).",
+  "« Tracer les niveaux dans le modèle » dessine un cadre en lignes de construction et une étiquette par niveau, dans un groupe « Niveaux (A2M) » sur la balise A2M_NIVEAUX, que l'on masque en un clic.",
+  "« Caler le zéro sur un point cliqué » : cliquez le dessous de la dalle ; le modèle est déplacé en hauteur pour que ce point devienne 0 (l'altitude NGF de l'origine suit si elle est connue)."
  ]
 }

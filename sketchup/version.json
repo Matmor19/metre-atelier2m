@@ -1,12 +1,12 @@
 {
- "version": "2.97.18",
+ "version": "2.97.19",
  "notes": [
+  "Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le…",
   "Porte intérieure : le journal contrôle après chaque pose la position des ailes et du corps du cadre par rapport au plan milieu de…",
   "Porte intérieure : le cadre est maintenant mesuré sur ses faces exactes : le corps du cadre (ex. 86,1 × 204 cm) est centré dans…",
   "Porte intérieure : le journal note maintenant les faces exactes du cadre (positions en épaisseur) pour caler précisément la porte…",
   "Porte intérieure : le corps du cadre est maintenant repéré comme la largeur qui occupe le plus d'épaisseur (et non plus la plus…",
   "Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est…",
-  "Fusion des cloisons : tolérance portée à 5 cm (plus la demi-épaisseur) entre deux cloisons de mêmes réglages qui se suivent ou se…",
-  "… et 109 autres nouveautés plus anciennes."
+  "… et 110 autres nouveautés plus anciennes."
  ]
 }

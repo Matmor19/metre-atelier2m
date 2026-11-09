@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.18)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.19)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -7,6 +7,15 @@ Notice générée automatiquement à chaque version : chaque bouton de la palett
 
 ### Tableau de bord du modèle
 Contrôle du modèle et métré en direct dans une seule fenêtre : points à vérifier cliquables, surfaces, linéaires et menuiseries par pièce, envoi au métré
+
+### Niveaux du bâtiment
+Liste des niveaux (code, nom, altitude) avec un schéma en coupe : le dessous de la dalle est le zéro, ce qui est dessous est négatif ; ajoutez, modifiez ou supprimez les niveaux, tracez-les dans le modèle ou calez le zéro sur un point cliqué
+
+- La liste commence par des niveaux types (haut des murs, plafond, fini du sol, dessus et dessous de la dalle, semelles) : changez les noms, les codes et les altitudes dans le tableau.
+- Le bouton « + Ajouter un niveau » en ajoute un ; la croix à droite d'une ligne le supprime. Le schéma en coupe à droite suit chaque frappe, sans bouton « Appliquer ».
+- Le zéro est le dessous de la dalle : en dessous, les altitudes sont négatives (−0,60) ; au-dessus, positives (+0,15).
+- « Tracer les niveaux dans le modèle » dessine un cadre en lignes de construction et une étiquette par niveau, dans un groupe « Niveaux (A2M) » sur la balise A2M_NIVEAUX, que l'on masque en un clic.
+- « Caler le zéro sur un point cliqué » : cliquez le dessous de la dalle ; le modèle est déplacé en hauteur pour que ce point devienne 0 (l'altitude NGF de l'origine suit si elle est connue).
 
 ### Créer les balises du métré
 Crée les balises A2M_ du métré (dossier « Métré A2M »), sans toucher à celles qui existent
@@ -271,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le dessous de la dalle est le zéro, les semelles sont en négatif ; tracé des niveaux dans le modèle et recalage du zéro sur un point cliqué
 - Porte intérieure : le journal contrôle après chaque pose la position des ailes et du corps du cadre par rapport au plan milieu de la cloison
 - Porte intérieure : le cadre est maintenant mesuré sur ses faces exactes : le corps du cadre (ex. 86,1 × 204 cm) est centré dans l'épaisseur de la cloison et les ailes de recouvrement tombent de part et d'autre des plaques ; la réservation prend la taille du corps ; la hauteur du trou prend aussi celle du corps (204 cm pour une porte 83×204)
 - Porte intérieure : le journal note maintenant les faces exactes du cadre (positions en épaisseur) pour caler précisément la porte dans la cloison
@@ -290,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons : jusqu'à 5 couches de votre choix. Par défaut plaque 13 mm + ossature 48 mm (rail et montant) + plaque 13 mm = 74 mm, tracée dans son axe. Les cloisons composées qui se touchent fusionnent comme les autres cloisons, et se modifient avec « Modifier ce que j'ai dessiné »
 - Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture, toujours dans le menu Extensions) : cliquez un mur, une toiture, une ouverture, un sol ou plafond, un escalier, un garde-corps, la couverture, la charpente, la zinguerie ou des semelles → l'outil se rouvre avec ses réglages. Sols et plafonds dessinés : les points du contour se déplacent. Escalier et garde-corps : on peut les replacer. Les objets créés avant cette version doivent être refaits une fois. Planelles : pas de modification (voir la notice)
 - Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur, hauteur du linteau et position le long du mur se changent ; le mur est rebouché puis repercé, la menuiserie et l'appui refaits avec les mêmes choix. Les ouvertures percées avant cette version peuvent déjà changer de taille, mais sans retrouver leur menuiserie de bibliothèque (une réservation est posée)
-- Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente, débord, épaisseur, faîtage) et refait la toiture ; on peut aussi reprendre le contour sur d'autres murs sélectionnés avec elle. Les toitures déjà créées avant cette version doivent être refaites une fois
