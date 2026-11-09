@@ -779,7 +779,144 @@ module A2M
     end
   end
 end
+
+module A2M
+  module EntretienPortes
+    EPS = 0.001
+
+    # Étendue en x (repère de la définition) de toute la géométrie sous « ents », transformée par tr
+    def self.xr(ents, tr)
+      mn = nil; mx = nil
+      ents.each do |e|
+        if e.is_a?(Sketchup::Edge)
+          e.vertices.each do |v|
+            x = (tr * v.position).x
+            mn = x if mn.nil? || x < mn
+            mx = x if mx.nil? || x > mx
+          end
+        elsif e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          a, b = xr(e.definition.entities, tr * e.transformation)
+          next unless a
+          mn = a if mn.nil? || a < mn
+          mx = b if mx.nil? || b > mx
+        end
+      end
+      [mn, mx]
+    end
+
+    def self.sens_2d?(e) e.is_a?(Sketchup::Group) && e.name == 'sens ouverture 2D' end
+
+    # Nombre de sommets dans ]lo, hi] (hors dessin 2D du sens d'ouverture) : pour ne pas replier la géométrie en rétrécissant
+    def self.compter(ents, tr, lo, hi)
+      n = 0
+      ents.each do |e|
+        if e.is_a?(Sketchup::Edge)
+          e.vertices.each { |v| x = (tr * v.position).x; n += 1 if x > lo && x <= hi }
+        elsif (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && !sens_2d?(e)
+          n += compter(e.definition.entities, tr * e.transformation, lo, hi)
+        end
+      end
+      n
+    end
+
+    # Étire : tout ce qui est à droite de xmid (repère de la définition) se décale de dxw (vecteur en pouces)
+    def self.etirer(ents, tr, xmid, dxw)
+      loc = dxw.transform(tr.inverse)
+      verts = ents.grep(Sketchup::Edge).flat_map(&:vertices).uniq.select { |v| (tr * v.position).x > xmid + EPS }
+      ents.transform_by_vectors(verts, Array.new(verts.size, loc)) unless verts.empty?
+      ents.to_a.each do |e|
+        next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+        next if sens_2d?(e)
+        t = tr * e.transformation
+        a, b = xr(e.definition.entities, t)
+        next unless a
+        if a > xmid - EPS
+          ents.transform_entities(Geom::Transformation.translation(loc), [e])
+        elsif b > xmid + EPS
+          e.make_unique
+          etirer(e.definition.entities, t, xmid, dxw)
+        end
+      end
+    end
+
+    def self.cm(v) (v.to_f * 2.54).round(1) end
+
+    def self.refaire(largeur, source = 73)
+      model = Sketchup.active_model
+      dos = File.join(A2M::Bibliotheque.dossier, 'Portes interieures')
+      f_src = File.join(dos, "B.P #{source}x204 Chauvat.skp")
+      f_dst = File.join(dos, "B.P #{largeur}x204 Chauvat.skp")
+      dw = (largeur - source).to_f
+      dxw = Geom::Vector3d.new(dw.cm, 0, 0)
+      res = []
+      model.start_operation('Refaire porte', true)
+      begin
+        d = model.definitions.load(f_src)
+        inst = model.entities.add_instance(d, Geom::Transformation.new)
+        inst.make_unique
+        dd = inst.definition
+        cadre = dd.entities.grep(Sketchup::Group).find { |g| g.name == 'Cadre' }
+        pan = dd.entities.grep(Sketchup::ComponentInstance).find { |c| c.definition.get_attribute('dynamic_attributes', 'onclick') || c.get_attribute('dynamic_attributes', 'onclick') }
+        raise 'cadre ou panneau introuvable' unless cadre && pan
+        a, b = xr(cadre.definition.entities, cadre.transformation)
+        xmid = (a + b) / 2.0
+        res << "cadre x #{cm(a)}..#{cm(b)} milieu #{cm(xmid)}"
+        if dw < 0
+          risque = compter(dd.entities, Geom::Transformation.new, xmid, xmid - dw.cm)
+          raise "#{risque} sommet(s) dans la zone d'étirement : rétrécissement impossible sans abîmer" if risque > 0
+        end
+        arc = dd.entities.grep(Sketchup::Group).find { |g| sens_2d?(g) }
+        o = pan.transformation.origin
+        r_old = arc ? arc.bounds.max.x - o.x : nil
+        pan.make_unique if pan.definition.count_instances > 1
+        etirer(dd.entities, Geom::Transformation.new, xmid, dxw)
+        if arc && r_old && r_old > 0
+          f = (r_old + dw.cm) / r_old
+          dd.entities.transform_entities(Geom::Transformation.scaling(Geom::Point3d.new(o.x, o.y, 0), f, f, 1), [arc])
+          res << "arc 2D : rayon #{cm(r_old)} -> #{cm(r_old + dw.cm)}"
+        end
+        a2, b2 = xr(cadre.definition.entities, cadre.transformation)
+        res << "cadre après : #{cm(a2)}..#{cm(b2)} (largeur #{cm(b2 - a2)})"
+        pan.definition.name = "Panneau #{largeur}"
+        pan.definition.set_attribute('dynamic_attributes', '_name', "Panneau #{largeur}")
+        pan.set_attribute('dynamic_attributes', '_name', "Panneau #{largeur}")
+        ent = A2M::Bibliotheque.objets.find { |x| x['nom'] == "B.P #{largeur}x204 Chauvat" }
+        raise "fiche « B.P #{largeur}x204 Chauvat » absente de l'index" unless ent
+        dd.set_attribute('a2m_obj', 'nom', ent['nom'])
+        dd.set_attribute('a2m_obj', 'vl0', largeur.to_f.to_s)
+        dd.set_attribute('a2m_obj', 'l0', ent['l0'].to_s)
+        dd.set_attribute('a2m_obj', 'info', JSON.generate(ent))
+        if File.exist?(f_dst)
+          arch = File.join(File.dirname(A2M::Bibliotheque.dossier), 'Bibliothèque SketchUp', '_A_SUPPRIMER_portes_anciennes')
+          FileUtils.mkdir_p(arch)
+          FileUtils.cp(f_dst, File.join(arch, "B.P #{largeur}x204 Chauvat (battant ouvert, sans quincaillerie).skp"))
+        end
+        ok = dd.save_as(f_dst)
+        res << "enregistré : #{ok ? 'oui' : 'NON'} #{f_dst}"
+      ensure
+        model.abort_operation
+      end
+      res
+    end
+
+    def self.refaire_63_83
+      sortie = []
+      [63, 83].each do |w|
+        begin
+          sortie << "== #{w}"
+          sortie.concat(refaire(w))
+        rescue StandardError => ex
+          sortie << "ERREUR #{w} : #{ex.class} #{ex.message} #{ex.backtrace.to_a.first(2).join(' | ')}"
+        end
+      end
+      cible = File.join(File.dirname(A2M::Bibliotheque.dossier), 'refonte_portes.txt')
+      File.write(cible, sortie.join("\n"), encoding: 'UTF-8')
+      UI.messagebox(sortie.join("\n")[0, 900])
+    end
+  end
+end
 if !$a2m_entretien_portes
   $a2m_entretien_portes = true
   UI.menu('Extensions').add_item('Métré A2M (provisoire) : relevé des portes Chauvat') { A2M::EntretienPortes.releve }
+  UI.menu('Extensions').add_item('Métré A2M (provisoire) : refaire les portes 63 et 83 depuis la 73') { A2M::EntretienPortes.refaire_63_83 }
 end

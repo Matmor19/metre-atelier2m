@@ -1,12 +1,12 @@
 {
- "version": "2.97.44",
+ "version": "2.97.45",
  "notes": [
+  "Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)",
   "Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)",
   "Niveaux : « Caler le zéro sur un point cliqué » ne plante plus SketchUp au deuxième recalage. Le déplacement du modèle se fait…",
   "Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au…",
   "Niveaux : « Caler le zéro sur un point cliqué » ne casse plus les murs percés (des bouchons apparaissaient au-dessus des portes).…",
   "Bibliothèque : bouton « Vignette (vue actuelle) ». Pose l'objet dans le modèle, règle ta vue, sélectionne-le, clique le bouton :…",
-  "Fenêtre de la bibliothèque : les réglages de l'image 2D sont repliés (un clic pour les ouvrir), ce qui laisse plus de place aux…",
-  "… et 134 autres nouveautés plus anciennes."
+  "… et 135 autres nouveautés plus anciennes."
  ]
 }
