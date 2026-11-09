@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.47)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.48)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -131,7 +131,7 @@ Chevrons à l'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, f
 Pose ardoise, tuile mécanique ou plate, zinc à joints debout ou bac acier sur les pans de la toiture : rangs, joints décalés, nervures, teintes variées, surface au métré
 
 ### Zinguerie (gouttières, descentes)
-Gouttières demi-rondes ou nantaises sur tous les égouts de la toiture, descentes d'eaux pluviales jusqu'au sol, linéaires pour le métré
+Gouttières (zinc dév. 25 et 33, nantaise, alu) avec crochets sur les égouts ; descente placée au clic sur l'égout et réglée sur une coupe : coudes, tuyau horizontal contre le mur, colliers répartis, regard en pied ; linéaires pour le métré
 
 ### Escalier
 Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons, loi de Blondel, côté mur
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Zinguerie refaite : choix de la gouttière (zinc dév. 25, dév. 33, nantaise, alu) avec crochets, et descente placée au clic sur l'égout. Une coupe dans la fenêtre règle tout en direct : distance au mur, coudes, tuyau horizontal, colliers de départ et d'arrivée répartis régulièrement, regard en pied. Rouvrable avec « Modifier ce que j'ai dessiné ». Pièces provisoires en attendant vos objets (coudes, colliers, crochets, naissances, regard)
 - Toiture 3D : faîtages et arêtiers posés automatiquement le long des arêtes entre pans (visuel seulement, pas de tuiles). Balises A2M_FAITAGE_3D et A2M_ARETIER_3D, ignorées par le métré qui reste au mètre linéaire. Ils suivent « Modifier la toiture »
 - Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)
 - Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Portes animées : le sens d'ouverture suit maintenant ton arc 2D (lu sur le dessin lui-même), et le panneau reste dans le cadre après refermeture (il garde sa propre orientation au lieu de la perdre à la première animation)
 - Porte intérieure : une menuiserie à taille fixe (ex. B.P 103x204) prend automatiquement sa propre taille, même si une autre case de dimension est cochée (fin du message « n'a pas de ligne d'étirement dans ce sens »)
 - Portes d'intérieur de la bibliothèque : à la pose, le panneau devient un composant dynamique qui s'ouvre et se referme au clic (outil Interagir), comme la porte moulurée. Il tourne autour de l'axe de la charnière = centre de ton arc 2D ; la géométrie et les dimensions ne changent pas, l'arc 2D reste en place
-- Portes d'intérieur : préparation de l'ouverture animée au clic. Un relevé unique de la structure des portes de la bibliothèque est écrit dans Documents\Atelier 2M\diag_portes.txt (rien n'est modifié dans ton modèle)

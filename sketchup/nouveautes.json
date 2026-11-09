@@ -1,4 +1,5 @@
 [
+ "Zinguerie refaite : choix de la gouttière (zinc dév. 25, dév. 33, nantaise, alu) avec crochets, et descente placée au clic sur l'égout. Une coupe dans la fenêtre règle tout en direct : distance au mur, coudes, tuyau horizontal, colliers de départ et d'arrivée répartis régulièrement, regard en pied. Rouvrable avec « Modifier ce que j'ai dessiné ». Pièces provisoires en attendant vos objets (coudes, colliers, crochets, naissances, regard)",
  "Toiture 3D : faîtages et arêtiers posés automatiquement le long des arêtes entre pans (visuel seulement, pas de tuiles). Balises A2M_FAITAGE_3D et A2M_ARETIER_3D, ignorées par le métré qui reste au mètre linéaire. Ils suivent « Modifier la toiture »",
  "Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)",
  "Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)",
