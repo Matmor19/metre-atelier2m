@@ -197,15 +197,18 @@ module A2M
       return nil if boites.size < 4
       ys = boites.flat_map { |b| [b[2], b[3]] }.map { |q| q.round(2) }.uniq.sort
       tr = []   # tranches : [largeur, hauteur, y0, y1]
+      tous = []
       ys.each_cons(2) do |y0, y1|
         next if y1 - y0 < 0.05
         mid = (y0 + y1) / 2.0
         bs = boites.select { |b| b[2] <= mid && b[3] >= mid && b[3] - b[2] > 0.02 }
         next if bs.empty?
         l = bs.map { |b| b[1] }.max - bs.map { |b| b[0] }.min
+        tous << [y0, y1, l.round(1), (bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min).round(1)]
         next if l < vl + 0.3      # tranches plus étroites que le vantail (poignée, panneau) : ignorées
         tr << [l, bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min, y0, y1]
       end
+      (A2M::Suivi.journal('cadre tranches (y0-y1:largeur/hauteur) : ' + tous.map { |a, b, l, h| "#{a.round(2)}-#{b.round(2)}:#{l}/#{h}" }.join(' '))) if vl > 0
       return nil if tr.size < 2
       lmax = tr.map { |x| x[0] }.max
       hmax = tr.map { |x| x[1] }.max
