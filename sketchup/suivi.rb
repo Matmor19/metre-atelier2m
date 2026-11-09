@@ -89,7 +89,7 @@ module A2M
     # Affiche la fin du journal (Documents\\Atelier 2M\\journal_ouvertures.txt) et l'état du suivi : pour comprendre un souci
     def self.afficher_journal
       f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'journal_ouvertures.txt')
-      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(30).map { |l| l.strip[0, 220] } : ['(journal vide)']
+      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(30).map { |l| l.strip[0, 1500] } : ['(journal vide)']
       esc = ->(t) { t.to_s.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;') }
       html = "<html><body style='font-family:Consolas,monospace;font-size:17px;margin:12px;background:#fff;color:#222'>" \
              "<h3 style='margin:0 0 8px 0'>Suivi des ouvertures : #{@cache.size} menuiserie(s) suivie(s), #{@attente.size} en attente</h3>" \

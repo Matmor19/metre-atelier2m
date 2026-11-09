@@ -208,7 +208,14 @@ module A2M
         next if l < vl + 0.3      # tranches plus étroites que le vantail (poignée, panneau) : ignorées
         tr << [l, bs.map { |b| b[5] }.max - bs.map { |b| b[4] }.min, y0, y1]
       end
-      (A2M::Suivi.journal('cadre tranches (y0-y1:largeur/hauteur) : ' + tous.map { |a, b, l, h| "#{a.round(2)}-#{b.round(2)}:#{l}/#{h}" }.join(' '))) if vl > 0
+      if vl > 0
+        fus = []
+        tous.each do |a, b, l, h|
+          d = fus.last
+          if d && (d[2] - l).abs < 0.15 && (d[3] - h).abs < 0.15 && (a - d[1]).abs < 0.06 then d[1] = b else fus << [a, b, l, h] end
+        end
+        A2M::Suivi.journal('cadre tranches (y0-y1:largeur/hauteur) : ' + fus.map { |a, b, l, h| "#{a.round(2)}-#{b.round(2)}:#{l}/#{h}" }.join('  '))
+      end
       return nil if tr.size < 2
       lmax = tr.map { |x| x[0] }.max
       hmax = tr.map { |x| x[1] }.max
@@ -412,7 +419,7 @@ module A2M
   module Suivi
     def self.afficher_journal
       f = File.join(File.dirname(A2M::Bibliotheque.dossier), 'journal_ouvertures.txt')
-      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(30).map { |l| l.strip[0, 220] } : ['(journal vide)']
+      lignes = File.exist?(f) ? File.readlines(f, encoding: 'UTF-8').last(30).map { |l| l.strip[0, 1500] } : ['(journal vide)']
       esc = ->(t) { t.to_s.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;') }
       html = "<html><body style='font-family:Consolas,monospace;font-size:17px;margin:12px;background:#fff;color:#222'>" \
              "<h3 style='margin:0 0 8px 0'>Suivi des ouvertures : #{@cache.size} menuiserie(s) suivie(s), #{@attente.size} en attente</h3>" \
