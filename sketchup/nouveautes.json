@@ -1,4 +1,5 @@
 [
+ "Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré), comme la palette ; la palette et la recherche de mise à jour restent en haut et en bas (visible au prochain démarrage de SketchUp)",
  "Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du corps du cadre (et non de la boîte englobante, poignée comprise) : la porte reste centrée dans la cloison",
  "Fusion des cloisons : deux cloisons qui ne diffèrent que par le côté du tracé (couches à droite ou à gauche) se fusionnent maintenant quand leur composition est symétrique (plaque + cloison + plaque) : leur emplacement ne bouge pas",
  "Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le dessous de la dalle est le zéro, les semelles sont en négatif ; tracé des niveaux dans le modèle et recalage du zéro sur un point cliqué",

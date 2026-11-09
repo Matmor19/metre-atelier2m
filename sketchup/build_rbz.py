@@ -78,21 +78,32 @@ unless file_loaded?(__FILE__)
     ['palette',     'Palette Atelier 2M',                  'Ouvre la palette flottante : boutons espacés, animés au survol, rangés par étape, avec leur explication', -> { A2M::Palette.ouvrir }, false]
   ]
   menu = UI.menu('Extensions').add_submenu('Métré Atelier 2M')
-  ACTIONS_A2M.each do |_ic, titre, _b, action, sep|
-    menu.add_item(titre + '…') { action.call }
-    menu.add_separator if sep
+  menu.add_item('Palette Atelier 2M…') { A2M::Palette.ouvrir }
+  menu.add_separator
+  # Sous-menus = les mêmes rubriques que la palette ; les commandes qui n'y ont pas de bouton sont rangées dans la rubrique voisine
+  plus = { 'pieces' => 'Préparer', 'controle' => 'Préparer', 'journal_ouvertures' => 'Ouvertures, finitions',
+           'modifier_ouverture' => 'Ouvertures, finitions', 'modifier_mur' => 'Dessiner', 'modifier_toiture' => 'Dessiner',
+           'textures_auto' => 'Dessiner', 'extraire' => 'Métré' }
+  par = {}
+  A2M::Palette::GROUPES.each { |t, ids| par[t] = ids.map { |i| ACTIONS_A2M.find { |a| a[0] == i } }.compact }
+  ACTIONS_A2M.each do |a|
+    next if a[0] == 'palette' || par.values.flatten(1).include?(a)
+    (par[plus[a[0]] || 'Préparer'] ||= []) << a
   end
-  menu.add_item('Poser une menuiserie de la bibliothèque sur l\'ouverture sélectionnée…') { A2M::Suivi.poser_sur }
-  menu.add_item('Réglages de l\'outil Ouverture…') { A2M::Ouvertures.regler }
-  menu.add_item('Réglages de l\'envoi au métré…') { A2M::Envoi.reglages }
-  menu.add_separator
-  menu.add_item('Recaler le NGF (altitude du modèle)…') { A2M::Ngf.recaler }
-  menu.add_item('Poser une cote NGF au point cliqué…') { A2M::Ngf.poser_cotes }
-  menu.add_item('Textures extérieures (enduits, RAL, tuiles…)…') { A2M::Textures.ouvrir }
-  menu.add_item('Créer les menuiseries types (2 porte-fenêtres, porte d\'entrée)…') { A2M::ObjetsMenuiseries.creer }
-  menu.add_separator
-  menu.add_item('Hachures de coupe par couche…') { A2M::Hachures.regler }
-  menu.add_item('Appliquer les hachures au modèle') { A2M::Hachures.appliquer }
+  supp = {
+    'Ouvertures, finitions' => [['Poser une menuiserie de la bibliothèque sur l\'ouverture sélectionnée…', -> { A2M::Suivi.poser_sur }],
+                                ['Réglages de l\'outil Ouverture…', -> { A2M::Ouvertures.regler }],
+                                ['Créer les menuiseries types (2 porte-fenêtres, porte d\'entrée)…', -> { A2M::ObjetsMenuiseries.creer }]],
+    'Préparer' => [['Recaler le NGF (altitude du modèle)…', -> { A2M::Ngf.recaler }],
+                   ['Poser une cote NGF au point cliqué…', -> { A2M::Ngf.poser_cotes }]],
+    'Dessiner' => [['Appliquer les hachures au modèle', -> { A2M::Hachures.appliquer }]],
+    'Métré' => [['Réglages de l\'envoi au métré…', -> { A2M::Envoi.reglages }]]
+  }
+  par.each do |titre, acts|
+    sm = menu.add_submenu(titre)
+    acts.each { |_ic, t, _b, action, _sep| sm.add_item(t + '…') { action.call } }
+    (supp[titre] || []).each { |t, f| sm.add_item(t) { f.call } }
+  end
   menu.add_separator
   menu.add_item('Rechercher une mise à jour…') { A2M::MiseAJour.verifier(true) }
   menu.add_item('Dossier du fichier .rbz pour les mises à jour…') { A2M::MiseAJour.choisir_dossier }
