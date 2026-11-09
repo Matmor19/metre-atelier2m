@@ -490,9 +490,11 @@ module A2M
       env = grp.to_component
       env.name = nom; env.layer = tag
       env.make_unique if env.definition.instances.size > 1
-      v = Geom::Vector3d.new(axe.x, axe.y, axe.z)
-      env.definition.entities.transform_entities(Geom::Transformation.translation(v.reverse), env.definition.entities.to_a)
-      env.transformation = env.transformation * Geom::Transformation.translation(v)
+      # l'enveloppe n'a pas forcément son origine en (0;0;0) : on ramène son origine exactement sur l'axe de la charnière
+      o0 = env.transformation.origin
+      vd = axe - o0
+      env.definition.entities.transform_entities(Geom::Transformation.translation(vd.reverse), env.definition.entities.to_a)
+      env.transformation = Geom::Transformation.translation(Geom::Vector3d.new(axe.x, axe.y, axe.z))
       att = {
         '_has_movetool_behaviors' => '1.0', '_hasbehaviors' => '1.0', '_name' => 'panneau',
         '_onclick_label' => 'onClick', '_onclick_state1' => '0', 'onclick' => "ANIMATE(\"RotZ\",0,#{angle})",
