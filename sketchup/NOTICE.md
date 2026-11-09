@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.24)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.25)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Fusion des cloisons : les portes et fenêtres déjà posées sont automatiquement repercées dans la cloison fusionnée (avant, la cloison refaite pleine recouvrait les portes)
 - Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens
 - Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé
 - Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré), comme la palette ; la palette et la recherche de mise à jour restent en haut et en bas (visible au prochain démarrage de SketchUp)
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Pièces : si une pièce existe déjà à cet endroit, l'outil (clic ou Pièces automatiques) ouvre « Modifier » et met à jour son revêtement, son nom et ses plinthes, au lieu de créer un deuxième sol par-dessus
 - Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il est vraiment impossible, un message explique pourquoi au lieu de ne rien faire. Chaque suppression est notée dans le journal Documents\\Atelier 2M\\journal_ouvertures.txt
 - Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans la cloison), sans les ailes de recouvrement qui viennent sur les plaques de chaque côté. L'outil mesure la porte choisie ; si elle n'a pas d'ailes, la réservation reste le vantail + le jeu saisi comme avant
-- Fusion des cloisons plus tolérante : une cloison qui s'arrête contre la face d'une autre (et non sur son axe) est maintenant reconnue comme reliée. Si rien ne fusionne, le message explique pourquoi (réglages différents avec le détail, ou cloisons trop éloignées)

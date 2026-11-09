@@ -492,6 +492,7 @@ module A2M
           fusionnees += fam.size
           refus += 1 if nb.size > couches_de(p_de(dep[:j])).size
         end
+        rep = compo > 0 ? (A2M::Suivi.repercer_toutes(m) rescue [0, ['erreur']]) : [0, []]
         m.commit_operation
         msg = if compo.zero?
           "Aucune cloison à fusionner (#{cand.size} cloisons reconnues).\n" + diagnostic_cloisons(cand)
@@ -499,7 +500,8 @@ module A2M
           "#{fusionnees} cloisons réunies en #{compo} ensemble(s)."
         end
         msg += "\n\nAttention : dans #{refus} ensemble(s), SketchUp a refusé l'union des volumes : les cloisons restent côte à côte (liées, modifiables ensemble)." if refus > 0
-        msg += "\n\nLes ouvertures percées dans ces cloisons sont à refaire." if compo > 0
+        msg += "\n\n#{rep[0]} ouverture(s) repercée(s) à la place de leur porte ou fenêtre." if rep[0] > 0
+        msg += "\n\nÀ refaire à la main (non repercées) : #{rep[1].join(', ')}." if rep[1].any?
         UI.messagebox(msg)
       rescue StandardError => ex
         m.abort_operation

@@ -404,6 +404,53 @@ module A2M
       end
     end
 
+    # Après une fusion de cloisons : les anciens murs sont refaits pleins, les trous sont perdus. On repercer chaque
+    # menuiserie suivie à sa place actuelle (sans la déplacer). Renvoie [nombre repercées, noms en échec].
+    def self.repercer_toutes(model)
+      ok = 0; echecs = []
+      cible = model.active_entities.to_a.select { |e| suivie?(e) }
+      @occupe = true
+      cible.each do |r|
+        d = donnees(r)
+        next unless d && d['o'] && d['p']
+        begin
+          t = r.transformation
+          ol = d['o']; pr = d['p']
+          bas = Geom::Point3d.new(ol['bas']).transform(t)
+          u = Geom::Vector3d.new(ol['u']).transform(t); u = Geom::Vector3d.new(u.x, u.y, 0).normalize
+          n = Geom::Vector3d.new(ol['n']).transform(t); n = Geom::Vector3d.new(n.x, n.y, 0).normalize
+          l = (pr['l'] / 100.0).m; h = (pr['h'] / 100.0).m
+          o = { bas: bas, u: u, n: n, centre: bas.offset(u, l / 2.0).offset(Z_AXIS, h / 2.0) }
+          p = { l: pr['l'], h: pr['h'], n: pr['n'], appui: pr['appui'], type: [pr['lib'], pr['tag']], contigu: pr['contigu'] }
+          A2M::Plinthes.retirer(d['id'], model)
+          dec = begin
+            A2M::Ouvertures.decouper(o, p, d['id'], model)
+          rescue A2M::Ouvertures::SensInverse
+            A2M::Ouvertures.inverser!
+            A2M::Ouvertures.decouper(o, p, d['id'], model)
+          end
+          journal("repercement après fusion « #{r.name} » : #{dec ? "#{dec[:nb]} couche(s)" : 'aucun mur trouvé'}")
+          if dec && dec[:echecs].empty?
+            d['couches'] = dec[:couches]
+            emp = [bas, bas.offset(u, l), bas.offset(u, l).offset(n, -dec[:prof]), bas.offset(n, -dec[:prof])]
+            d['empreinte'] = emp.map(&:to_a)
+            A2M::Plinthes.enregistrer(emp, d['genre'], model, d['id']) if dec[:prof] > 0
+            A2M::Plinthes.regenerer_autour(emp) if dec[:prof] > 0 && d['genre'] != 'fenetre'
+            ecrire(r, d)
+            ok += 1
+          else
+            echecs << r.name
+          end
+        rescue StandardError => ex
+          journal("ERREUR repercement « #{r.name} » : #{ex.message}")
+          echecs << r.name
+        end
+      end
+      [ok, echecs]
+    ensure
+      @occupe = false
+    end
+
     # Perce à la nouvelle place de la menuiserie (sur le mur qu'elle touche maintenant), la recale au nu intérieur
     def self.recouper(model, r, d)
       t = r.transformation
