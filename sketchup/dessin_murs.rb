@@ -318,8 +318,8 @@ module A2M
     end
 
     # Comme relies?, mais une cloison qui s'arrête contre la FACE d'une autre (et non sur son axe) compte aussi :
-    # la tolérance est la demi-épaisseur de la cloison touchée + 1 cm
-    def self.relies_large?(a, b, marge = 0.4)
+    # la tolérance est la demi-épaisseur de la cloison touchée + 5 cm
+    def self.relies_large?(a, b, marge = 2.0)
       relies?(a, b, marge + epaisseur_po(b) / 2.0) || relies?(b, a, marge + epaisseur_po(a) / 2.0)
     end
 
@@ -411,7 +411,7 @@ module A2M
         if a[:j] != b[:j]
           lignes << "• Réglages différents : [#{resume_j(a[:j])}] / [#{resume_j(b[:j])}]"
         elsif !relies_large?(a, b)
-          lignes << '• Réglage identique mais trop éloignées (écart de plus de ~1 cm à la face)'
+          lignes << '• Réglage identique mais trop éloignées (écart de plus de ~5 cm à la face)'
         end
       end
       return "Aucune paire de cloisons proches (moins de 30 cm) n'a été trouvée entre les cloisons reconnues.\nLes autres cloisons ne sont peut-être pas reconnues : seules les cloisons droites (balise A2M_CLOISON) ou dessinées avec les outils le sont." if lignes.empty?
