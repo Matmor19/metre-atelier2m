@@ -232,15 +232,19 @@ module A2M
       end
       m = format('%.3f', z.to_m).tr('.', ',')
       return false unless UI.messagebox("Le point cliqué est à #{m} m du zéro actuel.\n\nTout le modèle va être déplacé de #{m} m en hauteur pour que ce point devienne le niveau 0 (dessous de la dalle). Continuer ?", MB_YESNO) == IDYES
+      A2M::Suivi.suspendre!
       model.start_operation('Niveau 0 : recaler le modèle', true)
       ents = model.entities
       ents.transform_entities(Geom::Transformation.translation(Geom::Vector3d.new(0, 0, -z)), ents.to_a)
+      A2M::Suivi.decaler_z(model, -z)
       ngf = (A2M::Ngf.origine rescue nil)
       model.set_attribute(A2M::Ngf::DICO, 'origine_ngf', ngf + z.to_m) if ngf
       model.commit_operation
+      A2M::Suivi.reprendre!
       true
     rescue StandardError => ex
       model.abort_operation rescue nil
+      A2M::Suivi.reprendre!
       UI.messagebox("Recalage impossible : #{ex.message}")
       false
     end

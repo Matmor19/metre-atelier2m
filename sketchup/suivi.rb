@@ -451,6 +451,30 @@ module A2M
       @occupe = false
     end
 
+    # Déplacement vertical de TOUT le modèle (recalage du niveau 0) : le suivi est suspendu pendant le déplacement, puis les données
+    # absolues de chaque ouverture (position de la menuiserie, rectangles des couches percées, empreintes) sont décalées du même
+    # montant. Sans cela, le suivi croyait que les menuiseries avaient bougé seules et rebouchait / repercait aux anciennes altitudes.
+    def self.suspendre!() @occupe = true end
+
+    def self.reprendre!
+      UI.start_timer(0.6, false) { @attente.clear; @occupe = false }
+    end
+
+    def self.decaler_z(model, dz)
+      model.entities.each do |r|
+        next unless suivie?(r)
+        d = donnees(r)
+        next unless d
+        d['t'] = t_tab(r.transformation)
+        d['empreinte'] = (d['empreinte'] || []).map { |a| [a[0], a[1], a[2].to_f + dz] }
+        (d['couches'] || []).each { |c| c['rect'] = (c['rect'] || []).map { |a| [a[0], a[1], a[2].to_f + dz] } }
+        ecrire(r, d)
+      end
+      liste = A2M::Plinthes.ouvertures(model)
+      liste.each { |o| o['z'] = o['z'].to_f + dz }
+      model.set_attribute('a2m', 'ouvertures', JSON.generate(liste))
+    end
+
     # Perce à la nouvelle place de la menuiserie (sur le mur qu'elle touche maintenant), la recale au nu intérieur
     def self.recouper(model, r, d)
       t = r.transformation
