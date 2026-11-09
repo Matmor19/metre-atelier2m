@@ -908,7 +908,7 @@ module A2M
       def maj_statut
         lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
         Sketchup.status_text = "#{lib}, #{A2M::DessinMurs.lib_cote(@p).downcase} (Tab pour changer). Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
-                               'R = partir d\'un repère (point + direction + distance) ; Ctrl ou clic droit = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
+                               'flèche haut ou clic droit = partir d\'un repère (point + direction + distance) ; Ctrl ou clic droit = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
 
@@ -934,16 +934,24 @@ module A2M
           view.invalidate
           return true
         end
-        if key == 'R'.ord && !@rep && !@rep_att
+        if key == 38 && !@rep && !@rep_att   # flèche haut (R est pris par SketchUp : rectangle)
           return true if rpt > 1
-          @rep_att = true
-          Sketchup.status_text = 'Repère : cliquez le point de référence (accrochages SketchUp), puis visez la direction et tapez la distance, Entrée. Échap pour annuler.'
+          demarrer_repere(view)
           return true
         end
         @pt.touche_bas(key, rpt, view, @rep ? [@rep] : @pts)
       end
       def onKeyUp(key, _rpt, _flags, view) @pt.touche_haut(key, view) end
-      def getMenu(menu) @pt.menu(menu) end
+      def getMenu(menu)
+        menu.add_item('Partir d\'un repère (point + direction + distance)  ↑') { demarrer_repere(Sketchup.active_model.active_view) } unless @rep || @rep_att
+        @pt.menu(menu)
+      end
+
+      def demarrer_repere(view)
+        @rep_att = true
+        Sketchup.status_text = 'Repère : cliquez le point de référence (accrochages SketchUp), puis visez la direction et tapez la distance, Entrée. Échap pour annuler.'
+        view.invalidate
+      end
 
       def ajouter(pt, view, ferme = false)
         pt = Geom::Point3d.new(pt.x, pt.y, @pts.empty? ? pt.z : @pts[0].z)

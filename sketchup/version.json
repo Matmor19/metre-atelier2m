@@ -1,7 +1,7 @@
 {
- "version": "2.95.0",
+ "version": "2.95.1",
  "notes": [
-  "Murs et cloisons : touche R pendant le tracé = « partir d'un repère ». Vous cliquez un point de référence (accrochages SketchUp),…",
+  "Murs et cloisons : flèche HAUT (ou clic droit > « Partir d'un repère ») pendant le tracé (la touche R est prise par SketchUp) = «…",
   "Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la…",
   "Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons :…",
   "Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture,…",
