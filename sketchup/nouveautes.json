@@ -1,4 +1,5 @@
 [
+ "Fenêtre de la bibliothèque : les réglages de l'image 2D sont repliés (un clic pour les ouvrir), ce qui laisse plus de place aux vignettes",
  "Bibliothèque : portes triées dans l'ordre naturel (63, 73, 83, 93, 103), vignettes plus grandes et alignées en rangées régulières dans la fenêtre de la bibliothèque et dans le choix de la porte ; l'ancienne version non animée des portes 83, 93 et 103 est mise de côté et les versions animées portent le nom propre « B.P 83x204 Chauvat »",
  "Rangement d'un objet dans la bibliothèque : un composant dynamique (ex. panneau de porte qui s'ouvre au clic) n'est plus éclaté à la préparation, il garde son animation une fois rangé (c'était la cause de la porte 73 qui ne s'ouvrait plus après rangement)",
  "Bibliothèque : un objet enregistré à nouveau (ex. une porte rendue dynamique) est rechargé à la pose au lieu de réutiliser son ancienne version gardée dans le modèle",

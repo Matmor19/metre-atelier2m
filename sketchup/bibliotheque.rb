@@ -988,7 +988,7 @@ module A2M
         /* Vignettes plus grandes (les portes sont hautes et fines), alignées en rangées régulières, noms centrés sur 2 lignes */
         #liste .grille{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px;align-items:stretch}
         #liste .carte{align-items:stretch}
-        #liste .carte .vignette{height:150px;background:#fff}
+        #liste .carte .vignette{height:140px;background:#fff}
         #liste .carte span{text-align:center;font-weight:600;min-height:2.5em;display:flex;align-items:center;justify-content:center;word-break:break-word}
         #liste h2{margin:14px 0 8px;position:sticky;top:0;background:var(--fond,#fff);padding:4px 0;z-index:1}
       </style>
@@ -1013,12 +1013,13 @@ module A2M
           <div><label for="l">Largeur</label><input type="text" id="l" inputmode="decimal" autocomplete="off"></div><div class="x">×</div>
           <div><label for="h">Hauteur</label><input type="text" id="h" inputmode="decimal" autocomplete="off"></div>
         </div>
-        <div style="flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <details style="flex-basis:100%;margin:0"><summary class="petit" style="margin:0">Image 2D sur le plan (dessus, face…)</summary>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">
           <span class="petit">Image 2D sur le plan :</span>
           <button type="button" class="puce rempli" data-v="dessus">Dessus</button><button type="button" class="puce" data-v="face">Face</button>
           <button type="button" class="puce rempli" data-c="0">Couleur</button><button type="button" class="puce" data-c="1">Blanc</button>
           <button id="go2d" type="button" class="puce" style="margin-left:auto">Poser l'image 2D</button>
-        </div>
+        </div></details>
         <button id="retirer" type="button" class="puce" style="align-self:flex-end">Retirer</button>
         <button id="go" type="button" style="align-self:flex-end">Poser</button>
       </div>
