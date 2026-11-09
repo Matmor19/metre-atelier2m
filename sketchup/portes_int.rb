@@ -176,6 +176,32 @@ module A2M
       analyser_cadre(inst.definition.entities, inst.transformation, vl)
     end
 
+    # Diagnostic : faces perpendiculaires à Y (y, largeur, hauteur) et à X (étendue y) du cadre, en cm, dans le repère de l'objet
+    def self.diag_faces(ents0, t0)
+      py = []; px = []
+      rec = lambda do |ents, t|
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            nrm = (t * e.normal) rescue e.normal
+            pts = e.vertices.map { |v| t * v.position }
+            xs = pts.map { |q| q.x * 2.54 }; ys = pts.map { |q| q.y * 2.54 }; zs = pts.map { |q| q.z * 2.54 }
+            if nrm.y.abs > 0.99 && xs.max - xs.min > 2 && zs.max - zs.min > 2
+              py << [ys.min.round(2), (xs.max - xs.min).round(1), (zs.max - zs.min).round(1), xs.min.round(1)]
+            elsif nrm.x.abs > 0.99 && ys.max - ys.min > 1 && zs.max - zs.min > 50
+              px << [xs.min.round(1), ys.min.round(2), ys.max.round(2), (zs.max - zs.min).round(0)]
+            end
+          elsif e.is_a?(Sketchup::Group) then rec.call(e.entities, t * e.transformation)
+          elsif e.is_a?(Sketchup::ComponentInstance) then rec.call(e.definition.entities, t * e.transformation)
+          end
+        end
+      end
+      rec.call(ents0, t0)
+      A2M::Suivi.journal('diag faces Y (y:largeur/hauteur@x0) : ' + py.uniq.sort.first(40).map { |a| "#{a[0]}:#{a[1]}/#{a[2]}@#{a[3]}" }.join(' '))
+      A2M::Suivi.journal('diag faces X (x:y0-y1/h) : ' + px.uniq.sort.first(30).map { |a| "#{a[0]}:#{a[1]}-#{a[2]}/#{a[3]}" }.join(' '))
+    rescue StandardError => ex
+      A2M::Suivi.journal("diag ERREUR #{ex.message}") rescue nil
+    end
+
     # Renvoie [corps_l, corps_h, total_l, total_h, y_milieu_corps] en cm (y du corps du cadre, dans le repère de l'objet), ou nil.
     # Corps = la plus grande largeur qui reste nettement plus étroite que les ailes (la plus grande de toutes).
     def self.analyser_cadre(ents0, t0, vl = 0)
@@ -245,6 +271,7 @@ module A2M
         a, c = cotes(obj, p)
         r = A2M::Bibliotheque.instance_pour(model.active_entities, obj, a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
         m = r && corps_cadre(r, p[:vl])
+        diag_faces(r.definition.entities, r.transformation) if r
         A2M::Suivi.journal("cadre : instance=#{r ? 'ok' : 'nil'} mesure=#{m ? m.map { |q| q.round(1) }.inspect : 'nil'}")
         if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
           p[:l] = m[0].round(1)

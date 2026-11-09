@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.14)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.15)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -271,6 +271,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Porte intérieure : le journal note maintenant les faces exactes du cadre (positions en épaisseur) pour caler précisément la porte dans la cloison
 - Porte intérieure : le corps du cadre est maintenant repéré comme la largeur qui occupe le plus d'épaisseur (et non plus la plus étroite) ; le journal des ouvertures s'ouvre dans une fenêtre lisible avec les mesures détaillées
 - Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est centrée sur le corps du cadre dans l'épaisseur de la cloison, pas sur son hors-tout (plus de décalage de quelques cm)
 - Fusion des cloisons : tolérance portée à 5 cm (plus la demi-épaisseur) entre deux cloisons de mêmes réglages qui se suivent ou se touchent presque
@@ -290,4 +291,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente, débord, épaisseur, faîtage) et refait la toiture ; on peut aussi reprendre le contour sur d'autres murs sélectionnés avec elle. Les toitures déjà créées avant cette version doivent être refaites une fois
 - Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un seul solide ; tous les tracés sont gardés en mémoire (Modifier un mur → Modifier le tracé montre et déplace les points de chacun). Si SketchUp refuse l'union, les morceaux restent côte à côte mais toujours liés au même mur
 - Toiture : nouveau type « Suit les murs » : la toiture épouse exactement le contour des murs sélectionnés (maison en L, en T, en U…), tous les pans ont la même pente, avec faîtages, noues et arêtiers calculés ; débord et épaisseur comme pour les autres types
-- Modifier un mur : les murs et cloisons déjà dessinés (droits) sont repris automatiquement : leur axe, épaisseur et hauteur sont retrouvés, ils peuvent donc être modifiés sans les retracer ; un mur non droit (angle, tour fermé) demande encore d'être retracé une fois
