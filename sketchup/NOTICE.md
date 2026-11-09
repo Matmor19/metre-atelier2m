@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.3)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.4)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -271,6 +271,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Pièces : si une pièce existe déjà à cet endroit, l'outil (clic ou Pièces automatiques) ouvre « Modifier » et met à jour son revêtement, son nom et ses plinthes, au lieu de créer un deuxième sol par-dessus
 - Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il est vraiment impossible, un message explique pourquoi au lieu de ne rien faire. Chaque suppression est notée dans le journal Documents\\Atelier 2M\\journal_ouvertures.txt
 - Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans la cloison), sans les ailes de recouvrement qui viennent sur les plaques de chaque côté. L'outil mesure la porte choisie ; si elle n'a pas d'ailes, la réservation reste le vantail + le jeu saisi comme avant
 - Fusion des cloisons plus tolérante : une cloison qui s'arrête contre la face d'une autre (et non sur son axe) est maintenant reconnue comme reliée. Si rien ne fusionne, le message explique pourquoi (réglages différents avec le détail, ou cloisons trop éloignées)
@@ -290,4 +291,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Textures extérieures : les couches sont maintenant une grande colonne à gauche (bien visible) ; nouvel onglet « Mes textures » avec tes matières A2M_ (Mes éléments > Textures et modèle ouvert)
 - Correction du rechargement automatique (liste des fichiers mal lue) ; un dernier redémarrage de SketchUp est nécessaire pour l'activer
 - Textures extérieures : nouveau choix « Couche concernée » (comme pour les hachures de coupe) : on choisit la couche, puis la texture, qui est posée sur tous les objets de la couche et sur les prochains dessinés ; bouton pour la retirer
-- Rechargement automatique : dès que les fichiers de l'extension changent (installation par le Gestionnaire d'extensions ou à la main), SketchUp les recharge tout seul en quelques secondes, sans redémarrer

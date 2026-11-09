@@ -200,6 +200,7 @@ module A2M
       el('hsp').value = s.hauteur; el('hsp').addEventListener('input', rendre);
       if (D.total > 0) { el('passer').style.display = ''; el('passer').addEventListener('click', function () { sketchup.passer(''); }); }
       el('go').addEventListener('click', function () { sketchup.creer(JSON.stringify({ nom: s.nom, precision: el('prec').value, ep: el('ep').value, revetement: s.revetement, plinthe: s.plinthe, plafond: !!s.plafond, hauteur: el('hsp').value, scenes: !!s.scenes })); });
+      if (D.existe) { el('go').textContent = 'Mettre à jour la pièce'; }
       rendre();
     JS
 
@@ -214,19 +215,85 @@ module A2M
         model = Sketchup.active_model
         ctr, err = A2M::PieceClic.contour_en(model, p.x.to_f, p.y.to_f)
         return UI.messagebox(err) unless ctr
-        deja = A2M::PieceClic.piece_existante(model, p)
-        return UI.messagebox("Il y a déjà une pièce ici : « #{deja} ». Supprimez-la d'abord pour la refaire.") if deja
         A2M::PieceClic.panneau(ctr)
       end
     end
 
-    def self.piece_existante(model, p)
-      model.active_entities.each do |g|
-        next unless (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.layer && g.layer.name == 'A2M_PIECE'
-        b = g.bounds
-        return g.name if p.x >= b.min.x && p.x <= b.max.x && p.y >= b.min.y && p.y <= b.max.y && (A2M::PiecesAuto.dedans(p.x.to_f, p.y.to_f, g.entities.grep(Sketchup::Face).max_by(&:area).outer_loop.vertices.map { |v| q = g.transformation * v.position; [q.x.to_f, q.y.to_f] }) rescue false)
+    def self.pieces_existantes(model)
+      model.active_entities.select { |g| (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.valid? && g.layer && g.layer.name == 'A2M_PIECE' }
+    end
+
+    def self.poly_piece(g)
+      f = g.entities.grep(Sketchup::Face).max_by(&:area)
+      return nil unless f
+      f.outer_loop.vertices.map { |v| q = g.transformation * v.position; [q.x.to_f, q.y.to_f] }
+    end
+
+    # Pièce déjà créée qui occupe ce contour (points d'essai : centre et milieux vers les sommets)
+    def self.groupe_pour_contour(model, ctr)
+      pts = ctr[0]
+      return nil if pts.empty?
+      cx = pts.sum { |q| q.x.to_f } / pts.size; cy = pts.sum { |q| q.y.to_f } / pts.size
+      essais = [[cx, cy]] + pts.map { |q| [(q.x.to_f + cx) / 2, (q.y.to_f + cy) / 2] }
+      pieces_existantes(model).each do |g|
+        poly = poly_piece(g)
+        next unless poly
+        return g if essais.any? { |x, y| (A2M::PiecesAuto.dedans(x, y, poly) rescue false) }
       end
       nil
+    end
+
+    def self.piece_existante(model, p)
+      pieces_existantes(model).each do |g|
+        poly = poly_piece(g)
+        return g.name if poly && (A2M::PiecesAuto.dedans(p.x.to_f, p.y.to_f, poly) rescue false)
+      end
+      nil
+    end
+
+    # Met à jour une pièce existante : revêtement, nom, plinthes (pas de doublon)
+    def self.mettre_a_jour(g, r)
+      model = Sketchup.active_model
+      nom = r['nom'].to_s.strip
+      nom = g.get_attribute('a2m', 'nom_liste').to_s if nom.empty?
+      prec = r['precision'].to_s.strip
+      nom_final = prec.empty? ? nom : "#{nom} – #{prec}"
+      model.start_operation('Pièce : mise à jour (métré)', true)
+      begin
+        choix = r['revetement'].to_s
+        tex = textures_sols.find { |l, _| l == choix }
+        teinte = TEINTES.find { |l, _| l == choix }
+        m = nil
+        if tex
+          m = A2M::Textures.materiau(model, 'sols', tex[1])
+        elsif teinte && teinte[1]
+          m = model.materials["A2M sol #{teinte[0]}"] || model.materials.add("A2M sol #{teinte[0]}")
+          m.color = Sketchup::Color.new(*teinte[1])
+        end
+        g.entities.grep(Sketchup::Face).each { |x| x.material = m if x.normal.z > 0.99 } if m
+        g.name = nom_final
+        g.set_attribute('a2m', 'revetement', choix)
+        g.set_attribute('a2m', 'nom_liste', nom)
+        g.set_attribute('a2m', 'precision', prec)
+        ml_pl = nil
+        if r['plinthe'].to_s != SANS_PLINTHE && !r['plinthe'].to_s.empty?
+          o = profils.find { |x| A2M::Profils.libelle(x) == r['plinthe'] }
+          profil = o ? A2M::Profils.parties(o).first[1] : A2M::Plinthes.profil_rectangle(10, 1.2)
+          ml_pl = A2M::Plinthes.generer(g, Geom::Transformation.new, profil, model)
+          g.set_attribute('a2m', 'plinthe_nom', r['plinthe'])
+        else
+          pid = g.persistent_id
+          model.active_entities.grep(Sketchup::Group).select { |p| p.get_attribute('a2m', 'plinthe_de') == pid }.each(&:erase!)
+          g.delete_attribute('a2m', 'plinthe_nom')
+        end
+        model.commit_operation
+        Sketchup.status_text = "#{nom_final} mise à jour (revêtement : #{choix})#{ml_pl ? ", plinthes #{(ml_pl * 100).round / 100.0} ml" : ''}"
+        g
+      rescue StandardError => ex
+        model.abort_operation
+        UI.messagebox("La pièce n'a pas pu être mise à jour : #{ex.message}\n#{ex.backtrace.first}")
+        nil
+      end
     end
 
     def self.panneau(ctr, rang = 0, total = 0, &suite)
@@ -240,14 +307,19 @@ module A2M
       rescue StandardError
         nil
       end
+      deja = groupe_pour_contour(model, ctr)
       existants = model.active_entities.select { |g| (g.is_a?(Sketchup::Group) || g.is_a?(Sketchup::ComponentInstance)) && g.layer && g.layer.name == 'A2M_PIECE' }.map { |g| g.get_attribute('a2m', 'nom_liste').to_s }.reject(&:empty?)
       noms = (NOMS + existants).uniq
+      if deja
+        @etat = (@etat || {}).merge('revetement' => deja.get_attribute('a2m', 'revetement').to_s, 'plinthe' => (deja.get_attribute('a2m', 'plinthe_nom') || SANS_PLINTHE).to_s)
+      end
       @etat ||= { 'ep' => '1', 'revetement' => (textures_sols.first || ['Sol brut (sans revêtement)']).first, 'plinthe' => RECT, 'plafond' => false, 'hauteur' => '250', 'scenes' => false }
       pls = [SANS_PLINTHE, RECT] + profils.map { |o| A2M::Profils.libelle(o) }
       pl = pls.include?(@etat['plinthe']) ? @etat['plinthe'] : RECT
       d = { 'noms' => noms, 'revetements' => revetements, 'plinthes' => pls, 'surface' => ctr[2], 'perimetre' => perimetre(ctr[0]), 'total' => total,
-            'etat' => { 'nom' => '', 'ep' => @etat['ep'], 'revetement' => @etat['revetement'], 'plinthe' => pl, 'plafond' => @etat['plafond'], 'hauteur' => @etat['hauteur'], 'scenes' => @etat['scenes'] } }
+            'existe' => (deja ? deja.name.to_s : ''), 'etat' => { 'nom' => (deja ? deja.get_attribute('a2m', 'nom_liste').to_s : ''), 'ep' => @etat['ep'], 'revetement' => @etat['revetement'], 'plinthe' => pl, 'plafond' => @etat['plafond'], 'hauteur' => @etat['hauteur'], 'scenes' => @etat['scenes'] } }
       titre = total > 0 ? "Pièce #{rang} sur #{total} : #{ctr[2].round(2).to_s.tr('.', ',')} m²" : 'Pièce en un clic'
+      titre = "Modifier : #{deja.name}" if deja
       html = A2M::Panneau.page(titre, total > 0 ? 'La pièce en surbrillance dans le modèle : donnez-lui son nom' : 'Sol, plinthes et nom en une fois', CORPS, SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : pièce', 'A2M_Panneau_PieceClic', html, 480, 800)
       @fen = dlg
@@ -257,7 +329,7 @@ module A2M
         @etat = { 'ep' => r['ep'], 'revetement' => r['revetement'], 'plinthe' => r['plinthe'], 'plafond' => r['plafond'], 'hauteur' => r['hauteur'], 'scenes' => r['scenes'] }
         dlg.close
         UI.start_timer(0.1, false) do
-          creer(ctr, r)
+          deja && deja.valid? ? mettre_a_jour(deja, r) : creer(ctr, r)
           suite ? suite.call : Sketchup.active_model.select_tool(Outil.new)
         end
       end
