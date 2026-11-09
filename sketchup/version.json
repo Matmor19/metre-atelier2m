@@ -1,12 +1,12 @@
 {
- "version": "2.97.10",
+ "version": "2.97.11",
  "notes": [
+  "Porte intérieure : le corps du cadre est maintenant repéré comme la largeur qui occupe le plus d'épaisseur (et non plus la plus…",
   "Porte intérieure : la réservation prend la plus grande largeur du corps du cadre (et non la plus étroite), et la porte est…",
   "Fusion des cloisons : tolérance portée à 5 cm (plus la demi-épaisseur) entre deux cloisons de mêmes réglages qui se suivent ou se…",
   "Pièces automatiques : à la fin, la vue revient sur l'ensemble du modèle au lieu de rester zoomée sur la dernière pièce",
   "Pièces : un petit jeu (jusqu'à 10 cm) entre le bout d'une cloison et le mur voisin n'empêche plus la séparation des pièces",
   "Porte intérieure : la mesure du corps du cadre ignore maintenant les éléments plus étroits que le vantail (poignée, panneaux),…",
-  "Porte intérieure : traces détaillées de la mesure du cadre dans le journal des ouvertures, pour comprendre pourquoi la…",
-  "… et 105 autres nouveautés plus anciennes."
+  "… et 106 autres nouveautés plus anciennes."
  ]
 }

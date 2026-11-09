@@ -209,12 +209,16 @@ module A2M
       return nil if tr.size < 2
       lmax = tr.map { |x| x[0] }.max
       hmax = tr.map { |x| x[1] }.max
-      corps = tr.select { |x| x[0] < lmax - 0.5 }
-      corps = tr if corps.empty?
-      lc = corps.map { |x| x[0] }.max
-      sel = corps.select { |x| x[0] >= lc - 0.05 }
-      hc = sel.map { |x| x[1] }.min
-      [lc, hc, lmax, hmax, (sel.map { |x| x[2] }.min + sel.map { |x| x[3] }.max) / 2.0]
+      # Classes de largeur (à 0,05 cm près) : le corps du cadre est la classe la plus épaisse (somme des épaisseurs) parmi celles
+      # nettement plus étroites que les ailes ; en cas d'égalité, la plus large
+      classes = tr.group_by { |x| (x[0] / 0.1).round }.map do |_k, v|
+        { l: v.map { |x| x[0] }.max, ep: v.sum { |x| x[3] - x[2] }, y0: v.map { |x| x[2] }.min, y1: v.map { |x| x[3] }.max, h: v.map { |x| x[1] }.min }
+      end
+      A2M::Suivi.journal('cadre classes : ' + classes.map { |c| "l=#{c[:l].round(1)} ep=#{c[:ep].round(1)} y=#{c[:y0].round(1)}..#{c[:y1].round(1)} h=#{c[:h].round(1)}" }.join(' | ')) rescue nil
+      corps = classes.select { |c| c[:l] < lmax - 0.5 }
+      corps = classes if corps.empty?
+      b = corps.max_by { |c| [c[:ep].round(1), c[:l]] }
+      [b[:l], b[:h], lmax, hmax, (b[:y0] + b[:y1]) / 2.0]
     rescue StandardError
       nil
     end
