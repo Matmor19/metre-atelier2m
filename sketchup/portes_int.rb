@@ -918,5 +918,8 @@ end
 if !$a2m_entretien_portes
   $a2m_entretien_portes = true
   UI.menu('Extensions').add_item('Métré A2M (provisoire) : relevé des portes Chauvat') { A2M::EntretienPortes.releve }
+end
+if !$a2m_entretien_portes_refonte
+  $a2m_entretien_portes_refonte = true
   UI.menu('Extensions').add_item('Métré A2M (provisoire) : refaire les portes 63 et 83 depuis la 73') { A2M::EntretienPortes.refaire_63_83 }
 end
