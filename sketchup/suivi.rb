@@ -374,11 +374,16 @@ module A2M
         att = A2M::Ouvertures.attributs(g)
         autres = A2M::Ouvertures.autres_dicts(g)
         nom = g.name; tag = g.layer; mat = g.material
-        res = g.union(bloc)
-        unless res
-          journal("  rebouchage impossible dans « #{g.name} » (mur non solide ?)")
+        unless g.manifold? && bloc.valid? && bloc.manifold?
+          journal("  rebouchage ignoré dans « #{nom} » (mur ou bouchon non solide)")
           bloc.erase! if bloc.valid?
-          raise "le mur « #{g.name} » n'a pas pu être rebouché"
+          next
+        end
+        res = g.union(bloc)
+        unless res && res.valid?
+          journal("  rebouchage impossible dans « #{nom} » (union refusée)")
+          bloc.erase! if bloc.valid?
+          next
         end
         journal("  rebouché : « #{nom} »")
         res.name = nom; res.layer = tag; res.material = mat if mat

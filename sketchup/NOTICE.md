@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.41)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.42)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au lieu de provoquer une erreur « reference to deleted Group » qui pouvait déstabiliser SketchUp
 - Niveaux : « Caler le zéro sur un point cliqué » ne casse plus les murs percés (des bouchons apparaissaient au-dessus des portes). Le suivi des ouvertures est suspendu pendant le déplacement et leurs altitudes mémorisées sont décalées du même montant
 - Bibliothèque : bouton « Vignette (vue actuelle) ». Pose l'objet dans le modèle, règle ta vue, sélectionne-le, clique le bouton : la vignette de la bibliothèque est refaite avec cette vue (objet isolé, fond transparent) puis le modèle est remis comme avant
 - Fenêtre de la bibliothèque : les réglages de l'image 2D sont repliés (un clic pour les ouvrir), ce qui laisse plus de place aux vignettes
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens
 - Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé
 - Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré), comme la palette ; la palette et la recherche de mise à jour restent en haut et en bas (visible au prochain démarrage de SketchUp)
-- Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du corps du cadre (et non de la boîte englobante, poignée comprise) : la porte reste centrée dans la cloison

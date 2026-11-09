@@ -1,12 +1,12 @@
 {
- "version": "2.97.41",
+ "version": "2.97.42",
  "notes": [
+  "Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au…",
   "Niveaux : « Caler le zéro sur un point cliqué » ne casse plus les murs percés (des bouchons apparaissaient au-dessus des portes).…",
   "Bibliothèque : bouton « Vignette (vue actuelle) ». Pose l'objet dans le modèle, règle ta vue, sélectionne-le, clique le bouton :…",
   "Fenêtre de la bibliothèque : les réglages de l'image 2D sont repliés (un clic pour les ouvrir), ce qui laisse plus de place aux…",
   "Bibliothèque : portes triées dans l'ordre naturel (63, 73, 83, 93, 103), vignettes plus grandes et alignées en rangées régulières…",
   "Rangement d'un objet dans la bibliothèque : un composant dynamique (ex. panneau de porte qui s'ouvre au clic) n'est plus éclaté à…",
-  "Bibliothèque : un objet enregistré à nouveau (ex. une porte rendue dynamique) est rechargé à la pose au lieu de réutiliser son…",
-  "… et 131 autres nouveautés plus anciennes."
+  "… et 132 autres nouveautés plus anciennes."
  ]
 }
