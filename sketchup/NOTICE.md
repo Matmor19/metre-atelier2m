@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.7)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.8)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -271,6 +271,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Pièces automatiques : à la fin, la vue revient sur l'ensemble du modèle au lieu de rester zoomée sur la dernière pièce
 - Pièces : un petit jeu (jusqu'à 10 cm) entre le bout d'une cloison et le mur voisin n'empêche plus la séparation des pièces
 - Porte intérieure : la mesure du corps du cadre ignore maintenant les éléments plus étroits que le vantail (poignée, panneaux), qui faussaient le résultat
 - Porte intérieure : traces détaillées de la mesure du cadre dans le journal des ouvertures, pour comprendre pourquoi la réservation reste à la taille hors-tout
@@ -290,4 +291,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Palette : ton logo en en-tête ; nouveaux pictogrammes plus distincts (mur, modifier un mur, contrôler un objet, palette, styles, compositions) ; boutons en double retirés de la palette (contrôle du modèle = tableau de bord, textures A2M_ automatiques = fenêtre Textures, extraire = envoyer au métré, baliser les pièces = pièce en un clic), toujours disponibles dans le menu Extensions
 - Textures : chaque texture de « Mes textures » a une liste « Ranger dans » pour la mettre dans la catégorie de ton choix (Enduits, Isolants…) ; elle y apparaît aussitôt. À l'enregistrement d'une nouvelle texture A2M_, la catégorie est proposée. Miniatures de tes textures corrigées
 - Modifier un mur : nouveau bouton « Modifier le tracé… » (déplacer un point du tracé, ajouter un point en cliquant un tronçon, retirer un point avec Suppr) ; le mur est refait à chaque geste
-- Le module de mise à jour se recharge lui-même : une correction de la mise à jour n'exige plus de redémarrer SketchUp

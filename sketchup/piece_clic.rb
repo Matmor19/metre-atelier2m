@@ -430,6 +430,7 @@ module A2M
         i += 1
         if i >= liste.size
           model.select_tool(nil)
+          (model.active_view.zoom_extents rescue nil)
           if @etat && @etat['scenes']
             A2M::Vues.creer(%w[plan persp], { 'aretes' => true, 'ombres' => false, 'style' => 'reel' }) rescue nil
           end
