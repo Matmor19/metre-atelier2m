@@ -63,6 +63,8 @@ module A2M
       rendre();
     JS
 
+    class << self; attr_reader :dernier_g, :posts; end
+
     def self.nombre(v, d) (Float(v.to_s.tr(',', '.')) rescue d) end
 
     # Barre pleine entre a et b : section l (largeur horizontale) × h, centrée sur l'axe a-b
@@ -101,6 +103,8 @@ module A2M
     # Pose le garde-corps le long d'une polyligne de points 3D (le dessus de la main courante suit le tracé + hauteur)
     def self.poser_chemin(model, pts, r)
       cle = r['r']; hauteur = nombre(r['haut'], 100).cm; ent = nombre(r['ent'], 120).cm
+      pot = nombre(r['pot'], 4).cm; esp = [nombre(r['esp'], 10), 3].max.cm; bas = nombre(r['bas'], 8).cm; pas_c = [nombre(r['pas'], 10), 3].max.cm; nl = [nombre(r['nl'], 3).to_i, 1].max
+      @dernier_g = nil; @posts ||= []
       couleur = MATIERES[r['mat']] || MATIERES['Métal noir']
       tag, _ = A2M::Balises.balise(model, TAG, [60, 60, 66])
       g = model.entities.add_group
@@ -117,34 +121,52 @@ module A2M
         pas = l / n
         dir = b - a; dir.normalize!
         # poteaux
-        (0..n).each { |k| p = a.offset(dir, pas * k); barre(e, p.offset(Z_AXIS, 0), p.offset(Z_AXIS, hauteur), 4.cm, 4.cm, couleur) if k < n || i == pts.size - 2 }
+        (0..n).each { |k| p = a.offset(dir, pas * k); next unless k < n || i == pts.size - 2; barre(e, p.offset(Z_AXIS, 0), p.offset(Z_AXIS, hauteur), pot, pot, couleur); @posts << p }
         # main courante sur le dessus
         ha = a.offset(Z_AXIS, hauteur); hb = b.offset(Z_AXIS, hauteur)
         barre(e, ha, hb, 5.cm, 4.cm, couleur)
         case cle
         when 'barreaux'
-          nb = (l / 10.cm).floor
+          nb = (l / esp).floor
           (1..nb).each do |k|
             p = a.offset(dir, l * k / (nb + 1.0))
-            barre(e, p.offset(Z_AXIS, 8.cm), p.offset(Z_AXIS, hauteur - 2.cm), 1.4.cm, 1.4.cm, couleur)
+            barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 1.4.cm, 1.4.cm, couleur)
           end
-          barre(e, a.offset(Z_AXIS, 8.cm), b.offset(Z_AXIS, 8.cm), 3.cm, 2.cm, couleur)
+          barre(e, a.offset(Z_AXIS, bas), b.offset(Z_AXIS, bas), 3.cm, 2.cm, couleur)
         when 'cables'
           z = 12.cm
           while z < hauteur - 4.cm
-            barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.6.cm, 0.6.cm, MATIERES['Inox']); z += 10.cm
+            barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.6.cm, 0.6.cm, MATIERES['Inox']); z += pas_c
           end
         when 'verre'
-          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, [p.z, q.z].min + 8.cm, [p.z, q.z].max + hauteur - 4.cm, 1.cm, [170, 205, 225]) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 4.cm, 1.cm, [170, 205, 225]) }
         when 'lisses'
-          [0.25, 0.5, 0.75].each { |t| barre(e, a.offset(Z_AXIS, hauteur * t), b.offset(Z_AXIS, hauteur * t), 4.cm, 2.cm, couleur) }
+          (1..nl).map { |i| i / (nl + 1.0) }.each { |t| barre(e, a.offset(Z_AXIS, hauteur * t), b.offset(Z_AXIS, hauteur * t), 4.cm, 2.cm, couleur) }
         when 'plein'
-          (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, [p.z, q.z].min + 8.cm, [p.z, q.z].max + hauteur - 6.cm, 2.cm, [190, 150, 100]) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 6.cm, 2.cm, [190, 150, 100]) }
         end
       end
       A2M::Modif.noter(g, 'garde_corps', { 'r' => r.reject { |k, _| k == 'replacer' }, 'pts' => A2M::Modif.pts_vers(pts) })
       g.set_attribute('a2m', 'garde_corps', JSON.generate('type' => cle, 'ml' => (ml.to_f * 0.0254).round(2), 'hauteur' => (hauteur.to_f * 2.54).round(0)))
+      @dernier_g = g
       ml * 0.0254
+    end
+
+    # Refait le garde-corps sur ces chemins (fenêtre à réglages en direct) ; retourne [groupes, ml]
+    def self.refaire(chs, r, anciens, transparent)
+      model = Sketchup.active_model
+      model.start_operation('Garde-corps', true, false, transparent)
+      begin
+        anciens.each { |g| g.erase! if g && g.valid? }
+        @posts = []
+        gs = []; ml = 0.0
+        chs.each { |c| ml += poser_chemin(model, c, r); gs << @dernier_g }
+        model.commit_operation
+        [gs, ml]
+      rescue StandardError
+        model.abort_operation
+        raise
+      end
     end
 
     # Chaînes de points à partir des arêtes sélectionnées (bout à bout)
