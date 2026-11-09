@@ -273,9 +273,14 @@ module A2M
         @ip.pick(v, x, y)
         return unless @ip.valid?
         z = @ip.position.z
+        dlg = @dlg
         Sketchup.active_model.select_tool(nil)
-        ok = Niveaux.caler(z)
-        (@dlg.execute_script("msg(#{JSON.generate(ok ? 'Zéro recalé : le modèle a été déplacé.' : 'Zéro inchangé.')})") rescue nil)
+        # Le déplacement du modèle est fait APRÈS la fin du clic et la fermeture de l'outil (modifier tout le modèle depuis
+        # l'intérieur d'un événement de l'outil qu'on désactive fait planter SketchUp).
+        UI.start_timer(0.15, false) do
+          ok = Niveaux.caler(z)
+          (dlg.execute_script("msg(#{JSON.generate(ok ? 'Zéro recalé : le modèle a été déplacé.' : 'Zéro inchangé.')})") rescue nil)
+        end
       end
 
       def onCancel(_r, _v)
