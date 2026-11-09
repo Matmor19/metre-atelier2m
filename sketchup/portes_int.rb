@@ -207,7 +207,9 @@ module A2M
 
     # Réservation = corps du cadre quand la porte a des ailes de recouvrement (sinon le vantail + jeu saisi, comme avant)
     def self.mesurer_cadre(p)
-      obj = p[:obj] or return
+      obj = p[:obj]
+      A2M::Suivi.journal("cadre : obj=#{obj ? obj['nom'] : 'aucun'} mode=#{obj && obj['mode']} vl0=#{obj && obj['vl0']} vl=#{p[:vl]} vh=#{p[:vh]}")
+      return unless obj
       return unless obj['mode'] == 'dynamique' || obj['vl0']
       model = Sketchup.active_model
       model.start_operation('Mesure du cadre', true)
@@ -215,6 +217,7 @@ module A2M
         a, c = cotes(obj, p)
         r = A2M::Bibliotheque.instance_pour(model.active_entities, obj, a, c, ORIGIN, X_AXIS, Y_AXIS, ->(_e) { 0 }, model, p[:opts], false)
         m = r && corps_cadre(r)
+        A2M::Suivi.journal("cadre : instance=#{r ? 'ok' : 'nil'} mesure=#{m ? m.map { |q| q.round(1) }.inspect : 'nil'}")
         if m && m[0] >= p[:vl] + 0.3 && m[2] - m[0] >= 0.3
           p[:l] = m[0].round(1)
           h = m[1] >= p[:vh] && m[3] - m[1] >= 0.3 ? m[1].round(1) : nil
@@ -222,7 +225,8 @@ module A2M
           p[:lin] = p[:h]
           p[:note_cadre] = "réservation prise sur le corps du cadre (#{p[:l]} × #{p[:h].round(1)} cm), ailes de recouvrement exclues (hors-tout #{m[2].round(1)} × #{m[3].round(1)})"
         end
-      rescue StandardError
+      rescue StandardError => ex
+        A2M::Suivi.journal("cadre : ERREUR #{ex.message} #{ex.backtrace.first}")
         nil
       ensure
         model.abort_operation

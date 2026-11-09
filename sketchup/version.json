@@ -1,12 +1,12 @@
 {
- "version": "2.97.4",
+ "version": "2.97.5",
  "notes": [
+  "Porte intérieure : traces détaillées de la mesure du cadre dans le journal des ouvertures, pour comprendre pourquoi la…",
   "Pièces : si une pièce existe déjà à cet endroit, l'outil (clic ou Pièces automatiques) ouvre « Modifier » et met à jour son…",
   "Porte supprimée : le rebouchage de la cloison est plus robuste (il retrouve le mur même si sa liste de trous est perdue) et, s'il…",
   "Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans…",
   "Fusion des cloisons plus tolérante : une cloison qui s'arrête contre la face d'une autre (et non sur son axe) est maintenant…",
   "Murs et cloisons : flèche HAUT (ou clic droit > « Partir d'un repère ») pendant le tracé (la touche R est prise par SketchUp) = «…",
-  "Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la…",
-  "… et 99 autres nouveautés plus anciennes."
+  "… et 100 autres nouveautés plus anciennes."
  ]
 }
