@@ -386,11 +386,35 @@ module A2M
       [res]
     end
 
+    # Deux réglages sont équivalents s'ils sont identiques, ou s'ils ne diffèrent que par le côté (0 = couches à droite du tracé,
+    # 1 = à gauche) pour une composition symétrique (plaque + cloison + plaque) : l'empreinte est alors la même, au décalage du tracé près
+    def self.meme_reglage?(a, b)
+      return true if a == b
+      return false unless a['compose'] && b['compose']
+      return false unless a.reject { |k, _| k == 'cote' } == b.reject { |k, _| k == 'cote' }
+      return false unless [a['cote'].to_i, b['cote'].to_i].all? { |c| c == 0 || c == 1 }
+      a['couches'] == a['couches'].reverse
+    end
+
+    # Copie du mur x exprimée avec les réglages (côté) de la cible : son tracé est décalé de façon que l'empreinte ne bouge pas
+    def self.aligne(x, cible_j)
+      return x if x[:j] == cible_j || x[:j]['cote'].to_i == cible_j['cote'].to_i
+      j = x[:j]
+      t = epaisseur_po(x)
+      avant = j['couches'][0...j['ref'].to_i].sum { |c| (c[1].to_f / 100.0).m }
+      delta = (t - 2 * avant) * (j['cote'].to_i == 1 ? 1.0 : -1.0)
+      ch = chemins_de(x).map do |cp, cf|
+        z = cp[0].z
+        [decale(cp, delta, cf).map { |px, py| Geom::Point3d.new(px, py, z) }, cf]
+      end
+      x.merge(chemins: ch, pts: ch[0][0], ferme: ch[0][1])
+    end
+
     # Cloison qui vient d'être dessinée : elle absorbe les cloisons reliées de même réglage (leurs tracés sont gardés)
     def self.fusionner(id)
       murs = murs_du_modele
       nv = murs[id] or return 0
-      voisins = murs.values.select { |m| m[:id] != id && m[:j] == nv[:j] && relies_large?(nv, m) }
+      voisins = murs.values.select { |m| m[:id] != id && meme_reglage?(m[:j], nv[:j]) && relies_large?(nv, aligne(m, nv[:j])) }.map { |m| aligne(m, nv[:j]) }
       return 0 if voisins.empty?
       tout = { id: id, groupes: nv[:groupes] + voisins.flat_map { |m| m[:groupes] }, j: nv[:j],
                chemins: chemins_de(nv) + voisins.flat_map { |m| chemins_de(m) } }
@@ -408,9 +432,9 @@ module A2M
       lignes = []
       cand.combination(2).each do |a, b|
         next unless relies_large?(a, b, 12.0)   # à moins de ~30 cm l'une de l'autre
-        if a[:j] != b[:j]
+        if !meme_reglage?(a[:j], b[:j])
           lignes << "• Réglages différents : [#{resume_j(a[:j])}] / [#{resume_j(b[:j])}]"
-        elsif !relies_large?(a, b)
+        elsif !relies_large?(a, aligne(b, a[:j]))
           lignes << '• Réglage identique mais trop éloignées (écart de plus de ~5 cm à la face)'
         end
       end
@@ -454,8 +478,10 @@ module A2M
           until file.empty?
             c = file.shift
             cand.each do |x|
-              next if vus[x[:id]] || x[:j] != dep[:j] || !relies_large?(c, x)
-              vus[x[:id]] = true; fam << x; file << x
+              next if vus[x[:id]] || !meme_reglage?(x[:j], dep[:j])
+              xa = aligne(x, dep[:j])
+              next unless relies_large?(c, xa)
+              vus[x[:id]] = true; fam << xa; file << xa
             end
           end
           next if fam.size < 2
