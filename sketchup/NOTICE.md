@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.94.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.95.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -90,6 +90,7 @@ Cloison à vos couches : plaque + ossature (rail, montant) + plaque, par exemple
 - Le tracé suit par défaut l'axe de la couche choisie (la Tab change de côté). Cliquez les points puis Entrée.
 - Chaque couche est sur sa balise : plaques = A2M_DOUBLAGE, ossature = A2M_CLOISON.
 - Les cloisons composées reliées fusionnent entre elles ; tout se rouvre avec « Modifier ce que j'ai dessiné ».
+- Placer un point à une distance d'un repère : pendant le tracé, appuyez sur R, cliquez le point de référence, visez la direction (flèche droite = axe rouge, flèche gauche = axe vert), tapez la distance puis Entrée. Le point est posé là (premier point compris). Échap annule le repère. Pareil avec l'outil mur.
 
 ### Dalle, chape, plafond depuis les murs
 Sélectionnez les murs : dalle béton sous l'emprise, isolant, chape et plafond dans chaque pièce fermée, posés d'un coup avec leurs épaisseurs
@@ -270,6 +271,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Murs et cloisons : touche R pendant le tracé = « partir d'un repère ». Vous cliquez un point de référence (accrochages SketchUp), visez la direction (flèche droite = axe rouge, flèche gauche = axe vert, ou à la souris), tapez la distance puis Entrée : le point du tracé est posé à cette distance du repère. Marche pour le premier point comme pour les suivants ; Échap annule le repère
 - Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la sélection, ou toutes si rien n'est sélectionné), reprend les anciennes cloisons droites, garde les tracés en mémoire et vous dit clairement si SketchUp refuse l'union. La fusion automatique ne s'appliquait qu'aux cloisons dessinées après la 2.89 et de réglage strictement identique
 - Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons : jusqu'à 5 couches de votre choix. Par défaut plaque 13 mm + ossature 48 mm (rail et montant) + plaque 13 mm = 74 mm, tracée dans son axe. Les cloisons composées qui se touchent fusionnent comme les autres cloisons, et se modifient avec « Modifier ce que j'ai dessiné »
 - Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture, toujours dans le menu Extensions) : cliquez un mur, une toiture, une ouverture, un sol ou plafond, un escalier, un garde-corps, la couverture, la charpente, la zinguerie ou des semelles → l'outil se rouvre avec ses réglages. Sols et plafonds dessinés : les points du contour se déplacent. Escalier et garde-corps : on peut les replacer. Les objets créés avant cette version doivent être refaits une fois. Planelles : pas de modification (voir la notice)
@@ -289,4 +291,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Mur composé et « Modifier un mur » : nouvelle colonne « descend plus bas (cm) » par couche, pour que l'enduit (ou une autre couche) descende sous le pied du mur périphérique
 - Nouvel outil « Modifier un mur » : cliquez un mur dessiné (ou clic droit > Atelier 2M : modifier ce mur) pour rouvrir ses couches, la couche d'insertion et le côté, puis appliquez à ce mur ou à tous les murs reliés de même composition (les murs déjà dessinés doivent être retracés une fois)
 - Mise à jour sans redémarrer SketchUp : la nouvelle version est chargée tout de suite après l'installation (seuls les nouveaux boutons ou menus demandent encore un redémarrage)
-- Hachures de coupe : les réglages (couleurs, opacité, épaisseur, taille, déplacement) s'appliquent maintenant tout de suite dans SketchUp, sans cliquer « Appliquer » ; curseurs de déplacement plus fins (0,05 cm)

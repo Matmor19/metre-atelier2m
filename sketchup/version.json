@@ -1,12 +1,12 @@
 {
- "version": "2.94.0",
+ "version": "2.95.0",
  "notes": [
+  "Murs et cloisons : touche R pendant le tracé = « partir d'un repère ». Vous cliquez un point de référence (accrochages SketchUp),…",
   "Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la…",
   "Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons :…",
   "Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture,…",
   "Modifier une ouverture : nouvel outil (palette Ouvertures, menu Extensions, clic droit sur la menuiserie). Largeur, hauteur,…",
   "Modifier la toiture : nouvel outil (palette, menu Extensions, clic droit sur la toiture). Il rouvre les réglages (type, pente,…",
-  "Cloisons : quand tu dessines une cloison qui touche une autre cloison de même réglage, elles fusionnent automatiquement en un…",
-  "… et 94 autres nouveautés plus anciennes."
+  "… et 95 autres nouveautés plus anciennes."
  ]
 }

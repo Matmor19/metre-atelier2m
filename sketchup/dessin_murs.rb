@@ -898,7 +898,7 @@ module A2M
     # ---- L'outil : clics successifs ; Entrée ou double-clic termine ; clic sur le premier point ferme le tour ----
     class Outil
       def initialize(p)
-        @p = p; @pts = []; @pt = A2M::Pointeur.new
+        @p = p; @pts = []; @pt = A2M::Pointeur.new; @rep = nil; @rep_att = false
       end
 
       def activate
@@ -908,7 +908,7 @@ module A2M
       def maj_statut
         lib = @p[:couches] ? "Mur composé (#{@p[:couches].map { |c| c[:e] }.join(' + ')} cm)" : "#{@p[:type][0]} — h #{@p[:h]} m, ép. #{@p[:e]} cm"
         Sketchup.status_text = "#{lib}, #{A2M::DessinMurs.lib_cote(@p).downcase} (Tab pour changer). Cliquez les points du tracé (accrochages SketchUp) ; tapez une longueur puis Entrée ; " \
-                               'Ctrl ou clic droit = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
+                               'R = partir d\'un repère (point + direction + distance) ; Ctrl ou clic droit = axes verrouillés ou tracé libre, Maj = bloquer la direction, flèche droite = axe rouge, flèche gauche = axe vert ; clic sur le 1er point (carré vert) pour fermer ; double-clic ou Entrée pour finir ; Échap pour annuler.'
         Sketchup.vcb_label = 'Longueur'
       end
 
@@ -916,8 +916,13 @@ module A2M
       def resume(view) maj_statut; view.invalidate end
 
       def onMouseMove(_flags, x, y, view)
-        q = @pt.bouger(view, x, y, @pts)
-        Sketchup.vcb_value = @pts[-1].distance(q).to_l.to_s if @pts.any?
+        if @rep_att
+          @pt.bouger(view, x, y, [])
+          return view.invalidate
+        end
+        base = @rep ? [@rep] : @pts
+        q = @pt.bouger(view, x, y, base)
+        Sketchup.vcb_value = base[-1].distance(q).to_l.to_s if base.any?
         view.invalidate
       end
 
@@ -929,7 +934,13 @@ module A2M
           view.invalidate
           return true
         end
-        @pt.touche_bas(key, rpt, view, @pts)
+        if key == 'R'.ord && !@rep && !@rep_att
+          return true if rpt > 1
+          @rep_att = true
+          Sketchup.status_text = 'Repère : cliquez le point de référence (accrochages SketchUp), puis visez la direction et tapez la distance, Entrée. Échap pour annuler.'
+          return true
+        end
+        @pt.touche_bas(key, rpt, view, @rep ? [@rep] : @pts)
       end
       def onKeyUp(key, _rpt, _flags, view) @pt.touche_haut(key, view) end
       def getMenu(menu) @pt.menu(menu) end
@@ -947,6 +958,18 @@ module A2M
       end
 
       def onLButtonDown(_flags, _x, _y, view)
+        if @rep_att
+          @pt.bouger(view, _x, _y, []) 
+          q = @pt.pos || @pt.ip.position
+          @rep = Geom::Point3d.new(q.x, q.y, @pts.empty? ? q.z : @pts[0].z)
+          @rep_att = false
+          @pt.valider
+          Sketchup.vcb_label = 'Distance'
+          Sketchup.status_text = 'Repère posé. Visez la direction (flèche droite = axe rouge, flèche gauche = axe vert, ou Maj pour la bloquer), tapez la distance puis Entrée. Échap pour annuler le repère.'
+          view.invalidate
+          return
+        end
+        return UI.beep if @rep
         ajouter(@pt.pos || @pt.ip.position, view, @pt.ferme?)
       end
 
@@ -958,6 +981,20 @@ module A2M
 
       def onUserText(text, view)
         l = text.to_l rescue nil
+        if @rep
+          return UI.beep unless l && @pt.pos
+          dir = @pt.pos - @rep
+          return UI.beep if dir.length < 0.001
+          dir.length = l
+          q = @rep.offset(dir)
+          @rep = nil
+          @pt.vider(view)
+          Sketchup.vcb_label = 'Longueur'
+          ajouter(q, view)
+          maj_statut
+          return
+        end
+        return UI.beep if @rep_att
         return UI.beep unless l && @pts.any? && @pt.pos
         dir = @pt.pos - @pts[-1]
         return UI.beep if dir.length < 0.001
@@ -977,10 +1014,25 @@ module A2M
       end
 
       def onCancel(_reason, view)
+        if @rep || @rep_att
+          @rep = nil; @rep_att = false; @pt.vider(view); maj_statut; view.invalidate
+          return
+        end
         @pts.empty? ? Sketchup.active_model.select_tool(nil) : reset(view)
       end
 
       def draw(view)
+        if @rep
+          @pt.dessiner(view, [@rep], 'orange')
+          if @pt.pos
+            view.line_width = 1; view.drawing_color = 'orange'
+            view.line_stipple = '-'
+            view.draw(GL_LINES, [@rep, @pt.pos])
+            view.line_stipple = ''
+          end
+          view.draw_points([@rep], 9, 2, 'orange') rescue nil
+          return
+        end
         @pt.dessiner(view, @pts, 'orange')
         # Côté en cours, écrit près du curseur
         if @pt.pos
@@ -1009,6 +1061,7 @@ module A2M
         bb = Geom::BoundingBox.new
         @pts.each { |q| bb.add(q) }
         bb.add(@pt.pos) if @pt.pos
+        bb.add(@rep) if @rep
         bb
       end
     end
