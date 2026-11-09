@@ -209,7 +209,7 @@ module A2M
       grandes = py.select { |f| f[1] >= wmax - 3.0 }
       y0 = grandes.map { |f| f[0] }.min; y1 = grandes.map { |f| f[0] }.max
       return nil if xmax - xmin < 30 || y1 - y0 < 1
-      { l: xmax - xmin, h: hmax, xc: (xmin + xmax) / 2.0, yc: (y0 + y1) / 2.0, tot_l: wmax, tot_h: py.map { |f| f[2] }.max }
+      { l: xmax - xmin, h: hmax, xc: (xmin + xmax) / 2.0, yc: (y0 + y1) / 2.0, y0: y0, y1: y1, tot_l: wmax, tot_h: py.map { |f| f[2] }.max }
     rescue StandardError
       nil
     end
@@ -371,9 +371,46 @@ module A2M
       t = Geom::Transformation.translation(Geom::Vector3d.new(-xm, -ym, -bv.min.z))
       # Repère commun : côté regardé à la paramétrisation vers -Y (celui qui pousse)
       t = Geom::Transformation.rotation(ORIGIN, Z_AXIS, Math::PI) * t if (obj && obj['ext_y']) == 'max'
-      t = Geom::Transformation.scaling(-1, 1, 1) * t if obj && (obj['paumelles'] || 'droite') != paumelles
-      x = Z_AXIS.cross(v_pousse).normalize
+      x = Z_AXIS.cross(v_pousse).normalize                 # la droite de celui qui pousse
+      # Charnière : mesurée sur la géométrie. La poignée est à l'extrémité libre du vantail, donc à l'opposé de la charnière :
+      # charnière à droite (vue du côté poussant) = poignée à gauche. Si la poignée n'est pas trouvée, on se fie au réglage mémorisé.
+      hx = (cf && cf[:y1]) ? poignee_x(defn, cf, Geom::Transformation.axes(base, x, v_pousse.reverse, Z_AXIS) * t, base, x) : nil
+      if hx
+        mir = (hx > 0) == (paumelles == 'droite')
+      else
+        mir = obj && (obj['paumelles'] || 'droite') != paumelles
+      end
+      A2M::Suivi.journal("porte : poignée #{hx ? (hx > 0 ? 'à droite' : 'à gauche') : 'non trouvée'} (vue du côté poussant), charnière voulue #{paumelles}, miroir #{mir ? 'oui' : 'non'}") rescue nil
+      t = Geom::Transformation.scaling(-1, 1, 1) * t if mir
       Geom::Transformation.axes(base, x, v_pousse.reverse, Z_AXIS) * t
+    end
+
+    # Position moyenne (pouces) de la poignée par rapport au plan milieu, le long de x (droite de celui qui pousse) ; nil si introuvable
+    # Poignée = petites faces (moins de 15 cm de large) situées au-delà de l'épaisseur du cadre, d'un côté ou de l'autre
+    def self.poignee_x(defn, cf, m0, base, x)
+      xs = []
+      marge = 1.0 / 2.54
+      y0 = cf[:y0] / 2.54; y1 = cf[:y1] / 2.54
+      rec = lambda do |ents, tn|
+        ents.each do |e|
+          if e.is_a?(Sketchup::Face)
+            pts = e.vertices.map { |v| tn * v.position }
+            dx = pts.map(&:x).max - pts.map(&:x).min
+            ym = pts.map(&:y).sum / pts.size
+            next unless dx * 2.54 < 15 && (ym > y1 + marge || ym < y0 - marge)
+            c = Geom::Point3d.new(pts.map(&:x).sum / pts.size, ym, pts.map(&:z).sum / pts.size)
+            xs << (m0 * c - base).dot(x).to_f
+          elsif e.is_a?(Sketchup::Group) then rec.call(e.entities, tn * e.transformation)
+          elsif e.is_a?(Sketchup::ComponentInstance) then rec.call(e.definition.entities, tn * e.transformation)
+          end
+        end
+      end
+      rec.call(defn.entities, Geom::Transformation.new)
+      return nil if xs.size < 3
+      moy = xs.sum / xs.size
+      moy.abs * 2.54 < 2.0 ? nil : moy     # moins de 2 cm d'écart : pas fiable
+    rescue StandardError
+      nil
     end
 
     # Cotes données à l'objet : composant dynamique = son vantail ; objet étiré = sa taille + l'écart de vantail

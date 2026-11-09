@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.22)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.23)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé
 - Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré), comme la palette ; la palette et la recherche de mise à jour restent en haut et en bas (visible au prochain démarrage de SketchUp)
 - Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du corps du cadre (et non de la boîte englobante, poignée comprise) : la porte reste centrée dans la cloison
 - Fusion des cloisons : deux cloisons qui ne diffèrent que par le côté du tracé (couches à droite ou à gauche) se fusionnent maintenant quand leur composition est symétrique (plaque + cloison + plaque) : leur emplacement ne bouge pas
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Porte intérieure de la bibliothèque : la réservation percée dans la cloison est maintenant le CORPS du cadre (ce qui entre dans la cloison), sans les ailes de recouvrement qui viennent sur les plaques de chaque côté. L'outil mesure la porte choisie ; si elle n'a pas d'ailes, la réservation reste le vantail + le jeu saisi comme avant
 - Fusion des cloisons plus tolérante : une cloison qui s'arrête contre la face d'une autre (et non sur son axe) est maintenant reconnue comme reliée. Si rien ne fusionne, le message explique pourquoi (réglages différents avec le détail, ou cloisons trop éloignées)
 - Murs et cloisons : flèche HAUT (ou clic droit > « Partir d'un repère ») pendant le tracé (la touche R est prise par SketchUp) = « partir d'un repère ». Vous cliquez un point de référence (accrochages SketchUp), visez la direction (flèche droite = axe rouge, flèche gauche = axe vert, ou à la souris), tapez la distance puis Entrée : le point du tracé est posé à cette distance du repère. Marche pour le premier point comme pour les suivants ; Échap annule le repère
-- Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la sélection, ou toutes si rien n'est sélectionné), reprend les anciennes cloisons droites, garde les tracés en mémoire et vous dit clairement si SketchUp refuse l'union. La fusion automatique ne s'appliquait qu'aux cloisons dessinées après la 2.89 et de réglage strictement identique

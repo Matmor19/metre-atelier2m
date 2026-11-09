@@ -1,12 +1,12 @@
 {
- "version": "2.97.22",
+ "version": "2.97.23",
  "notes": [
+  "Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à…",
   "Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré),…",
   "Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du…",
   "Fusion des cloisons : deux cloisons qui ne diffèrent que par le côté du tracé (couches à droite ou à gauche) se fusionnent…",
   "Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le…",
   "Porte intérieure : le journal contrôle après chaque pose la position des ailes et du corps du cadre par rapport au plan milieu de…",
-  "Porte intérieure : le cadre est maintenant mesuré sur ses faces exactes : le corps du cadre (ex. 86,1 × 204 cm) est centré dans…",
-  "… et 113 autres nouveautés plus anciennes."
+  "… et 114 autres nouveautés plus anciennes."
  ]
 }
