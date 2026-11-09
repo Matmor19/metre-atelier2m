@@ -49,6 +49,8 @@ module A2M
       ['A2M_ESCALIER',         'Escaliers (groupe)',                               [176, 140, 96]],
       ['A2M_GARDE_CORPS',      'Garde-corps (groupe)',                             [60, 60, 66]],
       ['A2M_CHARPENTE',        'Charpente : chevrons, pannes, liteaux (groupe)',   [200, 160, 110]],
+      ['A2M_FAITAGE_3D',       'Faîtages de toiture (visuel, hors métré)',          [120, 60, 40]],
+      ['A2M_ARETIER_3D',       'Arêtiers de toiture (visuel, hors métré)',          [130, 70, 50]],
       ['A2M_TOITURE_4',        'Toiture 4 : pans (groupe)',                        [210, 120, 100]],
       ['A2M_RIGOLE',           'Fouilles en rigoles (lignes)',                     [120, 80, 40]],
       ['A2M_FAITAGE',          'Faîtage forcé (lignes, facultatif)',               [255, 0, 0]],

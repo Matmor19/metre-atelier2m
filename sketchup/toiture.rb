@@ -157,6 +157,59 @@ module A2M
       end
     end
 
+
+    # ---- Faîtages et arêtiers : visuel seulement (le métré reste au mètre linéaire, il ne les lit pas) ----
+    # Une pièce par arête : faîtage = arête horizontale entre deux pans, arêtier = arête inclinée en saillie.
+    # Les noues (arêtes rentrantes) ne reçoivent rien. Groupes séparés, balises A2M_FAITAGE_3D / A2M_ARETIER_3D.
+    ACC = 'a2m_toiture_acc'
+    FAIT_PROFIL = [[-14, -2], [14, -2], [10, 8], [-10, 8]].freeze   # [écart latéral cm, hauteur cm]
+
+    def self.accessoires(model, toit, polys)
+      cle = ->(q) { [q.x, q.y, q.z].map { |c| (c * 10).round } }
+      aretes = Hash.new { |h, k| h[k] = [] }
+      polys.each_with_index do |pts, pi|
+        pts.each_with_index { |a, i| b = pts[(i + 1) % pts.size]; aretes[[cle.call(a), cle.call(b)].sort] << [a, b, pi] }
+      end
+      nrm = lambda do |pts|
+        n = Geom::Vector3d.new(0, 0, 0)
+        pts.each_with_index { |a, i| b = pts[(i + 1) % pts.size]; n += Geom::Vector3d.new((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)) }
+        n.length > 0 ? n.normalize : n
+      end
+      normales = polys.map { |pts| n = nrm.call(pts); n.z < 0 ? n.reverse : n }
+      centres = polys.map { |pts| Geom::Point3d.new(pts.sum { |q| q.x } / pts.size, pts.sum { |q| q.y } / pts.size, pts.sum { |q| q.z } / pts.size) }
+      pid = toit.persistent_id
+      cree = 0
+      aretes.each_value do |l|
+        next unless l.size == 2
+        a, b, p1 = l[0]; _, _, p2 = l[1]
+        next if p1 == p2 || a.distance(b) < 0.05.m
+        # saillie ? l'autre pan doit être sous le plan du premier
+        next unless (centres[p2] - centres[p1]).dot(normales[p1]) < -1e-6 && (centres[p1] - centres[p2]).dot(normales[p2]) < -1e-6
+        horiz = (a.z - b.z).abs < 0.001.m
+        tag = horiz ? 'A2M_FAITAGE_3D' : 'A2M_ARETIER_3D'
+        d = b - a
+        s = Z_AXIS.cross(d); next if s.length < 1e-9
+        s.normalize!
+        g = model.active_entities.add_group
+        sec = lambda { |o| FAIT_PROFIL.map { |x, z| o.offset(s, x.cm).offset(Z_AXIS, z.cm) } }
+        sa = sec.call(a); sb = sec.call(b)
+        g.entities.add_face(sa); g.entities.add_face(sb)
+        sa.each_index { |i| j = (i + 1) % sa.size; g.entities.add_face(sa[i], sa[j], sb[j], sb[i]) }
+        g.entities.grep(Sketchup::Face).each { |f| c = f.bounds.center; f.reverse! if f.normal.dot(c - Geom::Point3d.new((a.x + b.x) / 2.0, (a.y + b.y) / 2.0, (a.z + b.z) / 2.0 + 0.04.m)) < 0 }
+        lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
+        g.layer = lb
+        g.name = horiz ? 'Faîtage' : 'Arêtier'
+        g.set_attribute(ACC, 'toit', pid)
+        cree += 1
+      end
+      cree
+    end
+
+    def self.effacer_accessoires(model, toit)
+      pid = toit.persistent_id
+      model.active_entities.to_a.each { |e| e.erase! if e.valid? && e.respond_to?(:get_attribute) && e.get_attribute(ACC, 'toit') == pid }
+    end
+
     def self.batir(model, prm, base)
       type, d, ep, num = prm[:type], prm[:d], prm[:ep], prm[:num]
       s = prm[:pente] / 100.0
@@ -193,6 +246,7 @@ module A2M
       grp.name = "Toiture #{num} – #{type} #{prm[:pente].round}%#{ep > 0 ? ", ép. #{ep.round(1)} cm" : ''}"
       grp.set_attribute(ATTR, 'prm', JSON.generate(prm.reject { |k, _| k == :reprendre }.map { |k, v| [k.to_s, v] }.to_h))
       grp.set_attribute(ATTR, 'base', JSON.generate(base))
+      (accessoires(model, grp, polys) rescue nil)
       grp
     end
 
@@ -250,6 +304,7 @@ module A2M
           return UI.messagebox('Ce changement de type demande de reprendre le contour : choisissez « Reprendre sur les murs sélectionnés avec la toiture ».')
         end
         nouvelle = batir(model, nv, base)
+        effacer_accessoires(model, grp)
         grp.erase!
         model.commit_operation
         model.selection.clear

@@ -1,12 +1,12 @@
 {
- "version": "2.97.46",
+ "version": "2.97.47",
  "notes": [
+  "Toiture 3D : faîtages et arêtiers posés automatiquement le long des arêtes entre pans (visuel seulement, pas de tuiles). Balises…",
   "Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)",
   "Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)",
   "Niveaux : « Caler le zéro sur un point cliqué » ne plante plus SketchUp au deuxième recalage. Le déplacement du modèle se fait…",
   "Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au…",
   "Niveaux : « Caler le zéro sur un point cliqué » ne casse plus les murs percés (des bouchons apparaissaient au-dessus des portes).…",
-  "Bibliothèque : bouton « Vignette (vue actuelle) ». Pose l'objet dans le modèle, règle ta vue, sélectionne-le, clique le bouton :…",
-  "… et 135 autres nouveautés plus anciennes."
+  "… et 136 autres nouveautés plus anciennes."
  ]
 }
