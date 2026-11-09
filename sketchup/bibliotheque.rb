@@ -256,6 +256,7 @@ module A2M
     # les petits (poignée, paumelle, crémone, roulette) restent des composants : ils sont seulement déplacés
     def self.ouvrir_sous_composants(ents, l0, h0)
       ents.grep(Sketchup::ComponentInstance).each do |ci|
+        next if dynamique?(ci)   # composant dynamique (ex. panneau de porte qui s'ouvre au clic) : on ne l'éclate pas, il perdrait ses réglages
         b = ci.bounds
         next unless b.width > 0.2 * l0 || b.depth > 0.2 * h0 || b.height > 0.2 * l0
         g = ents.add_group
