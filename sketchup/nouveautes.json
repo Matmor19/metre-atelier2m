@@ -1,4 +1,5 @@
 [
+ "Porte intérieure : la poignée est distinguée des paumelles (la poignée est à un seul endroit, les paumelles sont réparties sur la hauteur du vantail), ce qui corrige la charnière inversée sur certains sens",
  "Porte intérieure : le côté de la charnière est maintenant déduit de la position réelle de la poignée dans l'objet (charnière à droite = poignée à gauche, vu du côté qui pousse), au lieu d'un réglage mémorisé qui pouvait être inversé ; le journal indique ce qui a été trouvé",
  "Menu Extensions > Métré Atelier 2M réorganisé en sous-menus (Préparer, Dessiner, Ouvertures et finitions, Bibliothèque, Métré), comme la palette ; la palette et la recherche de mise à jour restent en haut et en bas (visible au prochain démarrage de SketchUp)",
  "Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du corps du cadre (et non de la boîte englobante, poignée comprise) : la porte reste centrée dans la cloison",

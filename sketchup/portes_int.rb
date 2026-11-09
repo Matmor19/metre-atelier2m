@@ -385,10 +385,12 @@ module A2M
       Geom::Transformation.axes(base, x, v_pousse.reverse, Z_AXIS) * t
     end
 
-    # Position moyenne (pouces) de la poignée par rapport au plan milieu, le long de x (droite de celui qui pousse) ; nil si introuvable
-    # Poignée = petites faces (moins de 15 cm de large) situées au-delà de l'épaisseur du cadre, d'un côté ou de l'autre
+    # Côté de la poignée : position (pouces) le long de x (droite de celui qui pousse) ; nil si introuvable.
+    # On prend les petites faces (moins de 15 cm de large) situées au-delà de l'épaisseur du cadre, on les range à droite ou à gauche
+    # du milieu, et la poignée est le groupe qui s'étale le moins en hauteur (la poignée est à un seul endroit, alors que les
+    # paumelles sont réparties sur toute la hauteur du vantail).
     def self.poignee_x(defn, cf, m0, base, x)
-      xs = []
+      pts_xz = []
       marge = 1.0 / 2.54
       y0 = cf[:y0] / 2.54; y1 = cf[:y1] / 2.54
       rec = lambda do |ents, tn|
@@ -399,16 +401,26 @@ module A2M
             ym = pts.map(&:y).sum / pts.size
             next unless dx * 2.54 < 15 && (ym > y1 + marge || ym < y0 - marge)
             c = Geom::Point3d.new(pts.map(&:x).sum / pts.size, ym, pts.map(&:z).sum / pts.size)
-            xs << (m0 * c - base).dot(x).to_f
+            pts_xz << [(m0 * c - base).dot(x).to_f, c.z.to_f * 2.54]
           elsif e.is_a?(Sketchup::Group) then rec.call(e.entities, tn * e.transformation)
           elsif e.is_a?(Sketchup::ComponentInstance) then rec.call(e.definition.entities, tn * e.transformation)
           end
         end
       end
       rec.call(defn.entities, Geom::Transformation.new)
-      return nil if xs.size < 3
-      moy = xs.sum / xs.size
-      moy.abs * 2.54 < 2.0 ? nil : moy     # moins de 2 cm d'écart : pas fiable
+      dr = pts_xz.select { |px, _| px * 2.54 > 2.0 }
+      ga = pts_xz.select { |px, _| px * 2.54 < -2.0 }
+      etal = ->(g) { g.empty? ? nil : g.map(&:last).max - g.map(&:last).min }
+      er = etal.call(dr); eg = etal.call(ga)
+      A2M::Suivi.journal("porte : poignée, faces à droite #{dr.size} (étalement #{er ? er.round : '-'} cm), à gauche #{ga.size} (étalement #{eg ? eg.round : '-'} cm)") rescue nil
+      choix = if er && eg
+        return nil if (er - eg).abs < 30
+        er < eg ? dr : ga
+      elsif er && er < 40 then dr
+      elsif eg && eg < 40 then ga
+      end
+      return nil if choix.nil? || choix.size < 2
+      choix.sum { |px, _| px } / choix.size
     rescue StandardError
       nil
     end
