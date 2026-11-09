@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.20)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.21)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Porte intérieure : « Charnière gauche ↔ droite » et « Ouvrir de l'autre côté du mur » pivotent maintenant autour du milieu du corps du cadre (et non de la boîte englobante, poignée comprise) : la porte reste centrée dans la cloison
 - Fusion des cloisons : deux cloisons qui ne diffèrent que par le côté du tracé (couches à droite ou à gauche) se fusionnent maintenant quand leur composition est symétrique (plaque + cloison + plaque) : leur emplacement ne bouge pas
 - Nouveau : « Niveaux du bâtiment » : liste de niveaux (code, nom, altitude) avec schéma en coupe, ajout et suppression ; le dessous de la dalle est le zéro, les semelles sont en négatif ; tracé des niveaux dans le modèle et recalage du zéro sur un point cliqué
 - Porte intérieure : le journal contrôle après chaque pose la position des ailes et du corps du cadre par rapport au plan milieu de la cloison
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Murs et cloisons : flèche HAUT (ou clic droit > « Partir d'un repère ») pendant le tracé (la touche R est prise par SketchUp) = « partir d'un repère ». Vous cliquez un point de référence (accrochages SketchUp), visez la direction (flèche droite = axe rouge, flèche gauche = axe vert, ou à la souris), tapez la distance puis Entrée : le point du tracé est posé à cette distance du repère. Marche pour le premier point comme pour les suivants ; Échap annule le repère
 - Nouveau bouton « Fusionner les cloisons » (palette Dessiner) : réunit après coup les cloisons qui se touchent (celles de la sélection, ou toutes si rien n'est sélectionné), reprend les anciennes cloisons droites, garde les tracés en mémoire et vous dit clairement si SketchUp refuse l'union. La fusion automatique ne s'appliquait qu'aux cloisons dessinées après la 2.89 et de réglage strictement identique
 - Cloison composée : nouvel outil « Dessiner une cloison » (palette Dessiner), comme le mur composé mais pour les cloisons : jusqu'à 5 couches de votre choix. Par défaut plaque 13 mm + ossature 48 mm (rail et montant) + plaque 13 mm = 74 mm, tracée dans son axe. Les cloisons composées qui se touchent fusionnent comme les autres cloisons, et se modifient avec « Modifier ce que j'ai dessiné »
-- Bouton unique « Modifier ce que j'ai dessiné » (palette Dessiner, remplace les boutons modifier mur / toiture / ouverture, toujours dans le menu Extensions) : cliquez un mur, une toiture, une ouverture, un sol ou plafond, un escalier, un garde-corps, la couverture, la charpente, la zinguerie ou des semelles → l'outil se rouvre avec ses réglages. Sols et plafonds dessinés : les points du contour se déplacent. Escalier et garde-corps : on peut les replacer. Les objets créés avant cette version doivent être refaits une fois. Planelles : pas de modification (voir la notice)

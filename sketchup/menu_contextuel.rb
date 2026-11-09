@@ -21,6 +21,9 @@ module A2M
       bb = e.bounds
       c = bb.center
       t = e.transformation
+      # Porte de la bibliothèque posée par l'outil : l'origine de l'objet est le milieu du CORPS du cadre (dans la largeur et l'épaisseur
+      # de la cloison). La boîte englobante, elle, compte la poignée d'un seul côté : pivoter ou retourner autour d'elle décalerait la porte.
+      c = Geom::Point3d.new(t.origin.x, t.origin.y, c.z) if e.get_attribute('a2m_biblio', 'fichier')
       bl = (e.is_a?(Sketchup::Group) ? e.entities.parent : e.definition).bounds
       wx = bl.width * t.xscale; wy = bl.height * t.yscale
       ax = wx >= wy ? t.xaxis : t.yaxis

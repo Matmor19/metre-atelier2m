@@ -528,3 +528,21 @@ module A2M
     end
   end
 end
+
+# Mise à jour à chaud : menu_contextuel.rb n'est pas rechargé en cours de session, on redéfinit ici le calcul de l'axe et du centre
+module A2M
+  module MenuContextuel
+    def self.axes(e)
+      bb = e.bounds
+      c = bb.center
+      t = e.transformation
+      c = Geom::Point3d.new(t.origin.x, t.origin.y, c.z) if e.get_attribute('a2m_biblio', 'fichier')
+      bl = (e.is_a?(Sketchup::Group) ? e.entities.parent : e.definition).bounds
+      wx = bl.width * t.xscale; wy = bl.height * t.yscale
+      ax = wx >= wy ? t.xaxis : t.yaxis
+      ax = Geom::Vector3d.new(ax.x, ax.y, 0)
+      ax = ax.length > 0.001 ? ax.normalize : Geom::Vector3d.new(1, 0, 0)
+      [c, ax]
+    end
+  end
+end
