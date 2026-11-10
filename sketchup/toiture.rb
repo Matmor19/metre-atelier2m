@@ -401,42 +401,40 @@ module A2M
 end
 
 
-# TEMPORAIRE (essai automatique du faîtage dans un modèle vide, déclenché par un fichier-drapeau) : à retirer
-unless defined?(A2M::ESSAI_FAIT)
-  A2M::ESSAI_FAIT = true
-  UI.start_timer(2, false) do
-    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'test_faitage.flag')
-    next unless File.exist?(drap)
-    File.delete(drap) rescue nil
-    sortie = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'essai_faitage.txt')
-    begin
-      model = Sketchup.active_model
-      model.start_operation('essai faîtage', true)
-      msg = []
-      [['2 pans', 0], ['3 pans', 800]].each do |type, dx|
-        mur = model.entities.add_group
-        mur.name = "Murs essai #{type}"
-        f = mur.entities.add_face([[dx.cm, 0, 0], [(dx + 500).cm, 0, 0], [(dx + 500).cm, 400.cm, 0], [dx.cm, 400.cm, 0]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
-        f.pushpull(-250.cm) rescue f.pushpull(250.cm)
-        base = A2M::Toiture.base_des_murs([mur], type, model)
-        prm = { type: type, pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: 'côté opposé à l\'origine', num: '1' }
-        grp = A2M::Toiture.batir(model, prm, base)
-        nb = model.entities.grep(Sketchup::Group).select { |g| g.name == 'Faîtage' }.size
-        msg << "#{type} : #{nb} faîtage(s)"
-        if nb == 0
-          begin
-            A2M::Toiture.accessoires(model, grp, A2M::Toiture.polys_dernier)
-          rescue StandardError => ex
-            msg << "ERREUR accessoires #{ex.message} #{ex.backtrace.first(3).join(' | ')}"
-          end
-        end
-      end
-      model.commit_operation
-      model.active_view.zoom_extents
-      File.write(sortie, msg.join("\n"), encoding: 'UTF-8')
-    rescue StandardError => ex
-      (model.abort_operation rescue nil)
-      File.write(sortie, "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}", encoding: 'UTF-8') rescue nil
+# TEMPORAIRE (essai automatique du faîtage dans un nouveau modèle vide, déclenché par un fichier-drapeau) : à retirer
+UI.start_timer(2, false) do
+  dossier = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M')
+  drap = File.join(dossier, 'test_faitage.flag')
+  next unless File.exist?(drap)
+  File.delete(drap) rescue nil
+  sortie = File.join(dossier, 'essai_faitage.txt')
+  msg = []
+  begin
+    Sketchup.file_new
+    model = Sketchup.active_model
+    [['X', 500, 400, 0], ['Y', 400, 500, 1000]].each do |nom, lx, ly, dx|
+      mur = model.entities.add_group
+      mur.name = "Murs essai #{nom}"
+      f = mur.entities.add_face([[dx, 0, 0], [dx + lx, 0, 0], [dx + lx, ly, 0], [dx, ly, 0]].map { |x, y, z| Geom::Point3d.new(x.cm, y.cm, z.cm) })
+      f.reverse! if f.normal.z < 0
+      f.pushpull(250.cm)
+      base = A2M::Toiture.base_des_murs([mur], '2 pans', model)
+      prm = { type: '2 pans', pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: "côté opposé à l'origine", num: '1' }
+      msg << "== crête #{nom} : base #{base.class}"
+      A2M::Toiture.batir(model, prm, base)
     end
+    model.entities.grep(Sketchup::Group).select { |g| g.name == 'Faîtage' }.each do |g|
+      msg << "Faîtage groupe :"
+      g.entities.each do |e|
+        next unless e.respond_to?(:definition)
+        t = e.transformation; b = e.bounds
+        r = ->(v) { v.to_a.map { |c| (c * 100).round / 100.0 } }
+        msg << "  #{e.name} | def #{e.definition.name} | x=#{r.(t.xaxis)} y=#{r.(t.yaxis)} z=#{r.(t.zaxis)} | org(cm)=#{t.origin.to_a.map { |c| (c * 2.54 * 100).round / 100.0 }} | min=#{b.min.to_a.map { |c| (c * 2.54).round(1) }} max=#{b.max.to_a.map { |c| (c * 2.54).round(1) }}"
+      end
+    end
+    model.active_view.zoom_extents
+  rescue StandardError => ex
+    msg << "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}"
   end
+  File.write(sortie, msg.join("\n"), encoding: 'UTF-8') rescue nil
 end
