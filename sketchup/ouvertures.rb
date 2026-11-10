@@ -648,11 +648,7 @@ module A2M
       nb = Geom::Point3d.new(nb.x, nb.y, bas.z + (dz / 100.0).m)
       o = { bas: nb, u: u, n: n, centre: nb.offset(u, (l1 / 200.0).m).offset(Z_AXIS, (h1 / 200.0).m) }
       p = { type: type, l: l1, h: h1, lin: lin1 || pp['lin'], n: pr['n'], contigu: pr['contigu'], res: pr['tag'], obj: pp['obj'],
-            opts: pp['opts'] || {}, appui: pr['appui'].to_f, piece: pp['piece'], me: pp['me'], as_obj: pp['as_obj'], debord: pp['debord'].to_f,
-            tapee: pp['tapee'], tapee_prof: pp['tapee_prof'] }
-      p[:tapee] = nil unless pp.key?('tapee')
-      p.delete(:tapee) unless pp.key?('tapee')
-      p.delete(:tapee_prof) unless pp.key?('tapee')
+            opts: pp['opts'] || {}, appui: pr['appui'].to_f, piece: pp['piece'], me: pp['me'], as_obj: pp['as_obj'], debord: pp['debord'].to_f }
       begin
         A2M::Suivi.operation(model, 'Modifier l\'ouverture') do
           A2M::Suivi.annexes(model, d).each { |a| a.erase! if a.valid? }
@@ -666,10 +662,22 @@ module A2M
       percer(o, p)
     end
 
+    # Face la plus intérieure de la menuiserie : on ne regarde que les GRANDES faces parallèles au mur (cadre, vantail),
+    # pas la poignée ni la rosace qui dépassent côté intérieur ; ainsi le cadre se pose à zéro du nu intérieur (placo).
+    def self.fond_menuiserie(r, b, n)
+      fond = nil
+      A2M::Bibliotheque.faces(r.respond_to?(:definition) ? r.definition.entities : r.entities, r.transformation) do |f, tr|
+        next if A2M::Bibliotheque.cache?(f)
+        next unless f.normal.transform(tr).normalize.dot(n).abs > 0.98
+        next if f.area(tr) < 46.5            # 300 cm²
+        f.vertices.each { |vx| t = -((tr * vx.position) - b).dot(n); fond = t if fond.nil? || t > fond }
+      end
+      fond
+    end
+
     # Perce : boîte de découpe (largeur × hauteur, 3 m de profondeur) soustraite de chaque couche ; nom et balise conservés
     def self.percer(o, p, essai = 0)
       model = Sketchup.active_model
-      p[:tapee], p[:tapee_prof] = A2M::Tapee.demander if p[:res] && !p.key?(:tapee)   # tapée d'isolation : épaisseur, profondeur (0 = aucune ; profondeur 0 = égale à l'isolant)
       model.start_operation('Créer une ouverture (métré)', true)
       begin
         ents = model.active_entities
@@ -720,15 +728,9 @@ module A2M
         if p[:res] && prof > 0
           # Toutes les menuiseries : face intérieure au nu intérieur de la dernière couche percée
           d = r.respond_to?(:definition) ? r.definition : r.entities.parent
-          fond = (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(d).corner(i).transform(r.transformation)) - b).dot(n) }.max
+          fond = fond_menuiserie(r, b, n) || (0..7).map { |i| -((A2M::Bibliotheque.boite_visible(d).corner(i).transform(r.transformation)) - b).dot(n) }.max
           dep = prof - fond
           r.transform!(Geom::Transformation.translation(Geom::Vector3d.new(-n.x * dep, -n.y * dep, 0))) if dep.abs > 0.01
-        end
-        # Tapée d'isolation : habillage des trois côtés (jambages et linteau), épaisseur de l'isolant
-        if p[:res] && prof > 0 && p[:tapee].to_f > 0
-          ur_t = Z_AXIS.cross(n).normalize
-          org_t = u.dot(ur_t) > 0 ? b : b.offset(u, l)
-          A2M::Tapee.poser(ents, org_t, ur_t, n, l, h, prof, p[:tapee], p[:tapee_prof].to_f)
         end
         # Appui ou seuil de la bibliothèque : 1 pièce, ou 2, 3… pièces égales, centrées sous l'ouverture, dessus au bas de la menuiserie
         annexes = p[:as_obj] ? poser_appuis(ents, o, p, model) : []

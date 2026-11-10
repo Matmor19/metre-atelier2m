@@ -1,12 +1,12 @@
 {
- "version": "2.97.56",
+ "version": "2.97.57",
  "notes": [
+  "Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur de la dernière couche (placo) en se calant sur son cadre, plus sur la poignée qui dépasse",
   "Toiture : nouveau type « 3 pans » (croupe d'un côté, pignon de l'autre, côté de la croupe au choix) ; la case « Murs pignons » fonctionne aussi pour lui (un seul mur pignon, côté pignon)",
   "Configurateur d'ouverture : plus de modèle « Fixe » pour les portes-fenêtres ; pour « Coulissante », choix du nombre de vantaux…",
   "Configurateur d'ouverture : la fenêtre oscillo-battant montre maintenant son symbole (battant et oscillant en pointillés) aussi…",
   "Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de…",
   "Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la…",
-  "Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé…",
   "… et 144 autres nouveautés plus anciennes."
  ]
 }
