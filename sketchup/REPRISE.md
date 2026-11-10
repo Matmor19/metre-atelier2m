@@ -64,3 +64,6 @@ Principe (modèle : zinguerie 2.97.48) : une fenêtre avec dessin en direct (cou
 10. Porte intérieure : plan (sens, côté, charnières) ; Électricité : élévation de pièce avec hauteurs réglementaires.
 11. Zinguerie : suite (objets coudes/colliers/crochets/naissances/regard, gouttières sur la coupe, vue de dessus des descentes).
 Sans intérêt pour une fenêtre dessinée : balises, textures, hachures, export, cartouches, feuille, dossier, variantes, phases, contrôle, tableau.
+
+## Lucarnes (10/11/2026) — idée de Mathieu
+Mathieu dessine lui-même les lucarnes (capucine, jacobine, rampante, etc.) : murs + toitures, comme objets de bibliothèque. L'outil doit les poser sur un pan de toiture tracé en s'adaptant : pente du pan, réglage de la pente de la lucarne, hauteur de mur (joues), position sur le plan, et percement de la couverture (trou dans le pan sous la lucarne, joues/noues). Fenêtre avec vue de dessus + coupe comme les autres. Visuel seulement, métré inchangé (ml).
