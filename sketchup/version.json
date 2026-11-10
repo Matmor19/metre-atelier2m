@@ -1,12 +1,12 @@
 {
- "version": "2.97.61",
+ "version": "2.97.62",
  "notes": [
+  "Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées…",
   "Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire",
   "Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de…",
   "Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de…",
   "Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient…",
   "Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur…",
-  "Toiture : nouveau type « 3 pans » (croupe d'un côté, pignon de l'autre, côté de la croupe au choix) ; la case « Murs pignons »…",
-  "… et 150 autres nouveautés plus anciennes."
+  "… et 151 autres nouveautés plus anciennes."
  ]
 }
