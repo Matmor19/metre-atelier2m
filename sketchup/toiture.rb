@@ -179,6 +179,17 @@ module A2M
     FAIT_PAS_MAX = 48.5       # cm : pas maximal entre deux tuiles (recouvrement d'au moins 2,2 cm)
     FAIT_ABOUT_BAS = 10.11    # cm : le bas de l'about est sous la ligne de faîtage (relevé sur ta simulation)
 
+    # La tuile faîtière de la bibliothèque est un cône : son axe dérive de 1,64 cm en Y sur 49,6 cm (relevé sur ta tuile : centre de la
+    # section à 10,43 cm au début, 12,07 cm au bout). On la tourne de cet angle pour que son AXE soit sur la ligne de faîtage (ou d'arêtier).
+    FAIT_TUILE_DERIVE = Math.atan2(1.64, 49.6)
+
+    def self.tuile_axes(u, tr_)
+      c = Math.cos(FAIT_TUILE_DERIVE); s = Math.sin(FAIT_TUILE_DERIVE)
+      xw = Geom::Vector3d.new(u.x * c - tr_.x * s, u.y * c - tr_.y * s, u.z * c - tr_.z * s)
+      yw = Geom::Vector3d.new(u.x * s + tr_.x * c, u.y * s + tr_.y * c, u.z * s + tr_.z * c)
+      [xw, yw]
+    end
+
     def self.fait_objets
       lst = A2M::Bibliotheque.objets
       o = FAIT_OBJETS.map { |n| lst.find { |x| x['nom'] == n && x['fichier'] } }
@@ -212,8 +223,9 @@ module A2M
       x0 = n > 1 ? f0 : f0 + (reste - lt) / 2.0
       ents = g.entities
       n.times do |i|
-        o = debut.offset(u, (x0 + i * pas).cm).offset(tr_, (-wt / 2.0).cm)   # le bas de la tuile est à la hauteur de la ligne de faîtage
-        inst = ents.add_instance(dt, Geom::Transformation.axes(o, u, tr_, Z_AXIS))
+        xw, yw = tuile_axes(u, tr_)
+        o = debut.offset(u, (x0 + i * pas).cm).offset(yw, (-wt / 2.0).cm)   # axe de la tuile sur la ligne de faîtage, bas à la hauteur de la ligne
+        inst = ents.add_instance(dt, Geom::Transformation.axes(o, xw, yw, Z_AXIS))
         inst.name = 'Tuile faîtière' if inst
       end
       if about_a
@@ -250,8 +262,9 @@ module A2M
       n = lg <= lt ? 1 : ((lg - lt) / FAIT_PAS_MAX).ceil + 1
       pas = n > 1 ? (lg - lt) / (n - 1) : 0.0
       n.times do |i|
-        o = a.offset(u, (i * pas).cm).offset(tr_, (-wt / 2.0).cm)
-        inst = g.entities.add_instance(dt, Geom::Transformation.axes(o, u, tr_, nz))
+        xw, yw = tuile_axes(u, tr_)
+        o = a.offset(u, (i * pas).cm).offset(yw, (-wt / 2.0).cm)
+        inst = g.entities.add_instance(dt, Geom::Transformation.axes(o, xw, yw, nz))
         inst.name = 'Tuile faîtière' if inst
       end
     end

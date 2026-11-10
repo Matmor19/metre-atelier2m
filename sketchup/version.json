@@ -1,12 +1,12 @@
 {
- "version": "2.97.74",
+ "version": "2.97.75",
  "notes": [
+  "Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le…",
   "Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice…",
   "Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu…",
   "Provisoire : essai automatique du faîtage (à retirer)",
   "Toiture : le faîtage prend tes tuiles faîtières et tes about de la bibliothèque (répartis de bout en bout, pas ajusté à la…",
   "Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la…",
-  "Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25…",
-  "… et 158 autres nouveautés plus anciennes."
+  "… et 159 autres nouveautés plus anciennes."
  ]
 }
