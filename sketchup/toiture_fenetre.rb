@@ -39,6 +39,7 @@ module A2M
       <div id="sens_bloc"><h2>Faîtage parallèle au</h2><div class="puces" id="sens"></div></div>
       <div id="haut_bloc"><h2>Monopente : côté haut</h2><div class="puces" id="haut"></div></div>
       <div id="champs"></div>
+      <div id="pig_bloc"><div class="rang"><label><input type="checkbox" id="pignons"> Murs pignons (extrémités du faîtage, jusqu'à la toiture)</label></div></div>
       <h2>Toiture n°</h2>
       <div class="puces" id="num"></div>
       <div class="rang"><button type="button" class="btn" id="reprendre">Reprendre le contour sur les murs sélectionnés</button></div>
@@ -51,7 +52,7 @@ module A2M
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
       var P = null, DATA = null, tmr = null;
-      var CH = [['pente', 'Pente (%)', 5, 150, 1], ['d', 'Débord (cm)', 0, 150, 1], ['ep', 'Épaisseur de la toiture (cm)', 0, 40, 0.5]];
+      var CH = [['pente', 'Pente (%)', 5, 150, 1], ['d', 'Débord (cm)', 0, 150, 1], ['ep', 'Épaisseur de la toiture (cm)', 0, 40, 0.5], ['pig_ep', 'Épaisseur des murs pignons (cm)', 10, 40, 1]];
       function envoyer() { clearTimeout(tmr); tmr = setTimeout(function () { sketchup.maj(JSON.stringify(P)); }, 90); }
       function puces(id, liste, cle, aff) {
         var z = el(id); z.innerHTML = '';
@@ -63,13 +64,14 @@ module A2M
       function rendre() {
         puces('types', D.types, 'type'); puces('sens', ['grand côté', 'petit côté'], 'sens'); puces('haut', D.hauts, 'haut'); puces('num', ['1', '2', '3', '4'], 'num');
         el('sens_bloc').style.display = (P.type === 'Suit les murs') ? 'none' : 'block';
+        var pg = (P.type === '2 pans' || P.type === 'Monopente'); el('pig_bloc').style.display = pg ? 'block' : 'none'; el('pignons').checked = !!P.pignons; var wp = el('w_pig_ep'); if (wp) wp.style.display = (pg && P.pignons) ? 'grid' : 'none';
         el('haut_bloc').style.display = (P.type === 'Monopente') ? 'block' : 'none';
       }
       function champs(reset) {
         var z = el('champs');
         if (z.children.length === 0) {
           CH.forEach(function (c) {
-            var w = document.createElement('div'); w.className = 'champ';
+            var w = document.createElement('div'); w.className = 'champ'; w.id = 'w_' + c[0];
             w.innerHTML = '<label></label><input type="text" id="v_' + c[0] + '"><input type="range" id="r_' + c[0] + '">';
             w.querySelector('label').textContent = c[1]; z.appendChild(w);
             var r = w.querySelector('[type=range]'), v = w.querySelector('[type=text]');
@@ -80,6 +82,7 @@ module A2M
         }
         CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = (+P[c[0]]).toString().replace('.', ','); } });
       }
+      el('pignons').addEventListener('change', function () { P.pignons = el('pignons').checked; rendre(); envoyer(); });
       el('reprendre').addEventListener('click', function () { sketchup.reprendre(''); });
       el('valider').addEventListener('click', function () { sketchup.valider(''); });
       el('suppr').addEventListener('click', function () { sketchup.supprimer(''); });
@@ -89,6 +92,7 @@ module A2M
         el('info').textContent = data.info || '';
         dessus(data); coupe(data);
       }
+      function poly4(xa, ya, xb, yb) { return '<rect x="' + xa + '" y="' + ya + '" width="' + (xb - xa) + '" height="' + (yb - ya) + '" fill="#8a7f75" fill-opacity="0.7" stroke="#3C3C3C"/>'; }
       function cle(a, b) { function r(q) { return Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100) + ',' + Math.round(q[2] * 100); } var x = r(a), y = r(b); return x < y ? x + '|' + y : y + '|' + x; }
       function dessus(d) {
         var sv = el('dessus'), W = 520, H = 300, polys = d.polys, out = d.contour || [];
@@ -112,6 +116,7 @@ module A2M
             o += '<line x1="' + px + '" y1="' + py + '" x2="' + qx + '" y2="' + qy + '" stroke="#a8541f" stroke-width="1.6"/><circle cx="' + qx + '" cy="' + qy + '" r="3" fill="#a8541f"/>';
           }
         });
+        (d.pig || []).forEach(function (g) { o += poly4(X(g[0]), Y(d.wlarg), X(g[1]), Y(0)); });
         if (out.length) o += '<polygon points="' + out.map(function (q) { return X(q[0]) + ',' + Y(q[1]); }).join(' ') + '" fill="none" stroke="#6f665e" stroke-width="2" stroke-dasharray="6 4"/>';
         Object.keys(cnt).forEach(function (c) {
           if (cnt[c] < 2) return; var a = ar[c][0], b = ar[c][1], hor = Math.abs(a[2] - b[2]) < 0.01;
@@ -142,6 +147,41 @@ module A2M
       }
       sketchup.pret('');
     JS
+
+    # Repère (origine, axes, longueur, largeur) tel que le prend batir selon le sens et le côté haut
+    def self.repere(prm, base)
+      o = Geom::Point3d.new(*base['o']); u = Geom::Vector3d.new(*base['u']); v = Geom::Vector3d.new(*base['v'])
+      l, w = base['l'], base['w']
+      if prm[:sens] == 'petit côté' then o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l end
+      if prm[:type] == 'Monopente' && prm[:haut] == 'côté de l\'origine' then o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse end
+      [o, u, v, l, w]
+    end
+
+    # Murs pignons : les deux extrémités du faîtage (types 2 pans et monopente), de l'épaisseur choisie, jusqu'à la sous-face de la toiture
+    def self.pignons(model, toit, prm, base)
+      return 0 unless prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])
+      o, u, v, l, w = repere(prm, base)
+      s = prm[:pente] / 100.0
+      t = [prm[:pig_ep].to_f, 5].max / 100.0
+      z0 = base['ztop'].to_f
+      profil = prm[:type] == '2 pans' ? [[0, 0], [w, 0], [w / 2.0, s * w / 2.0]] : [[0, 0], [w, 0], [w, s * w]]
+      lb, _ = A2M::Balises.balise(model, 'A2M_MUR_PIGNON', [200, 100, 60])
+      cree = 0
+      [[0.0, 1], [l - t, 1]].each do |ua, _|
+        g = model.active_entities.add_group
+        pts = profil.map { |pv, pz| o.offset(u, ua.m).offset(v, pv.m).offset(Z_AXIS, z0 + pz.m) }
+        f = g.entities.add_face(pts)
+        unless f then g.erase!; next end
+        f.pushpull(f.normal.dot(u) > 0 ? t.m : -t.m)
+        g.layer = lb
+        g.name = 'Mur pignon'
+        col = Sketchup::Color.new(190, 175, 160)
+        g.entities.grep(Sketchup::Face).each { |x| x.material = col; x.back_material = col }
+        g.set_attribute(A2M::Toiture::ACC, 'toit', toit.persistent_id)
+        cree += 1
+      end
+      cree
+    end
 
     # ---- Données du dessin : pans et contour projetés à plat (vue de dessus), tranche verticale au milieu (coupe) ----
     def self.donnees(prm, base, polys)
@@ -175,15 +215,16 @@ module A2M
         segs << [cr.first, cr.last] if cr.size >= 2
       end
       hmax = pp.flatten(1).map { |q| q[2] }.max.to_f
-      { 'polys' => pp, 'contour' => contour, 'coupe' => segs, 'murs' => murs, 'ep' => prm[:ep].to_f, 'hfaite' => hmax }
+      pig = (prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])) ? [[0.0, prm[:pig_ep].to_f / 100.0], [l - prm[:pig_ep].to_f / 100.0, l]] : []
+      { 'pig' => pig, 'wlarg' => (base['k'] == 'rect' ? w : 0), 'polys' => pp, 'contour' => contour, 'coupe' => segs, 'murs' => murs, 'ep' => prm[:ep].to_f, 'hfaite' => hmax }
     end
 
-    def self.prm_json(prm) { 'type' => prm[:type], 'pente' => prm[:pente], 'd' => (prm[:d] * 100).round(1), 'ep' => prm[:ep], 'sens' => prm[:sens], 'haut' => prm[:haut], 'num' => prm[:num].to_s } end
+    def self.prm_json(prm) { 'type' => prm[:type], 'pente' => prm[:pente], 'd' => (prm[:d] * 100).round(1), 'ep' => prm[:ep], 'sens' => prm[:sens], 'haut' => prm[:haut], 'num' => prm[:num].to_s, 'pignons' => !!prm[:pignons], 'pig_ep' => prm[:pig_ep].to_f } end
 
     def self.defaut
       r = (A2M::Toiture.instance_variable_get(:@r) || {})
       { type: r[:type] || '2 pans', pente: (r[:pente] || 45).to_f, d: (r[:d] || 0.5).to_f, ep: (r[:ep] || 20).to_f,
-        sens: r[:sens] || 'grand côté', haut: r[:haut] || 'côté opposé à l\'origine', num: (r[:num] || '1').to_s }
+        sens: r[:sens] || 'grand côté', pignons: r[:pignons] ? true : false, pig_ep: (r[:pig_ep] || 20).to_f, haut: r[:haut] || 'côté opposé à l\'origine', num: (r[:num] || '1').to_s }
     end
 
     def self.murs_selection(model)
@@ -231,6 +272,7 @@ module A2M
           c[:base] = nb
         end
         nouvelle = A2M::Toiture.batir(model, c[:prm], c[:base])
+        pignons(model, nouvelle, c[:prm], c[:base])
         if c[:grp] && c[:grp].valid?
           A2M::Toiture.effacer_accessoires(model, c[:grp])
           c[:grp].erase!
@@ -268,6 +310,8 @@ module A2M
       p[:sens] = h['sens'] if h['sens']
       p[:haut] = h['haut'] if h['haut']
       p[:num] = h['num'].to_s if h['num']
+      p[:pignons] = h['pignons'] ? true : false
+      p[:pig_ep] = [h['pig_ep'].to_f, 5].max if h['pig_ep']
       reconstruire(false)
     end
 

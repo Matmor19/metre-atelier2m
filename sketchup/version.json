@@ -1,12 +1,12 @@
 {
- "version": "2.97.51",
+ "version": "2.97.52",
  "notes": [
+  "Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la…",
   "Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé…",
   "Escalier : nouvelle fenêtre avec vue de dessus et coupe à l'échelle, qui se dessinent à mesure des réglages (forme, hauteur,…",
   "Toiture : nouvelle fenêtre avec vue de dessus et coupe à l'échelle (pans, faîtage et arêtiers, sens de la pente, murs). Type,…",
   "Zinguerie refaite : choix de la gouttière (zinc dév. 25, dév. 33, nantaise, alu) avec crochets, et descente placée au clic sur…",
   "Toiture 3D : faîtages et arêtiers posés automatiquement le long des arêtes entre pans (visuel seulement, pas de tuiles). Balises…",
-  "Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)",
-  "… et 140 autres nouveautés plus anciennes."
+  "… et 141 autres nouveautés plus anciennes."
  ]
 }
