@@ -623,28 +623,3 @@ module A2M
 end
 
 
-# TEMPORAIRE (essai automatique de la gouttière dans un modèle vide, déclenché par un fichier-drapeau) : à retirer
-unless defined?(A2M::ESSAI_GOUT)
-  A2M::ESSAI_GOUT = true
-  UI.start_timer(2, false) do
-    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'test_gouttiere.flag')
-    next unless File.exist?(drap)
-    File.delete(drap) rescue nil
-    begin
-      model = Sketchup.active_model
-      model.start_operation('essai gouttière', true)
-      g = model.entities.add_group
-      g.name = 'Pan de toit essai'
-      pts = [[0, 0, 0], [400.cm, 0, 0], [400.cm, 200.cm, 120.cm], [0, 200.cm, 120.cm]].map { |x, y, z| Geom::Point3d.new(x, y, z) }
-      g.entities.add_face(pts)
-      A2M::Zinguerie.poser('g' => 'demi25', 'cible' => 'tout', 'crochet' => 50)
-      model.commit_operation
-      eye = Geom::Point3d.new(-120.cm, -160.cm, 60.cm)
-      model.active_view.camera = Sketchup::Camera.new(eye, Geom::Point3d.new(40.cm, 0, -6.cm), Geom::Vector3d.new(0, 0, 1))
-      File.write(File.join(ENV['USERPROFILE'], 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), 'ok', encoding: 'UTF-8')
-    rescue StandardError => ex
-      (model.abort_operation rescue nil)
-      File.write(File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), "ERREUR #{ex.message}\n#{ex.backtrace.first(5).join("\n")}", encoding: 'UTF-8') rescue nil
-    end
-  end
-end

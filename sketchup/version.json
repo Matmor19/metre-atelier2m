@@ -1,12 +1,12 @@
 {
- "version": "2.97.66",
+ "version": "2.97.67",
  "notes": [
-  "Provisoire : essai automatique de la gouttière (à retirer)",
   "Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25…",
   "Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et…",
   "Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées…",
   "Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire",
   "Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de…",
-  "… et 154 autres nouveautés plus anciennes."
+  "Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de…",
+  "… et 153 autres nouveautés plus anciennes."
  ]
 }
