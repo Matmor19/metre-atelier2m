@@ -325,3 +325,52 @@ module A2M
     end
   end
 end
+
+# TEMPORAIRE (relevé du faîtage simulé par l'utilisateur et de ses objets de faîtière) : à retirer
+unless defined?(A2M::DIAG_FAIT)
+  A2M::DIAG_FAIT = true
+  UI.start_timer(2, false) do
+    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_faitage.flag')
+    next unless File.exist?(drap)
+    File.delete(drap) rescue nil
+    sortie = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_faitage.json')
+    begin
+      model = Sketchup.active_model
+      out = { 'modele' => model.title.to_s, 'entites' => [], 'objets' => {} }
+      cm = ->(v) { (v.to_f * 2.54).round(2) }
+      rec = lambda do |ents, tr, niv, acc|
+        ents.each do |e|
+          next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+          t = tr * e.transformation
+          bb = e.bounds
+          defn = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
+          acc << { 'niv' => niv, 'type' => e.class.name.split('::').last, 'nom' => e.name.to_s, 'def' => (e.respond_to?(:definition) ? e.definition.name : ''), 'tag' => e.layer.name,
+                   'axes' => [t.xaxis, t.yaxis, t.zaxis].map { |v| v.to_a.map { |c| c.round(3) } }, 'org' => t.origin.to_a.map { |c| cm.(c) },
+                   'min' => bb.min.to_a.map { |c| cm.(c) }, 'max' => bb.max.to_a.map { |c| cm.(c) },
+                   'faces' => defn.grep(Sketchup::Face).size }
+          rec.call(defn, t, niv + 1, acc) if niv < 2
+        end
+      end
+      rec.call(model.entities, Geom::Transformation.new, 0, out['entites'])
+      out['faces_modele'] = model.entities.grep(Sketchup::Face).map { |f| f.vertices.map { |v| v.position.to_a.map { |c| cm.(c) } } }.first(40)
+      model.start_operation('diag', true)
+      ['Toiture/Tuile faitière canal', 'Toiture/About de faitière canal Gauche', 'Toiture/About de faitière canal Droite'].each do |n|
+        d = A2M::Bibliotheque.charger({ 'fichier' => n + '.skp' }, model)
+        b = d.bounds
+        info = { 'bb' => [b.min, b.max].map { |p| p.to_a.map { |c| cm.(c) } }, 'faces' => [], 'ouvertes' => 0 }
+        d.entities.grep(Sketchup::Edge).each { |e| info['ouvertes'] += 1 if e.faces.size == 1 }
+        A2M::Bibliotheque.faces(d.entities, Geom::Transformation.new) do |f, tr|
+          next if info['faces'].size > 900
+          info['faces'] << f.vertices.map { |v| (tr * v.position).to_a.map { |c| cm.(c) } }
+        end
+        info['nb_faces'] = d.entities.grep(Sketchup::Face).size
+        out['objets'][n] = info
+      end
+      model.abort_operation
+      File.write(sortie, JSON.pretty_generate(out), encoding: 'UTF-8')
+    rescue StandardError => ex
+      (model.abort_operation rescue nil)
+      File.write(sortie, "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}", encoding: 'UTF-8') rescue nil
+    end
+  end
+end
