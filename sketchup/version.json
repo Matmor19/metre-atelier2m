@@ -1,12 +1,12 @@
 {
- "version": "2.97.63",
+ "version": "2.97.64",
  "notes": [
+  "Provisoire : relevé de la géométrie de tes objets de zinguerie (crochet, naissance, collier) pour les poser à la place des pièces…",
   "Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et…",
   "Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées…",
   "Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire",
   "Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de…",
   "Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de…",
-  "Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient…",
-  "… et 152 autres nouveautés plus anciennes."
+  "… et 153 autres nouveautés plus anciennes."
  ]
 }

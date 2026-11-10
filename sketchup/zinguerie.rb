@@ -576,3 +576,36 @@ module A2M
     end
   end
 end
+
+# TEMPORAIRE (relevé de la géométrie des objets de zinguerie) : à retirer
+unless defined?(A2M::DIAG_ZING)
+  A2M::DIAG_ZING = true
+  UI.start_timer(2, false) do
+    begin
+      model = Sketchup.active_model
+      model.start_operation('diag', true)
+      out = {}
+      ['Zinguerie/Crochet goutière Dev 25', 'Zinguerie/Naissance Dev 25', 'Zinguerie/Colier descente zinc'].each do |n|
+        obj = { 'fichier' => n + '.skp' }
+        d = A2M::Bibliotheque.charger(obj, model)
+        b = d.bounds
+        info = { 'bb' => [b.min, b.max].map { |p| p.to_a.map { |v| (v * 2.54).round(2) } }, 'sous' => [], 'faces' => [] }
+        d.entities.each do |e|
+          next unless e.respond_to?(:bounds) && !e.is_a?(Sketchup::Face) && !e.is_a?(Sketchup::Edge)
+          bb = e.bounds
+          info['sous'] << [e.class.name.split('::').last, (e.name rescue ''), [bb.min, bb.max].map { |p| p.to_a.map { |v| (v * 2.54).round(2) } }]
+        end
+        A2M::Bibliotheque.faces(d.entities, Geom::Transformation.new) do |f, tr|
+          next if info['faces'].size > 500
+          info['faces'] << f.vertices.map { |v| (tr * v.position).to_a.map { |c| (c * 2.54).round(2) } }
+        end
+        out[n] = info
+      end
+      model.abort_operation
+      File.write(File.join(ENV['USERPROFILE'], 'Documents', 'ATELIER 2M', 'diag_zinguerie.json'), JSON.pretty_generate(out), encoding: 'UTF-8')
+    rescue StandardError => ex
+      (model.abort_operation rescue nil)
+      File.write(File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_zinguerie.json'), "ERREUR #{ex.message}\n#{ex.backtrace.first(4).join("\n")}", encoding: 'UTF-8') rescue nil
+    end
+  end
+end

@@ -1,4 +1,5 @@
 [
+ "Provisoire : relevé de la géométrie de tes objets de zinguerie (crochet, naissance, collier) pour les poser à la place des pièces provisoires",
  "Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable",
  "Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées au nu du placo, contrôle des objets)",
  "Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire",
