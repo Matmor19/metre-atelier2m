@@ -9,11 +9,13 @@ module A2M
   module Zinguerie
     # clé, libellé, aide, rayon extérieur cm, forme, descente conseillée
     GOUTTIERES = [
-      ['demi25',  'Zinc dév. 25',     'Demi-ronde en zinc, développé 25 cm',   4.5, :demi,  'd80'],
+      ['demi25',  'Zinc dév. 25',     'Demi-ronde en zinc, développé 25 cm (ton profil et ton crochet)',   4.5, :demi,  'd80'],
       ['demi33',  'Zinc dév. 33',     'Demi-ronde en zinc, développé 33 cm',   6.0, :demi,  'd100'],
       ['nant',    'Nantaise',         'Gouttière carrée à fond plat',          6.0, :carre, 'd100'],
       ['alu',     'Profil alu',       'Gouttière alu, profil carré',           6.5, :carre, 'd80']
     ].freeze
+    # Objets de ta bibliothèque utilisés à la place des formes calculées : [profil de gouttière, crochet]
+    LIB_GOUTTIERE = { 'demi25' => ['Goutière Zinc', 'Crochet goutière Dev 25'] }.freeze
     DESCENTES = [['d60', 'Ø 60', 3.0], ['d80', 'Ø 80', 4.0], ['d100', 'Ø 100', 5.0]].freeze
     PARAM_DEFAUT = { 'jeu' => 3.0, 'chute' => 10.0, 'haut_sol' => 0.0, 'c1' => 25.0, 'c2' => 30.0, 'n' => 3, 'regard' => true, 't' => 0.0 }.freeze
     GRIS_ZINC = [150, 160, 168].freeze
@@ -133,7 +135,7 @@ module A2M
         o += '<polygon points="' + X(-m.deb - 25) + ',' + Z(25) + ' ' + X(0) + ',' + Z(2) + ' ' + X(0) + ',' + Z(-3) + ' ' + X(-m.deb - 25) + ',' + Z(18) + '" fill="#b89b84" stroke="#6f665e"/>';
         o += '<line x1="' + X(xmin) + '" y1="' + Z(-m.haut) + '" x2="' + X(xmax) + '" y2="' + Z(-m.haut) + '" stroke="#6f665e" stroke-width="1.5"/>';
         var gx = X(m.xg), gz = Z(-2 - m.rg * 0.5);
-        if (m.demi) o += '<path d="M' + (gx - m.rg * k) + ' ' + Z(-2) + ' A' + (m.rg * k) + ' ' + (m.rg * k) + ' 0 0 0 ' + (gx + m.rg * k) + ' ' + Z(-2) + '" fill="none" stroke="#7a8691" stroke-width="3"/>';
+        if (m.demi) o += '<path d="M' + (gx - m.rg * k) + ' ' + Z(-2) + ' A' + (m.rg * k) + ' ' + (m.ry * k) + ' 0 0 0 ' + (gx + m.rg * k) + ' ' + Z(-2) + '" fill="none" stroke="#7a8691" stroke-width="3"/>';
         else o += '<path d="M' + (gx - m.rg * k) + ' ' + Z(-2 + m.rg * 1.4) + ' V' + Z(-2) + ' H' + (gx + m.rg * k) + ' V' + Z(-2 + m.rg * 1.4) + '" fill="none" stroke="#7a8691" stroke-width="3"/>';
         var w = Math.max(2, m.r * 2 * k), cl = '#E07838';
         var pts = [[m.xg, m.z0], [m.xg, m.z1], [m.xg - m.rb, m.z1 - m.rb], [m.xw + m.rb, m.z1 - m.rb], [m.xw, m.z2], [m.xw, m.zb]];
@@ -206,6 +208,20 @@ module A2M
       res.select { |a, b, s| a.distance(b) > 5.cm && s.length > 0.001 }
     end
 
+
+    # Ton profil de gouttière et ton crochet (bibliothèque) pour cette gouttière : nil si absents (formes calculées)
+    # 'pts' : contour [largeur, hauteur] en cm, bas de la gouttière à 0 et arrière (côté mur) à 0
+    def self.perso(g)
+      noms = LIB_GOUTTIERE[g[0]] or return nil
+      objs = A2M::Bibliotheque.objets
+      po = objs.find { |o| o['nom'] == noms[0] && o['profils'] } or return nil
+      pts = po['profils'][0][1].map { |x, z| [x.to_f * 2.54, z.to_f * 2.54] }
+      return nil if pts.size < 6
+      lg = pts.map(&:first); hg = pts.map(&:last)
+      pts = pts.map { |x, z| [x - lg.min, z - hg.min] }
+      { 'pts' => pts, 'larg' => lg.max - lg.min, 'haut' => hg.max - hg.min, 'crochet' => objs.find { |o| o['nom'] == noms[1] && o['fichier'] } }
+    end
+
     def self.profil(forme, r)
       ep = 0.1
       pts = []
@@ -225,7 +241,13 @@ module A2M
     def self.gouttiere(model, a, b, sortie, g, crochet_cm = 50)
       sortie = sortie.clone; sortie.normalize!
       d = b - a; l = d.length
-      pf = profil(g[4], g[3])
+      pe = perso(g)
+      if pe
+        xg = pe['larg'] / 2.0 * 0.4
+        pf = pe['pts'].map { |w, h| [w - pe['larg'] / 2.0 + xg, h - 2.0 - pe['haut']] }
+      else
+        pf = profil(g[4], g[3])
+      end
       face_pts = pf.map { |w, h| a.offset(sortie, w.cm).offset(Z_AXIS, h.cm) }
       grp = model.entities.add_group
       tg, _ = A2M::Balises.balise(model, 'A2M_GOUTTIERE', [130, 140, 150])
@@ -237,7 +259,7 @@ module A2M
       f.followme(chemin) rescue nil
       grp.entities.grep(Sketchup::Edge).each { |e| e.erase! if e.valid? && e.faces.empty? }
       grp.entities.grep(Sketchup::Face).each { |x| x.material = Sketchup::Color.new(*GRIS_ZINC); x.back_material = Sketchup::Color.new(*GRIS_ZINC) }
-      crochets(grp, a, d, sortie, pf, crochet_cm)
+      pe && pe['crochet'] ? crochets_objet(model, grp, a, d, sortie, pe, xg, crochet_cm) : crochets(grp, a, d, sortie, pf, crochet_cm)
       A2M::Modif.noter(grp, 'zinguerie', { 'r' => @r_en_cours }) if @r_en_cours
       grp.set_attribute('a2m', 'zinguerie', JSON.generate('type' => g[1], 'ml' => (l.to_f * 0.0254).round(2)))
       [grp, (l.to_f * 0.0254)]
@@ -263,6 +285,27 @@ module A2M
       end
     end
 
+
+    # Crochets de ta bibliothèque : posés tous les « pas » cm, creux du crochet sous le creux de la gouttière
+    # (objet : X le long de la gouttière, Y de l'arrière vers l'avant, Z vers le haut, bas du crochet à Z = 0)
+    def self.crochets_objet(model, grp, a, d, sortie, pe, xg, pas_cm)
+      return if pas_cm.to_f < 15
+      defn = A2M::Bibliotheque.charger(pe['crochet'], model)
+      l = d.length; u = d.normalize
+      ux = (u.cross(sortie).z > 0) ? u : u.reverse     # repère direct : X x Y = Z vers le haut
+      lc = pe['crochet']['l0'].to_f                      # largeur du crochet le long de la gouttière (pouces)
+      n = ((l.to_f / 2.54 - 20) / pas_cm).floor
+      (0..n).each do |i|
+        t = (10 + i * pas_cm).cm
+        break if t > l - 5.cm
+        q = a.offset(u, t)
+        o = q.offset(ux, -lc / 2.0).offset(sortie, (xg - pe['larg'] / 2.0 - 0.22).cm).offset(Z_AXIS, (-2.0 - pe['haut'] - 0.2).cm)
+        tr = Geom::Transformation.axes(o, ux, sortie, Z_AXIS)
+        inst = grp.entities.add_instance(defn, tr)
+        inst.name = 'Crochet' if inst
+      end
+    end
+
     def self.zsol(model)
       zs = []
       A2M::Plan2D.parcourir(model.entities, Geom::Transformation.new) { |e, t| zs << A2M::Plan2D.coins(e, t).map(&:z).min if e.layer.name == 'A2M_PIECE' }
@@ -275,6 +318,8 @@ module A2M
     # Toutes les cotes du montage, en cm, dans le repère de la coupe : x vers l'extérieur depuis la ligne d'égout, z depuis l'égout
     def self.mesures(ctx, p, g, de, hsol_cm)
       rg = g[3]; r = de[2]
+      pe = perso(g)
+      rg = pe['larg'] / 2.0 if pe
       demi = (g[4] == :demi)
       xg = demi ? rg * 0.4 : rg * 1.4   # axe de la gouttière par rapport à la ligne d'égout
       deb = p['deb'].to_f
@@ -286,7 +331,7 @@ module A2M
         rb = [(xg - xw) / 2.0, 0.5].max
         msg = 'Le débord est trop faible pour deux coudes : augmentez la distance égout → mur ou réduisez l\'écart au mur.'
       end
-      z0 = demi ? -2.0 - rg : -2.0
+      z0 = demi ? -2.0 - (pe ? pe['haut'] : rg) : -2.0
       z1 = z0 - 6.0 - p['chute'].to_f
       z2 = z1 - 2 * rb
       zb = -hsol_cm + p['haut_sol'].to_f
@@ -299,7 +344,7 @@ module A2M
       cols = if n == 1 || zc_h <= zc_b then [(zc_h + zc_b) / 2.0]
              else (0...n).map { |i| zc_h + (zc_b - zc_h) * i / (n - 1.0) } end
       { 'deb' => deb, 'xg' => xg, 'xw' => xw, 'r' => r, 'rg' => rg, 'rb' => rb, 'z0' => z0, 'z1' => z1, 'z2' => z2, 'zb' => zb,
-        'haut' => hsol_cm, 'demi' => demi, 'L' => (xg - rb) - (xw + rb), 'colliers' => cols, 'msg' => msg, 'long' => ctx['long'].to_f }
+        'haut' => hsol_cm, 'demi' => demi, 'ry' => (pe ? pe['haut'] : rg), 'L' => (xg - rb) - (xw + rb), 'colliers' => cols, 'msg' => msg, 'long' => ctx['long'].to_f }
     end
 
     def self.pt_local(o, s, x, z) o.offset(s, x.cm).offset(Z_AXIS, z.cm) end
@@ -577,35 +622,3 @@ module A2M
   end
 end
 
-# TEMPORAIRE (relevé de la géométrie des objets de zinguerie) : à retirer
-unless defined?(A2M::DIAG_ZING)
-  A2M::DIAG_ZING = true
-  UI.start_timer(2, false) do
-    begin
-      model = Sketchup.active_model
-      model.start_operation('diag', true)
-      out = {}
-      ['Zinguerie/Crochet goutière Dev 25', 'Zinguerie/Naissance Dev 25', 'Zinguerie/Colier descente zinc'].each do |n|
-        obj = { 'fichier' => n + '.skp' }
-        d = A2M::Bibliotheque.charger(obj, model)
-        b = d.bounds
-        info = { 'bb' => [b.min, b.max].map { |p| p.to_a.map { |v| (v * 2.54).round(2) } }, 'sous' => [], 'faces' => [] }
-        d.entities.each do |e|
-          next unless e.respond_to?(:bounds) && !e.is_a?(Sketchup::Face) && !e.is_a?(Sketchup::Edge)
-          bb = e.bounds
-          info['sous'] << [e.class.name.split('::').last, (e.name rescue ''), [bb.min, bb.max].map { |p| p.to_a.map { |v| (v * 2.54).round(2) } }]
-        end
-        A2M::Bibliotheque.faces(d.entities, Geom::Transformation.new) do |f, tr|
-          next if info['faces'].size > 500
-          info['faces'] << f.vertices.map { |v| (tr * v.position).to_a.map { |c| (c * 2.54).round(2) } }
-        end
-        out[n] = info
-      end
-      model.abort_operation
-      File.write(File.join(ENV['USERPROFILE'], 'Documents', 'ATELIER 2M', 'diag_zinguerie.json'), JSON.pretty_generate(out), encoding: 'UTF-8')
-    rescue StandardError => ex
-      (model.abort_operation rescue nil)
-      File.write(File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_zinguerie.json'), "ERREUR #{ex.message}\n#{ex.backtrace.first(4).join("\n")}", encoding: 'UTF-8') rescue nil
-    end
-  end
-end

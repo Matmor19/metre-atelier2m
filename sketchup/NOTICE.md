@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.64)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.65)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,7 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
-- Provisoire : relevé de la géométrie de tes objets de zinguerie (crochet, naissance, collier) pour les poser à la place des pièces provisoires
+- Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires
 - Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable
 - Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées au nu du placo, contrôle des objets)
 - Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire
