@@ -37,7 +37,7 @@ module A2M
       <h2>Type de toiture</h2>
       <div class="puces" id="types"></div>
       <div id="sens_bloc"><h2>Faîtage parallèle au</h2><div class="puces" id="sens"></div></div>
-      <div id="haut_bloc"><h2>Monopente : côté haut</h2><div class="puces" id="haut"></div></div>
+      <div id="haut_bloc"><h2 id="haut_titre">Monopente : côté haut</h2><div class="puces" id="haut"></div></div>
       <div id="champs"></div>
       <div id="pig_bloc"><div class="rang"><label><input type="checkbox" id="pignons"> Murs pignons (extrémités du faîtage, jusqu'à la toiture)</label></div>
         <div id="pig_opts"><div class="puces" id="pig_type"></div><div class="rang" id="pig_comp_bloc"><select id="pig_comp" style="max-width:100%;padding:6px;border-radius:8px"></select></div></div></div>
@@ -65,8 +65,9 @@ module A2M
       function rendre() {
         puces('types', D.types, 'type'); puces('sens', ['grand côté', 'petit côté'], 'sens'); puces('haut', D.hauts, 'haut'); puces('num', ['1', '2', '3', '4'], 'num');
         el('sens_bloc').style.display = (P.type === 'Suit les murs') ? 'none' : 'block';
-        var pg = (P.type === '2 pans' || P.type === 'Monopente'); el('pig_bloc').style.display = pg ? 'block' : 'none'; el('pignons').checked = !!P.pignons; var wp = el('w_pig_ep'); if (wp) wp.style.display = (pg && P.pignons && P.pig_type !== 'compose') ? 'grid' : 'none'; el('pig_opts').style.display = (pg && P.pignons) ? 'block' : 'none'; pigtype();
-        el('haut_bloc').style.display = (P.type === 'Monopente') ? 'block' : 'none';
+        var pg = (P.type === '2 pans' || P.type === '3 pans' || P.type === 'Monopente'); el('pig_bloc').style.display = pg ? 'block' : 'none'; el('pignons').checked = !!P.pignons; var wp = el('w_pig_ep'); if (wp) wp.style.display = (pg && P.pignons && P.pig_type !== 'compose') ? 'grid' : 'none'; el('pig_opts').style.display = (pg && P.pignons) ? 'block' : 'none'; pigtype();
+        el('haut_bloc').style.display = (P.type === 'Monopente' || P.type === '3 pans') ? 'block' : 'none';
+        el('haut_titre').textContent = P.type === '3 pans' ? '3 pans : côté de la croupe' : 'Monopente : côté haut';
       }
       function pigtype() {
         var z = el('pig_type'); z.innerHTML = '';
@@ -163,7 +164,7 @@ module A2M
       o = Geom::Point3d.new(*base['o']); u = Geom::Vector3d.new(*base['u']); v = Geom::Vector3d.new(*base['v'])
       l, w = base['l'], base['w']
       if prm[:sens] == 'petit côté' then o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l end
-      if prm[:type] == 'Monopente' && prm[:haut] == 'côté de l\'origine' then o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse end
+      if ['Monopente', '3 pans'].include?(prm[:type]) && prm[:haut] == 'côté de l\'origine' then o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse end
       [o, u, v, l, w]
     end
 
@@ -189,13 +190,13 @@ module A2M
 
     # Murs pignons : les deux extrémités du faîtage (types 2 pans et monopente), jusqu'à la sous-face de la toiture
     def self.pignons(model, toit, prm, base)
-      return 0 unless prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])
+      return 0 unless prm[:pignons] && base['k'] == 'rect' && ['2 pans', '3 pans', 'Monopente'].include?(prm[:type])
       o, u, v, l, w = repere(prm, base)
       s = prm[:pente] / 100.0
       z0 = base['ztop'].to_f
-      profil = prm[:type] == '2 pans' ? [[0, 0], [w, 0], [w / 2.0, s * w / 2.0]] : [[0, 0], [w, 0], [w, s * w]]
+      profil = ['2 pans', '3 pans'].include?(prm[:type]) ? [[0, 0], [w, 0], [w / 2.0, s * w / 2.0]] : [[0, 0], [w, 0], [w, s * w]]
       cree = 0
-      [0, 1].each do |bout|
+      (prm[:type] == '3 pans' ? [0] : [0, 1]).each do |bout|
         acc = 0.0
         couches_pignon(prm).each do |k|
           e = k['e'] / 100.0
@@ -226,7 +227,7 @@ module A2M
         o = Geom::Point3d.new(*base['o']); u = Geom::Vector3d.new(*base['u']); v = Geom::Vector3d.new(*base['v'])
         l, w = base['l'], base['w']
         if prm[:sens] == 'petit côté' then o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l end
-        if prm[:type] == 'Monopente' && prm[:haut] == 'côté de l\'origine' then o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse end
+        if ['Monopente', '3 pans'].include?(prm[:type]) && prm[:haut] == 'côté de l\'origine' then o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse end
         proj = ->(q) { d = q - o; [d.dot(u).to_m, d.dot(v).to_m, (q.z - ztop).to_m] }
         contour = [[0, 0], [l, 0], [l, w], [0, w]]
         murs = [[-0.1, 0.1], [w - 0.1, w + 0.1]]
@@ -251,7 +252,7 @@ module A2M
         segs << [cr.first, cr.last] if cr.size >= 2
       end
       hmax = pp.flatten(1).map { |q| q[2] }.max.to_f
-      pig = (prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])) ? [[0.0, pig_epaisseur(prm) / 100.0], [l - pig_epaisseur(prm) / 100.0, l]] : []
+      pig = (prm[:pignons] && base['k'] == 'rect' && ['2 pans', '3 pans', 'Monopente'].include?(prm[:type])) ? (prm[:type] == '3 pans' ? [[0.0, pig_epaisseur(prm) / 100.0]] : [[0.0, pig_epaisseur(prm) / 100.0], [l - pig_epaisseur(prm) / 100.0, l]]) : []
       { 'pig' => pig, 'wlarg' => (base['k'] == 'rect' ? w : 0), 'polys' => pp, 'contour' => contour, 'coupe' => segs, 'murs' => murs, 'ep' => prm[:ep].to_f, 'hfaite' => hmax }
     end
 

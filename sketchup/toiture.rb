@@ -6,7 +6,7 @@ require File.join(File.dirname(__FILE__), 'squelette')
 
 module A2M
   module Toiture
-    TYPES = ['2 pans', '4 pans', 'Monopente', 'Suit les murs']
+    TYPES = ['2 pans', '3 pans', '4 pans', 'Monopente', 'Suit les murs']
     SUIT = 'Suit les murs'
     @r = {}
 
@@ -19,6 +19,12 @@ module A2M
         zr = s * w / 2.0
         [[[-d, -d, ze], [l + d, -d, ze], [l + d, w / 2.0, zr], [-d, w / 2.0, zr]],
          [[l + d, w + d, ze], [-d, w + d, ze], [-d, w / 2.0, zr], [l + d, w / 2.0, zr]]]
+      when '3 pans'   # pignon côté u = 0, croupe côté u = L
+        zr = s * w / 2.0
+        r2 = [[l - w / 2.0, 0.0].max, w / 2.0, zr]
+        [[[-d, -d, ze], [l + d, -d, ze], r2, [-d, w / 2.0, zr]],
+         [[l + d, w + d, ze], [-d, w + d, ze], [-d, w / 2.0, zr], r2],
+         [[l + d, -d, ze], [l + d, w + d, ze], r2]]
       when '4 pans'
         zr = s * w / 2.0
         if l <= w + 1e-9   # carré ou presque : pyramide
@@ -228,7 +234,7 @@ module A2M
         if prm[:sens] == 'petit côté'
           o = o.offset(u, l.m); u, v = v, u.reverse; l, w = w, l
         end
-        if type == 'Monopente' && prm[:haut] == 'côté de l\'origine'
+        if ['Monopente', '3 pans'].include?(type) && prm[:haut] == 'côté de l\'origine'
           o = o.offset(u, l.m).offset(v, w.m); u = u.reverse; v = v.reverse
         end
         polys = pans(type, l, w, s, d).map do |poly|
