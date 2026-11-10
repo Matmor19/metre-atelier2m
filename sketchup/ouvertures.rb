@@ -144,7 +144,7 @@ module A2M
       { 'seuil_porte' => r['seuil_porte'].to_f, 'ts' => @r[:ts], 'l' => @r[:l] || 100, 'h' => @r[:h] || 125, 'lin' => @r[:lin] || r['lin'].to_f,
         'dernier_as' => Hash[TYPES_SAISIE.map { |t| [t, (@r[t] || {})[:as_note]] }],
         'listes' => { 'Appui de fenêtre' => appuis_seuils('Appui de fenêtre')[1], 'Seuil' => appuis_seuils('Seuil')[1] },
-        'recents' => @r[:recents] || [], 'modele' => @r[:modele] }
+        'recents' => @r[:recents] || [], 'modele' => @r[:modele], 'vant' => @r[:vant], 'gal' => @r[:gal] }
     end
 
     HTML_PANNEAU = <<~'HTML'
@@ -188,7 +188,8 @@ module A2M
       <h2>Type</h2>
       <div class="types" id="types"></div><div id="origine"></div>
 
-      <div id="bloc_mod"><h2>Modèle</h2><div class="types" id="modeles" style="grid-template-columns:repeat(5,1fr);gap:6px"></div></div>
+      <div id="bloc_mod"><h2>Modèle</h2><div class="types" id="modeles" style="grid-template-columns:repeat(5,1fr);gap:6px"></div>
+        <div id="bloc_coul" style="display:none;margin-top:8px"><div class="petit">Coulissante : nombre de vantaux</div><div class="puces" id="vant" style="margin:4px 0 8px"></div><div class="petit">Galandage (le vantail rentre dans la cloison)</div><div class="puces" id="gal" style="margin-top:4px"></div></div></div>
 
       <h2>Taille de l'ouverture</h2>
       <div class="dims">
@@ -227,7 +228,7 @@ module A2M
         if (k === 3) s += '<path d="M54 10 L10 29 L54 48 M10 10 L32 48 L54 10" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
         return '<svg viewBox="0 0 64 60" style="width:46px;height:44px;display:block;margin:0 auto">' + s + '<path d="M3 57H61" stroke="#E07838" stroke-width="3.5" stroke-linecap="round"/></svg>';
       }
-      var etat = { modele: D.modele || '', ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
+      var etat = { vant: D.vant || '2', gal: D.gal || '0', modele: D.modele || '', ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
       TYPES.forEach(function (t) {
         var d = D.dernier_as[t], liste = D.listes[t === TYPES[0] ? 'Appui de fenêtre' : 'Seuil'] || [];
         if (d === '' || (d && liste.indexOf(d) >= 0)) etat.choix[t] = d;
@@ -255,11 +256,25 @@ module A2M
         b.addEventListener('click', function () { etat.modele = (etat.modele === m[0] ? '' : m[0]); maj(); });
         bm.appendChild(b);
       });
+      function coul() {
+        var actif = etat.ts !== TYPES[2] && etat.modele === 'coulissante';
+        el('bloc_coul').style.display = actif ? '' : 'none';
+        var v = el('vant'); v.innerHTML = '';
+        [['2', '2 vantaux'], ['3', '3 vantaux'], ['4', '4 vantaux']].forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.vant === x[0] ? ' rempli' : ''); b.textContent = x[1];
+          b.addEventListener('click', function () { etat.vant = x[0]; maj(); }); v.appendChild(b);
+        });
+        var g = el('gal'); g.innerHTML = '';
+        [['0', 'Sans galandage'], ['1', 'Galandage d\u2019un côté'], ['2', 'Galandage des deux côtés']].forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (etat.gal === x[0] ? ' rempli' : ''); b.textContent = x[1];
+          b.addEventListener('click', function () { etat.gal = x[0]; maj(); }); g.appendChild(b);
+        });
+      }
       function modeleActif() { return etat.ts !== TYPES[2] ? MODELES.filter(function (m) { return m[0] === etat.modele; })[0] : null; }
 
       function apercu() {
         var l = etat.l, h = etat.h; if (!(l > 0 && h > 0)) { el('apercu').innerHTML = '<div class="petit" style="text-align:center;padding:60px 0">Tapez la largeur et la hauteur : l\'ouverture se dessine ici.</div>'; return; }
-        var lin = Math.max(etat.lin, h), W = Math.max(l + 140, 280), H = Math.max(lin + 50, 260), fs = Math.max(W, H) / 20;
+        var mo0 = modeleActif(), nvv = (mo0 && mo0[0] === 'coulissante') ? +etat.vant : 0, gal = nvv ? +etat.gal : 0, pw = gal ? (l - 16) / nvv : 0, lin = Math.max(etat.lin, h), W = Math.max(l + 140 + (gal ? 2 * pw : 0), 280), H = Math.max(lin + 50, 260), fs = Math.max(W, H) / 20;
         var x0 = (W - l) / 2, yh = H - lin, yb = H - (lin - h), s = '';
         s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#E4DCD2" stroke="#9c9186" stroke-width="1.5"/>';
         s += '<rect x="' + x0 + '" y="' + yh + '" width="' + l + '" height="' + h + '" fill="#fff" stroke="#3C3C3C" stroke-width="3"/>';
@@ -270,8 +285,9 @@ module A2M
           s += '<circle cx="' + (x0 + l - c - 8) + '" cy="' + (yh + h * .55) + '" r="3" fill="#3C3C3C"/>';
         } else {
           s += '<rect x="' + (x0 + c) + '" y="' + (yh + c) + '" width="' + (l - 2 * c) + '" height="' + (h - 2 * c) + '" fill="#BFE0F5" stroke="#3C3C3C" stroke-width="1.5"/>';
-          var mo = modeleActif(), nv = mo ? mo[2] : 2, iw = (l - 2 * c) / nv;
+          var mo = modeleActif(), nv = mo ? (nvv || mo[2]) : 2, iw = (l - 2 * c) / nv;
           for (var q = 1; q < nv; q++) s += '<path d="M' + (x0 + c + q * iw) + ' ' + (yh + c) + 'V' + (yb - c) + '" stroke="#3C3C3C" stroke-width="1.8"/>';
+          if (gal) { var pl = ''; if (gal === 2) pl += '<rect x="' + (x0 - pw) + '" y="' + (yh + c) + '" width="' + pw + '" height="' + (h - 2 * c) + '" fill="#BFE0F5" fill-opacity=".35" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="5 3"/>'; pl += '<rect x="' + (x0 + l) + '" y="' + (yh + c) + '" width="' + pw + '" height="' + (h - 2 * c) + '" fill="#BFE0F5" fill-opacity=".35" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="5 3"/>'; s += pl; }
           if (mo && mo[3] === 1) s += '<path d="M' + (x0 + l * .2) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .4) + 'M' + (x0 + l * .8) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .6) + '" stroke="#E07838" stroke-width="3" marker-end="none"/>';
           if (mo && mo[3] === 3) { var xa = x0 + c, xb = x0 + l - c, ya = yh + c, yb2 = yb - c; s += '<path d="M' + xb + ' ' + ya + 'L' + xa + ' ' + (yh + h / 2) + 'L' + xb + ' ' + yb2 + 'M' + xa + ' ' + ya + 'L' + (x0 + l / 2) + ' ' + yb2 + 'L' + xb + ' ' + ya + '" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="6 4"/>'; }
           if (mo && mo[3] === 0) for (var q2 = 0; q2 < nv; q2++) s += '<path d="M' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yh + c) + 'L' + (x0 + c + (q2 + .5) * iw) + ' ' + (yh + h / 2) + 'L' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yb - c) + '" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="6 4"/>';
@@ -315,6 +331,9 @@ module A2M
         if (!etat.manuel && etat.l > 0 && etat.h > 0) etat.ts = deduire(etat.l, etat.h);
         document.querySelectorAll('.type').forEach(function (b) { b.classList.toggle('actif', b.dataset.t ? b.dataset.t === etat.ts : b.dataset.m === etat.modele); });
         el('bloc_mod').style.display = etat.ts === TYPES[2] ? 'none' : '';
+        var bf = document.querySelector('[data-m="fixe"]'); if (bf) bf.style.display = etat.ts === TYPES[1] ? 'none' : '';
+        if (etat.ts === TYPES[1] && etat.modele === 'fixe') etat.modele = '';
+        coul();
         el('origine').textContent = etat.manuel ? 'Type choisi par vous.' : (etat.l > 0 && etat.h > 0 ? 'Type reconnu d\'après la taille : cliquez un autre type pour le changer.' : '');
         el('l').classList.toggle('ok', etat.l > 0); el('h').classList.toggle('ok', etat.h > 0); el('lin').classList.toggle('ok', etat.lin > 0);
         apercu(); puces();
@@ -331,7 +350,7 @@ module A2M
       el('lin').addEventListener('input', function () { etat.lin = nombre(this.value); maj(); });
       el('go').addEventListener('click', function () {
         if (el('go').disabled) return;
-        sketchup.valider(JSON.stringify({ modele: etat.ts === TYPES[2] ? '' : etat.modele, ts: etat.ts, l: etat.l, h: etat.h, lin: Math.max(etat.lin, etat.h), as: etat.choix[etat.ts] === undefined ? '' : etat.choix[etat.ts] }));
+        sketchup.valider(JSON.stringify({ vant: etat.vant, gal: etat.gal, modele: etat.ts === TYPES[2] ? '' : etat.modele, ts: etat.ts, l: etat.l, h: etat.h, lin: Math.max(etat.lin, etat.h), as: etat.choix[etat.ts] === undefined ? '' : etat.choix[etat.ts] }));
       });
       document.addEventListener('keydown', function (e) { if (e.key === 'Enter') el('go').click(); });
       recents(); maj(); el('l').focus(); el('l').select();
@@ -356,6 +375,8 @@ module A2M
         (@r[ts] ||= {})[:as_note] = as || ''
         modele = MODELES.key?(d['modele']) ? d['modele'] : nil
         @r[:modele] = modele
+        @r[:vant] = %w[2 3 4].include?(d['vant'].to_s) ? d['vant'].to_s : '2'
+        @r[:gal] = %w[0 1 2].include?(d['gal'].to_s) ? d['gal'].to_s : '0'
         dlg.close
         UI.start_timer(0, false) { suite.call(construire_etat(ts, l, h, lin, as)) }
       end
@@ -430,11 +451,17 @@ module A2M
       opts = obj && r['options'] ? A2M::Bibliotheque.demander_options(obj) : {}
       return nil if opts.nil?
       modele = (ts != 'Porte d\'entrée' && ts != 'Ouverture libre (passage sans porte)') ? MODELES[@r[:modele]] : nil
+      galandage = nil
+      if modele && @r[:modele] == 'coulissante'
+        galandage = (@r[:gal] || '0')
+        modele = [(@r[:vant] || '2'), galandage != '0' ? 'galandage' : 'coulissante']
+      end
       if modele
         base = (obj && obj['choix'] ? obj['choix'].dup : {}).merge('vantaux' => modele[0], 'ouvrant' => modele[1])
         obj = obj ? obj.merge('choix' => base) : obj
       end
       me = r['choix'] ? choix_menuiserie(tag, obj && obj['choix'] || (modele ? { 'vantaux' => modele[0], 'ouvrant' => modele[1] } : nil)) : (obj && obj['choix'] && obj['choix'].any? ? obj['choix'] : (modele ? { 'vantaux' => modele[0], 'ouvrant' => modele[1] } : nil))
+      me = (me || {}).merge('galandage' => galandage) if galandage && galandage != '0'
       as_obj = choix_as ? aps[asl.index(choix_as)] : nil
       p = { type: type, l: l, h: h, lin: lin, n: 6, contigu: true, res: tag, obj: obj, opts: opts,
             appui: haute ? r['res_porte'].to_f : r['res_fen'].to_f, piece: nil, me: me, as_obj: as_obj, debord: r['debord'].to_f }
