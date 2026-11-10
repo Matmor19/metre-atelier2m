@@ -16,6 +16,8 @@ module A2M
     ].freeze
     # Objets de ta bibliothèque utilisés à la place des formes calculées : [profil de gouttière, crochet]
     LIB_GOUTTIERE = { 'demi25' => ['Goutière Zinc', 'Crochet goutière Dev 25'] }.freeze
+    # Objets de la descente pour cette gouttière : naissance, collier (pour Ø 80), regard en pied
+    LIB_DESCENTE = { 'demi25' => { 'naissance' => 'Naissance Dev 25', 'collier' => 'Colier descente zinc', 'regard' => 'Regard béton pied de descente' } }.freeze
     DESCENTES = [['d60', 'Ø 60', 3.0], ['d80', 'Ø 80', 4.0], ['d100', 'Ø 100', 5.0]].freeze
     PARAM_DEFAUT = { 'jeu' => 3.0, 'chute' => 10.0, 'haut_sol' => 0.0, 'c1' => 25.0, 'c2' => 30.0, 'n' => 3, 'regard' => true, 't' => 0.0 }.freeze
     GRIS_ZINC = [150, 160, 168].freeze
@@ -219,7 +221,11 @@ module A2M
       return nil if pts.size < 6
       lg = pts.map(&:first); hg = pts.map(&:last)
       pts = pts.map { |x, z| [x - lg.min, z - hg.min] }
-      { 'pts' => pts, 'larg' => lg.max - lg.min, 'haut' => hg.max - hg.min, 'crochet' => objs.find { |o| o['nom'] == noms[1] && o['fichier'] } }
+      bas = pts.min_by { |_x, z| z }   # creux de la gouttière : le tuyau de descente passe sous ce point
+      ld = LIB_DESCENTE[g[0]] || {}
+      trouve = ->(n) { n && objs.find { |o| o['nom'] == n && o['fichier'] } }
+      { 'pts' => pts, 'larg' => lg.max - lg.min, 'haut' => hg.max - hg.min, 'cx' => bas[0],
+        'crochet' => trouve.(noms[1]), 'naissance' => trouve.(ld['naissance']), 'collier' => trouve.(ld['collier']), 'regard' => trouve.(ld['regard']) }
     end
 
     def self.profil(forme, r)
@@ -238,31 +244,74 @@ module A2M
       end[0]
     end
 
+    # Positions (pouces, depuis a) des naissances de descente posées sur cet égout : la gouttière y est coupée
+    def self.coupes_naissances(model, a, b, g)
+      res = []
+      model.entities.grep(Sketchup::Group).each do |e|
+        next unless e.valid? && e.layer.name == 'A2M_DESCENTE'
+        o = A2M::Modif.lire(e) or next
+        d = o[1]
+        next unless d['kind'] == 'descente' && d['ctx'] && d['ctx']['a'] && d['ctx']['b'] && d['p'] && d['p']['g'] == g[0]
+        next unless Geom::Point3d.new(*d['ctx']['a']).distance(a) < 0.05 && Geom::Point3d.new(*d['ctx']['b']).distance(b) < 0.05
+        res << [[d['p']['t'].to_f.m, 0.0].max, (b - a).length].min
+      end
+      res.sort
+    end
+
     def self.gouttiere(model, a, b, sortie, g, crochet_cm = 50)
       sortie = sortie.clone; sortie.normalize!
-      d = b - a; l = d.length
+      d = b - a; l = d.length; u = d.normalize
       pe = perso(g)
       if pe
-        xg = pe['larg'] / 2.0 * 0.4
-        pf = pe['pts'].map { |w, h| [w - pe['larg'] / 2.0 + xg, h - 2.0 - pe['haut']] }
+        xg = pe['cx'] * 0.4   # le creux de la gouttière est un peu vers l'extérieur de l'égout
+        pf = pe['pts'].map { |w, h| [w - pe['cx'] + xg, h - 2.0 - pe['haut']] }
       else
         pf = profil(g[4], g[3])
       end
-      face_pts = pf.map { |w, h| a.offset(sortie, w.cm).offset(Z_AXIS, h.cm) }
+      # tronçons : la gouttière est coupée là où ta naissance est posée
+      coupes = pe && pe['naissance'] ? coupes_naissances(model, a, b, g) : []
+      demi = pe && pe['naissance'] ? pe['naissance']['l0'].to_f / 2.0 : 0.0
+      tronc = []; pos = 0.0
+      coupes.each { |t| c0 = t - demi; tronc << [pos, c0] if c0 - pos > 5.cm; pos = [pos, t + demi].max }
+      tronc << [pos, l] if l - pos > 5.cm
       grp = model.entities.add_group
       tg, _ = A2M::Balises.balise(model, 'A2M_GOUTTIERE', [130, 140, 150])
       grp.layer = tg
       grp.name = "Gouttière #{g[1]} – #{(l.to_f * 0.0254).round(2)} m"
-      f = grp.entities.add_face(face_pts)
-      return grp.erase! unless f
-      chemin = grp.entities.add_edges(a, b)
-      f.followme(chemin) rescue nil
+      ok = false
+      tronc.each do |t0, t1|
+        p0 = a.offset(u, t0); p1 = a.offset(u, t1)
+        f = grp.entities.add_face(pf.map { |w, h| p0.offset(sortie, w.cm).offset(Z_AXIS, h.cm) })
+        next unless f
+        f.followme(grp.entities.add_edges(p0, p1)) rescue nil
+        ok = true
+      end
+      return grp.erase! unless ok
       grp.entities.grep(Sketchup::Edge).each { |e| e.erase! if e.valid? && e.faces.empty? }
       grp.entities.grep(Sketchup::Face).each { |x| x.material = Sketchup::Color.new(*GRIS_ZINC); x.back_material = Sketchup::Color.new(*GRIS_ZINC) }
-      pe && pe['crochet'] ? crochets_objet(model, grp, a, d, sortie, pe, xg, crochet_cm) : crochets(grp, a, d, sortie, pf, crochet_cm)
+      pe && pe['crochet'] ? crochets_objet(model, grp, a, d, sortie, pe, xg, crochet_cm, coupes) : crochets(grp, a, d, sortie, pf, crochet_cm)
       A2M::Modif.noter(grp, 'zinguerie', { 'r' => @r_en_cours }) if @r_en_cours
+      grp.set_attribute('a2m', 'edge', JSON.generate([a.to_a, b.to_a, sortie.to_a]))
       grp.set_attribute('a2m', 'zinguerie', JSON.generate('type' => g[1], 'ml' => (l.to_f * 0.0254).round(2)))
       [grp, (l.to_f * 0.0254)]
+    end
+
+    # Refait la gouttière de cet égout avec ses réglages d'origine (après la pose, le déplacement ou la suppression d'une naissance)
+    def self.refaire_gouttiere(model, ctx)
+      a = Geom::Point3d.new(*ctx['a']); b = Geom::Point3d.new(*ctx['b'])
+      model.entities.grep(Sketchup::Group).each do |e|
+        next unless e.valid? && e.layer.name == 'A2M_GOUTTIERE'
+        ed = (JSON.parse(e.get_attribute('a2m', 'edge').to_s) rescue nil) or next
+        next unless Geom::Point3d.new(*ed[0]).distance(a) < 0.05 && Geom::Point3d.new(*ed[1]).distance(b) < 0.05
+        o = A2M::Modif.lire(e)
+        r = o && o[1]['r'] or next
+        g = GOUTTIERES.find { |x| x[0] == r['g'] } or next
+        e.erase!
+        @r_en_cours = r
+        gouttiere(model, a, b, Geom::Vector3d.new(*ed[2]), g, r['crochet'].to_f.nonzero? || 50)
+        return true
+      end
+      false
     end
 
     # Crochets provisoires : une tranche du profil, un peu plus grande, tous les « pas » cm (remplacés plus tard par vos objets)
@@ -288,7 +337,7 @@ module A2M
 
     # Crochets de ta bibliothèque : posés tous les « pas » cm, creux du crochet sous le creux de la gouttière
     # (objet : X le long de la gouttière, Y de l'arrière vers l'avant, Z vers le haut, bas du crochet à Z = 0)
-    def self.crochets_objet(model, grp, a, d, sortie, pe, xg, pas_cm)
+    def self.crochets_objet(model, grp, a, d, sortie, pe, xg, pas_cm, coupes = [])
       return if pas_cm.to_f < 15
       defn = A2M::Bibliotheque.charger(pe['crochet'], model)
       l = d.length; u = d.normalize
@@ -298,8 +347,10 @@ module A2M
       (0..n).each do |i|
         t = (10 + i * pas_cm).cm
         break if t > l - 5.cm
+        demi_n = pe['naissance'] ? pe['naissance']['l0'].to_f / 2.0 + lc / 2.0 + 1.cm : 0.0
+        next if coupes.any? { |c| (c - t).abs < demi_n }   # pas de crochet sous la naissance
         q = a.offset(u, t)
-        o = q.offset(ux, -lc / 2.0).offset(sortie, (xg - pe['larg'] / 2.0 - 0.22).cm).offset(Z_AXIS, (-2.0 - pe['haut'] - 0.2).cm)
+        o = q.offset(ux, -lc / 2.0).offset(sortie, (xg - pe['cx'] - 0.22).cm).offset(Z_AXIS, (-2.0 - pe['haut'] - 0.2).cm)
         tr = Geom::Transformation.axes(o, ux, sortie, Z_AXIS)
         inst = grp.entities.add_instance(defn, tr)
         inst.name = 'Crochet' if inst
@@ -319,7 +370,7 @@ module A2M
     def self.mesures(ctx, p, g, de, hsol_cm)
       rg = g[3]; r = de[2]
       pe = perso(g)
-      rg = pe['larg'] / 2.0 if pe
+      rg = pe['cx'] if pe
       demi = (g[4] == :demi)
       xg = demi ? rg * 0.4 : rg * 1.4   # axe de la gouttière par rapport à la ligne d'égout
       deb = p['deb'].to_f
@@ -393,6 +444,16 @@ module A2M
       colorier(e2, [60, 60, 60])
     end
 
+    # Ton collier : anneau vertical (centre à 6,96 / 10,55 / 1,35 cm dans l'objet), patte de scellement vers le mur (Y de l'objet vers l'extérieur)
+    def self.collier_objet(model, grp, obj, o, s, m, z)
+      defn = A2M::Bibliotheque.charger(obj, model)
+      x = s.cross(Z_AXIS); x.normalize!
+      c = pt_local(o, s, m['xw'], z)
+      base = c.offset(x, -6.96.cm).offset(s, -10.55.cm).offset(Z_AXIS, -1.35.cm)
+      inst = grp.entities.add_instance(defn, Geom::Transformation.axes(base, x, s, Z_AXIS))
+      inst.name = 'Collier' if inst
+    end
+
     def self.p_jeu_vers_mur(m) m['jeu'].to_f end
 
     def self.monter_descente(model, ctx, p)
@@ -408,17 +469,39 @@ module A2M
       grp = model.entities.add_group
       e = grp.entities
       r = m['r']
-      # naissance (évasée), tuyau jusqu'au premier coude
-      tube(e, pt_local(o, s, m['xg'], m['z0']), Z_AXIS.reverse, 6.cm, r * 1.25)
-      tube(e, pt_local(o, s, m['xg'], m['z0'] - 6), Z_AXIS.reverse, (m['z0'] - 6 - m['z1']).cm, r)
+      pe = perso(g)
+      nais = pe && pe['naissance'] && de[0] == 'd80' ? pe['naissance'] : nil
+      if nais
+        # ta naissance remplace la pièce provisoire ; la sortie fait 6,3 cm sous le creux de la gouttière
+        tube(e, pt_local(o, s, m['xg'], m['z0'] - 6.3), Z_AXIS.reverse, (m['z0'] - 6.3 - m['z1']).cm, r)
+      else
+        # naissance (évasée), tuyau jusqu'au premier coude
+        tube(e, pt_local(o, s, m['xg'], m['z0']), Z_AXIS.reverse, 6.cm, r * 1.25)
+        tube(e, pt_local(o, s, m['xg'], m['z0'] - 6), Z_AXIS.reverse, (m['z0'] - 6 - m['z1']).cm, r)
+      end
       coude(e, o, s, m['xg'] - m['rb'], m['z1'], m['rb'], 0, -90, r)
       hz = m['L']
       tube(e, pt_local(o, s, m['xg'] - m['rb'], m['z1'] - m['rb']), s.reverse, hz.cm, r) if hz > 0.1
       coude(e, o, s, m['xw'] + m['rb'], m['z2'], m['rb'], 90, 180, r)
       tube(e, pt_local(o, s, m['xw'], m['z2']), Z_AXIS.reverse, (m['z2'] - m['zb']).cm, r)
       colorier(e, GRIS_ZINC)
-      m['colliers'].each { |z| collier(grp, o, s, m, z) }
-      if p['regard']
+      if nais
+        ux = (u.cross(s).z > 0) ? u : u.reverse
+        base = o.offset(ux, -nais['l0'].to_f / 2.0).offset(s, (m['xg'] - pe['cx'] - 0.22).cm).offset(Z_AXIS, (m['z0'] - 6.3).cm)
+        inst = e.add_instance(A2M::Bibliotheque.charger(nais, model), Geom::Transformation.axes(base, ux, s, Z_AXIS))
+        inst.name = 'Naissance' if inst
+      end
+      col = pe && pe['collier'] && de[0] == 'd80' ? pe['collier'] : nil
+      m['colliers'].each { |z| col ? collier_objet(model, grp, col, o, s, m, z) : collier(grp, o, s, m, z) }
+      reg = pe && pe['regard'] ? pe['regard'] : nil
+      if p['regard'] && reg
+        dr = A2M::Bibliotheque.charger(reg, model)
+        bb = dr.bounds
+        cible = pt_local(o, s, m['xw'], m['zb'])
+        v = cible - Geom::Point3d.new(bb.center.x, bb.center.y, bb.max.z)   # centré sous le tuyau, dessus au bas du tuyau
+        ir = grp.entities.add_instance(dr, Geom::Transformation.translation(v))
+        ir.name = 'Regard en pied' if ir
+      elsif p['regard']
         ey = Z_AXIS.cross(s); ey.normalize!
         sg = grp.entities.add_group
         pts = [[-15, -15], [15, -15], [15, 15], [-15, 15]].map { |dx, dy| pt_local(o, s, m['xw'] + dx, m['zb']).offset(ey, dy.cm) }
@@ -546,6 +629,11 @@ module A2M
         old.erase! if old && old.valid?
         grp, m = monter_descente(model, @cur['ctx'], @cur['p'])
         @cur['grp'] = grp; @cur['premier'] = false
+        cle = [@cur['p']['t'], @cur['p']['g'], @cur['p']['d']]
+        if @cur['cle_gout'] != cle
+          refaire_gouttiere(model, @cur['ctx'])   # la gouttière est coupée à la naissance
+          @cur['cle_gout'] = cle
+        end
         model.commit_operation
         envoyer_etat(m, reset)
       rescue StandardError => ex
@@ -577,6 +665,7 @@ module A2M
       if g && g.valid?
         Sketchup.active_model.start_operation('Supprimer la descente', true)
         g.erase!
+        refaire_gouttiere(Sketchup.active_model, @cur['ctx'])   # la gouttière redevient continue
         Sketchup.active_model.commit_operation
       end
       @cur = nil
@@ -623,3 +712,32 @@ module A2M
 end
 
 
+
+# TEMPORAIRE (essai automatique de la descente dans un modèle vide, déclenché par un fichier-drapeau) : à retirer
+unless defined?(A2M::ESSAI_DESC)
+  A2M::ESSAI_DESC = true
+  UI.start_timer(2, false) do
+    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'test_gouttiere.flag')
+    next unless File.exist?(drap)
+    File.delete(drap) rescue nil
+    begin
+      model = Sketchup.active_model
+      model.start_operation('essai descente', true)
+      g = model.entities.add_group
+      g.name = 'Pan de toit essai'
+      g.entities.add_face([[0, 0, 0], [400.cm, 0, 0], [400.cm, 200.cm, 120.cm], [0, 200.cm, 120.cm]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
+      sol = model.entities.add_group
+      sol.name = 'Sol essai'
+      sol.entities.add_face([[-100.cm, -300.cm, -300.cm], [500.cm, -300.cm, -300.cm], [500.cm, 100.cm, -300.cm], [-100.cm, 100.cm, -300.cm]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
+      A2M::Zinguerie.poser('g' => 'demi25', 'cible' => 'tout', 'crochet' => 50)
+      model.commit_operation
+      A2M::Zinguerie.nouvelle_descente(Geom::Point3d.new(0, 0, 0), Geom::Point3d.new(400.cm, 0, 0), Geom::Vector3d.new(0, -1, 0), 200.cm)
+      A2M::Zinguerie.valider
+      model.active_view.camera = Sketchup::Camera.new(Geom::Point3d.new(330.cm, -230.cm, -40.cm), Geom::Point3d.new(200.cm, 0, -110.cm), Geom::Vector3d.new(0, 0, 1))
+      File.write(File.join(ENV['USERPROFILE'], 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), 'ok', encoding: 'UTF-8')
+    rescue StandardError => ex
+      (model.abort_operation rescue nil)
+      File.write(File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}", encoding: 'UTF-8') rescue nil
+    end
+  end
+end
