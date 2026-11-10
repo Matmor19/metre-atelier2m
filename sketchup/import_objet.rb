@@ -118,7 +118,7 @@ module A2M
     # Referme les petits trous (3 ou 4 arêtes de bord) : faces supprimées par erreur dans un maillage.
     # Les grandes ouvertures (dessous d'une coque, bout ouvert) ont plus d'arêtes et sont laissées telles quelles.
     def self.combler_trous(defn)
-      ents = defn.entities
+      ents = defn.respond_to?(:entities) ? defn.entities : defn
       bord = ents.grep(Sketchup::Edge).select { |e| e.faces.size == 1 }
       par_sommet = Hash.new { |h, k| h[k] = [] }
       bord.each { |e| par_sommet[e.start] << e; par_sommet[e.end] << e }
@@ -150,7 +150,7 @@ module A2M
     # Met toutes les faces d'une même pièce dans le même sens (arête parcourue en sens inverse par ses deux faces),
     # puis tourne la pièce entière pour que les faces regardent vers l'extérieur. Renvoie le nombre de faces retournées.
     def self.orienter_faces(defn)
-      faces = defn.entities.grep(Sketchup::Face)
+      faces = (defn.respond_to?(:entities) ? defn.entities : defn).grep(Sketchup::Face)
       vus = {}; retournees = 0
       faces.each do |seed|
         next if vus[seed] || !seed.valid?
@@ -180,6 +180,33 @@ module A2M
         end
       end
       retournees
+    end
+
+    # Diagnostic (provisoire) : compte les faces, les arêtes ouvertes, les faces incohérentes ; sélectionne les arêtes de bord
+    def self.diagnostic(reparer = false)
+      model = Sketchup.active_model
+      ents = model.active_entities
+      model.start_operation(reparer ? 'Réparer les faces' : 'Diagnostic des faces', true)
+      comb = 0; ret = 0
+      if reparer
+        comb = combler_trous(ents)
+        ret = orienter_faces(ents)
+      end
+      faces = ents.grep(Sketchup::Face); aretes = ents.grep(Sketchup::Edge)
+      bord = aretes.select { |e| e.faces.size == 1 }
+      multi = aretes.select { |e| e.faces.size > 2 }
+      libres = aretes.select { |e| e.faces.empty? }
+      cachees = aretes.select(&:hidden?)
+      incoh = 0
+      aretes.each { |e| fs = e.faces; incoh += 1 if fs.size == 2 && e.reversed_in?(fs[0]) == e.reversed_in?(fs[1]) }
+      model.commit_operation
+      model.selection.clear
+      model.selection.add(bord)
+      txt = "#{faces.size} faces, #{aretes.size} arêtes (#{cachees.size} masquées)\n"
+      txt += "Arêtes de bord (1 seule face) : #{bord.size}\nArêtes libres : #{libres.size}\nArêtes à plus de 2 faces : #{multi.size}\nArêtes où deux faces sont de sens contraire : #{incoh}"
+      txt += "\n\nRéparation : #{comb} trou(s) refermé(s), #{ret} face(s) retournée(s)" if reparer
+      txt += "\n\n(les arêtes de bord sont sélectionnées)"
+      UI.messagebox(txt)
     end
 
     def self.controler
@@ -377,4 +404,10 @@ module A2M
       dlg.show
     end
   end
+end
+
+if defined?(UI) && !defined?(A2M::MENU_DIAG)
+  A2M::MENU_DIAG = true
+  UI.menu('Extensions').add_item('Métré A2M (provisoire) : diagnostic des faces de l\'objet ouvert') { A2M::ImportObjet.diagnostic(false) }
+  UI.menu('Extensions').add_item('Métré A2M (provisoire) : réparer les faces de l\'objet ouvert') { A2M::ImportObjet.diagnostic(true) }
 end

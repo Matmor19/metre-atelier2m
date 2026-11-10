@@ -1,12 +1,12 @@
 {
- "version": "2.97.58",
+ "version": "2.97.59",
  "notes": [
+  "Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de sens contraire)",
   "Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient disparaître des faces ; il referme les petits trous et remet toutes les faces dans le même sens",
   "Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur de la dernière couche (placo) en se calant sur son cadre, plus sur la poignée qui dépasse",
   "Toiture : nouveau type « 3 pans » (croupe d'un côté, pignon de l'autre, côté de la croupe au choix) ; la case « Murs pignons » fonctionne aussi pour lui (un seul mur pignon, côté pignon)",
   "Configurateur d'ouverture : plus de modèle « Fixe » pour les portes-fenêtres ; pour « Coulissante », choix du nombre de vantaux…",
   "Configurateur d'ouverture : la fenêtre oscillo-battant montre maintenant son symbole (battant et oscillant en pointillés) aussi…",
-  "Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de…",
   "… et 144 autres nouveautés plus anciennes."
  ]
 }
