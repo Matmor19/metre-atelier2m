@@ -67,3 +67,4 @@ Sans intérêt pour une fenêtre dessinée : balises, textures, hachures, export
 
 ## Lucarnes (10/11/2026) — idée de Mathieu
 Mathieu dessine lui-même les lucarnes (capucine, jacobine, rampante, etc.) : murs + toitures, comme objets de bibliothèque. L'outil doit les poser sur un pan de toiture tracé en s'adaptant : pente du pan, réglage de la pente de la lucarne, hauteur de mur (joues), position sur le plan, et percement de la couverture (trou dans le pan sous la lucarne, joues/noues). Fenêtre avec vue de dessus + coupe comme les autres. Visuel seulement, métré inchangé (ml).
+Lucarnes, largeur : réglable aussi (étirement symétrique de l'objet, comme l'étirement des portes), pour caler une menuiserie dans la façade : la largeur de la lucarne = largeur de la menuiserie + 2 × jambages (réglables), l'ouverture de la façade suit ; la menuiserie se pose avec l'outil Ouverture / bibliothèque.
