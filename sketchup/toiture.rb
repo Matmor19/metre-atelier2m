@@ -222,23 +222,29 @@ module A2M
         inst.name = 'About gauche' if inst
       end
       if about_b
-        wd = dd.bounds.width * 2.54
-        o = debut.offset(u, ligne.cm).offset(tr_, (-wd / 2.0).cm).offset(Z_AXIS, -FAIT_ABOUT_BAS.cm)
-        inst = ents.add_instance(dd, Geom::Transformation.axes(o, tr_, u.reverse, Z_AXIS))
+        # l'about droit est dessiné dans le même sens que le gauche (axe Y le long du faîtage vers l'avant, plaque du bout côté Y maxi)
+        wd = dd.bounds.width * 2.54; ld = dd.bounds.height * 2.54
+        o = debut.offset(u, (ligne - ld).cm).offset(tr_, (wd / 2.0).cm).offset(Z_AXIS, -FAIT_ABOUT_BAS.cm)
+        inst = ents.add_instance(dd, Geom::Transformation.axes(o, tr_.reverse, u, Z_AXIS))
         inst.name = 'About droit' if inst
       end
     end
 
     # Arêtier : les tuiles faîtières de la bibliothèque posées le long de l'arête inclinée, du bas (égout) vers le haut (faîtage),
     # réparties au pas voulu, première et dernière calées aux deux bouts. Pas d'about (aucun objet fourni pour l'instant).
-    def self.poser_aretier_objets(model, g, a, b, objs)
+    def self.poser_aretier_objets(model, g, a, b, objs, n1 = nil, n2 = nil)
       a, b = b, a if b.z < a.z
       u = b - a
       lg = u.length.to_f * 2.54
       u.normalize!
-      tr_ = Z_AXIS.cross(u); return if tr_.length < 1e-9
+      # axe de la tuile = bissectrice des deux pans (perpendiculaire à l'arêtier, vers le haut) : la tuile est centrée sur son axe
+      bis = (n1 && n2) ? (n1 + n2) : Z_AXIS
+      bis = Z_AXIS if bis.length < 1e-9
+      nz = bis - Geom::Vector3d.new(u.x * bis.dot(u), u.y * bis.dot(u), u.z * bis.dot(u))
+      nz = Z_AXIS if nz.length < 1e-9
+      nz.normalize!
+      tr_ = nz.cross(u); return if tr_.length < 1e-9
       tr_.normalize!
-      nz = u.cross(tr_); nz.normalize!        # perpendiculaire à l'arêtier, vers le haut
       dt = A2M::Bibliotheque.charger(objs[0], model)
       bt = dt.bounds; lt = bt.width * 2.54; wt = bt.height * 2.54
       n = lg <= lt ? 1 : ((lg - lt) / FAIT_PAS_MAX).ceil + 1
@@ -272,12 +278,12 @@ module A2M
         a, b, p1 = l[0]; _, _, p2 = l[1]
         next if p1 == p2 || a.distance(b) < 0.05.m
         next unless (centres[p2] - centres[p1]).dot(normales[p1]) < -1e-6 && (centres[p1] - centres[p2]).dot(normales[p2]) < -1e-6   # saillie ? l'autre pan est sous le plan du premier
-        saillies << [a, b, (a.z - b.z).abs < 0.001.m]
+        saillies << [a, b, (a.z - b.z).abs < 0.001.m, p1, p2]
       end
       points_arete = {}
-      saillies.each { |a, b, h| (points_arete[cle.call(a)] = true; points_arete[cle.call(b)] = true) unless h }
+      saillies.each { |a, b, h, _p1, _p2| (points_arete[cle.call(a)] = true; points_arete[cle.call(b)] = true) unless h }
       objs = fait_objets
-      saillies.each do |a, b, horiz|
+      saillies.each do |a, b, horiz, ip1, ip2|
         tag = horiz ? 'A2M_FAITAGE_3D' : 'A2M_ARETIER_3D'
         d = b - a
         s = Z_AXIS.cross(d); next if s.length < 1e-9
@@ -294,7 +300,7 @@ module A2M
           next
         end
         if objs && !horiz
-          poser_aretier_objets(model, g, a, b, objs)
+          poser_aretier_objets(model, g, a, b, objs, normales[ip1], normales[ip2])
           lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
           g.layer = lb
           g.name = 'Arêtier'
@@ -442,14 +448,14 @@ UI.start_timer(2, false) do
   begin
     Sketchup.file_new
     model = Sketchup.active_model
-    [['X', 500, 400, 0]].each do |nom, lx, ly, dx|
+    [['2 pans', 500, 400, 0], ['4 pans', 500, 400, 1000]].each do |nom, lx, ly, dx|
       mur = model.entities.add_group
       mur.name = "Murs essai #{nom}"
       f = mur.entities.add_face([[dx, 0, 0], [dx + lx, 0, 0], [dx + lx, ly, 0], [dx, ly, 0]].map { |x, y, z| Geom::Point3d.new(x.cm, y.cm, z.cm) })
       f.reverse! if f.normal.z < 0
       f.pushpull(250.cm)
-      base = A2M::Toiture.base_des_murs([mur], '4 pans', model)
-      prm = { type: '4 pans', pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: "côté opposé à l'origine", num: '1' }
+      base = A2M::Toiture.base_des_murs([mur], nom, model)
+      prm = { type: nom, pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: "côté opposé à l'origine", num: '1' }
       msg << "== crête #{nom} : base #{base.class}"
       A2M::Toiture.batir(model, prm, base)
     end
