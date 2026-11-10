@@ -248,6 +248,10 @@ module A2M
           retournees += faces.size
         end
         rapport << "#{retournees} face(s) retournée(s) (sens des faces rendu cohérent, couleur à l'extérieur)" if retournees > 0
+        ar_ = d.entities.grep(Sketchup::Edge)
+        bord_ = ar_.count { |x| x.faces.size == 1 }
+        incoh_ = ar_.count { |x| fs = x.faces; fs.size == 2 && x.reversed_in?(fs[0]) == x.reversed_in?(fs[1]) }
+        rapport << "Contrôle de la forme : #{faces.size} faces, #{ar_.size} arêtes dont #{ar_.count(&:hidden?)} masquées, #{bord_} arête(s) de bord, #{incoh_} arête(s) où deux faces sont de sens contraire"
         # 4. Taille réelle
         bb = d.bounds
         dims = [bb.width, bb.height, bb.depth].map { |x| (x.to_f * 2.54).round(1) }
