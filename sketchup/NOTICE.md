@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.53)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.54)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Configurateur d'ouverture : la fenêtre oscillo-battant montre maintenant son symbole (battant et oscillant en pointillés) aussi dans le grand aperçu, comme les autres modèles
 - Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de murs (une pièce par couche, balises conservées, structure sur la balise Mur pignon)
 - Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la sous-face de la toiture, avec l'épaisseur réglable ; ils sont sur la balise Mur pignon et se refont avec la toiture
 - Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé à 11 cm, hauteur à 100 cm) et vue de dessus du tracé avec les poteaux. Hauteur, entraxe, section des poteaux, vide sous le remplissage, espacement des barreaux, écart des câbles et nombre de lisses se règlent en direct une fois le garde-corps posé
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Bibliothèque : un objet enregistré à nouveau (ex. une porte rendue dynamique) est rechargé à la pose au lieu de réutiliser son ancienne version gardée dans le modèle
 - Portes dont le panneau est déjà dynamique : l'animation automatique ne fait plus de copie de la porte (elle cassait l'ouverture au clic de la 73)
 - Portes de la bibliothèque dont le panneau est déjà un composant dynamique (fait à la main) : elles sont posées entières, sans copie éclatée, donc l'ouverture au clic fonctionne pour toutes les largeurs (avant, seule la porte enregistrée « dynamique » marchait) ; l'animation automatique n'intervient plus sur elles
-- Portes animées : l'axe de rotation est maintenant posé exactement sur la charnière (l'enveloppe du panneau n'avait pas son origine au bon endroit, d'où un vantail décalé hors du cadre)

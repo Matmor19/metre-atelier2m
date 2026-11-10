@@ -224,7 +224,7 @@ module A2M
           if (k === 0) s += '<path d="M' + (i % 2 ? x + w : x) + ' 10 L' + (x + w / 2) + ' 29 L' + (i % 2 ? x + w : x) + ' 48" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
         }
         if (k === 1) s += '<path d="M14 29H30M26 25L30 29L26 33" fill="none" stroke="#E07838" stroke-width="2"/><path d="M50 29H34M38 25L34 29L38 33" fill="none" stroke="#E07838" stroke-width="2"/>';
-        if (k === 3) s += '<path d="M12 48 L32 12 L52 48" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
+        if (k === 3) s += '<path d="M54 10 L10 29 L54 48 M10 10 L32 48 L54 10" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="3 2"/>';
         return '<svg viewBox="0 0 64 60" style="width:46px;height:44px;display:block;margin:0 auto">' + s + '<path d="M3 57H61" stroke="#E07838" stroke-width="3.5" stroke-linecap="round"/></svg>';
       }
       var etat = { modele: D.modele || '', ts: TYPES.indexOf(D.ts) >= 0 ? D.ts : null, l: D.l, h: D.h, lin: D.lin, manuel: false, choix: {} };
@@ -273,6 +273,7 @@ module A2M
           var mo = modeleActif(), nv = mo ? mo[2] : 2, iw = (l - 2 * c) / nv;
           for (var q = 1; q < nv; q++) s += '<path d="M' + (x0 + c + q * iw) + ' ' + (yh + c) + 'V' + (yb - c) + '" stroke="#3C3C3C" stroke-width="1.8"/>';
           if (mo && mo[3] === 1) s += '<path d="M' + (x0 + l * .2) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .4) + 'M' + (x0 + l * .8) + ' ' + (yh + h / 2) + 'H' + (x0 + l * .6) + '" stroke="#E07838" stroke-width="3" marker-end="none"/>';
+          if (mo && mo[3] === 3) { var xa = x0 + c, xb = x0 + l - c, ya = yh + c, yb2 = yb - c; s += '<path d="M' + xb + ' ' + ya + 'L' + xa + ' ' + (yh + h / 2) + 'L' + xb + ' ' + yb2 + 'M' + xa + ' ' + ya + 'L' + (x0 + l / 2) + ' ' + yb2 + 'L' + xb + ' ' + ya + '" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="6 4"/>'; }
           if (mo && mo[3] === 0) for (var q2 = 0; q2 < nv; q2++) s += '<path d="M' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yh + c) + 'L' + (x0 + c + (q2 + .5) * iw) + ' ' + (yh + h / 2) + 'L' + (q2 % 2 ? x0 + c + (q2 + 1) * iw : x0 + c + q2 * iw) + ' ' + (yb - c) + '" fill="none" stroke="#3C3C3C" stroke-width="1" stroke-dasharray="6 4"/>';
         }
         s += '<path d="M' + (x0 - 8) + ' ' + yb + 'H' + (x0 + l + 8) + '" stroke="#E07838" stroke-width="5" stroke-linecap="round"/>';
