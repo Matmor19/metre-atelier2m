@@ -115,40 +115,54 @@ module A2M
       acc
     end
 
-    # Referme les petits trous (3 ou 4 arêtes de bord) : faces supprimées par erreur dans un maillage.
-    # Les grandes ouvertures (dessous d'une coque, bout ouvert) ont plus d'arêtes et sont laissées telles quelles.
-    def self.combler_trous(defn)
-      ents = defn.respond_to?(:entities) ? defn.entities : defn
+    # Contours ouverts d'une forme : chaînes d'arêtes de bord (1 seule face) qui se referment. Renvoie une liste de listes de sommets.
+    def self.contours_ouverts(ents)
       bord = ents.grep(Sketchup::Edge).select { |e| e.faces.size == 1 }
       par_sommet = Hash.new { |h, k| h[k] = [] }
       bord.each { |e| par_sommet[e.start] << e; par_sommet[e.end] << e }
-      vus = {}; n = 0
+      vus = {}; res = []
       bord.each do |e0|
         next if vus[e0]
         chaine = [e0]; sommets = [e0.start]; v = e0.end; ok = true
         while v != e0.start
           suivantes = par_sommet[v].reject { |x| x == chaine.last }
-          if suivantes.size != 1 || chaine.size > 4 then ok = false; break end
+          if suivantes.size != 1 || chaine.size > 400 then ok = false; break end
           x = suivantes[0]
           chaine << x; sommets << v
           v = (x.start == v ? x.end : x.start)
         end
-        next unless ok && chaine.size.between?(3, 4)
+        next unless ok
         chaine.each { |x| vus[x] = true }
-        pts = sommets.map(&:position)
-        begin
-          ents.add_face(pts)
-        rescue StandardError
-          ents.add_face(pts[0], pts[1], pts[2]) rescue nil
-          ents.add_face(pts[0], pts[2], pts[3]) rescue nil if pts.size == 4
-        end
-        n += 1
+        res << sommets
       end
-      n
+      res
     end
 
-    # Met toutes les faces d'une même pièce dans le même sens (arête parcourue en sens inverse par ses deux faces),
-    # puis tourne la pièce entière pour que les faces regardent vers l'extérieur. Renvoie le nombre de faces retournées.
+    # Referme les trous laissés par des faces supprimées : chaque contour ouvert d'au plus `max` arêtes est rempli de triangles
+    # (on coupe toujours l'oreille dont la diagonale est la plus courte). Les contours plus grands sont laissés (vraies ouvertures).
+    # Renvoie [nombre de trous refermés, tailles des contours restants].
+    def self.combler_trous(defn, max = 12)
+      ents = defn.respond_to?(:entities) ? defn.entities : defn
+      n = 0; restes = []
+      contours_ouverts(ents).each do |sommets|
+        if sommets.size > max then restes << sommets.size; next end
+        pts = sommets.map(&:position)
+        ok = true
+        while pts.size > 3
+          k = (0...pts.size).min_by { |i| pts[(i - 1) % pts.size].distance(pts[(i + 1) % pts.size]) }
+          a = pts[(k - 1) % pts.size]; b = pts[k]; c = pts[(k + 1) % pts.size]
+          begin ents.add_face(a, b, c) rescue ok = false end
+          pts.delete_at(k)
+        end
+        begin ents.add_face(pts[0], pts[1], pts[2]) rescue ok = false end
+        n += 1 if ok
+      end
+      [n, restes]
+    end
+
+    # Met toutes les faces d'une même pièce dans le même sens (arête parcourue en sens inverse par ses deux faces), puis tourne
+    # la pièce entière pour que les faces regardent vers l'extérieur : au sommet le plus éloigné du centre, la surface est forcément
+    # tournée vers l'extérieur. Renvoie le nombre de faces retournées.
     def self.orienter_faces(defn)
       faces = (defn.respond_to?(:entities) ? defn.entities : defn).grep(Sketchup::Face)
       vus = {}; retournees = 0
@@ -170,10 +184,12 @@ module A2M
             piece << g; file << g
           end
         end
-        centre = Geom::BoundingBox.new
-        piece.each { |f| centre.add(f.bounds) }
-        c = centre.center
-        s = piece.sum { |f| f.normal.dot(f.bounds.center - c) * f.area }
+        boite = Geom::BoundingBox.new
+        piece.each { |f| boite.add(f.bounds) }
+        c = boite.center
+        loin = piece.flat_map { |f| f.vertices }.max_by { |v| v.position.distance(c) }
+        next unless loin
+        s = loin.faces.select { |f| piece.include?(f) }.sum { |f| f.normal.dot(loin.position - c) * f.area }
         if s < 0
           piece.each(&:reverse!)
           retournees += piece.size
@@ -189,7 +205,7 @@ module A2M
       model.start_operation(reparer ? 'Réparer les faces' : 'Diagnostic des faces', true)
       comb = 0; ret = 0
       if reparer
-        comb = combler_trous(ents)
+        comb = combler_trous(ents)[0]
         ret = orienter_faces(ents)
       end
       faces = ents.grep(Sketchup::Face); aretes = ents.grep(Sketchup::Edge)
@@ -237,8 +253,9 @@ module A2M
         n = nettoyer(d, o)
         rapport << "#{n} élément(s) parasite(s) retiré(s) (masqués, cotes, textes, guides, arêtes isolées)" if n > 0
         # 3. Faces : trous refermés, toutes les faces dans le même sens (vers l'extérieur), puis couleur à l'extérieur
-        comblees = combler_trous(d)
-        rapport << "#{comblees} petit(s) trou(s) refermé(s) (faces manquantes)" if comblees > 0
+        comblees, restes = combler_trous(d)
+        rapport << "#{comblees} trou(s) refermé(s) (faces manquantes)" if comblees > 0
+        rapport << "Contours ouverts restants (nombre d'arêtes) : #{restes.sort.join(', ')}" if restes.any?
         retournees = orienter_faces(d)
         faces = faces_de(d)
         av = 0.0; ar = 0.0

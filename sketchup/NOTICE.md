@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.62)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.63)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable
 - Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées au nu du placo, contrôle des objets)
 - Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire
 - Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de l'objet ouvert
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)
 - Outil provisoire d'entretien des portes Chauvat de la bibliothèque (relevé de leur structure)
 - Niveaux : « Caler le zéro sur un point cliqué » ne plante plus SketchUp au deuxième recalage. Le déplacement du modèle se fait maintenant après la fin du clic et la fermeture de l'outil, plus pendant l'événement du clic
-- Suivi des ouvertures : quand un mur ne peut pas être rebouché (mur non solide), le rebouchage est ignoré et noté au journal, au lieu de provoquer une erreur « reference to deleted Group » qui pouvait déstabiliser SketchUp
