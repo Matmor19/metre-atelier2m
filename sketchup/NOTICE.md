@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.75)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.76)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -123,6 +123,7 @@ Toiture 2 pans, 4 pans, monopente ou « Suit les murs » (épouse exactement le 
 - Sélectionnez les murs (groupes), puis lancez « Créer la toiture ».
 - Choisissez le type : 2 pans, 4 pans, Monopente (sur le rectangle des murs) ou « Suit les murs » (la toiture épouse exactement le contour, par exemple une maison en L).
 - Réglez la pente, le débord et l'épaisseur : tous les pans ont la même pente. « Faîtage parallèle » et « côté haut » ne servent pas pour « Suit les murs ».
+- Faîtages et arêtiers sont posés avec vos objets de la bibliothèque (Toiture : « Tuile faitière canal », « About de faitière canal Gauche » et « Droite »). Les tuiles sont réparties de bout en bout au pas de 48,5 cm au plus, l'axe de la tuile sur la ligne ; les abouts ferment le faîtage aux deux bouts, sauf là où un arêtier arrive.
 
 ### Charpente (chevrons, liteaux)
 Chevrons à l'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, faîtière et sablière sous chaque pan, avec les linéaires pour le métré
@@ -283,8 +284,6 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)
 - Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice des deux pans)
 - Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné
-- Provisoire : essai automatique du faîtage (à retirer)
-- Toiture : le faîtage prend tes tuiles faîtières et tes about de la bibliothèque (répartis de bout en bout, pas ajusté à la longueur) ; les arêtiers gardent la pièce provisoire
 - Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente
 - Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires
 - Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable
@@ -300,3 +299,5 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de murs (une pièce par couche, balises conservées, structure sur la balise Mur pignon)
 - Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la sous-face de la toiture, avec l'épaisseur réglable ; ils sont sur la balise Mur pignon et se refont avec la toiture
 - Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé à 11 cm, hauteur à 100 cm) et vue de dessus du tracé avec les poteaux. Hauteur, entraxe, section des poteaux, vide sous le remplissage, espacement des barreaux, écart des câbles et nombre de lisses se règlent en direct une fois le garde-corps posé
+- Escalier : nouvelle fenêtre avec vue de dessus et coupe à l'échelle, qui se dessinent à mesure des réglages (forme, hauteur, largeur, giron, nombre de marches, loi de Blondel). Une fois l'escalier posé en 2 clics, chaque réglage le refait en direct dans le modèle ; il se rouvre avec « Modifier ce que j'ai dessiné »
+- Toiture : nouvelle fenêtre avec vue de dessus et coupe à l'échelle (pans, faîtage et arêtiers, sens de la pente, murs). Type, pente, débord, épaisseur, sens du faîtage et numéro se règlent avec des curseurs et la toiture du modèle suit en direct. S'ouvre avec « Créer la toiture » et « Modifier la toiture » (ancienne fenêtre gardée en réserve)

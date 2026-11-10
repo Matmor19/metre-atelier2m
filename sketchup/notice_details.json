@@ -87,7 +87,8 @@
  "toiture": [
   "Sélectionnez les murs (groupes), puis lancez « Créer la toiture ».",
   "Choisissez le type : 2 pans, 4 pans, Monopente (sur le rectangle des murs) ou « Suit les murs » (la toiture épouse exactement le contour, par exemple une maison en L).",
-  "Réglez la pente, le débord et l'épaisseur : tous les pans ont la même pente. « Faîtage parallèle » et « côté haut » ne servent pas pour « Suit les murs »."
+  "Réglez la pente, le débord et l'épaisseur : tous les pans ont la même pente. « Faîtage parallèle » et « côté haut » ne servent pas pour « Suit les murs ».",
+  "Faîtages et arêtiers sont posés avec vos objets de la bibliothèque (Toiture : « Tuile faitière canal », « About de faitière canal Gauche » et « Droite »). Les tuiles sont réparties de bout en bout au pas de 48,5 cm au plus, l'axe de la tuile sur la ligne ; les abouts ferment le faîtage aux deux bouts, sauf là où un arêtier arrive."
  ],
  "modifier_toiture": [
   "Sélectionnez la toiture (ou faites un clic droit dessus → « modifier cette toiture »), puis lancez « Modifier la toiture ».",
