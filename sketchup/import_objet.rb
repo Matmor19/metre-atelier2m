@@ -66,6 +66,16 @@ module A2M
       nil
     end
 
+    # Un élément masqué n'est effacé que s'il est vraiment parasite. Les arêtes masquées (diagonales d'un maillage de tuile,
+    # d'une coque, d'une surface courbe) et les faces qui les touchent font partie de la forme : les effacer troue l'objet.
+    def self.effacable_masque?(e)
+      case e
+      when Sketchup::Edge then false
+      when Sketchup::Face then e.edges.all? { |x| x.faces.size <= 1 }   # face isolée seulement
+      else true
+      end
+    end
+
     # Nettoie une définition (et ses sous-composants) ; renvoie le nombre d'éléments retirés
     def self.nettoyer(defn, o, vus = {})
       return 0 if vus[defn]
@@ -77,7 +87,7 @@ module A2M
         if o['balises'] && e.respond_to?(:layer=) && e.layer != model.layers[0]
           e.layer = model.layers[0]
         end
-        if o['cache'] && e.respond_to?(:hidden?) && e.hidden?
+        if o['cache'] && e.respond_to?(:hidden?) && e.hidden? && effacable_masque?(e)
           a_effacer << e
         elsif o['parasites'] && (e.is_a?(Sketchup::ConstructionPoint) || e.is_a?(Sketchup::ConstructionLine) || e.is_a?(Sketchup::Text) || e.is_a?(Sketchup::Dimension))
           a_effacer << e
@@ -103,6 +113,73 @@ module A2M
         end
       end
       acc
+    end
+
+    # Referme les petits trous (3 ou 4 arêtes de bord) : faces supprimées par erreur dans un maillage.
+    # Les grandes ouvertures (dessous d'une coque, bout ouvert) ont plus d'arêtes et sont laissées telles quelles.
+    def self.combler_trous(defn)
+      ents = defn.entities
+      bord = ents.grep(Sketchup::Edge).select { |e| e.faces.size == 1 }
+      par_sommet = Hash.new { |h, k| h[k] = [] }
+      bord.each { |e| par_sommet[e.start] << e; par_sommet[e.end] << e }
+      vus = {}; n = 0
+      bord.each do |e0|
+        next if vus[e0]
+        chaine = [e0]; sommets = [e0.start]; v = e0.end; ok = true
+        while v != e0.start
+          suivantes = par_sommet[v].reject { |x| x == chaine.last }
+          if suivantes.size != 1 || chaine.size > 4 then ok = false; break end
+          x = suivantes[0]
+          chaine << x; sommets << v
+          v = (x.start == v ? x.end : x.start)
+        end
+        next unless ok && chaine.size.between?(3, 4)
+        chaine.each { |x| vus[x] = true }
+        pts = sommets.map(&:position)
+        begin
+          ents.add_face(pts)
+        rescue StandardError
+          ents.add_face(pts[0], pts[1], pts[2]) rescue nil
+          ents.add_face(pts[0], pts[2], pts[3]) rescue nil if pts.size == 4
+        end
+        n += 1
+      end
+      n
+    end
+
+    # Met toutes les faces d'une même pièce dans le même sens (arête parcourue en sens inverse par ses deux faces),
+    # puis tourne la pièce entière pour que les faces regardent vers l'extérieur. Renvoie le nombre de faces retournées.
+    def self.orienter_faces(defn)
+      faces = defn.entities.grep(Sketchup::Face)
+      vus = {}; retournees = 0
+      faces.each do |seed|
+        next if vus[seed] || !seed.valid?
+        vus[seed] = true
+        piece = [seed]; file = [seed]
+        until file.empty?
+          f = file.shift
+          f.edges.each do |e|
+            fs = e.faces
+            next unless fs.size == 2
+            g = fs[0] == f ? fs[1] : fs[0]
+            next if vus[g]
+            vus[g] = true
+            if e.reversed_in?(f) == e.reversed_in?(g)
+              g.reverse!; retournees += 1
+            end
+            piece << g; file << g
+          end
+        end
+        centre = Geom::BoundingBox.new
+        piece.each { |f| centre.add(f.bounds) }
+        c = centre.center
+        s = piece.sum { |f| f.normal.dot(f.bounds.center - c) * f.area }
+        if s < 0
+          piece.each(&:reverse!)
+          retournees += piece.size
+        end
+      end
+      retournees
     end
 
     def self.controler
@@ -132,16 +209,18 @@ module A2M
         inst.layer = model.layers[0]
         n = nettoyer(d, o)
         rapport << "#{n} élément(s) parasite(s) retiré(s) (masqués, cotes, textes, guides, arêtes isolées)" if n > 0
-        # 3. Faces : la face colorée doit être à l'extérieur
-        retournees = 0
+        # 3. Faces : trous refermés, toutes les faces dans le même sens (vers l'extérieur), puis couleur à l'extérieur
+        comblees = combler_trous(d)
+        rapport << "#{comblees} petit(s) trou(s) refermé(s) (faces manquantes)" if comblees > 0
+        retournees = orienter_faces(d)
         faces = faces_de(d)
-        faces.each do |f|
-          next unless f.valid?
-          if f.material.nil? && f.back_material
-            f.reverse!; retournees += 1
-          end
+        av = 0.0; ar = 0.0
+        faces.each { |f| next unless f.valid?; av += f.area if f.material; ar += f.area if f.back_material && f.material.nil? }
+        if ar > av && ar > 0
+          faces.each { |f| f.reverse! if f.valid? }
+          retournees += faces.size
         end
-        rapport << "#{retournees} face(s) retournée(s) (la couleur était à l'envers)" if retournees > 0
+        rapport << "#{retournees} face(s) retournée(s) (sens des faces rendu cohérent, couleur à l'extérieur)" if retournees > 0
         # 4. Taille réelle
         bb = d.bounds
         dims = [bb.width, bb.height, bb.depth].map { |x| (x.to_f * 2.54).round(1) }

@@ -192,7 +192,7 @@ Vérifie l'objet sélectionné (taille, faces à l'envers, éléments parasites,
 
 - Pour un objet DÉJÀ dans SketchUp (téléchargé, copié d'un autre modèle…).
 - 1. Sélectionnez l'objet. 2. Cliquez l'outil.
-- Il réunit les morceaux en un composant, retire les éléments parasites, retourne les faces à l'envers, vérifie la taille (propose la mise à l'échelle si elle est douteuse), le poids et le nom, puis purge le modèle.
+- Il réunit les morceaux en un composant, retire les éléments parasites, referme les petits trous (faces manquantes), met toutes les faces dans le même sens (vers l'extérieur), sans jamais effacer les arêtes masquées d'une forme courbe, vérifie la taille (propose la mise à l'échelle si elle est douteuse), le poids et le nom, puis purge le modèle.
 - Un rapport s'affiche et propose de ranger l'objet dans la bibliothèque : répondez Oui.
 
 ### Vue 2D de l'objet sélectionné
