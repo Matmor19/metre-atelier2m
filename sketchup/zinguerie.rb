@@ -713,31 +713,3 @@ end
 
 
 
-# TEMPORAIRE (essai automatique de la descente dans un modèle vide, déclenché par un fichier-drapeau) : à retirer
-unless defined?(A2M::ESSAI_DESC)
-  A2M::ESSAI_DESC = true
-  UI.start_timer(2, false) do
-    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'test_gouttiere.flag')
-    next unless File.exist?(drap)
-    File.delete(drap) rescue nil
-    begin
-      model = Sketchup.active_model
-      model.start_operation('essai descente', true)
-      g = model.entities.add_group
-      g.name = 'Pan de toit essai'
-      g.entities.add_face([[0, 0, 0], [400.cm, 0, 0], [400.cm, 200.cm, 120.cm], [0, 200.cm, 120.cm]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
-      sol = model.entities.add_group
-      sol.name = 'Sol essai'
-      sol.entities.add_face([[-100.cm, -300.cm, -300.cm], [500.cm, -300.cm, -300.cm], [500.cm, 100.cm, -300.cm], [-100.cm, 100.cm, -300.cm]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
-      A2M::Zinguerie.poser('g' => 'demi25', 'cible' => 'tout', 'crochet' => 50)
-      model.commit_operation
-      A2M::Zinguerie.nouvelle_descente(Geom::Point3d.new(0, 0, 0), Geom::Point3d.new(400.cm, 0, 0), Geom::Vector3d.new(0, -1, 0), 200.cm)
-      A2M::Zinguerie.valider
-      model.active_view.camera = Sketchup::Camera.new(Geom::Point3d.new(330.cm, -230.cm, -40.cm), Geom::Point3d.new(200.cm, 0, -110.cm), Geom::Vector3d.new(0, 0, 1))
-      File.write(File.join(ENV['USERPROFILE'], 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), 'ok', encoding: 'UTF-8')
-    rescue StandardError => ex
-      (model.abort_operation rescue nil)
-      File.write(File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'essai_gouttiere.txt'), "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}", encoding: 'UTF-8') rescue nil
-    end
-  end
-end

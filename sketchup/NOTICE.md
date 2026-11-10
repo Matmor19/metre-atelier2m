@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.68)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.69)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,7 +280,6 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
-- Provisoire : essai automatique de la descente (à retirer)
 - Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente
 - Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires
 - Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable
@@ -300,3 +299,4 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : nouvelle fenêtre avec vue de dessus et coupe à l'échelle (pans, faîtage et arêtiers, sens de la pente, murs). Type, pente, débord, épaisseur, sens du faîtage et numéro se règlent avec des curseurs et la toiture du modèle suit en direct. S'ouvre avec « Créer la toiture » et « Modifier la toiture » (ancienne fenêtre gardée en réserve)
 - Zinguerie refaite : choix de la gouttière (zinc dév. 25, dév. 33, nantaise, alu) avec crochets, et descente placée au clic sur l'égout. Une coupe dans la fenêtre règle tout en direct : distance au mur, coudes, tuyau horizontal, colliers de départ et d'arrivée répartis régulièrement, regard en pied. Rouvrable avec « Modifier ce que j'ai dessiné ». Pièces provisoires en attendant vos objets (coudes, colliers, crochets, naissances, regard)
 - Toiture 3D : faîtages et arêtiers posés automatiquement le long des arêtes entre pans (visuel seulement, pas de tuiles). Balises A2M_FAITAGE_3D et A2M_ARETIER_3D, ignorées par le métré qui reste au mètre linéaire. Ils suivent « Modifier la toiture »
+- Outil provisoire : refait les portes Chauvat 63 et 83 de la bibliothèque à partir de la 73 (battant fermé, quincaillerie complète)
