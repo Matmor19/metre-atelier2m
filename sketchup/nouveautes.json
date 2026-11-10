@@ -1,4 +1,5 @@
 [
+ "Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de murs (une pièce par couche, balises conservées, structure sur la balise Mur pignon)",
  "Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la sous-face de la toiture, avec l'épaisseur réglable ; ils sont sur la balise Mur pignon et se refont avec la toiture",
  "Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé à 11 cm, hauteur à 100 cm) et vue de dessus du tracé avec les poteaux. Hauteur, entraxe, section des poteaux, vide sous le remplissage, espacement des barreaux, écart des câbles et nombre de lisses se règlent en direct une fois le garde-corps posé",
  "Escalier : nouvelle fenêtre avec vue de dessus et coupe à l'échelle, qui se dessinent à mesure des réglages (forme, hauteur, largeur, giron, nombre de marches, loi de Blondel). Une fois l'escalier posé en 2 clics, chaque réglage le refait en direct dans le modèle ; il se rouvre avec « Modifier ce que j'ai dessiné »",

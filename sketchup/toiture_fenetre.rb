@@ -39,7 +39,8 @@ module A2M
       <div id="sens_bloc"><h2>Faîtage parallèle au</h2><div class="puces" id="sens"></div></div>
       <div id="haut_bloc"><h2>Monopente : côté haut</h2><div class="puces" id="haut"></div></div>
       <div id="champs"></div>
-      <div id="pig_bloc"><div class="rang"><label><input type="checkbox" id="pignons"> Murs pignons (extrémités du faîtage, jusqu'à la toiture)</label></div></div>
+      <div id="pig_bloc"><div class="rang"><label><input type="checkbox" id="pignons"> Murs pignons (extrémités du faîtage, jusqu'à la toiture)</label></div>
+        <div id="pig_opts"><div class="puces" id="pig_type"></div><div class="rang" id="pig_comp_bloc"><select id="pig_comp" style="max-width:100%;padding:6px;border-radius:8px"></select></div></div></div>
       <h2>Toiture n°</h2>
       <div class="puces" id="num"></div>
       <div class="rang"><button type="button" class="btn" id="reprendre">Reprendre le contour sur les murs sélectionnés</button></div>
@@ -64,8 +65,17 @@ module A2M
       function rendre() {
         puces('types', D.types, 'type'); puces('sens', ['grand côté', 'petit côté'], 'sens'); puces('haut', D.hauts, 'haut'); puces('num', ['1', '2', '3', '4'], 'num');
         el('sens_bloc').style.display = (P.type === 'Suit les murs') ? 'none' : 'block';
-        var pg = (P.type === '2 pans' || P.type === 'Monopente'); el('pig_bloc').style.display = pg ? 'block' : 'none'; el('pignons').checked = !!P.pignons; var wp = el('w_pig_ep'); if (wp) wp.style.display = (pg && P.pignons) ? 'grid' : 'none';
+        var pg = (P.type === '2 pans' || P.type === 'Monopente'); el('pig_bloc').style.display = pg ? 'block' : 'none'; el('pignons').checked = !!P.pignons; var wp = el('w_pig_ep'); if (wp) wp.style.display = (pg && P.pignons && P.pig_type !== 'compose') ? 'grid' : 'none'; el('pig_opts').style.display = (pg && P.pignons) ? 'block' : 'none'; pigtype();
         el('haut_bloc').style.display = (P.type === 'Monopente') ? 'block' : 'none';
+      }
+      function pigtype() {
+        var z = el('pig_type'); z.innerHTML = '';
+        [['brique', 'Brique'], ['parpaing', 'Parpaing'], ['compose', 'Mur composé']].forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.pig_type === x[0] ? ' rempli' : ''); b.textContent = x[1];
+          b.addEventListener('click', function () { P.pig_type = x[0]; if (x[0] === 'compose' && !P.pig_comp && D.compos.length) P.pig_comp = D.compos[0].id; rendre(); envoyer(); }); z.appendChild(b);
+        });
+        var sel = el('pig_comp'); if (sel.options.length === 0) { D.compos.forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = c.nom + ' (' + c.total + ' cm)'; sel.appendChild(o); }); sel.addEventListener('change', function () { P.pig_comp = sel.value; envoyer(); }); }
+        sel.value = P.pig_comp || ''; el('pig_comp_bloc').style.display = P.pig_type === 'compose' ? 'flex' : 'none';
       }
       function champs(reset) {
         var z = el('champs');
@@ -157,28 +167,54 @@ module A2M
       [o, u, v, l, w]
     end
 
-    # Murs pignons : les deux extrémités du faîtage (types 2 pans et monopente), de l'épaisseur choisie, jusqu'à la sous-face de la toiture
+    PIG_STRUCT = %w[A2M_MUR_PERI A2M_MUR_REFEND A2M_MUR_SOUB].freeze
+    PIG_COULEURS = { 'brique' => [196, 112, 84], 'parpaing' => [160, 160, 165] }.freeze
+
+    # Couches du pignon, de l'extérieur vers l'intérieur : brique ou parpaing (une couche de l'épaisseur choisie) ou une composition de murs
+    def self.couches_pignon(prm)
+      t = [prm[:pig_ep].to_f, 5].max
+      if prm[:pig_type] == 'compose'
+        c = A2M::Compositions.trouver(prm[:pig_comp].to_s)
+        return c['couches'].map { |k| { 'nom' => k['nom'], 'balise' => (PIG_STRUCT.include?(k['balise']) ? 'A2M_MUR_PIGNON' : k['balise']), 'e' => k['e'].to_f, 'cle' => nil } } if c
+      end
+      cle = prm[:pig_type] == 'parpaing' ? 'parpaing' : 'brique'
+      [{ 'nom' => cle == 'parpaing' ? 'Parpaing' : 'Brique', 'balise' => 'A2M_MUR_PIGNON', 'e' => t, 'cle' => cle }]
+    end
+
+    def self.pig_epaisseur(prm) couches_pignon(prm).sum { |k| k['e'] } end
+
+    def self.compositions_murs
+      A2M::Compositions.toutes.select { |x| x['famille'] == 'Murs' }.map { |x| { 'id' => x['id'], 'nom' => x['nom'], 'total' => x['couches'].sum { |k| k['e'].to_f }.round(1) } }
+    end
+
+    # Murs pignons : les deux extrémités du faîtage (types 2 pans et monopente), jusqu'à la sous-face de la toiture
     def self.pignons(model, toit, prm, base)
       return 0 unless prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])
       o, u, v, l, w = repere(prm, base)
       s = prm[:pente] / 100.0
-      t = [prm[:pig_ep].to_f, 5].max / 100.0
       z0 = base['ztop'].to_f
       profil = prm[:type] == '2 pans' ? [[0, 0], [w, 0], [w / 2.0, s * w / 2.0]] : [[0, 0], [w, 0], [w, s * w]]
-      lb, _ = A2M::Balises.balise(model, 'A2M_MUR_PIGNON', [200, 100, 60])
       cree = 0
-      [[0.0, 1], [l - t, 1]].each do |ua, _|
-        g = model.active_entities.add_group
-        pts = profil.map { |pv, pz| o.offset(u, ua.m).offset(v, pv.m).offset(Z_AXIS, z0 + pz.m) }
-        f = g.entities.add_face(pts)
-        unless f then g.erase!; next end
-        f.pushpull(f.normal.dot(u) > 0 ? t.m : -t.m)
-        g.layer = lb
-        g.name = 'Mur pignon'
-        col = Sketchup::Color.new(190, 175, 160)
-        g.entities.grep(Sketchup::Face).each { |x| x.material = col; x.back_material = col }
-        g.set_attribute(A2M::Toiture::ACC, 'toit', toit.persistent_id)
-        cree += 1
+      [0, 1].each do |bout|
+        acc = 0.0
+        couches_pignon(prm).each do |k|
+          e = k['e'] / 100.0
+          ua = bout == 0 ? acc : l - acc - e
+          acc += e
+          g = model.active_entities.add_group
+          pts = profil.map { |pv, pz| o.offset(u, ua.m).offset(v, pv.m).offset(Z_AXIS, z0 + pz.m) }
+          f = g.entities.add_face(pts)
+          unless f then g.erase!; next end
+          f.pushpull(f.normal.dot(u) > 0 ? e.m : -e.m)
+          lb, _ = A2M::Balises.balise(model, k['balise'], A2M::Compositions::COULEURS[k['balise']])
+          g.layer = lb
+          g.name = "Pignon – #{k['nom']}"
+          rgb = (k['cle'] && PIG_COULEURS[k['cle']]) || A2M::Compositions::COULEURS[k['balise']] || [190, 175, 160]
+          mat = k['cle'] ? model.materials.to_a.find { |m| m.name.downcase == "a2m_#{k['cle']}" } : nil
+          g.entities.grep(Sketchup::Face).each { |x| if mat then x.material = mat; x.back_material = mat else c = Sketchup::Color.new(*rgb); x.material = c; x.back_material = c end }
+          g.set_attribute(A2M::Toiture::ACC, 'toit', toit.persistent_id)
+          cree += 1
+        end
       end
       cree
     end
@@ -215,16 +251,16 @@ module A2M
         segs << [cr.first, cr.last] if cr.size >= 2
       end
       hmax = pp.flatten(1).map { |q| q[2] }.max.to_f
-      pig = (prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])) ? [[0.0, prm[:pig_ep].to_f / 100.0], [l - prm[:pig_ep].to_f / 100.0, l]] : []
+      pig = (prm[:pignons] && base['k'] == 'rect' && ['2 pans', 'Monopente'].include?(prm[:type])) ? [[0.0, pig_epaisseur(prm) / 100.0], [l - pig_epaisseur(prm) / 100.0, l]] : []
       { 'pig' => pig, 'wlarg' => (base['k'] == 'rect' ? w : 0), 'polys' => pp, 'contour' => contour, 'coupe' => segs, 'murs' => murs, 'ep' => prm[:ep].to_f, 'hfaite' => hmax }
     end
 
-    def self.prm_json(prm) { 'type' => prm[:type], 'pente' => prm[:pente], 'd' => (prm[:d] * 100).round(1), 'ep' => prm[:ep], 'sens' => prm[:sens], 'haut' => prm[:haut], 'num' => prm[:num].to_s, 'pignons' => !!prm[:pignons], 'pig_ep' => prm[:pig_ep].to_f } end
+    def self.prm_json(prm) { 'type' => prm[:type], 'pente' => prm[:pente], 'd' => (prm[:d] * 100).round(1), 'ep' => prm[:ep], 'sens' => prm[:sens], 'haut' => prm[:haut], 'num' => prm[:num].to_s, 'pignons' => !!prm[:pignons], 'pig_ep' => prm[:pig_ep].to_f, 'pig_type' => prm[:pig_type], 'pig_comp' => prm[:pig_comp].to_s } end
 
     def self.defaut
       r = (A2M::Toiture.instance_variable_get(:@r) || {})
       { type: r[:type] || '2 pans', pente: (r[:pente] || 45).to_f, d: (r[:d] || 0.5).to_f, ep: (r[:ep] || 20).to_f,
-        sens: r[:sens] || 'grand côté', pignons: r[:pignons] ? true : false, pig_ep: (r[:pig_ep] || 20).to_f, haut: r[:haut] || 'côté opposé à l\'origine', num: (r[:num] || '1').to_s }
+        sens: r[:sens] || 'grand côté', pignons: r[:pignons] ? true : false, pig_type: (r[:pig_type] || 'brique'), pig_comp: r[:pig_comp].to_s, pig_ep: (r[:pig_ep] || 20).to_f, haut: r[:haut] || 'côté opposé à l\'origine', num: (r[:num] || '1').to_s }
     end
 
     def self.murs_selection(model)
@@ -312,6 +348,8 @@ module A2M
       p[:num] = h['num'].to_s if h['num']
       p[:pignons] = h['pignons'] ? true : false
       p[:pig_ep] = [h['pig_ep'].to_f, 5].max if h['pig_ep']
+      p[:pig_type] = h['pig_type'] if %w[brique parpaing compose].include?(h['pig_type'])
+      p[:pig_comp] = h['pig_comp'].to_s if h['pig_comp']
       reconstruire(false)
     end
 
@@ -351,7 +389,7 @@ module A2M
         @fen.bring_to_front
         return
       end
-      d = { 'types' => A2M::Toiture::TYPES, 'hauts' => ['côté opposé à l\'origine', 'côté de l\'origine'] }
+      d = { 'compos' => compositions_murs, 'types' => A2M::Toiture::TYPES, 'hauts' => ['côté opposé à l\'origine', 'côté de l\'origine'] }
       html = A2M::Panneau.page('Toiture', 'Vue de dessus et coupe à l\'échelle : tout se règle ici, le modèle suit en direct', CORPS, SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : toiture', 'A2M_Panneau_Toiture', html, 580, 940)
       @fen = dlg
