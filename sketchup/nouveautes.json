@@ -1,4 +1,5 @@
 [
+ "Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de l'objet ouvert",
  "Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de sens contraire)",
  "Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient disparaître des faces ; il referme les petits trous et remet toutes les faces dans le même sens",
  "Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur de la dernière couche (placo) en se calant sur son cadre, plus sur la poignée qui dépasse",

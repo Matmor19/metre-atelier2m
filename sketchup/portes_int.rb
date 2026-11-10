@@ -923,3 +923,7 @@ if !$a2m_entretien_portes_refonte
   $a2m_entretien_portes_refonte = true
   UI.menu('Extensions').add_item('Métré A2M (provisoire) : refaire les portes 63 et 83 depuis la 73') { A2M::EntretienPortes.refaire_63_83 }
 end
+
+# TEMPORAIRE (diagnostic des faces) : les deux commandes provisoires ci-dessus servent le temps de réparer des objets de la bibliothèque
+A2M::EntretienPortes.singleton_class.send(:define_method, :releve) { A2M::ImportObjet.diagnostic(false) }
+A2M::EntretienPortes.singleton_class.send(:define_method, :refaire_63_83) { A2M::ImportObjet.diagnostic(true) }
