@@ -171,6 +171,64 @@ module A2M
     ACC = 'a2m_toiture_acc'
     FAIT_PROFIL = [[-14, -2], [14, -2], [10, 8], [-10, 8]].freeze   # [écart latéral cm, hauteur cm]
 
+
+    # Objets de faîtage de la bibliothèque : tuile faîtière, about gauche, about droit (nil si l'un manque : pièces provisoires)
+    FAIT_OBJETS = ['Tuile faitière canal', 'About de faitière canal Gauche', 'About de faitière canal Droite'].freeze
+    FAIT_DEBORD = 1.0         # cm : l'about dépasse du pan à chaque bout
+    FAIT_RECOUV_ABOUT = 6.6   # cm : recouvrement de la première tuile sur l'about (relevé sur ta simulation)
+    FAIT_PAS_MAX = 48.5       # cm : pas maximal entre deux tuiles (recouvrement d'au moins 2,2 cm)
+    FAIT_ABOUT_BAS = 10.11    # cm : le bas de l'about est sous la ligne de faîtage (relevé sur ta simulation)
+
+    def self.fait_objets
+      lst = A2M::Bibliotheque.objets
+      o = FAIT_OBJETS.map { |n| lst.find { |x| x['nom'] == n && x['fichier'] } }
+      o.all? ? o : nil
+    rescue StandardError
+      nil
+    end
+
+    # Pose abouts et tuiles le long de l'arête a-b : l'about gauche au début, le droit à la fin, les tuiles réparties au pas voulu entre les deux.
+    # about_a / about_b : false là où un arêtier arrive (pas d'about, la dernière tuile s'arrête au bout de l'arête).
+    def self.poser_faitage_objets(model, g, a, b, objs, about_a, about_b)
+      u = b - a
+      if u.x < -1e-6 || (u.x.abs <= 1e-6 && u.y < 0)
+        a, b = b, a; u = u.reverse; about_a, about_b = about_b, about_a
+      end
+      lg = u.length.to_f * 2.54          # cm
+      u.normalize!
+      tr_ = Z_AXIS.cross(u); tr_.normalize!   # travers : Z x u
+      deb = about_a ? FAIT_DEBORD : 0.0
+      fin = about_b ? FAIT_DEBORD : 0.0
+      debut = a.offset(u, -deb.cm)
+      ligne = lg + deb + fin
+      dt, dg, dd = objs.map { |o| A2M::Bibliotheque.charger(o, model) }
+      bt = dt.bounds; lt = bt.width * 2.54; wt = bt.height * 2.54
+      ba = dg.bounds; la = ba.height * 2.54; wa = ba.width * 2.54
+      f0 = about_a ? la - FAIT_RECOUV_ABOUT : 0.0
+      f1 = about_b ? dd.bounds.height * 2.54 - FAIT_RECOUV_ABOUT : 0.0
+      reste = ligne - f0 - f1
+      n = reste <= lt ? 1 : ((reste - lt) / FAIT_PAS_MAX).ceil + 1
+      pas = n > 1 ? (reste - lt) / (n - 1) : 0.0
+      x0 = n > 1 ? f0 : f0 + (reste - lt) / 2.0
+      ents = g.entities
+      n.times do |i|
+        o = debut.offset(u, (x0 + i * pas).cm).offset(tr_, (-wt / 2.0).cm)   # le bas de la tuile est à la hauteur de la ligne de faîtage
+        inst = ents.add_instance(dt, Geom::Transformation.axes(o, u, tr_, Z_AXIS))
+        inst.name = 'Tuile faîtière' if inst
+      end
+      if about_a
+        o = debut.offset(tr_, (wa / 2.0).cm).offset(Z_AXIS, -FAIT_ABOUT_BAS.cm)
+        inst = ents.add_instance(dg, Geom::Transformation.axes(o, tr_.reverse, u, Z_AXIS))
+        inst.name = 'About gauche' if inst
+      end
+      if about_b
+        wd = dd.bounds.width * 2.54
+        o = debut.offset(u, ligne.cm).offset(tr_, (-wd / 2.0).cm).offset(Z_AXIS, -FAIT_ABOUT_BAS.cm)
+        inst = ents.add_instance(dd, Geom::Transformation.axes(o, tr_, u.reverse, Z_AXIS))
+        inst.name = 'About droit' if inst
+      end
+    end
+
     def self.accessoires(model, toit, polys)
       cle = ->(q) { [q.x, q.y, q.z].map { |c| (c * 10).round } }
       aretes = Hash.new { |h, k| h[k] = [] }
@@ -186,18 +244,34 @@ module A2M
       centres = polys.map { |pts| Geom::Point3d.new(pts.sum { |q| q.x } / pts.size, pts.sum { |q| q.y } / pts.size, pts.sum { |q| q.z } / pts.size) }
       pid = toit.persistent_id
       cree = 0
+      # arêtes en saillie (faîtages et arêtiers), et points où un arêtier arrive (le faîtage n'y a pas d'about)
+      saillies = []
       aretes.each_value do |l|
         next unless l.size == 2
         a, b, p1 = l[0]; _, _, p2 = l[1]
         next if p1 == p2 || a.distance(b) < 0.05.m
-        # saillie ? l'autre pan doit être sous le plan du premier
-        next unless (centres[p2] - centres[p1]).dot(normales[p1]) < -1e-6 && (centres[p1] - centres[p2]).dot(normales[p2]) < -1e-6
-        horiz = (a.z - b.z).abs < 0.001.m
+        next unless (centres[p2] - centres[p1]).dot(normales[p1]) < -1e-6 && (centres[p1] - centres[p2]).dot(normales[p2]) < -1e-6   # saillie ? l'autre pan est sous le plan du premier
+        saillies << [a, b, (a.z - b.z).abs < 0.001.m]
+      end
+      points_arete = {}
+      saillies.each { |a, b, h| (points_arete[cle.call(a)] = true; points_arete[cle.call(b)] = true) unless h }
+      objs = fait_objets
+      saillies.each do |a, b, horiz|
         tag = horiz ? 'A2M_FAITAGE_3D' : 'A2M_ARETIER_3D'
         d = b - a
         s = Z_AXIS.cross(d); next if s.length < 1e-9
         s.normalize!
         g = model.active_entities.add_group
+        if horiz && objs
+          # tes tuiles faîtières et tes about de la bibliothèque (le métré ne les lit pas)
+          poser_faitage_objets(model, g, a, b, objs, !points_arete[cle.call(a)], !points_arete[cle.call(b)])
+          lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
+          g.layer = lb
+          g.name = 'Faîtage'
+          g.set_attribute(ACC, 'toit', pid)
+          cree += 1
+          next
+        end
         sec = lambda { |o| FAIT_PROFIL.map { |x, z| o.offset(s, x.cm).offset(Z_AXIS, z.cm) } }
         sa = sec.call(a); sb = sec.call(b)
         g.entities.add_face(sa); g.entities.add_face(sb)
@@ -326,48 +400,40 @@ module A2M
   end
 end
 
-# TEMPORAIRE (relevé du faîtage simulé par l'utilisateur et de ses objets de faîtière) : à retirer
-unless defined?(A2M::DIAG_FAIT)
-  A2M::DIAG_FAIT = true
+
+# TEMPORAIRE (essai automatique du faîtage dans un modèle vide, déclenché par un fichier-drapeau) : à retirer
+unless defined?(A2M::ESSAI_FAIT)
+  A2M::ESSAI_FAIT = true
   UI.start_timer(2, false) do
-    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_faitage.flag')
+    drap = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'test_faitage.flag')
     next unless File.exist?(drap)
     File.delete(drap) rescue nil
-    sortie = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'diag_faitage.json')
+    sortie = File.join(ENV['USERPROFILE'].to_s, 'Documents', 'ATELIER 2M', 'essai_faitage.txt')
     begin
       model = Sketchup.active_model
-      out = { 'modele' => model.title.to_s, 'entites' => [], 'objets' => {} }
-      cm = ->(v) { (v.to_f * 2.54).round(2) }
-      rec = lambda do |ents, tr, niv, acc|
-        ents.each do |e|
-          next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
-          t = tr * e.transformation
-          bb = e.bounds
-          defn = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
-          acc << { 'niv' => niv, 'type' => e.class.name.split('::').last, 'nom' => e.name.to_s, 'def' => (e.respond_to?(:definition) ? e.definition.name : ''), 'tag' => e.layer.name,
-                   'axes' => [t.xaxis, t.yaxis, t.zaxis].map { |v| v.to_a.map { |c| c.round(3) } }, 'org' => t.origin.to_a.map { |c| cm.(c) },
-                   'min' => bb.min.to_a.map { |c| cm.(c) }, 'max' => bb.max.to_a.map { |c| cm.(c) },
-                   'faces' => defn.grep(Sketchup::Face).size }
-          rec.call(defn, t, niv + 1, acc) if niv < 2
+      model.start_operation('essai faîtage', true)
+      msg = []
+      [['2 pans', 0], ['3 pans', 800]].each do |type, dx|
+        mur = model.entities.add_group
+        mur.name = "Murs essai #{type}"
+        f = mur.entities.add_face([[dx.cm, 0, 0], [(dx + 500).cm, 0, 0], [(dx + 500).cm, 400.cm, 0], [dx.cm, 400.cm, 0]].map { |x, y, z| Geom::Point3d.new(x, y, z) })
+        f.pushpull(-250.cm) rescue f.pushpull(250.cm)
+        base = A2M::Toiture.base_des_murs([mur], type, model)
+        prm = { type: type, pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: 'côté opposé à l\'origine', num: '1' }
+        grp = A2M::Toiture.batir(model, prm, base)
+        nb = model.entities.grep(Sketchup::Group).select { |g| g.name == 'Faîtage' }.size
+        msg << "#{type} : #{nb} faîtage(s)"
+        if nb == 0
+          begin
+            A2M::Toiture.accessoires(model, grp, A2M::Toiture.polys_dernier)
+          rescue StandardError => ex
+            msg << "ERREUR accessoires #{ex.message} #{ex.backtrace.first(3).join(' | ')}"
+          end
         end
       end
-      rec.call(model.entities, Geom::Transformation.new, 0, out['entites'])
-      out['faces_modele'] = model.entities.grep(Sketchup::Face).map { |f| f.vertices.map { |v| v.position.to_a.map { |c| cm.(c) } } }.first(40)
-      model.start_operation('diag', true)
-      ['Toiture/Tuile faitière canal', 'Toiture/About de faitière canal Gauche', 'Toiture/About de faitière canal Droite'].each do |n|
-        d = A2M::Bibliotheque.charger({ 'fichier' => n + '.skp' }, model)
-        b = d.bounds
-        info = { 'bb' => [b.min, b.max].map { |p| p.to_a.map { |c| cm.(c) } }, 'faces' => [], 'ouvertes' => 0 }
-        d.entities.grep(Sketchup::Edge).each { |e| info['ouvertes'] += 1 if e.faces.size == 1 }
-        A2M::Bibliotheque.faces(d.entities, Geom::Transformation.new) do |f, tr|
-          next if info['faces'].size > 900
-          info['faces'] << f.vertices.map { |v| (tr * v.position).to_a.map { |c| cm.(c) } }
-        end
-        info['nb_faces'] = d.entities.grep(Sketchup::Face).size
-        out['objets'][n] = info
-      end
-      model.abort_operation
-      File.write(sortie, JSON.pretty_generate(out), encoding: 'UTF-8')
+      model.commit_operation
+      model.active_view.zoom_extents
+      File.write(sortie, msg.join("\n"), encoding: 'UTF-8')
     rescue StandardError => ex
       (model.abort_operation rescue nil)
       File.write(sortie, "ERREUR #{ex.message}\n#{ex.backtrace.first(6).join("\n")}", encoding: 'UTF-8') rescue nil

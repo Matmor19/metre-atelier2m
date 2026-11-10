@@ -1,12 +1,12 @@
 {
- "version": "2.97.70",
+ "version": "2.97.71",
  "notes": [
-  "Provisoire : relevé du faîtage simulé et des objets de faîtière (à retirer)",
+  "Provisoire : essai automatique du faîtage (à retirer)",
+  "Toiture : le faîtage prend tes tuiles faîtières et tes about de la bibliothèque (répartis de bout en bout, pas ajusté à la…",
   "Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la…",
   "Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25…",
   "Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et…",
   "Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées…",
-  "Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire",
-  "… et 155 autres nouveautés plus anciennes."
+  "… et 156 autres nouveautés plus anciennes."
  ]
 }

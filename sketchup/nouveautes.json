@@ -1,5 +1,6 @@
 [
- "Provisoire : relevé du faîtage simulé et des objets de faîtière (à retirer)",
+ "Provisoire : essai automatique du faîtage (à retirer)",
+ "Toiture : le faîtage prend tes tuiles faîtières et tes about de la bibliothèque (répartis de bout en bout, pas ajusté à la longueur) ; les arêtiers gardent la pièce provisoire",
  "Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente",
  "Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires",
  "Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable",
