@@ -229,6 +229,27 @@ module A2M
       end
     end
 
+    # Arêtier : les tuiles faîtières de la bibliothèque posées le long de l'arête inclinée, du bas (égout) vers le haut (faîtage),
+    # réparties au pas voulu, première et dernière calées aux deux bouts. Pas d'about (aucun objet fourni pour l'instant).
+    def self.poser_aretier_objets(model, g, a, b, objs)
+      a, b = b, a if b.z < a.z
+      u = b - a
+      lg = u.length.to_f * 2.54
+      u.normalize!
+      tr_ = Z_AXIS.cross(u); return if tr_.length < 1e-9
+      tr_.normalize!
+      nz = u.cross(tr_); nz.normalize!        # perpendiculaire à l'arêtier, vers le haut
+      dt = A2M::Bibliotheque.charger(objs[0], model)
+      bt = dt.bounds; lt = bt.width * 2.54; wt = bt.height * 2.54
+      n = lg <= lt ? 1 : ((lg - lt) / FAIT_PAS_MAX).ceil + 1
+      pas = n > 1 ? (lg - lt) / (n - 1) : 0.0
+      n.times do |i|
+        o = a.offset(u, (i * pas).cm).offset(tr_, (-wt / 2.0).cm)
+        inst = g.entities.add_instance(dt, Geom::Transformation.axes(o, u, tr_, nz))
+        inst.name = 'Tuile faîtière' if inst
+      end
+    end
+
     def self.accessoires(model, toit, polys)
       cle = ->(q) { [q.x, q.y, q.z].map { |c| (c * 10).round } }
       aretes = Hash.new { |h, k| h[k] = [] }
@@ -268,6 +289,15 @@ module A2M
           lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
           g.layer = lb
           g.name = 'Faîtage'
+          g.set_attribute(ACC, 'toit', pid)
+          cree += 1
+          next
+        end
+        if objs && !horiz
+          poser_aretier_objets(model, g, a, b, objs)
+          lb, _ = A2M::Balises.balise(model, tag, (A2M::Balises::LISTE.find { |n, _, _| n == tag } || [])[2])
+          g.layer = lb
+          g.name = 'Arêtier'
           g.set_attribute(ACC, 'toit', pid)
           cree += 1
           next
@@ -412,19 +442,19 @@ UI.start_timer(2, false) do
   begin
     Sketchup.file_new
     model = Sketchup.active_model
-    [['X', 500, 400, 0], ['Y', 400, 500, 1000]].each do |nom, lx, ly, dx|
+    [['X', 500, 400, 0]].each do |nom, lx, ly, dx|
       mur = model.entities.add_group
       mur.name = "Murs essai #{nom}"
       f = mur.entities.add_face([[dx, 0, 0], [dx + lx, 0, 0], [dx + lx, ly, 0], [dx, ly, 0]].map { |x, y, z| Geom::Point3d.new(x.cm, y.cm, z.cm) })
       f.reverse! if f.normal.z < 0
       f.pushpull(250.cm)
-      base = A2M::Toiture.base_des_murs([mur], '2 pans', model)
-      prm = { type: '2 pans', pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: "côté opposé à l'origine", num: '1' }
+      base = A2M::Toiture.base_des_murs([mur], '4 pans', model)
+      prm = { type: '4 pans', pente: 45.0, d: 0.5, ep: 0.0, sens: 'grand côté', haut: "côté opposé à l'origine", num: '1' }
       msg << "== crête #{nom} : base #{base.class}"
       A2M::Toiture.batir(model, prm, base)
     end
-    model.entities.grep(Sketchup::Group).select { |g| g.name == 'Faîtage' }.each do |g|
-      msg << "Faîtage groupe :"
+    model.entities.grep(Sketchup::Group).select { |g| %w[Faîtage Arêtier].include?(g.name) }.each do |g|
+      msg << "Groupe #{g.name} :"
       g.entities.each do |e|
         next unless e.respond_to?(:definition)
         t = e.transformation; b = e.bounds

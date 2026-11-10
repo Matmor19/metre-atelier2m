@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.72)
+# Métré Atelier 2M — notice d'utilisation (version 2.97.73)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -280,6 +280,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné
 - Provisoire : essai automatique du faîtage (à retirer)
 - Toiture : le faîtage prend tes tuiles faîtières et tes about de la bibliothèque (répartis de bout en bout, pas ajusté à la longueur) ; les arêtiers gardent la pièce provisoire
 - Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente
@@ -299,4 +300,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé à 11 cm, hauteur à 100 cm) et vue de dessus du tracé avec les poteaux. Hauteur, entraxe, section des poteaux, vide sous le remplissage, espacement des barreaux, écart des câbles et nombre de lisses se règlent en direct une fois le garde-corps posé
 - Escalier : nouvelle fenêtre avec vue de dessus et coupe à l'échelle, qui se dessinent à mesure des réglages (forme, hauteur, largeur, giron, nombre de marches, loi de Blondel). Une fois l'escalier posé en 2 clics, chaque réglage le refait en direct dans le modèle ; il se rouvre avec « Modifier ce que j'ai dessiné »
 - Toiture : nouvelle fenêtre avec vue de dessus et coupe à l'échelle (pans, faîtage et arêtiers, sens de la pente, murs). Type, pente, débord, épaisseur, sens du faîtage et numéro se règlent avec des curseurs et la toiture du modèle suit en direct. S'ouvre avec « Créer la toiture » et « Modifier la toiture » (ancienne fenêtre gardée en réserve)
-- Zinguerie refaite : choix de la gouttière (zinc dév. 25, dév. 33, nantaise, alu) avec crochets, et descente placée au clic sur l'égout. Une coupe dans la fenêtre règle tout en direct : distance au mur, coudes, tuyau horizontal, colliers de départ et d'arrivée répartis régulièrement, regard en pied. Rouvrable avec « Modifier ce que j'ai dessiné ». Pièces provisoires en attendant vos objets (coudes, colliers, crochets, naissances, regard)
