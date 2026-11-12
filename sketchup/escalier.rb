@@ -173,6 +173,8 @@ module A2M
         c = Sketchup::Color.new(*couleur)
         ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
       end
+      # poteau d'angle (noyau) sous l'angle intérieur : porte les trois marches
+      bloc(ents, o1, dir, lat, 0, 7.cm, gauche ? w - 7.cm : 0, gauche ? w : 7.cm, 0, zt1 + 2 * h - ep, couleur)
       if contre
         [e30, e60, [0, 0]].each_with_index do |b, j|
           a3 = pt.call(*pp); b3 = pt.call(*b)
