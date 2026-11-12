@@ -48,6 +48,20 @@ module A2M
       rendre();
     JS
 
+    class << self; attr_reader :bilan; end
+
+    # Longueur (cm) et pente (°) approximatives du premier pan, pour le dessin en coupe
+    def self.infos_pan
+      f, t = A2M::Couverture.pans(Sketchup.active_model, 'tout').first
+      return nil unless f
+      n = (t * f.normal); n.normalize!
+      ang = Math.acos([n.z.abs, 1.0].min)
+      pts = f.outer_loop.vertices.map { |v| (t * v.position).z * 2.54 }
+      h = pts.max - pts.min
+      return { 'pente' => 0, 'long' => 0 } if ang < 0.02 || h < 1
+      { 'pente' => (ang * 180 / Math::PI).round, 'long' => (h / Math.sin(ang)).round }
+    end
+
     def self.nombre(v, d) (Float(v.to_s.tr(',', '.')) rescue d) end
 
     # Barre orientée : a-b l'axe ; lat et up donnent la section l × h
@@ -126,17 +140,22 @@ module A2M
       [nc, ml_ch, ml_lit, ml_ctr, ml_sab, ml_fai, ml_ch * sec[0] * sec[1] + ml_ctr * 3 * 3 + ml_lit * 4 * 4 + ml_sab * 7.5 * 15 + ml_fai * 7.5 * 22]
     end
 
-    def self.poser(r)
+    def self.poser(r, silencieux = false)
       model = Sketchup.active_model
       cibles = A2M::Couverture.pans(model, r['cible'])
-      return UI.messagebox('Aucun pan trouvé. Générez la toiture ou sélectionnez des pans.') if cibles.empty?
+      if cibles.empty?
+        Sketchup.status_text = 'Charpente : aucun pan trouvé (générez la toiture ou sélectionnez des pans).'
+        return silencieux ? nil : UI.messagebox('Aucun pan trouvé. Générez la toiture ou sélectionnez des pans.')
+      end
       model.start_operation('Charpente', true)
       begin
         model.entities.grep(Sketchup::Group).each { |x| x.erase! if x.valid? && x.layer.name == TAG } if r['cible'] == 'tout'
         tot = [0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         cibles.each { |f, t| res = pan(model, f, t, r); 7.times { |i| tot[i] += res[i] } }
         model.commit_operation
-        UI.messagebox("Charpente posée sur #{cibles.size} pan(s) :\n#{tot[0]} chevrons (#{tot[1].round(1).to_s.tr('.', ',')} ml), contre-liteaux #{tot[3].round(1).to_s.tr('.', ',')} ml, liteaux #{tot[2].round(1).to_s.tr('.', ',')} ml, sablière #{tot[4].round(1).to_s.tr('.', ',')} ml, faîtière #{tot[5].round(1).to_s.tr('.', ',')} ml.\nBois total : #{(tot[6] / 10_000.0).round(2).to_s.tr('.', ',')} m³ (sections choisies, hors chutes).")
+        @bilan = { 'pans' => cibles.size, 'chevrons' => tot[0], 'ml_chevrons' => tot[1].round(1), 'ml_liteaux' => tot[2].round(1), 'ml_contre' => tot[3].round(1), 'ml_sabliere' => tot[4].round(1), 'ml_faitiere' => tot[5].round(1), 'm3' => (tot[6] / 10_000.0).round(2) }
+        msg = ("Charpente posée sur #{cibles.size} pan(s) :\n#{tot[0]} chevrons (#{tot[1].round(1).to_s.tr('.', ',')} ml), contre-liteaux #{tot[3].round(1).to_s.tr('.', ',')} ml, liteaux #{tot[2].round(1).to_s.tr('.', ',')} ml, sablière #{tot[4].round(1).to_s.tr('.', ',')} ml, faîtière #{tot[5].round(1).to_s.tr('.', ',')} ml.\nBois total : #{(tot[6] / 10_000.0).round(2).to_s.tr('.', ',')} m³ (sections choisies, hors chutes).")
+        silencieux ? (Sketchup.status_text = msg.tr("\n", ' ')) : UI.messagebox(msg)
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Charpente impossible : #{ex.message}\n#{ex.backtrace.first}")

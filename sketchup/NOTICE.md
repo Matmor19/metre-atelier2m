@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.101.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.102.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -127,6 +127,11 @@ Toiture 2 pans, 4 pans, monopente ou « Suit les murs » (épouse exactement le 
 
 ### Charpente (chevrons, liteaux)
 Chevrons à l'entraxe choisi, contre-liteaux, liteaux au pas de la couverture, faîtière et sablière sous chaque pan, avec les linéaires pour le métré
+
+- Charpente sous les pans de la toiture : chevrons, contre-liteaux, liteaux, faîtière et sablière.
+- La fenêtre montre la coupe d'un pan à l'échelle ; entraxe des chevrons, pas des liteaux, section et éléments se règlent en direct, sans bouton « Appliquer ».
+- Le bilan donne les mètres de chaque pièce et le volume de bois en m³ (hors chutes), repris dans le métré.
+- Pour changer plus tard : « Modifier ce que j'ai dessiné ».
 
 ### Couverture (ardoise, tuiles, zinc)
 Pose ardoise, tuile mécanique ou plate, zinc à joints debout ou bac acier sur les pans de la toiture : rangs, joints décalés, nervures, teintes variées, surface au métré
@@ -306,6 +311,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Charpente : nouvelle fenêtre avec coupe d'un pan à l'échelle (chevron, liteaux, sablière, faîtière) et curseurs en direct (entraxe, pas des liteaux) ; la charpente se refait sous tous les pans à chaque réglage, avec le bilan en mètres et en m³. Nécessite de redémarrer SketchUp une fois
 - Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de bois en m³ (sections choisies, hors chutes)
 - Détail / Présentation (nouveau, bouton dans « Dessiner ») : un clic bascule le même modèle entre le mode détail (barres du ferraillage visibles, béton transparent) et le mode présentation (ferraillage masqué, béton plein) ; rien n'est supprimé. Nécessite de redémarrer SketchUp une fois
 - Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux kilos (le nombre de jonctions est affiché)
@@ -325,4 +331,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire
 - Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de l'objet ouvert
 - Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de sens contraire)
-- Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient disparaître des faces ; il referme les petits trous et remet toutes les faces dans le même sens
