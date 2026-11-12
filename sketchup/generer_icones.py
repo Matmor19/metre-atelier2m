@@ -94,6 +94,33 @@ icones['sol'] = (boite(0, 0, 0, 5, 5, 0.6, haut='#F4E9DA', cx=12, cy=10, k=2.1)
     + ''.join(ligne(iso(i, 0, 0.6, 12, 10, 2.1), iso(i, 5, 0.6, 12, 10, 2.1), '#9C8F84', 0.5) + ligne(iso(0, i, 0.6, 12, 10, 2.1), iso(5, i, 0.6, 12, 10, 2.1), '#9C8F84', 0.5) for i in (1, 2, 3, 4)))
 icones['cloison'] = (boite(0, 0, 0, 5, 0.5, 4.2, haut='#FFFFFF', gauche='#F3EEE8', droite='#D6CFC7', cx=5, cy=15, k=2.3)
     + ''.join(ligne(iso(i, 0.5, 0.3, 5, 15, 2.3), iso(i, 0.5, 3.9, 5, 15, 2.3), O, 0.7) for i in (1, 2, 3, 4)))
+# lot 3 : textures, hachures, phases, charpente, zinguerie, couverture, planelle, axes
+def P0(cx, cy, k): return lambda x, y, z: iso(x, y, z, cx, cy, k)
+_p = P0(12, 11, 2.3)
+icones['textures'] = (boite(0, 0, 0, 4, 4, 4, cx=12, cy=11.5, k=2.2)
+    + ''.join(ligne(iso(0, 4, z, 12, 11.5, 2.2), iso(4, 4, z, 12, 11.5, 2.2), '#B8653A', 0.55) for z in (1, 2, 3))
+    + ''.join(ligne(iso(4, 0, z, 12, 11.5, 2.2), iso(4, 4, z, 12, 11.5, 2.2), '#8A4A2A', 0.55) for z in (1, 2, 3))
+    + f'<path d="M17.5 3.5 L21 7 L19.2 8.8 L15.7 5.3 Z" fill="{O}" {st(0.6)}/>')
+_h = P0(12, 9, 2.3)
+icones['hachures'] = (poly([_h(0, 0, 0), _h(5, 0, 0), _h(5, 5, 0), _h(0, 5, 0)], '#FFFFFF') + ''.join(ligne(_h(i, 0, 0), _h(0, i, 0), D, 0.6) for i in (1, 2, 3, 4)) + ''.join(ligne(_h(5, i, 0), _h(i, 5, 0), D, 0.6) for i in (1, 2, 3, 4)) + ligne(_h(0, 5, 0), _h(5, 0, 0), D, 0.6) + boite(0, 0, -0.9, 5, 5, 0, haut='none', cx=12, cy=9, k=2.3).replace('fill="none"', 'fill="none" opacity="0"'))
+icones['phases'] = (boite(0, 0, 0, 2, 2, 2, haut='#E4E4E4', gauche='#BEBEBE', droite='#9A9A9A', cx=5, cy=15, k=2.0)
+    + boite(0, 0, 0, 2, 2, 2, haut='#F08080', gauche='#D62828', droite='#A81C1C', cx=12, cy=11, k=2.0)
+    + boite(0, 0, 0, 2, 2, 2, haut='#8FB7EA', gauche='#286ED2', droite='#1D4F9C', cx=19, cy=15, k=2.0))
+_c = P0(9, 11.5, 2.2)
+icones['charpente'] = (''.join(ligne(_c(x, 0, 0.2), _c(x, 2.5, 3.4), D, 1.0) + ligne(_c(x, 5, 0.2), _c(x, 2.5, 3.4), D, 1.0) + ligne(_c(x, 0, 0.2), _c(x, 5, 0.2), D, 0.8) for x in (0, 3))
+    + ligne(_c(0, 2.5, 3.4), _c(3, 2.5, 3.4), O, 1.4) + ligne(_c(0, 0, 0.2), _c(3, 0, 0.2), O, 1.0) + ligne(_c(0, 5, 0.2), _c(3, 5, 0.2), O, 1.0))
+icones['zinguerie'] = ('<path d="M3 7.5 H18 V10.5 Q18 12.5 16 12.5 H5 Q3 12.5 3 10.5 Z" fill="#DDE3E8" ' + st() + '/><path d="M3 7.5 H18" stroke="#8FA0AE" stroke-width="0.8"/>'
+    + '<rect x="17.2" y="12.5" width="2.8" height="8.5" fill="#C9D2D9" ' + st() + '/><path d="M5 9.5 H16" stroke="#fff" stroke-width="0.8" stroke-linecap="round"/>'
+    + f'<path d="M18.6 21.5 V23" stroke="{O}" stroke-width="1.2" stroke-linecap="round"/>')
+_r = P0(4, 5, 2.4)
+icones['couverture'] = (poly([iso(0, 0, 0, 12, 16.5, 2.2), iso(5, 0, 2, 12, 16.5, 2.2), iso(5, 5, 2, 12, 16.5, 2.2), iso(0, 5, 0, 12, 16.5, 2.2)], '#E9A06A')
+    + ''.join(ligne(iso(0, y, 0 + (y*0), 12, 16.5, 2.2), iso(5, y, 2, 12, 16.5, 2.2), '#A8541F', 0.6) for y in (1, 2, 3, 4)) + ''.join(ligne(iso(x, 0, 2 * x / 5, 12, 16.5, 2.2), iso(x, 5, 2 * x / 5, 12, 16.5, 2.2), '#A8541F', 0.5) for x in (1.7, 3.4)))
+icones['planelle'] = (boite(0, 0, 0, 5, 1.3, 2.2, cx=6, cy=16, k=2.3) + boite(0, 0, 2.2, 5, 1.3, 2.8, haut='#F4C79F', gauche='#E9A06A', droite='#D88A55', cx=6, cy=16, k=2.3)
+    + f'<path d="M17.5 3 V9 M15.3 6.8 L17.5 9.2 L19.7 6.8" stroke="{O}" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+_a = P0(7.5, 16.5, 2.6)
+icones['axes'] = (ligne(_a(0, 0, 0), _a(4.5, 0, 0), '#D62828', 1.4) + ligne(_a(0, 0, 0), _a(0, 4.5, 0), '#2E9E6B', 1.4) + ligne(_a(0, 0, 0), _a(0, 0, 4.2), '#286ED2', 1.4)
+    + f'<circle cx="{_a(0,0,0)[0]:.2f}" cy="{_a(0,0,0)[1]:.2f}" r="1.2" fill="{D}"/>' + f'<rect x="14" y="3.5" width="5.2" height="4.4" rx="0.8" fill="{O}" {st(0.6)}/><path d="M15.2 3.5 V2.4 Q15.2 1.2 16.6 1.2 Q18 1.2 18 2.4 V3.5" fill="none" {st(0.7)}/>')
+for _n, _t in (('charpente', (5, 1)), ('couverture', (0, -7)), ('axes', (1.5, -1))): icones[_n] = '<g transform="translate(%s,%s)">' % _t + icones[_n] + '</g>'
 import cairosvg
 for n, corps in icones.items():
     open(os.path.join(ici, 'icones', n + '.svg'), 'w', encoding='utf-8').write(TUILE + corps + '</svg>')
