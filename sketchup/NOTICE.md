@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.99.2)
+# Métré Atelier 2M — notice d'utilisation (version 2.100.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -136,6 +136,10 @@ Gouttières (zinc dév. 25 et 33, nantaise, alu) avec crochets sur les égouts ;
 
 ### Escalier
 Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons, loi de Blondel, côté mur
+
+- Escalier droit, quart ou demi-tournant calculé avec la loi de Blondel, avec vue de dessus et coupe, réglable en direct après la pose (2 clics).
+- Option « Structure béton + ferraillage » : marches et paillasse inclinée en un seul bloc (épaisseur 10 à 25 cm), barres principales suivant la pente (Ø et espacement au choix), barres de répartition Ø8 tous les 25 cm, grille dans le palier. Les mètres et kilos par diamètre sont repris dans le métré.
+- Pour changer plus tard : « Modifier ce que j'ai dessiné ».
 
 ### Garde-corps
 Poteaux, main courante et remplissage (barreaux, câbles, verre, lisses, plein) le long d'un tracé ou d'un escalier
@@ -295,6 +299,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Escalier : nouvelle option « Structure béton + ferraillage » : marches et paillasse inclinée coulées d'un bloc (épaisseur réglable), barres principales suivant la pente et barres de répartition en 3D, grille dans le palier, mètres et kilos par diamètre repris dans le métré ; réglable en direct comme le reste de l'escalier
 - Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »
 - Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé
 - Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)
@@ -314,4 +319,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : nouveau type « 3 pans » (croupe d'un côté, pignon de l'autre, côté de la croupe au choix) ; la case « Murs pignons » fonctionne aussi pour lui (un seul mur pignon, côté pignon)
 - Configurateur d'ouverture : plus de modèle « Fixe » pour les portes-fenêtres ; pour « Coulissante », choix du nombre de vantaux (2, 3 ou 4) et du galandage (aucun, d'un côté, des deux côtés), dessiné dans l'aperçu et repris dans la fiche menuiserie
 - Configurateur d'ouverture : la fenêtre oscillo-battant montre maintenant son symbole (battant et oscillant en pointillés) aussi dans le grand aperçu, comme les autres modèles
-- Toiture, murs pignons : choix du type de mur : brique, parpaing (épaisseur réglable) ou mur composé pris dans vos compositions de murs (une pièce par couche, balises conservées, structure sur la balise Mur pignon)

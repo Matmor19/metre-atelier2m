@@ -140,5 +140,10 @@
   "Semelles filantes sous les murs sélectionnés : largeur et hauteur de la semelle, et béton de propreté (5 cm par défaut, 0 = aucun) posé dessous, 5 cm plus large de chaque côté.",
   "Sélectionnez les murs porteurs, cliquez l'outil, réglez les trois valeurs. Pour changer plus tard : « Modifier ce que j'ai dessiné ».",
   "Pour dessiner les armatures des semelles : sélectionnez-les puis utilisez l'outil Ferraillage (type « Semelle filante »)."
+ ],
+ "escalier": [
+  "Escalier droit, quart ou demi-tournant calculé avec la loi de Blondel, avec vue de dessus et coupe, réglable en direct après la pose (2 clics).",
+  "Option « Structure béton + ferraillage » : marches et paillasse inclinée en un seul bloc (épaisseur 10 à 25 cm), barres principales suivant la pente (Ø et espacement au choix), barres de répartition Ø8 tous les 25 cm, grille dans le palier. Les mètres et kilos par diamètre sont repris dans le métré.",
+  "Pour changer plus tard : « Modifier ce que j'ai dessiné »."
  ]
 }

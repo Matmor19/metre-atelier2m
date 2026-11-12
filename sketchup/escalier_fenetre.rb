@@ -50,8 +50,8 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var P = { t: 'droit', h: 270, w: 90, g: 25, nm: 0, contre: true, limons: true, mur: 'aucun', mat: 'Chêne' }, placed = false, tmr = null;
-      var CH = [['h', 'Hauteur à monter (cm)', 100, 450, 0.5], ['w', 'Largeur de l’escalier (cm)', 60, 150, 1], ['g', 'Giron (cm)', 18, 35, 0.5], ['nm', 'Nombre de marches (0 = calculé)', 0, 25, 1]];
+      var P = { t: 'droit', h: 270, w: 90, g: 25, nm: 0, contre: true, limons: true, mur: 'aucun', mat: 'Chêne', beton: false, eb: 14, db: 10, sb: 15 }, placed = false, tmr = null;
+      var CH = [['h', 'Hauteur à monter (cm)', 100, 450, 0.5], ['w', 'Largeur de l’escalier (cm)', 60, 150, 1], ['g', 'Giron (cm)', 18, 35, 0.5], ['nm', 'Nombre de marches (0 = calculé)', 0, 25, 1], ['eb', 'Épaisseur de la paillasse béton (cm)', 10, 25, 1, 1], ['db', 'Ø des barres principales (mm)', 8, 16, 2, 1], ['sb', 'Espacement des barres (cm)', 10, 25, 1, 1]];
       var FORMES = { droit: 'M8 32 V8 H40 V32 Z M8 14 H40 M8 20 H40 M8 26 H40', quart_g: 'M8 32 V18 H22 V8 H40 V32 Z M8 24 H22 M22 14 H40 M22 24 H40', quart_d: 'M8 8 H26 V18 H40 V32 H8 Z M8 14 H26 M26 24 H40 M16 18 V32', demi_g: 'M8 8 H40 V32 H8 Z M24 8 V32 M8 14 H24 M32 14 H40', demi_d: 'M8 8 H40 V32 H8 Z M24 8 V32 M8 14 H24 M32 14 H40' };
       function envoyer() { clearTimeout(tmr); tmr = setTimeout(function () { if (placed) sketchup.maj(JSON.stringify(P)); }, 80); }
       function pose(v) { placed = v; el('placer').textContent = v ? 'Replacer l’escalier (2 clics)' : 'Placer l’escalier (2 clics)'; el('fin').style.display = v ? 'flex' : 'none'; }
@@ -69,6 +69,8 @@ module A2M
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P[x[0]] ? ' rempli' : ''); b.textContent = x[1];
           b.addEventListener('click', function () { P[x[0]] = !P[x[0]]; rendre(); envoyer(); }); o.appendChild(b);
         });
+        var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'puce' + (P.beton ? ' rempli' : ''); bt.textContent = 'Structure béton + ferraillage';
+        bt.addEventListener('click', function () { P.beton = !P.beton; rendre(); envoyer(); }); o.appendChild(bt);
         var w = document.createElement('span'); w.className = 'petit'; w.textContent = ' Côté mur (sans garde-corps) :'; o.appendChild(w);
         [['aucun', 'aucun'], ['gauche', 'à gauche'], ['droite', 'à droite']].forEach(function (x) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.mur === x[0] ? ' rempli' : ''); b.textContent = x[1];
@@ -79,6 +81,7 @@ module A2M
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.mat === x ? ' rempli' : ''); b.textContent = x;
           b.addEventListener('click', function () { P.mat = x; rendre(); envoyer(); }); m.appendChild(b);
         });
+        if (el('champs').children.length) champs(false);
       }
       function champs(reset) {
         var z = el('champs');
@@ -86,13 +89,14 @@ module A2M
           CH.forEach(function (c) {
             var w = document.createElement('div'); w.className = 'champ';
             w.innerHTML = '<label></label><input type="text" id="v_' + c[0] + '"><input type="range" id="r_' + c[0] + '">';
-            w.querySelector('label').textContent = c[1]; z.appendChild(w);
+            w.querySelector('label').textContent = c[1]; if (c[5]) w.setAttribute('data-b', '1'); z.appendChild(w);
             var r = w.querySelector('[type=range]'), v = w.querySelector('[type=text]');
             r.min = c[2]; r.max = c[3]; r.step = c[4];
             r.addEventListener('input', function () { v.value = r.value.replace('.', ','); P[c[0]] = parseFloat(r.value); dessiner(); envoyer(); });
             v.addEventListener('input', function () { var x = parseFloat(v.value.replace(',', '.')); if (!isNaN(x)) { P[c[0]] = x; if (x > +r.max) r.max = x; r.value = x; dessiner(); envoyer(); } });
           });
         }
+        Array.prototype.forEach.call(z.querySelectorAll('[data-b]'), function (q) { q.style.display = P.beton ? '' : 'none'; });
         CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = (+P[c[0]]).toString().replace('.', ','); } });
       }
       // Géométrie à plat : mêmes règles que le modèle (volée 1, palier, volée 2)

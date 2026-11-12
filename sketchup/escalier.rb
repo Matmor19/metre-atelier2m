@@ -120,6 +120,72 @@ module A2M
       cotes
     end
 
+    ENR_ESC = 3.cm
+
+    # Volée en béton : une seule masse en dents de scie (marches + paillasse inclinée), avec ses barres
+    def self.volee_beton(ents, rge, stock, o, dir, lat, m, zb, h, g, w, eb, dd, sd, couleur, mur)
+      gf = g.to_f; hf = h.to_f; ebf = eb.to_f
+      cosa = gf / Math.sqrt(gf * gf + hf * hf)
+      ev = ebf / cosa
+      zs = ->(x) { zb.to_f + hf + (hf / gf) * x - ev }
+      x0 = (ev - hf) * gf / hf
+      pts = []
+      if x0 > 0 then pts << [0.0, zb.to_f]; pts << [0.0, zb.to_f + hf]
+      else pts << [0.0, zs.call(0.0)]; pts << [0.0, zb.to_f + hf] end
+      m.times do |k|
+        pts << [k * gf, zb.to_f + (k + 1) * hf] unless k == 0
+        pts << [(k + 1) * gf, zb.to_f + (k + 1) * hf]
+        pts << [(k + 1) * gf, zb.to_f + (k + 2) * hf] if k < m - 1
+      end
+      pts << [m * gf, zs.call(m * gf)]
+      pts << [x0, zb.to_f] if x0 > 0
+      pts = pts.each_with_index.select { |q, i| i == 0 || (q[0] - pts[i - 1][0]).abs > 1e-6 || (q[1] - pts[i - 1][1]).abs > 1e-6 }.map(&:first)
+      q = pts.map { |x, z| o.offset(dir, x).offset(lat, 0).offset(Z_AXIS, z) }
+      f = ents.add_face(q)
+      if f
+        f.reverse! if f.normal.dot(lat) < 0
+        f.pushpull(w)
+        c = Sketchup::Color.new(*couleur)
+        ents.grep(Sketchup::Face).each { |x| x.material = c; x.back_material = c }
+      end
+      # barres : principales suivant la pente (au-dessus de la sous-face), de répartition en travers
+      en = ENR_ESC.to_f
+      lat_pos = A2M::Ferraillage.repartir(en, w.to_f - en, A2M::Ferraillage.nombre_entre(en, w.to_f - en, sd.to_f))
+      xa = [x0, 0.0].max + en; xb = m * gf - en
+      dz = (en + dd / 25.4 / 2) / cosa
+      if xb > xa
+        lat_pos.each do |y|
+          p1 = o.offset(dir, xa).offset(lat, y).offset(Z_AXIS, zs.call(xa) + dz)
+          p2 = o.offset(dir, xb).offset(lat, y).offset(Z_AXIS, zs.call(xb) + dz)
+          A2M::Ferraillage.barre_seule(rge, Sketchup.active_model, dd, p1, p2, stock)
+        end
+        long = (xb - xa) / cosa
+        nr = A2M::Ferraillage.nombre_entre(0.0, long, 25.cm.to_f)
+        A2M::Ferraillage.repartir(0.0, long, nr).each do |t|
+          x = xa + t * cosa
+          z = zs.call(x) + dz + (dd + 8) / 25.4
+          p1 = o.offset(dir, x).offset(lat, en).offset(Z_AXIS, z)
+          p2 = o.offset(dir, x).offset(lat, w.to_f - en).offset(Z_AXIS, z)
+          A2M::Ferraillage.barre_seule(rge, Sketchup.active_model, 8, p1, p2, stock)
+        end
+      end
+      cotes = []
+      [[0, 'droite'], [w, 'gauche']].each do |y, nom|
+        next if mur == nom
+        cotes << [o.offset(dir, 0).offset(lat, y).offset(Z_AXIS, zb + h), o.offset(dir, m * g).offset(lat, y).offset(Z_AXIS, zb + m * h + h)]
+      end
+      cotes
+    end
+
+    # Grille simple de barres dans une dalle de palier (deux sens)
+    def self.grille_palier(rge, stock, o, dir, lat, x0, x1, y0, y1, z, dd, s)
+      en = ENR_ESC
+      fx = A2M::Ferraillage.repartir(y0.to_f + en.to_f, y1.to_f - en.to_f, A2M::Ferraillage.nombre_entre(y0.to_f + en.to_f, y1.to_f - en.to_f, s.to_f))
+      fx.each { |y| A2M::Ferraillage.barre_seule(rge, Sketchup.active_model, dd, o.offset(dir, x0 + en).offset(lat, y).offset(Z_AXIS, z), o.offset(dir, x1 - en).offset(lat, y).offset(Z_AXIS, z), stock) }
+      fy = A2M::Ferraillage.repartir(x0.to_f + en.to_f, x1.to_f - en.to_f, A2M::Ferraillage.nombre_entre(x0.to_f + en.to_f, x1.to_f - en.to_f, s.to_f))
+      fy.each { |x| A2M::Ferraillage.barre_seule(rge, Sketchup.active_model, dd, o.offset(dir, x).offset(lat, y0 + en).offset(Z_AXIS, z + dd / 25.4), o.offset(dir, x).offset(lat, y1 - en).offset(Z_AXIS, z + dd / 25.4), stock) }
+    end
+
     def self.poser(r, o, dir)
       model = Sketchup.active_model
       hauteur = nombre(r['h'], 270).cm; w = nombre(r['w'], 90).cm; g = nombre(r['g'], 25).cm
@@ -143,22 +209,33 @@ module A2M
         e = grp.entities
         gc = []
         types = r['t']
+        beton = !!r['beton']
+        eb = nombre(r['eb'], 14).cm; dd = nombre(r['db'], 10).to_i; sd = nombre(r['sb'], 15).cm
+        stock = {}
+        rge = beton ? e.add_group : nil
+        epp = beton ? eb : ep
+        vol = lambda do |o2, d2, l2, m2, zb2|
+          if beton then volee_beton(e, rge.entities, stock, o2, d2, l2, m2, zb2, h, g, w, eb, dd, sd, couleur, r['mur'])
+          else volee(e, o2, d2, l2, m2, zb2, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']) end
+        end
         if types == 'droit'
-          gc.concat(volee(e, o, dir, lat, treads, o.z, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']))
+          gc.concat(vol.call(o, dir, lat, treads, o.z))
         else
           gauche = types.end_with?('_g')
           m1 = types.start_with?('quart') ? (treads - 1) / 2 : (treads - 1) / 2
           m2 = treads - 1 - m1
-          gc.concat(volee(e, o, dir, lat, m1, o.z, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']))
+          gc.concat(vol.call(o, dir, lat, m1, o.z))
           # palier : une marche pleine
           zt = o.z + (m1 + 1) * h
           o1 = o.offset(dir, m1 * g)
           lon = types.start_with?('quart') ? w : w
           lar = types.start_with?('quart') ? w : 2 * w
           if gauche
-            bloc(e, o1, dir, lat, 0, lon, 0, lar, zt - ep, zt, couleur)
+            bloc(e, o1, dir, lat, 0, lon, 0, lar, zt - epp, zt, couleur)
+            grille_palier(rge.entities, stock, o1, dir, lat, 0, lon, 0, lar, zt - epp + ENR_ESC.to_f + dd / 50.8, dd, sd) if beton
           else
-            bloc(e, o1, dir, lat, 0, lon, w - lar, w, zt - ep, zt, couleur)
+            bloc(e, o1, dir, lat, 0, lon, w - lar, w, zt - epp, zt, couleur)
+            grille_palier(rge.entities, stock, o1, dir, lat, 0, lon, w - lar, w, zt - epp + ENR_ESC.to_f + dd / 50.8, dd, sd) if beton
           end
           if types.start_with?('quart')
             if gauche
@@ -168,15 +245,31 @@ module A2M
               o2 = o1.offset(dir, 0).offset(lat, 0)
             end
             # volée 2 : démarre au bord du palier, en montant
-            gc.concat(volee(e, o2, d2, l2, m2, zt, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']))
+            gc.concat(vol.call(o2, d2, l2, m2, zt))
           else
             if gauche
               o2 = o1.offset(lat, 2 * w); d2 = dir.reverse; l2 = lat.reverse
             else
               o2 = o1.offset(lat, -w); d2 = dir.reverse; l2 = lat
             end
-            gc.concat(volee(e, o2, d2, l2, m2, zt, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']))
+            gc.concat(vol.call(o2, d2, l2, m2, zt))
           end
+        end
+        if beton
+          if stock.empty?
+            rge.erase!
+          else
+            lb, _ = A2M::Balises.balise(model, A2M::Ferraillage::BALISE, [200, 60, 40])
+            rge.layer = lb
+            detail = stock.sort.map { |d2, l| { 'd' => d2, 'ml' => (l * 100).round / 100.0, 'kg' => (l * A2M::Ferraillage.kgm(d2) * 100).round / 100.0 } }
+            kg = detail.sum { |x| x['kg'] }.round(2)
+            rge.name = "Ferraillage escalier (#{kg.round} kg)"
+            rge.set_attribute(A2M::Ferraillage::DICO, 'kg', kg)
+            rge.set_attribute(A2M::Ferraillage::DICO, 'ml', detail.sum { |x| x['ml'] }.round(2))
+            rge.set_attribute(A2M::Ferraillage::DICO, 'detail', JSON.generate(detail))
+            rge.set_attribute(A2M::Ferraillage::DICO, 'type', 'escalier')
+          end
+          grp.name = "#{grp.name} (béton #{(eb.to_f * 2.54).round} cm)"
         end
         grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |a, b| [a.to_a, b.to_a] }))
         grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0)))

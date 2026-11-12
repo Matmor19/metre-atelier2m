@@ -1,4 +1,5 @@
 [
+ "Escalier : nouvelle option « Structure béton + ferraillage » : marches et paillasse inclinée coulées d'un bloc (épaisseur réglable), barres principales suivant la pente et barres de répartition en 3D, grille dans le palier, mètres et kilos par diamètre repris dans le métré ; réglable en direct comme le reste de l'escalier",
  "Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »",
  "Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé",
  "Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)",
