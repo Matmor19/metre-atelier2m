@@ -193,7 +193,7 @@ with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(ici, 'plinthes.rb'), 'a2m_metre/plinthes.rb')
     for f in ('pointage', 'palette', 'suivi', 'maj', 'portes_int', 'hachures', 'hachures_moteur', 'hachures_fr', 'hachures_onde', 'hachures_dessin', 'planelles', 'profils'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
-    for f in ('controle', 'modif', 'squelette', 'toiture', 'toiture_fenetre', 'pieces_auto', 'fondations', 'electricite', 'envoi', 'ngf', 'niveaux', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
+    for f in ('controle', 'modif', 'squelette', 'toiture', 'toiture_fenetre', 'pieces_auto', 'fondations', 'ferraillage', 'electricite', 'envoi', 'ngf', 'niveaux', 'textures', 'textures_auto', 'tapee', 'objets_menuiseries'):
         z.write(os.path.join(ici, f + '.rb'), 'a2m_metre/' + f + '.rb')
     for f in sorted(os.listdir(os.path.join(ici, 'hachures'))):
         z.write(os.path.join(ici, 'hachures', f), 'a2m_metre/hachures/' + f)
