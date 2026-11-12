@@ -1,5 +1,5 @@
 {
- "version": "2.99.0",
+ "version": "2.99.1",
  "notes": [
   "Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée…",
   "Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du…",

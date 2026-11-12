@@ -218,6 +218,9 @@ module A2M
       faces.each do |f|
         a = f.area(tr).to_f; per = f.loops.sum { |lp| lp.edges.sum { |e| (tr * e.start.position).distance(tr * e.end.position) } }
         w = (2.0 * a / per).to_m
+        # Semelles créées par l'outil : la largeur réglée fait foi
+        dm = A2M::Modif.lire(src)
+        w = dm[1]['l'].to_f / 100.0 if dm && dm[0] == 'semelle' && dm[1]['l'].to_f > 0
         lat = enr + d / 2000.0
         raise 'Béton trop étroit pour cet enrobage.' if w - 2 * lat < 0.02
         f.loops.each do |lp|
