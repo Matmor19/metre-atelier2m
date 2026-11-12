@@ -147,7 +147,12 @@
   "Pour changer plus tard : « Modifier ce que j'ai dessiné ».",
   "Structure au choix : bois (limons pleins), limons crémaillère (les marches reposent dans les crans), limon central métal (poutre au centre, marches en console) ou béton armé (avec ferraillage).",
   "Quart tournant : option « Marches balancées » pour remplacer le palier par 3 marches triangulaires (angles de 30°).",
-  "L'épaisseur des marches et le nez de marche se règlent en direct."
+  "L'épaisseur des marches et le nez de marche se règlent en direct.",
+  "Structure : bois, crémaillère, limons en profilé (plat, tube, UPN, IPE avec tailles), limon central, marches seules ou béton armé.",
+  "Limons : épaisseur, hauteur, retombée et matière (acier noir, brut, inox, bois) réglables.",
+  "Hélicoïdal : colimaçon autour d'un noyau, angle total, rayon du noyau et sens de montée au choix.",
+  "Bouton « Ajuster le giron » : règle le giron (ou l'angle du colimaçon) pour tomber sur 63 cm, loi de Blondel.",
+  "La fenêtre contrôle la largeur (80 cm) et donne la longueur de trémie pour une échappée de 2 m."
  ],
  "mode_vue": [
   "Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.",

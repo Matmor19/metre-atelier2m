@@ -278,7 +278,8 @@ module A2M
             ajouter.call('Garde-corps : fixations', g['fixation'].to_s, g['nb_fixations'], 'u') if g['nb_fixations'].to_i > 0
             ajouter.call('Garde-corps : pinces à verre', 'pinces', g['pinces'], 'u') if g['pinces'].to_i > 0
           end
-          if (es = lire.call(e, 'escalier')).is_a?(Hash) then ajouter.call('Escalier', es['type'].to_s, es['marches'], 'marches') end
+          if (es = lire.call(e, 'escalier')).is_a?(Hash) then ajouter.call('Escalier', es['type'].to_s, es['marches'], 'marches')
+          if es.is_a?(Hash) && es['ml_limons'].to_f > 0 then ajouter.call('Escalier : limons', [es['structure'], es['profil']].compact.join(' '), es['ml_limons'].to_f.round(2), 'ml') end end
           if p < 2
             sous = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
             parcours.call(sous, p + 1)

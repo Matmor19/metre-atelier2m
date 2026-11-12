@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.110.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.111.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -148,6 +148,11 @@ Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons
 - Structure au choix : bois (limons pleins), limons crémaillère (les marches reposent dans les crans), limon central métal (poutre au centre, marches en console) ou béton armé (avec ferraillage).
 - Quart tournant : option « Marches balancées » pour remplacer le palier par 3 marches triangulaires (angles de 30°).
 - L'épaisseur des marches et le nez de marche se règlent en direct.
+- Structure : bois, crémaillère, limons en profilé (plat, tube, UPN, IPE avec tailles), limon central, marches seules ou béton armé.
+- Limons : épaisseur, hauteur, retombée et matière (acier noir, brut, inox, bois) réglables.
+- Hélicoïdal : colimaçon autour d'un noyau, angle total, rayon du noyau et sens de montée au choix.
+- Bouton « Ajuster le giron » : règle le giron (ou l'angle du colimaçon) pour tomber sur 63 cm, loi de Blondel.
+- La fenêtre contrôle la largeur (80 cm) et donne la longueur de trémie pour une échappée de 2 m.
 
 ### Garde-corps
 Poteaux, fixations (platine, rosace, chant, scellé), main courante et remplissage (barreaux, câbles, verre, pinces, profilé, grille, lisses, plein) le long d'un tracé ou d'un escalier
@@ -326,6 +331,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Escalier « hyper complet » : limons en profilé (plat acier, tube rectangulaire, UPN, IPE, avec leurs tailles) latéraux ou central, limons bois (épaisseur et hauteur réglables) et crémaillère (retombée réglable), matière du limon au choix (acier noir, brut, inox…), « marches seules » sans limon, escalier hélicoïdal (colimaçon avec noyau, angle et sens réglables), bouton « Ajuster le giron » (loi de Blondel), contrôle de la largeur et calcul de la trémie pour 2 m d'échappée ; les mètres de limons sont repris dans le métré
 - Garde-corps : assemblage repris — le dessus de la main courante est exactement à la hauteur réglée (les poteaux s'arrêtent dessous, les barreaux montent jusqu'à son dessous) et, aux angles, les tronçons de main courante se rejoignent au lieu de laisser un vide
 - Escalier : choix de la structure (bois à limons pleins, limons crémaillère, limon central métal, béton armé), marches balancées pour le quart tournant (3 marches triangulaires à la place du palier), épaisseur des marches et nez de marche réglables, contremarches posées sur la marche d'en dessous et palier avec sa contremarche, l'escalier posé en altitude garde la bonne hauteur, garde-corps possible sur le côté extérieur des marches balancées
 - Garde-corps en verre (et panneau plein) : les panneaux suivent maintenant la pente d'un escalier (parallélogrammes parallèles à la main courante) ; les pinces suivent aussi
@@ -345,4 +351,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Escalier : nouvelle option « Structure béton + ferraillage » : marches et paillasse inclinée coulées d'un bloc (épaisseur réglable), barres principales suivant la pente et barres de répartition en 3D, grille dans le palier, mètres et kilos par diamètre repris dans le métré ; réglable en direct comme le reste de l'escalier
 - Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »
 - Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé
-- Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)

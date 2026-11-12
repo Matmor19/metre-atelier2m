@@ -11,9 +11,17 @@ module A2M
       ['quart_g', 'Quart tournant gauche', 'Palier carré, tourne à gauche'],
       ['quart_d', 'Quart tournant droit',  'Palier carré, tourne à droite'],
       ['demi_g', 'Demi-tournant gauche', 'Palier rectangulaire, retour à gauche'],
-      ['demi_d', 'Demi-tournant droit',  'Palier rectangulaire, retour à droite']
+      ['demi_d', 'Demi-tournant droit',  'Palier rectangulaire, retour à droite'],
+      ['helico', 'Hélicoïdal', 'Marches en colimaçon autour d\'un noyau']
     ].freeze
     MATIERES = { 'Chêne' => [176, 140, 96], 'Blanc' => [240, 240, 236], 'Noir' => [40, 42, 46], 'Béton' => [170, 170, 170], 'Frêne' => [214, 190, 150] }.freeze
+    LIMON_COULEURS = MATIERES.merge('Acier brut' => [120, 122, 126], 'Inox' => [200, 204, 208]).freeze
+    # Profilés de limon : [nom, largeur cm, hauteur cm, épaisseur âme, épaisseur ailes]
+    PROFILS = {
+      'tube' => [['40×60', 4, 6], ['40×80', 4, 8], ['50×100', 5, 10], ['60×120', 6, 12], ['80×120', 8, 12], ['100×150', 10, 15]],
+      'upn' => [['UPN 100', 5, 10, 0.6, 0.85], ['UPN 140', 6, 14, 0.7, 1.0], ['UPN 160', 6.5, 16, 0.75, 1.05], ['UPN 200', 7.5, 20, 0.85, 1.15], ['UPN 240', 8.5, 24, 0.95, 1.3]],
+      'ipe' => [['IPE 120', 6.4, 12, 0.44, 0.63], ['IPE 160', 8.2, 16, 0.5, 0.74], ['IPE 200', 10, 20, 0.56, 0.85], ['IPE 240', 12, 24, 0.62, 0.98], ['IPE 300', 15, 30, 0.71, 1.07]]
+    }.freeze
 
     CORPS = <<~'HTML'
       <h2>Forme</h2>
@@ -116,37 +124,120 @@ module A2M
 
     # Volée de m marches : retourne les chemins de garde-corps des côtés (gauche = y max, droite = y min)
     # struct : 'bois' (limons pleins), 'cremaillere' (limons crémaillère), 'central' (limon central métal)
-    def self.volee(ents, o, dir, lat, m, zb, h, g, w, ep, contre, limons, couleur, mur, struct = 'bois', nez = 2.cm)
+    class << self; attr_accessor :ml_limons, :nom_limon; end
+
+    def self.colorer_nil(ents, couleur)
+      c = Sketchup::Color.new(*couleur)
+      ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+    end
+
+    # Taille du profilé choisi : [genre, largeur cm, hauteur cm, âme, ailes, nom]
+    def self.taille_profil(lim)
+      k = lim['lp'].to_s
+      if PROFILS[k]
+        l = PROFILS[k]; t = l[nombre(lim['ls'], 1).to_i.clamp(0, l.size - 1)]
+        [k, t[1].to_f, t[2].to_f, (t[3] || 0.5).to_f, (t[4] || 0.8).to_f, t[0]]
+      else
+        b = nombre(lim['pt'], 1.2).to_f; hh = nombre(lim['ph'], 20).to_f
+        ['plat', b, hh, 0, 0, "plat #{b.round(1)}×#{hh.round(1)}"]
+      end
+    end
+
+    # Contours (y, v) en cm d'un profilé : y centré, v de 0 (bas) à hh (haut)
+    def self.contours_profil(k, b, hh, tw, tf, sens = 1)
+      y = b / 2.0
+      case k
+      when 'tube'
+        e = 0.4
+        [[[-y, 0], [y, 0], [y, hh], [-y, hh]], [[-y + e, e], [y - e, e], [y - e, hh - e], [-y + e, hh - e]]]
+      when 'ipe'
+        [[[-y, 0], [y, 0], [y, tf], [tw / 2, tf], [tw / 2, hh - tf], [y, hh - tf], [y, hh], [-y, hh], [-y, hh - tf], [-tw / 2, hh - tf], [-tw / 2, tf], [-y, tf]]]
+      when 'upn'
+        p = [[-y, 0], [y, 0], [y, tf], [-y + tw, tf], [-y + tw, hh - tf], [y, hh - tf], [y, hh], [-y, hh]]
+        p = p.map { |a, v| [-a, v] }.reverse if sens < 0
+        [p]
+      else
+        [[[-y, 0], [y, 0], [y, hh], [-y, hh]]]
+      end
+    end
+
+    # Poutre : profil extrudé le long de la pente, du point (xa, za) (dessus du profil) au point (xb, zb2) ; yc = axe en travers
+    def self.poutre(ents, o, dir, lat, xa, za, xb, zb2, yc, boucles, hh, couleur)
+      dx = (xb - xa).to_f; dz = (zb2 - za).to_f; len = Math.hypot(dx, dz)
+      return if len < 0.1
+      sx = dx / len; sz = dz / len; nx = -sz; nz = sx
+      pt = lambda do |yy, v|
+        vv = v.cm.to_f - hh.cm.to_f
+        o.offset(dir, xa.to_f + nx * vv).offset(lat, yc.to_f + yy.cm.to_f).offset(Z_AXIS, za.to_f + nz * vv)
+      end
+      f = ents.add_face(boucles[0].map { |yy, v| pt.call(yy, v) })
+      return unless f
+      if boucles[1]
+        t = ents.add_face(boucles[1].map { |yy, v| pt.call(yy, v) })
+        t.erase! if t
+      end
+      n = f.normal
+      d = n.dot(dir) * sx + n.z * sz
+      f.reverse! if d < 0
+      f.pushpull(len)
+      colorer_nil(ents, couleur)
+      @ml_limons = (@ml_limons || 0.0) + len.to_f * 2.54 / 100.0
+    end
+
+    # Volée de m marches : retourne les chemins de garde-corps des côtés (gauche = y max, droite = y min)
+    # struct : 'bois' (limons pleins), 'cremaillere', 'profil' (limons en profilé), 'central' (profilé central), 'sans' (marches seules)
+    def self.volee(ents, o, dir, lat, m, zb, h, g, w, ep, contre, limons, couleur, mur, struct = 'bois', nez = 2.cm, lim = {})
+      lim ||= {}
       m.times do |k|
         i = k + 1
         bloc(ents, o, dir, lat, (i - 1) * g - nez, i * g + RI, 0, w, zb + i * h - ep, zb + i * h, couleur)
         bloc(ents, o, dir, lat, (i - 1) * g, (i - 1) * g + RI, 0, w, zb + (i - 1) * h, zb + i * h - ep, couleur) if contre
       end
+      lt = nombre(lim['lt'], 4).cm; lh = nombre(lim['lh'], 22).cm; lc = nombre(lim['lc'], 9).cm
+      lcol = LIMON_COULEURS[lim['lm']] || couleur
       if m > 0 && struct == 'cremaillere'
-        hb = h + ep + 9.cm
+        hb = h + ep + lc
         haut = []
         m.times { |k| i = k + 1; z = zb + i * h - ep; haut << [(i - 1) * g, z] << [i * g, z] }
         poly = couper_z(haut + [[m * g, zb + h + m * h - hb], [0, zb + h - hb]], zb)
-        [[0, 4.cm], [w - 4.cm, w]].each { |y0, y1| prisme_xz(ents, o, dir, lat, poly, y0, y1, couleur) }
-      elsif m > 0 && struct == 'central'
-        acier = MATIERES['Noir']
+        [[0, lt], [w - lt, w]].each { |y0, y1| prisme_xz(ents, o, dir, lat, poly, y0, y1, lcol) }
+        @ml_limons = (@ml_limons || 0.0) + 2 * Math.hypot((m * g).to_f, (m * h).to_f) * 2.54 / 100.0
+      elsif m > 0 && (struct == 'profil' || struct == 'central')
+        k, b, hh, tw, tf, nom = taille_profil(lim)
+        @nom_limon = nom
         sl = h / g
-        t0 = zb - ep - 1.cm
-        poly = couper_z([[0, t0], [m * g, t0 + sl * m * g], [m * g, t0 + sl * m * g - 16.cm], [0, t0 - 16.cm]], zb)
-        prisme_xz(ents, o, dir, lat, poly, w / 2 - 4.cm, w / 2 + 4.cm, acier)
-        m.times do |k|
-          i = k + 1; xa = (i - 1) * g + 2.cm
-          bloc(ents, o, dir, lat, xa, i * g - 2.cm, w / 2 - 4.cm, w / 2 + 4.cm, [t0 + sl * xa - 2.cm, zb].max, zb + i * h - ep, acier)
+        cosa = g / Math.hypot(g.to_f, h.to_f)
+        sina = h / Math.hypot(g.to_f, h.to_f)
+        ztop = ->(x) { zb + sl * x - ep }
+        xs = [(ep + cosa * hh.cm) / sl, 0].max
+        xs = [xs, m * g - 5.cm].min
+        xe = m * g
+        ys = struct == 'central' ? [[w / 2.0, 1]] : [[b.cm / 2.0, 1], [w - b.cm / 2.0, -1]]
+        ys.each do |yc, sens|
+          # le dessous du profil ne doit pas passer sous le sol : on part du point où son coin bas touche le sol
+          boucles = contours_profil(k, b, hh, tw, tf, struct == 'central' ? 1 : (yc < w / 2 ? -1 : 1))
+          poutre(ents, o, dir, lat, xs, ztop.call(xs), xe, ztop.call(xe), yc, boucles, hh, lcol)
         end
-      elsif limons && m > 0
-        [[0, 4.cm], [w - 4.cm, w]].each do |y0, y1|
+        # petites cales sous chaque marche entre le profilé et la marche
+        lc2 = [b.cm - 0.4.cm, 3.cm].max
+        ys.each do |yc, _|
+          m.times do |kk|
+            i = kk + 1; xa = (i - 1) * g + 1.cm; xb = i * g - 1.cm
+            zu = zb + i * h - ep
+            zl = xa >= xs ? ztop.call(xa) - 1.cm : zb
+            bloc(ents, o, dir, lat, xa, xb, yc - lc2 / 2.0, yc + lc2 / 2.0, zl, zu, lcol) if zu - zl > 0.5.cm
+          end
+        end
+      elsif limons && m > 0 && struct == 'bois'
+        [[0, lt], [w - lt, w]].each do |y0, y1|
           pas = h / g
-          xc = pas > 0 ? g * (22.cm - h) / h : 0
+          xc = pas > 0 ? g * (lh - h) / h : 0
           xc = 0 if xc < 0
-          pts = [[0, zb], [xc, zb], [m * g, zb + m * h + h - 22.cm], [m * g, zb + m * h + h - ep - 0.5.cm], [0, zb + h - ep - 0.5.cm]]
+          pts = [[0, zb], [xc, zb], [m * g, zb + m * h + h - lh], [m * g, zb + m * h + h - ep - 0.5.cm], [0, zb + h - ep - 0.5.cm]]
           pts = pts.select.with_index { |_, i| i != 1 || xc > 0 }
-          prisme_xz(ents, o, dir, lat, pts, y0, y1, couleur)
+          prisme_xz(ents, o, dir, lat, pts, y0, y1, lcol)
         end
+        @ml_limons = (@ml_limons || 0.0) + 2 * Math.hypot((m * g).to_f, (m * h).to_f) * 2.54 / 100.0
       end
       cotes = []
       [[0, 'droite'], [w, 'gauche']].each do |y, nom|
@@ -154,6 +245,49 @@ module A2M
         cotes << [o.offset(dir, 0).offset(lat, y).offset(Z_AXIS, zb + h), o.offset(dir, m * g).offset(lat, y).offset(Z_AXIS, zb + m * h + h)]
       end
       cotes
+    end
+
+    # Escalier hélicoïdal : marches en secteur autour d'un noyau ; retourne les chemins de garde-corps
+    def self.helico(ents, o, dir, lat, treads, zb, h, w, ri, ang, gauche, ep, contre, couleur, mur)
+      rm = ri + w / 2.0
+      u0 = gauche ? lat.reverse : lat
+      c = o.offset(u0, -rm)
+      pt = ->(r, th, z) { c.offset(u0, r * Math.cos(th)).offset(dir, r * Math.sin(th)).offset(Z_AXIS, z) }
+      da = ang.to_f.degrees / treads
+      ro = ri + w
+      segs = [(da / 10.degrees).ceil, 1].max
+      treads.times do |k|
+        i = k + 1
+        ta = k * da
+        zl = zb + i * h - ep
+        ext = (0..segs).map { |j| pt.call(ro, ta + da * j / segs, zl) }
+        int = ri > 0.5.cm ? (0..segs).map { |j| pt.call(ri, ta + da * (segs - j) / segs, zl) } : [c.offset(Z_AXIS, zl)]
+        f = ents.add_face(ext + int)
+        if f
+          f.reverse! if f.normal.z < 0
+          f.pushpull(ep)
+        end
+        colorer_nil(ents, couleur)
+        if contre
+          r = ents.add_face(pt.call(ri, ta, zb + (i - 1) * h), pt.call(ro, ta, zb + (i - 1) * h), pt.call(ro, ta, zl), pt.call(ri, ta, zl))
+          if r then cc = Sketchup::Color.new(*couleur); r.material = cc; r.back_material = cc end
+        end
+      end
+      if ri >= 2.cm
+        cer = ents.add_circle(c.offset(Z_AXIS, zb), Z_AXIS, ri, 28)
+        fc = ents.add_face(cer)
+        if fc
+          fc.reverse! if fc.normal.z < 0
+          fc.pushpull((treads + 1) * h)
+          colorer_nil(ents, MATIERES['Noir'])
+        end
+      end
+      ch = []
+      ext_nom = gauche ? 'droite' : 'gauche'
+      int_nom = gauche ? 'gauche' : 'droite'
+      ch << (0..treads).map { |i| pt.call(ro, i * da, zb + (i + 1) * h) } unless mur == ext_nom
+      ch << (0..treads).map { |i| pt.call(ri, i * da, zb + (i + 1) * h) } if ri < 2.cm && mur != int_nom
+      ch
     end
 
     # Quart tournant à 3 marches balancées dans un carré w × w : rayons à 0°, 30°, 60°, 90° depuis l'angle intérieur
@@ -289,9 +423,12 @@ module A2M
         epp = beton ? eb : ep
         vol = lambda do |o2, d2, l2, m2, zb2|
           if beton then volee_beton(e, rge.entities, stock, o2, d2, l2, m2, zb2, h, g, w, eb, dd, sd, couleur, r['mur'])
-          else volee(e, o2, d2, l2, m2, zb2, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur'], struct, nez) end
+          else volee(e, o2, d2, l2, m2, zb2, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur'], struct, nez, r) end
         end
-        if types == 'droit'
+        @ml_limons = 0.0; @nom_limon = nil
+        if types == 'helico'
+          gc.concat(helico(e, o, dir, lat, treads, o.z, h, w, nombre(r['ri'], 8).cm, nombre(r['ang'], 270), r['sens'] != 'd', ep, r['contre'], couleur, r['mur']))
+        elsif types == 'droit'
           gc.concat(vol.call(o, dir, lat, treads, o.z))
         else
           gauche = types.end_with?('_g')
@@ -353,7 +490,7 @@ module A2M
           grp.name = "#{grp.name} (béton #{(eb.to_f * 2.54).round} cm)"
         end
         grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |c| c.map(&:to_a) }))
-        grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0)))
+        grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0), 'structure' => (beton ? 'beton' : struct), 'profil' => @nom_limon, 'ml_limons' => (@ml_limons || 0).round(2)))
         A2M::Modif.noter(grp, 'escalier', { 'r' => r.reject { |k, _| k == 'replacer' }, 'o' => o_orig.to_a, 'dir' => dir.to_a })
         grp.transform!(Geom::Transformation.translation(Geom::Vector3d.new(0, 0, oz))) if oz.abs > 0.001
         @dernier = grp
