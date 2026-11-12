@@ -45,13 +45,20 @@ module A2M
     end
 
     # positions : points de départ ; dir : axe de la barre (vecteur unitaire)
+    # Barres vendues en 12 m : au-delà, on compte les jonctions avec un recouvrement de 40 Ø (ajouté aux mètres et aux kilos)
+    LONG_BARRE = 12.0
+    def self.compter(stock, dmm, long_m, nb = 1)
+      jonctions = [(long_m / LONG_BARRE).ceil - 1, 0].max
+      stock[dmm] = (stock[dmm] || 0.0) + (long_m + jonctions * 40 * dmm / 1000.0) * nb
+      stock[:jonctions] = (stock[:jonctions] || 0) + jonctions * nb
+    end
     def self.famille(ents, model, nom, dmm, long_m, dir, positions, stock)
       return if positions.empty? || long_m <= 0.001
       g = ents.add_group
       g.name = "#{nom} Ø#{dmm}"
       dfn = barre_def(model, dmm, long_m)
       positions.each { |p| g.entities.add_instance(dfn, Geom::Transformation.new(p, dir)) }
-      stock[dmm] = (stock[dmm] || 0.0) + long_m * positions.size
+      compter(stock, dmm, long_m, positions.size)
       g
     end
 
@@ -198,7 +205,7 @@ module A2M
       dfn = barre_def(model, dmm, v.length.to_m)
       g = ents.add_group
       g.entities.add_instance(dfn, Geom::Transformation.new(p, v.normalize))
-      stock[dmm] = (stock[dmm] || 0.0) + v.length.to_m
+      compter(stock, dmm, v.length.to_m)
     end
 
     def self.barres_filante(ents, model, src, r, stock)
@@ -286,6 +293,7 @@ module A2M
       raise 'Aucune barre créée : le béton est trop petit pour cet enrobage.' if stock.empty?
       lb, _ = A2M::Balises.balise(model, BALISE, [200, 60, 40])
       grp.layer = lb
+      jonc = stock.delete(:jonctions).to_i
       detail = stock.sort.map { |dd, l| { 'd' => dd, 'ml' => (l * 100).round / 100.0, 'kg' => (l * kgm(dd) * 100).round / 100.0 } }
       kg = detail.sum { |x| x['kg'] }.round(2)
       ml = detail.sum { |x| x['ml'] }.round(2)
@@ -295,7 +303,8 @@ module A2M
       grp.set_attribute(DICO, 'detail', JSON.generate(detail))
       grp.set_attribute(DICO, 'type', r['type'])
       A2M::Modif.noter(grp, 'ferraillage', { 'r' => r, 'src' => src.persistent_id })
-      [grp, { 'detail' => detail, 'kg' => kg, 'ml' => ml }.merge(info)]
+      grp.set_attribute(DICO, 'jonctions', jonc)
+      [grp, { 'detail' => detail, 'kg' => kg, 'ml' => ml, 'jonctions' => jonc }.merge(info)]
     end
 
     # --- fenêtre ---
@@ -336,6 +345,7 @@ module A2M
         q.detail.forEach(function(x){ h += '<tr><td>Ø '+x.d+' mm</td><td align=right>'+x.ml.toFixed(1)+' m</td><td align=right>'+x.kg.toFixed(1)+' kg</td></tr>'; });
         h += '<tr><td><b>Total</b></td><td align=right><b>'+q.ml.toFixed(1)+' m</b></td><td align=right><b>'+q.kg.toFixed(1)+' kg</b></td></tr></table>';
         if (q.cadres) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.cadres+' cadres, zone serrée de '+q.zone_cm+' cm à chaque bout (cadres à l\'espacement divisé par 2).</div>';
+        if (q.jonctions) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.jonctions+' jonction(s) de barres (barres de 12 m, recouvrement 40 Ø compté dans les kilos).</div>';
         el('qte').innerHTML = h;
       }
       function init(j){ var o = JSON.parse(j); P = o.r; dessiner(); if (o.ok) envoyer(); else el('qte').textContent = o.texte; }

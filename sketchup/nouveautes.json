@@ -1,4 +1,5 @@
 [
+ "Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux kilos (le nombre de jonctions est affiché)",
  "Pictogrammes : escalier, fondation, ferraillage, toiture et garde-corps redessinés en perspective pour qu'on reconnaisse l'objet au premier coup d'œil",
  "Escalier : nouvelle option « Structure béton + ferraillage » : marches et paillasse inclinée coulées d'un bloc (épaisseur réglable), barres principales suivant la pente et barres de répartition en 3D, grille dans le palier, mètres et kilos par diamètre repris dans le métré ; réglable en direct comme le reste de l'escalier",
  "Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »",

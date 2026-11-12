@@ -261,6 +261,7 @@ module A2M
           else
             lb, _ = A2M::Balises.balise(model, A2M::Ferraillage::BALISE, [200, 60, 40])
             rge.layer = lb
+            stock.delete(:jonctions)
             detail = stock.sort.map { |d2, l| { 'd' => d2, 'ml' => (l * 100).round / 100.0, 'kg' => (l * A2M::Ferraillage.kgm(d2) * 100).round / 100.0 } }
             kg = detail.sum { |x| x['kg'] }.round(2)
             rge.name = "Ferraillage escalier (#{kg.round} kg)"
