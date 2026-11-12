@@ -164,13 +164,12 @@ module A2M
     end
 
     # Panneau mince (verre, plein) entre deux poteaux : de bas à haut
-    def self.panneau(ents, a, b, z0, z1, ep, couleur, alpha = nil)
+    def self.panneau(ents, a, b, db, dt, ep, couleur, alpha = nil)   # db, dt : hauteurs du bas et du haut au-dessus de chaque extrémité (le panneau suit la pente)
       d = b - a; d.z = 0
       return if d.length < 1.cm
       d.normalize!
       lat = Z_AXIS.cross(d); lat.normalize!
-      p0 = Geom::Point3d.new(a.x, a.y, z0); p1 = Geom::Point3d.new(b.x, b.y, z0)
-      pts = [p0.offset(lat, -ep / 2), p1.offset(lat, -ep / 2), Geom::Point3d.new(p1.x, p1.y, z1).offset(lat, -ep / 2), Geom::Point3d.new(p0.x, p0.y, z1).offset(lat, -ep / 2)]
+      pts = [a.offset(Z_AXIS, db).offset(lat, -ep / 2), b.offset(Z_AXIS, db).offset(lat, -ep / 2), b.offset(Z_AXIS, dt).offset(lat, -ep / 2), a.offset(Z_AXIS, dt).offset(lat, -ep / 2)]
       f = ents.add_face(pts)
       return unless f
       f.reverse! if f.normal.dot(lat) < 0
@@ -253,23 +252,23 @@ module A2M
             barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.6.cm, 0.6.cm, inox); z += pas_c
           end
         when 'verre'
-          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 4.cm, 1.cm, [170, 205, 225], 0.4) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, bas, hauteur - 4.cm, 1.cm, [170, 205, 225], 0.4) }
         when 'verre_pinces'
           (0...n).each do |k|
             p = a.offset(dir, pas * k + pot / 2 + 0.5.cm); q = a.offset(dir, pas * (k + 1) - pot / 2 - 0.5.cm)
-            z0 = [p.z, q.z].min + bas; z1 = [p.z, q.z].max + hauteur - 4.cm
+            z0 = bas; z1 = hauteur - 4.cm
             panneau(e, p, q, z0, z1, 1.cm, [170, 205, 225], 0.4)
             [[p, 1], [q, -1]].each do |pe, sg|
               c = pe.offset(dh, sg * 2.cm)
               [z0 + 8.cm, z1 - 8.cm].each do |zz|
-                cp = Geom::Point3d.new(c.x, c.y, zz)
+                cp = Geom::Point3d.new(c.x, c.y, c.z + zz)
                 barre(e, cp.offset(lat, -1.3.cm), cp.offset(lat, 1.3.cm), 5.cm, 5.cm, inox, false, true); npinces += 1
               end
             end
           end
         when 'verre_profil'
           barre(e, a.offset(Z_AXIS, 4.cm), b.offset(Z_AXIS, 4.cm), 6.cm, 8.cm, inox)
-          (0...n).each { |k| p = a.offset(dir, pas * k + 0.5.cm); q = a.offset(dir, pas * (k + 1) - 0.5.cm); panneau(e, p, q, [p.z, q.z].min + 7.cm, [p.z, q.z].max + htop, 1.2.cm, [170, 205, 225], 0.4) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 0.5.cm); q = a.offset(dir, pas * (k + 1) - 0.5.cm); panneau(e, p, q, 7.cm, htop, 1.2.cm, [170, 205, 225], 0.4) }
         when 'grille'
           nb = (l / esp).floor
           (1..nb).each { |k| p = a.offset(dir, l * k / (nb + 1.0)); barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 0.8.cm, 0.8.cm, couleur, false, true) }
@@ -280,7 +279,7 @@ module A2M
         when 'lisses'
           (1..nl).map { |j| j / (nl + 1.0) }.each { |t| barre(e, a.offset(Z_AXIS, hauteur * t), b.offset(Z_AXIS, hauteur * t), rd ? 3.cm : 4.cm, rd ? 3.cm : 2.cm, couleur, false, rd) }
         when 'plein'
-          (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 6.cm, 2.cm, [190, 150, 100]) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, bas, hauteur - 6.cm, 2.cm, [190, 150, 100]) }
         end
       end
       A2M::Modif.noter(g, 'garde_corps', { 'r' => r.reject { |k, _| k == 'replacer' }, 'pts' => A2M::Modif.pts_vers(pts0) })
