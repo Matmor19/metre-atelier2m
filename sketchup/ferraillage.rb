@@ -22,6 +22,8 @@ module A2M
     # Type deviné d'après la forme du béton
     def self.deviner(bb, src = nil)
       @src_vol = src && src.respond_to?(:volume) ? src.volume.to_f : nil
+      dm = src && A2M::Modif.lire(src)
+      return 'filante' if dm && dm[0] == 'semelle'
       x, y, z = bb.width.to_m, bb.height.to_m, bb.depth.to_m
       vol = @src_vol && @src_vol > 0 ? @src_vol / (bb.width.to_f * bb.height.to_f * bb.depth.to_f) : nil
       return 'filante' if vol && vol < 0.7 && z < 1.0 && z > 0.15 && [x, y].min > 0.8

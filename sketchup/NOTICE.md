@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.99.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.99.2)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
