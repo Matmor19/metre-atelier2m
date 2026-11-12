@@ -248,7 +248,17 @@ module A2M
       r = DEFAUT.dup
       r['type'] = deviner(src.bounds)
       r['enr'] = 5.0 if r['type'] == 'semelle'
-      afficher(src, r, nil)
+      # Un ferraillage déjà posé sur ce béton est repris (et refait), pas doublé
+      ancien = model.entities.grep(Sketchup::Group).find do |g|
+        d = A2M::Modif.lire(g)
+        d = d && d[1]
+        g.valid? && g.get_attribute(DICO, 'kg') && d.is_a?(Hash) && d['src'] == src.persistent_id
+      end
+      if ancien
+        d = A2M::Modif.lire(ancien)[1]
+        r = DEFAUT.merge(d['r'])
+      end
+      afficher(src, r, ancien)
     end
 
     def self.modifier(grp, d)
