@@ -145,5 +145,10 @@
   "Escalier droit, quart ou demi-tournant calculé avec la loi de Blondel, avec vue de dessus et coupe, réglable en direct après la pose (2 clics).",
   "Option « Structure béton + ferraillage » : marches et paillasse inclinée en un seul bloc (épaisseur 10 à 25 cm), barres principales suivant la pente (Ø et espacement au choix), barres de répartition Ø8 tous les 25 cm, grille dans le palier. Les mètres et kilos par diamètre sont repris dans le métré.",
   "Pour changer plus tard : « Modifier ce que j'ai dessiné »."
+ ],
+ "mode_vue": [
+  "Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.",
+  "Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur.",
+  "Mode présentation : le ferraillage est masqué et le béton redevient plein. Rien n'est supprimé : on rebascule quand on veut."
  ]
 }

@@ -77,6 +77,12 @@ def gc():
     o += ligne(P(0, 0, 3), P(4, 0, 3), O, 1.6) + ligne(P(0, 0, 0.3), P(4, 0, 0.3), D, 0.7)
     return o
 icones['gardecorps'] = '<g transform="translate(0,2)">' + gc() + '</g>'
+# détail / présentation : cube plein à gauche, cube transparent avec barres à droite
+icones['mode_vue'] = (boite(0, 0, 0, 2.2, 2.2, 2.2, cx=6.5, cy=14, k=2.3)
+    + poly([iso(0, 0, 2.2, 17, 14, 2.3), iso(2.2, 0, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 2.2, 17, 14, 2.3), iso(0, 2.2, 2.2, 17, 14, 2.3)], 'none', 0.7)
+    + poly([iso(0, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 0, 17, 14, 2.3), iso(0, 2.2, 0, 17, 14, 2.3)], 'none', 0.7)
+    + poly([iso(2.2, 0, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 0, 17, 14, 2.3), iso(2.2, 0, 0, 17, 14, 2.3)], 'none', 0.7)
+    + ligne(iso(0.6, 1.1, 0.5, 17, 14, 2.3), iso(1.6, 1.1, 0.5, 17, 14, 2.3), O, 1.1) + ligne(iso(0.6, 1.1, 1.6, 17, 14, 2.3), iso(1.6, 1.1, 1.6, 17, 14, 2.3), O, 1.1))
 import cairosvg
 for n, corps in icones.items():
     open(os.path.join(ici, 'icones', n + '.svg'), 'w', encoding='utf-8').write(TUILE + corps + '</svg>')

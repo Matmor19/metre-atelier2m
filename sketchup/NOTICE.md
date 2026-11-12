@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.100.2)
+# Métré Atelier 2M — notice d'utilisation (version 2.101.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -161,6 +161,13 @@ Sélectionnez un béton (dalle, semelle, linteau, poutre, poteau) : les barres e
 - Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).
 - Limites : dalle, poutre et poteau sont lus par leur boîte rectangulaire alignée sur les axes ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études.
 
+### Détail / Présentation
+Bascule le même modèle : en « détail », les barres du ferraillage sont visibles et le béton est transparent ; en « présentation », le ferraillage est masqué et le béton est plein. Rien n'est supprimé
+
+- Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.
+- Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur.
+- Mode présentation : le ferraillage est masqué et le béton redevient plein. Rien n'est supprimé : on rebascule quand on veut.
+
 ### Hachures de coupe par couche
 Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l'appliquer au modèle déjà dessiné
 
@@ -299,6 +306,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Détail / Présentation (nouveau, bouton dans « Dessiner ») : un clic bascule le même modèle entre le mode détail (barres du ferraillage visibles, béton transparent) et le mode présentation (ferraillage masqué, béton plein) ; rien n'est supprimé. Nécessite de redémarrer SketchUp une fois
 - Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux kilos (le nombre de jonctions est affiché)
 - Pictogrammes : escalier, fondation, ferraillage, toiture et garde-corps redessinés en perspective pour qu'on reconnaisse l'objet au premier coup d'œil
 - Escalier : nouvelle option « Structure béton + ferraillage » : marches et paillasse inclinée coulées d'un bloc (épaisseur réglable), barres principales suivant la pente et barres de répartition en 3D, grille dans le palier, mètres et kilos par diamètre repris dans le métré ; réglable en direct comme le reste de l'escalier
@@ -318,4 +326,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de sens contraire)
 - Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient disparaître des faces ; il referme les petits trous et remet toutes les faces dans le même sens
 - Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur de la dernière couche (placo) en se calant sur son cadre, plus sur la poignée qui dépasse
-- Toiture : nouveau type « 3 pans » (croupe d'un côté, pignon de l'autre, côté de la croupe au choix) ; la case « Murs pignons » fonctionne aussi pour lui (un seul mur pignon, côté pignon)
