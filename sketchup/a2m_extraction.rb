@@ -270,6 +270,8 @@ module A2M
             ajouter.call('Charpente : chevrons', h['section'].to_s, h['ml_chevrons'], 'ml')
             ajouter.call('Charpente : liteaux', 'liteaux', h['ml_liteaux'], 'ml')
             ajouter.call('Charpente : contre-liteaux', 'contre-liteaux', h['ml_contre_liteaux'], 'ml') if h['ml_contre_liteaux'].to_f > 0
+            ajouter.call('Charpente : sablière', 'sablière', h['ml_sabliere'], 'ml') if h['ml_sabliere'].to_f > 0
+            ajouter.call('Charpente : faîtière', 'faîtière', h['ml_faitiere'], 'ml') if h['ml_faitiere'].to_f > 0
           end
           if (g = lire.call(e, 'garde_corps')).is_a?(Hash) then ajouter.call('Garde-corps', g['type'].to_s, g['ml'], 'ml') end
           if (es = lire.call(e, 'escalier')).is_a?(Hash) then ajouter.call('Escalier', es['type'].to_s, es['marches'], 'marches') end

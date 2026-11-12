@@ -86,7 +86,7 @@ module A2M
       e = g.entities
       at = ->(uu, vv, prof) { o.offset(u, uu.cm).offset(haut, vv.cm).offset(n, -prof) }
       ep_lit = 4.cm; ep_contre = 3.cm
-      nc = 0; ml_ch = 0.0; ml_lit = 0.0; ml_ctr = 0.0
+      nc = 0; ml_ch = 0.0; ml_lit = 0.0; ml_ctr = 0.0; ml_sab = 0.0; ml_fai = 0.0
       z_lit = ep_lit / 2; z_ctr = ep_lit + ep_contre / 2; z_chev = ep_lit + ep_contre + ch / 2
       if r['chev']
         x = umin + ent / 2.0
@@ -112,16 +112,18 @@ module A2M
         end
       end
       if r['sabliere']
-        A2M::Couverture.coupe_h(poly, vmin + 6).each { |a, b| barre(e, at.call(a, vmin + 6, ep_lit + ep_contre + 6.cm), at.call(b, vmin + 6, ep_lit + ep_contre + 6.cm), haut, n, 7.5.cm, 15.cm, nil) }
+        A2M::Couverture.coupe_h(poly, vmin + 6).each { |a, b| ml_sab += (b - a) / 100.0 if barre(e, at.call(a, vmin + 6, ep_lit + ep_contre + 6.cm), at.call(b, vmin + 6, ep_lit + ep_contre + 6.cm), haut, n, 7.5.cm, 15.cm, nil) }
       end
       if r['faitiere']
-        A2M::Couverture.coupe_h(poly, vmax - 8).each { |a, b| barre(e, at.call(a, vmax - 8, ep_lit + ep_contre + 11.cm), at.call(b, vmax - 8, ep_lit + ep_contre + 11.cm), haut, n, 7.5.cm, 22.cm, nil) }
+        A2M::Couverture.coupe_h(poly, vmax - 8).each { |a, b| ml_fai += (b - a) / 100.0 if barre(e, at.call(a, vmax - 8, ep_lit + ep_contre + 11.cm), at.call(b, vmax - 8, ep_lit + ep_contre + 11.cm), haut, n, 7.5.cm, 22.cm, nil) }
       end
       c = Sketchup::Color.new(214, 178, 130)
       e.grep(Sketchup::Face).each { |f| f.material = c; f.back_material = c }
       A2M::Modif.noter(g, 'charpente', { 'r' => r.reject { |k, _| k == 'cible' } })
-      g.set_attribute('a2m', 'charpente', JSON.generate('chevrons' => nc, 'ml_chevrons' => ml_ch.round(1), 'ml_liteaux' => ml_lit.round(1), 'ml_contre_liteaux' => ml_ctr.round(1), 'section' => r['sec'], 'entraxe' => ent))
-      [nc, ml_ch, ml_lit, ml_ctr]
+      g.set_attribute('a2m', 'charpente', JSON.generate('chevrons' => nc, 'ml_chevrons' => ml_ch.round(1), 'ml_liteaux' => ml_lit.round(1), 'ml_contre_liteaux' => ml_ctr.round(1), 'section' => r['sec'], 'entraxe' => ent,
+                                                                     'ml_sabliere' => ml_sab.round(1), 'ml_faitiere' => ml_fai.round(1),
+                                                                     'm3_bois' => (ml_ch * sec[0] * sec[1] + ml_ctr * 3 * 3 + ml_lit * 4 * 4 + ml_sab * 7.5 * 15 + ml_fai * 7.5 * 22).fdiv(10_000).round(3)))
+      [nc, ml_ch, ml_lit, ml_ctr, ml_sab, ml_fai, ml_ch * sec[0] * sec[1] + ml_ctr * 3 * 3 + ml_lit * 4 * 4 + ml_sab * 7.5 * 15 + ml_fai * 7.5 * 22]
     end
 
     def self.poser(r)
@@ -131,10 +133,10 @@ module A2M
       model.start_operation('Charpente', true)
       begin
         model.entities.grep(Sketchup::Group).each { |x| x.erase! if x.valid? && x.layer.name == TAG } if r['cible'] == 'tout'
-        tot = [0, 0.0, 0.0, 0.0]
-        cibles.each { |f, t| res = pan(model, f, t, r); 4.times { |i| tot[i] += res[i] } }
+        tot = [0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        cibles.each { |f, t| res = pan(model, f, t, r); 7.times { |i| tot[i] += res[i] } }
         model.commit_operation
-        UI.messagebox("Charpente posée sur #{cibles.size} pan(s) :\n#{tot[0]} chevrons (#{tot[1].round(1).to_s.tr('.', ',')} ml), contre-liteaux #{tot[3].round(1).to_s.tr('.', ',')} ml, liteaux #{tot[2].round(1).to_s.tr('.', ',')} ml.")
+        UI.messagebox("Charpente posée sur #{cibles.size} pan(s) :\n#{tot[0]} chevrons (#{tot[1].round(1).to_s.tr('.', ',')} ml), contre-liteaux #{tot[3].round(1).to_s.tr('.', ',')} ml, liteaux #{tot[2].round(1).to_s.tr('.', ',')} ml, sablière #{tot[4].round(1).to_s.tr('.', ',')} ml, faîtière #{tot[5].round(1).to_s.tr('.', ',')} ml.\nBois total : #{(tot[6] / 10_000.0).round(2).to_s.tr('.', ',')} m³ (sections choisies, hors chutes).")
       rescue StandardError => ex
         model.abort_operation
         UI.messagebox("Charpente impossible : #{ex.message}\n#{ex.backtrace.first}")

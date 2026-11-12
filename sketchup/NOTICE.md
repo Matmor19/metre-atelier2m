@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.101.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.101.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -306,6 +306,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de bois en m³ (sections choisies, hors chutes)
 - Détail / Présentation (nouveau, bouton dans « Dessiner ») : un clic bascule le même modèle entre le mode détail (barres du ferraillage visibles, béton transparent) et le mode présentation (ferraillage masqué, béton plein) ; rien n'est supprimé. Nécessite de redémarrer SketchUp une fois
 - Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux kilos (le nombre de jonctions est affiché)
 - Pictogrammes : escalier, fondation, ferraillage, toiture et garde-corps redessinés en perspective pour qu'on reconnaisse l'objet au premier coup d'œil
@@ -325,4 +326,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de l'objet ouvert
 - Provisoire : deux commandes dans Extensions pour diagnostiquer et réparer les faces de l'objet ouvert (faces manquantes ou de sens contraire)
 - Contrôler et préparer un objet : ne supprime plus les arêtes masquées (diagonales des tuiles, faîtières, coques), qui faisaient disparaître des faces ; il referme les petits trous et remet toutes les faces dans le même sens
-- Ouvertures : l'option « tapée d'isolation » est retirée ; la menuiserie (porte d'entrée comprise) se pose à zéro du nu intérieur de la dernière couche (placo) en se calant sur son cadre, plus sur la poignée qui dépasse

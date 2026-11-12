@@ -1,4 +1,5 @@
 [
+ "Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de bois en m³ (sections choisies, hors chutes)",
  "Détail / Présentation (nouveau, bouton dans « Dessiner ») : un clic bascule le même modèle entre le mode détail (barres du ferraillage visibles, béton transparent) et le mode présentation (ferraillage masqué, béton plein) ; rien n'est supprimé. Nécessite de redémarrer SketchUp une fois",
  "Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux kilos (le nombre de jonctions est affiché)",
  "Pictogrammes : escalier, fondation, ferraillage, toiture et garde-corps redessinés en perspective pour qu'on reconnaisse l'objet au premier coup d'œil",
