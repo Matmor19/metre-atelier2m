@@ -1,12 +1,12 @@
 {
- "version": "2.98.4",
+ "version": "2.99.0",
  "notes": [
+  "Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée…",
+  "Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du…",
   "Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)",
   "Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se…",
   "Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le…",
   "Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice…",
-  "Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu…",
-  "Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la…",
-  "… et 159 autres nouveautés plus anciennes."
+  "… et 161 autres nouveautés plus anciennes."
  ]
 }

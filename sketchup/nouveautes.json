@@ -1,4 +1,6 @@
 [
+ "Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »",
+ "Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé",
  "Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)",
  "Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré",
  "Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)",

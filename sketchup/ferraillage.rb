@@ -7,7 +7,7 @@ require 'json'
 
 module A2M
   module Ferraillage
-    TYPES = [['dalle', 'Dalle (2 nappes)'], ['semelle', 'Semelle (nappe basse)'], ['poutre', 'Linteau / poutre'], ['poteau', 'Poteau']].freeze
+    TYPES = [['dalle', 'Dalle (2 nappes)'], ['semelle', 'Semelle (nappe basse)'], ['filante', 'Semelle filante (suit le tracé)'], ['poutre', 'Linteau / poutre'], ['poteau', 'Poteau']].freeze
     DEFAUT = { 'type' => 'dalle', 'enr' => 3.0, 'd' => 10, 's' => 20, 'haut' => 1, 'nb' => 3, 'nh' => 2, 'dh' => 10,
                'dc' => 6, 'sc' => 20, 'nc' => 2 }.freeze
     BALISE = 'A2M_FERRAILLAGE'
@@ -20,8 +20,11 @@ module A2M
     def self.beton?(e) (e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)) && e.valid? && !e.get_attribute(DICO, 'kg') end
 
     # Type deviné d'après la forme du béton
-    def self.deviner(bb)
+    def self.deviner(bb, src = nil)
+      @src_vol = src && src.respond_to?(:volume) ? src.volume.to_f : nil
       x, y, z = bb.width.to_m, bb.height.to_m, bb.depth.to_m
+      vol = @src_vol && @src_vol > 0 ? @src_vol / (bb.width.to_f * bb.height.to_f * bb.depth.to_f) : nil
+      return 'filante' if vol && vol < 0.7 && z < 1.0 && z > 0.15 && [x, y].min > 0.8
       return 'poteau' if z > 2.5 * [x, y].max && [x, y].max < 0.6
       return 'poutre' if [x, y].max > 3 * [x, y].min && z < 0.6 && [x, y].min < 0.6 && z > 0.12
       z < [x, y].min / 2 ? 'dalle' : (z < 0.5 ? 'semelle' : 'poutre')
@@ -166,6 +169,100 @@ module A2M
       nx + ny
     end
 
+
+    # --- Semelle filante : barres qui suivent le tracé du béton ---
+    # Décale une boucle (points, matière à gauche) de t mètres vers la matière, avec onglets aux angles
+    def self.decaler_boucle(pts, t)
+      n = pts.size
+      nor = (0...n).map do |i|
+        d = pts[(i + 1) % n] - pts[i]
+        d.z = 0
+        d.normalize!
+        Geom::Vector3d.new(-d.y, d.x, 0)
+      end
+      (0...n).map do |i|
+        n0 = nor[(i - 1) % n]; n1 = nor[i]
+        c = n0.dot(n1)
+        k = t.m.to_f / (1.0 + c)
+        pts[i] + Geom::Vector3d.new((n0.x + n1.x) * k, (n0.y + n1.y) * k, 0)
+      end
+    end
+
+    def self.air(pts) pts.each_with_index.sum { |q, i| r = pts[(i + 1) % pts.size]; q.x * r.y - r.x * q.y } / 2.0 end
+
+    def self.barre_seule(ents, model, dmm, p, q, stock)
+      v = q - p
+      return if v.length < 0.002.m
+      dfn = barre_def(model, dmm, v.length.to_m)
+      g = ents.add_group
+      g.entities.add_instance(dfn, Geom::Transformation.new(p, v.normalize))
+      stock[dmm] = (stock[dmm] || 0.0) + v.length.to_m
+    end
+
+    def self.barres_filante(ents, model, src, r, stock)
+      enr = r['enr'] / 100.0; d = r['d']
+      bb = src.bounds
+      tr = src.transformation
+      defn = src.is_a?(Sketchup::Group) ? src.entities : src.definition.entities
+      faces = defn.grep(Sketchup::Face).select { |f| (tr * f.normal).z > 0.99 }
+      raise 'Pas de face supérieure lisible sur ce béton.' if faces.empty?
+      zt = faces.map { |f| (tr * f.vertices[0].position).z }.max
+      faces = faces.select { |f| ((tr * f.vertices[0].position).z - zt).abs < 0.001 }
+      zmin = bb.min.z; h = (zt - zmin).to_m
+      z0 = zmin + (enr + d / 2000.0).m
+      z1 = z0 + (d / 1000.0).m
+      z2 = zt - (enr + r['dh'] / 2000.0).m
+      groupes = { bas: ents.add_group, haut: ents.add_group, trans: ents.add_group }
+      groupes[:bas].name = "Barres longitudinales basses Ø#{d}"; groupes[:haut].name = "Barres longitudinales hautes Ø#{r['dh']}"; groupes[:trans].name = "Barres transversales Ø#{d}"
+      total = 0
+      faces.each do |f|
+        a = f.area(tr).to_f; per = f.loops.sum { |lp| lp.edges.sum { |e| (tr * e.start.position).distance(tr * e.end.position) } }
+        w = (2.0 * a / per).to_m
+        lat = enr + d / 2000.0
+        raise 'Béton trop étroit pour cet enrobage.' if w - 2 * lat < 0.02
+        f.loops.each do |lp|
+          pts = lp.vertices.map { |v| tr * v.position }
+          pts.map! { |p| Geom::Point3d.new(p.x, p.y, 0) }
+          ccw = air(pts) > 0
+          sens = lp.outer? ? ccw : !ccw
+          pts.reverse! unless sens
+          nb = [r['nb'], 2].max; nh = r['nh']
+          # nappes longitudinales : lignes réparties sur la largeur
+          lignes = ->(n, z, dd, gr) do
+            (0...n).each do |i|
+              t = lat + (n == 1 ? (w - 2 * lat) / 2.0 : i * (w - 2 * lat) / (n - 1.0))
+              o = decaler_boucle(pts, t)
+              o.each_with_index { |q, k| total += 1; barre_seule(gr.entities, model, dd, Geom::Point3d.new(q.x, q.y, z), Geom::Point3d.new(o[(k + 1) % o.size].x, o[(k + 1) % o.size].y, z), stock) }
+            end
+          end
+          lignes.call(nb, z1, d, groupes[:bas])
+          lignes.call(nh, z2, r['dh'], groupes[:haut]) if nh > 0
+          # barres transversales posées sur l'axe, perpendiculaires au tracé
+          axe = decaler_boucle(pts, w / 2.0)
+          pas = [r['s'], 8].max / 100.0
+          axe.each_with_index do |q, k|
+            q2 = axe[(k + 1) % axe.size]
+            v = q2 - q
+            lg = v.length.to_m
+            next if lg < 0.1
+            dir = v.normalize
+            nor = Geom::Vector3d.new(-dir.y, dir.x, 0)
+            n = [((lg - 2 * enr) / pas).floor + 1, 1].max
+            raise 'Trop de barres transversales.' if total + n > MAX_BARRES
+            pos = (0...n).map do |i|
+              s = n == 1 ? lg / 2.0 : enr + i * (lg - 2 * enr) / (n - 1.0)
+              c = q + Geom::Vector3d.new(dir.x * s.m.to_f, dir.y * s.m.to_f, 0)
+              c = c - Geom::Vector3d.new(nor.x * (w / 2.0 - enr).m.to_f, nor.y * (w / 2.0 - enr).m.to_f, 0)
+              Geom::Point3d.new(c.x, c.y, z0)
+            end
+            famille(groupes[:trans].entities, model, 'Transversales', d, w - 2 * enr, nor, pos, stock)
+            total += n
+          end
+        end
+      end
+      groupes.each_value { |g| g.erase! if g.valid? && g.entities.count == 0 }
+    end
+
     # Construit le ferraillage de la source ; renvoie le groupe créé et le détail
     def self.construire(src, r, ancien = nil)
       model = Sketchup.active_model
@@ -174,7 +271,9 @@ module A2M
       ancien.erase! if ancien && ancien.valid?
       grp = model.active_entities.add_group
       info = {}
-      if %w[dalle semelle].include?(r['type'])
+      if r['type'] == 'filante'
+        barres_filante(grp.entities, model, src, r, stock)
+      elsif %w[dalle semelle].include?(r['type'])
         barres_dalle(grp.entities, model, bb, r, stock)
       else
         info = barres_lineaires(grp.entities, model, bb, r, r['type'] == 'poteau', stock)
@@ -206,6 +305,7 @@ module A2M
       var D = __DONNEES__, P = {}, tmr = null;
       var CH = {
         dalle:  [['enr','Enrobage (cm)',1,6,0.5],['d','Diamètre des barres (mm)',6,20,2],['s','Espacement (cm)',10,30,1],['haut','Nappe haute (0 = non, 1 = oui)',0,1,1]],
+        filante:[['enr','Enrobage (cm)',3,8,0.5],['d','Ø barres transversales et basses (mm)',8,20,2],['s','Espacement transversal (cm)',10,30,1],['nb','Barres longitudinales basses',2,6,1],['nh','Barres longitudinales hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2]],
         semelle:[['enr','Enrobage (cm)',3,8,0.5],['d','Diamètre des barres (mm)',8,20,2],['s','Espacement (cm)',10,30,1]],
         poutre: [['enr','Enrobage (cm)',2,6,0.5],['nb','Barres basses',2,6,1],['d','Ø barres basses (mm)',8,25,2],['nh','Barres hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1]],
         poteau: [['enr','Enrobage (cm)',2,6,0.5],['nc','Barres par côté',2,5,1],['d','Ø barres (mm)',10,25,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1]]
@@ -246,7 +346,7 @@ module A2M
         return
       end
       r = DEFAUT.dup
-      r['type'] = deviner(src.bounds)
+      r['type'] = deviner(src.bounds, src)
       r['enr'] = 5.0 if r['type'] == 'semelle'
       # Un ferraillage déjà posé sur ce béton est repris (et refait), pas doublé
       ancien = model.entities.grep(Sketchup::Group).find do |g|
