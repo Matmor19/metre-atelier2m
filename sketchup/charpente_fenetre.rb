@@ -57,18 +57,18 @@ module A2M
         CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = String(P[c[0]]).replace('.', ','); } });
       }
       function dessiner() {
-        var L = D.pan.long || 400, a = (D.pan.pente || 30) * Math.PI / 180, sec = P.sec.replace(',', '.').split('×'), ch = parseFloat(sec[1]) || 15;
+        var L = D.pan.long || 400, a = (D.pan.pente || 30) * Math.PI / 180, sec = P.sec.replace(',', '.').split('×'), ch = (parseFloat(sec[1]) || 15) * 1.6, E = 1.6;
         var W = 520, H = 230, k = Math.min((W - 80) / (L * Math.cos(a)), (H - 70) / (L * Math.sin(a) + 20));
         function X(s) { return 40 + s * Math.cos(a) * k; } function Y(s) { return H - 30 - s * Math.sin(a) * k; }
         var o = '<line x1="20" y1="' + (H - 30) + '" x2="500" y2="' + (H - 30) + '" stroke="#b9afa4" stroke-dasharray="4 3"/>';
         function bar(s0, s1, ep, fill) { var nx = -Math.sin(a) * ep * k, ny = -Math.cos(a) * ep * k; return '<polygon fill="' + fill + '" stroke="#8a7f75" stroke-width="0.8" points="' + X(s0) + ',' + Y(s0) + ' ' + X(s1) + ',' + Y(s1) + ' ' + (X(s1) + nx) + ',' + (Y(s1) + ny) + ' ' + (X(s0) + nx) + ',' + (Y(s0) + ny) + '"/>'; }
         if (P.chev) o += bar(0, L, ch, '#d6b282');
         var n = 0;
-        if (P.lit) for (var s = P.pas; s < L - 2; s += P.pas) { n++; var cx = X(s), cy = Y(s), nx = -Math.sin(a) * (ch + 7) * k, ny = -Math.cos(a) * (ch + 7) * k; o += '<rect x="' + (cx + nx - 3) + '" y="' + (cy + ny - 3) + '" width="6" height="6" fill="#a8541f" transform="rotate(' + (-a * 180 / Math.PI) + ' ' + (cx + nx) + ' ' + (cy + ny) + ')"/>'; }
+        if (P.lit) for (var s = P.pas; s < L - 2; s += P.pas) { n++; var cx = X(s), cy = Y(s), nx = -Math.sin(a) * (ch + 10) * k, ny = -Math.cos(a) * (ch + 10) * k; o += '<rect x="' + (cx + nx - 3) + '" y="' + (cy + ny - 3) + '" width="6" height="6" fill="#a8541f" transform="rotate(' + (-a * 180 / Math.PI) + ' ' + (cx + nx) + ' ' + (cy + ny) + ')"/>'; }
         if (P.contre) o += bar(0, L, 0, 'none');
-        if (P.sabliere) { o += '<rect x="' + (X(0) - 4) + '" y="' + (Y(0) - 15 * k) + '" width="' + (7.5 * k) + '" height="' + (15 * k) + '" fill="#c79a62" stroke="#8a7f75"/>'; }
-        if (P.faitiere) { o += '<rect x="' + (X(L) - 6) + '" y="' + (Y(L) - 22 * k) + '" width="' + (7.5 * k) + '" height="' + (22 * k) + '" fill="#c79a62" stroke="#8a7f75"/>'; }
-        o += '<text x="12" y="16" font-size="10" fill="#8a7f75">chevron : ' + Math.round(L) + ' cm de long, pente ' + (D.pan.pente || '?') + '°</text>';
+        if (P.sabliere) { o += '<rect x="' + (X(0) - 10 * E * k) + '" y="' + (Y(0) - 15 * E * k) + '" width="' + (7.5 * E * k) + '" height="' + (15 * E * k) + '" fill="#b98748" stroke="#5c4a36" stroke-width="1.2"/>'; }
+        if (P.faitiere) { o += '<rect x="' + (X(L) - 8 * E * k) + '" y="' + (Y(L) - 22 * E * k) + '" width="' + (7.5 * E * k) + '" height="' + (22 * E * k) + '" fill="#b98748" stroke="#5c4a36" stroke-width="1.2"/>'; }
+        o += '<text x="12" y="16" font-size="10" fill="#8a7f75">chevron : ' + Math.round(L) + ' cm de long, pente ' + (D.pan.pente || '?') + '° (épaisseurs agrandies pour la lisibilité)</text>';
         el('coupe').innerHTML = o;
         el('info').textContent = P.lit ? ((n) + ' liteaux sur ce pan, un tous les ' + String(P.pas).replace('.', ',') + ' cm') : '';
       }
