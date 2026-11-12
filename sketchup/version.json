@@ -1,12 +1,12 @@
 {
- "version": "2.103.0",
+ "version": "2.103.1",
  "notes": [
+  "Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective",
   "Ferraillage : nouveau réglage « Crochets aux extrémités » : les crochets (10 Ø à chaque bout, 7 cm minimum) sont comptés dans les…",
   "Charpente : la coupe de la fenêtre montre mieux la sablière et la faîtière (épaisseurs agrandies, contrastes renforcés)",
   "Charpente : nouvelle fenêtre avec coupe d'un pan à l'échelle (chevron, liteaux, sablière, faîtière) et curseurs en direct…",
   "Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de…",
   "Détail / Présentation (nouveau, bouton dans « Dessiner ») : un clic bascule le même modèle entre le mode détail (barres du…",
-  "Ferraillage : les barres de plus de 12 m sont coupées en barres de 12 m avec un recouvrement de 40 Ø, ajouté aux mètres et aux…",
-  "… et 169 autres nouveautés plus anciennes."
+  "… et 170 autres nouveautés plus anciennes."
  ]
 }

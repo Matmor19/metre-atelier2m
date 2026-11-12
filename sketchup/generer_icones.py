@@ -83,6 +83,17 @@ icones['mode_vue'] = (boite(0, 0, 0, 2.2, 2.2, 2.2, cx=6.5, cy=14, k=2.3)
     + poly([iso(0, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 0, 17, 14, 2.3), iso(0, 2.2, 0, 17, 14, 2.3)], 'none', 0.7)
     + poly([iso(2.2, 0, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 2.2, 17, 14, 2.3), iso(2.2, 2.2, 0, 17, 14, 2.3), iso(2.2, 0, 0, 17, 14, 2.3)], 'none', 0.7)
     + ligne(iso(0.6, 1.1, 0.5, 17, 14, 2.3), iso(1.6, 1.1, 0.5, 17, 14, 2.3), O, 1.1) + ligne(iso(0.6, 1.1, 1.6, 17, 14, 2.3), iso(1.6, 1.1, 1.6, 17, 14, 2.3), O, 1.1))
+# porte / ouverture / plinthe / sol / cloison en perspective
+def mur_iso(): return boite(0, 0, 0, 5, 1, 4.2, cx=5, cy=11.5, k=2.2)
+icones['porte'] = (mur_iso() + poly([iso(1.2, 1, 0, 5, 11.5, 2.2), iso(2.8, 1, 0, 5, 11.5, 2.2), iso(2.8, 1, 3.1, 5, 11.5, 2.2), iso(1.2, 1, 3.1, 5, 11.5, 2.2)], '#D6A878')
+    + f'<circle cx="{iso(2.5, 1, 1.5, 5, 11.5, 2.2)[0]:.2f}" cy="{iso(2.5, 1, 1.5, 5, 11.5, 2.2)[1]:.2f}" r="0.55" fill="{O}"/>')
+icones['ouverture'] = (mur_iso() + poly([iso(1.1, 1, 1.2, 5, 11.5, 2.2), iso(3.9, 1, 1.2, 5, 11.5, 2.2), iso(3.9, 1, 3.4, 5, 11.5, 2.2), iso(1.1, 1, 3.4, 5, 11.5, 2.2)], '#BFD9EA')
+    + ligne(iso(2.5, 1, 1.2, 5, 11.5, 2.2), iso(2.5, 1, 3.4, 5, 11.5, 2.2), D, 0.6))
+icones['plinthe'] = (boite(0, 0, 0, 5, 0.5, 0.7, haut='#FFFFFF', cx=5, cy=15, k=2.4) + boite(0, 0, 0.7, 5, 0.12, 4, haut='#FFFFFF', gauche='#F3EEE8', droite='#E0D9D1', cx=5, cy=15, k=2.4) + '')
+icones['sol'] = (boite(0, 0, 0, 5, 5, 0.6, haut='#F4E9DA', cx=12, cy=10, k=2.1)
+    + ''.join(ligne(iso(i, 0, 0.6, 12, 10, 2.1), iso(i, 5, 0.6, 12, 10, 2.1), '#9C8F84', 0.5) + ligne(iso(0, i, 0.6, 12, 10, 2.1), iso(5, i, 0.6, 12, 10, 2.1), '#9C8F84', 0.5) for i in (1, 2, 3, 4)))
+icones['cloison'] = (boite(0, 0, 0, 5, 0.5, 4.2, haut='#FFFFFF', gauche='#F3EEE8', droite='#D6CFC7', cx=5, cy=15, k=2.3)
+    + ''.join(ligne(iso(i, 0.5, 0.3, 5, 15, 2.3), iso(i, 0.5, 3.9, 5, 15, 2.3), O, 0.7) for i in (1, 2, 3, 4)))
 import cairosvg
 for n, corps in icones.items():
     open(os.path.join(ici, 'icones', n + '.svg'), 'w', encoding='utf-8').write(TUILE + corps + '</svg>')
