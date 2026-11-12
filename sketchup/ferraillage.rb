@@ -8,7 +8,7 @@ require 'json'
 module A2M
   module Ferraillage
     TYPES = [['dalle', 'Dalle (2 nappes)'], ['semelle', 'Semelle (nappe basse)'], ['filante', 'Semelle filante (suit le tracé)'], ['poutre', 'Linteau / poutre'], ['poteau', 'Poteau']].freeze
-    DEFAUT = { 'type' => 'dalle', 'enr' => 3.0, 'd' => 10, 's' => 20, 'haut' => 1, 'nb' => 3, 'nh' => 2, 'dh' => 10,
+    DEFAUT = { 'type' => 'dalle', 'cro' => 0, 'enr' => 3.0, 'd' => 10, 's' => 20, 'haut' => 1, 'nb' => 3, 'nh' => 2, 'dh' => 10,
                'dc' => 6, 'sc' => 20, 'nc' => 2 }.freeze
     BALISE = 'A2M_FERRAILLAGE'
     DICO = 'a2m_ferraillage'
@@ -47,9 +47,9 @@ module A2M
     # positions : points de départ ; dir : axe de la barre (vecteur unitaire)
     # Barres vendues en 12 m : au-delà, on compte les jonctions avec un recouvrement de 40 Ø (ajouté aux mètres et aux kilos)
     LONG_BARRE = 12.0
-    def self.compter(stock, dmm, long_m, nb = 1)
+    def self.compter(stock, dmm, long_m, nb = 1, ext = 0.0)
       jonctions = [(long_m / LONG_BARRE).ceil - 1, 0].max
-      stock[dmm] = (stock[dmm] || 0.0) + (long_m + jonctions * 40 * dmm / 1000.0) * nb
+      stock[dmm] = (stock[dmm] || 0.0) + (long_m + ext + jonctions * 40 * dmm / 1000.0) * nb
       stock[:jonctions] = (stock[:jonctions] || 0) + jonctions * nb
     end
     def self.famille(ents, model, nom, dmm, long_m, dir, positions, stock)
@@ -58,7 +58,7 @@ module A2M
       g.name = "#{nom} Ø#{dmm}"
       dfn = barre_def(model, dmm, long_m)
       positions.each { |p| g.entities.add_instance(dfn, Geom::Transformation.new(p, dir)) }
-      compter(stock, dmm, long_m, positions.size)
+      compter(stock, dmm, long_m, positions.size, @cro ? 2 * [10 * dmm / 1000.0, 0.07].max : 0.0)
       g
     end
 
@@ -277,6 +277,7 @@ module A2M
 
     # Construit le ferraillage de la source ; renvoie le groupe créé et le détail
     def self.construire(src, r, ancien = nil)
+      @cro = r['cro'].to_i == 1
       model = Sketchup.active_model
       bb = src.bounds
       stock = {}
@@ -318,11 +319,11 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__, P = {}, tmr = null;
       var CH = {
-        dalle:  [['enr','Enrobage (cm)',1,6,0.5],['d','Diamètre des barres (mm)',6,20,2],['s','Espacement (cm)',10,30,1],['haut','Nappe haute (0 = non, 1 = oui)',0,1,1]],
-        filante:[['enr','Enrobage (cm)',3,8,0.5],['d','Ø barres transversales et basses (mm)',8,20,2],['s','Espacement transversal (cm)',10,30,1],['nb','Barres longitudinales basses',2,6,1],['nh','Barres longitudinales hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2]],
-        semelle:[['enr','Enrobage (cm)',3,8,0.5],['d','Diamètre des barres (mm)',8,20,2],['s','Espacement (cm)',10,30,1]],
-        poutre: [['enr','Enrobage (cm)',2,6,0.5],['nb','Barres basses',2,6,1],['d','Ø barres basses (mm)',8,25,2],['nh','Barres hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1]],
-        poteau: [['enr','Enrobage (cm)',2,6,0.5],['nc','Barres par côté',2,5,1],['d','Ø barres (mm)',10,25,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1]]
+        dalle:  [['enr','Enrobage (cm)',1,6,0.5],['d','Diamètre des barres (mm)',6,20,2],['s','Espacement (cm)',10,30,1],['haut','Nappe haute (0 = non, 1 = oui)',0,1,1],['cro','Crochets aux extrémités (0 = non, 1 = oui)',0,1,1]],
+        filante:[['enr','Enrobage (cm)',3,8,0.5],['d','Ø barres transversales et basses (mm)',8,20,2],['s','Espacement transversal (cm)',10,30,1],['nb','Barres longitudinales basses',2,6,1],['nh','Barres longitudinales hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2],['cro','Crochets aux extrémités (0 = non, 1 = oui)',0,1,1]],
+        semelle:[['enr','Enrobage (cm)',3,8,0.5],['d','Diamètre des barres (mm)',8,20,2],['s','Espacement (cm)',10,30,1],['cro','Crochets aux extrémités (0 = non, 1 = oui)',0,1,1]],
+        poutre: [['enr','Enrobage (cm)',2,6,0.5],['nb','Barres basses',2,6,1],['d','Ø barres basses (mm)',8,25,2],['nh','Barres hautes',0,4,1],['dh','Ø barres hautes (mm)',8,20,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1],['cro','Crochets aux extrémités (0 = non, 1 = oui)',0,1,1]],
+        poteau: [['enr','Enrobage (cm)',2,6,0.5],['nc','Barres par côté',2,5,1],['d','Ø barres (mm)',10,25,2],['dc','Ø cadres (mm)',5,10,1],['sc','Espacement des cadres (cm)',10,30,1],['cro','Crochets aux extrémités (0 = non, 1 = oui)',0,1,1]]
       };
       function el(i){ return document.getElementById(i); }
       function envoyer(){ clearTimeout(tmr); tmr = setTimeout(function(){ sketchup.maj(JSON.stringify(P)); }, 120); }
@@ -345,6 +346,7 @@ module A2M
         q.detail.forEach(function(x){ h += '<tr><td>Ø '+x.d+' mm</td><td align=right>'+x.ml.toFixed(1)+' m</td><td align=right>'+x.kg.toFixed(1)+' kg</td></tr>'; });
         h += '<tr><td><b>Total</b></td><td align=right><b>'+q.ml.toFixed(1)+' m</b></td><td align=right><b>'+q.kg.toFixed(1)+' kg</b></td></tr></table>';
         if (q.cadres) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.cadres+' cadres, zone serrée de '+q.zone_cm+' cm à chaque bout (cadres à l\'espacement divisé par 2).</div>';
+        if (P.cro) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">Crochets comptés dans les mètres et les kilos (10 Ø à chaque bout, 7 cm minimum) ; ils ne sont pas dessinés.</div>';
         if (q.jonctions) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.jonctions+' jonction(s) de barres (barres de 12 m, recouvrement 40 Ø compté dans les kilos).</div>';
         el('qte').innerHTML = h;
       }

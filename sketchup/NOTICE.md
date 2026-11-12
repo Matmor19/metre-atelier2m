@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.102.1)
+# Métré Atelier 2M — notice d'utilisation (version 2.103.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -311,6 +311,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Ferraillage : nouveau réglage « Crochets aux extrémités » : les crochets (10 Ø à chaque bout, 7 cm minimum) sont comptés dans les mètres et les kilos des barres (ils ne sont pas dessinés)
 - Charpente : la coupe de la fenêtre montre mieux la sablière et la faîtière (épaisseurs agrandies, contrastes renforcés)
 - Charpente : nouvelle fenêtre avec coupe d'un pan à l'échelle (chevron, liteaux, sablière, faîtière) et curseurs en direct (entraxe, pas des liteaux) ; la charpente se refait sous tous les pans à chaque réglage, avec le bilan en mètres et en m³. Nécessite de redémarrer SketchUp une fois
 - Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de bois en m³ (sections choisies, hors chutes)
@@ -330,4 +331,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable
 - Mise à jour : le paquet d'installation contient enfin toutes les corrections récentes (toit 3 pans, ouvertures sans tapée posées au nu du placo, contrôle des objets)
 - Contrôler et préparer un objet : le rapport indique le nombre d'arêtes de bord, masquées et de faces de sens contraire
-- Provisoire : les deux commandes « Métré A2M (provisoire) » du menu Extensions servent à diagnostiquer et réparer les faces de l'objet ouvert

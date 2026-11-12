@@ -1,4 +1,5 @@
 [
+ "Ferraillage : nouveau réglage « Crochets aux extrémités » : les crochets (10 Ø à chaque bout, 7 cm minimum) sont comptés dans les mètres et les kilos des barres (ils ne sont pas dessinés)",
  "Charpente : la coupe de la fenêtre montre mieux la sablière et la faîtière (épaisseurs agrandies, contrastes renforcés)",
  "Charpente : nouvelle fenêtre avec coupe d'un pan à l'échelle (chevron, liteaux, sablière, faîtière) et curseurs en direct (entraxe, pas des liteaux) ; la charpente se refait sous tous les pans à chaque réglage, avec le bilan en mètres et en m³. Nécessite de redémarrer SketchUp une fois",
  "Charpente : la sablière et la faîtière sont maintenant comptées en mètres dans le métré, et le message final donne le volume de bois en m³ (sections choisies, hors chutes)",
