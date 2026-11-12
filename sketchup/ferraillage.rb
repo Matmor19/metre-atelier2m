@@ -87,7 +87,10 @@ module A2M
       elsif ex[:x] >= ex[:y] then ax = X_AXIS; u = Y_AXIS; v = Z_AXIS; la = ex[:x]; eu = ex[:y]; ev = ex[:z]
       else ax = Y_AXIS; u = Z_AXIS; v = X_AXIS; la = ex[:y]; eu = ex[:z]; ev = ex[:x] end
       # origine locale = coin minimal ; coordonnées (a, p, q) le long de ax, u, v
-      pt = ->(a, p, q) { mn + (ax * a.m) + (u * p.m) + (v * q.m) }
+      pt = lambda do |a, p, q|
+        am = a.m.to_f; pm = p.m.to_f; qm = q.m.to_f
+        mn + Geom::Vector3d.new(ax.x * am + u.x * pm + v.x * qm, ax.y * am + u.y * pm + v.y * qm, ax.z * am + u.z * pm + v.z * qm)
+      end
       coords_h = nil
       # largeur utile pour les barres (axe des centres de barre)
       off = enr + dc / 1000.0 + d / 2000.0

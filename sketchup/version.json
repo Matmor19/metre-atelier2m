@@ -1,5 +1,5 @@
 {
- "version": "2.98.2",
+ "version": "2.98.3",
  "notes": [
   "Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)",
   "Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se…",
