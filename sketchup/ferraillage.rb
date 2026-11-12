@@ -290,7 +290,7 @@ module A2M
         res = q
       rescue StandardError => ex
         model.abort_operation
-        res = { 'erreur' => ex.message }
+        res = { 'erreur' => "#{ex.message} @ #{ex.backtrace.to_a.first(3).map { |l| l.sub(/.*\//, '') }.join(' | ')}" }
         @cur[:grp] = nil if @cur[:grp] && !@cur[:grp].valid?
       end
       @fen.execute_script("recu(#{JSON.generate(JSON.generate(res))})") if @fen
