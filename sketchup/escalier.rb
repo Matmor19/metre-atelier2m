@@ -86,30 +86,66 @@ module A2M
       f.reverse! if f.normal.z < 0
       f.pushpull(z1 - z0)
       c = Sketchup::Color.new(*couleur)
-      ents.grep(Sketchup::Face).each { |x| x.material = c; x.back_material = c if x.material.nil? || true }
+      ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+    end
+
+    RI = 2.cm   # épaisseur des contremarches
+
+    # Polygone (x, z) coupé sous le plan z = zmin
+    def self.couper_z(pts, zmin)
+      res = []
+      pts.each_with_index do |p, i|
+        q = pts[(i + 1) % pts.size]
+        pin = p[1] >= zmin; qin = q[1] >= zmin
+        res << p if pin
+        res << [p[0] + (zmin - p[1]) / (q[1] - p[1]) * (q[0] - p[0]), zmin] if pin != qin
+      end
+      res
+    end
+
+    # Polygone (x, z) extrudé en travers, de y0 à y1
+    def self.prisme_xz(ents, o, dir, lat, pts, y0, y1, couleur)
+      return if pts.size < 3
+      f = ents.add_face(pts.map { |x, z| o.offset(dir, x).offset(lat, y0).offset(Z_AXIS, z) })
+      return unless f
+      f.reverse! if f.normal.dot(lat) < 0
+      f.pushpull(y1 - y0)
+      c = Sketchup::Color.new(*couleur)
+      ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
     end
 
     # Volée de m marches : retourne les chemins de garde-corps des côtés (gauche = y max, droite = y min)
-    def self.volee(ents, o, dir, lat, m, zb, h, g, w, ep, contre, limons, couleur, mur)
+    # struct : 'bois' (limons pleins), 'cremaillere' (limons crémaillère), 'central' (limon central métal)
+    def self.volee(ents, o, dir, lat, m, zb, h, g, w, ep, contre, limons, couleur, mur, struct = 'bois', nez = 2.cm)
       m.times do |k|
         i = k + 1
-        bloc(ents, o, dir, lat, (i - 1) * g - 2.cm, i * g, 0, w, zb + i * h - ep, zb + i * h, couleur)
-        bloc(ents, o, dir, lat, (i - 1) * g - 2.cm, (i - 1) * g, 0, w, zb + (i - 1) * h, zb + i * h - ep, couleur) if contre
+        bloc(ents, o, dir, lat, (i - 1) * g - nez, i * g + RI, 0, w, zb + i * h - ep, zb + i * h, couleur)
+        bloc(ents, o, dir, lat, (i - 1) * g, (i - 1) * g + RI, 0, w, zb + (i - 1) * h, zb + i * h - ep, couleur) if contre
       end
-      if limons && m > 0
+      if m > 0 && struct == 'cremaillere'
+        hb = h + ep + 9.cm
+        haut = []
+        m.times { |k| i = k + 1; z = zb + i * h - ep; haut << [(i - 1) * g, z] << [i * g, z] }
+        poly = couper_z(haut + [[m * g, zb + h + m * h - hb], [0, zb + h - hb]], zb)
+        [[0, 4.cm], [w - 4.cm, w]].each { |y0, y1| prisme_xz(ents, o, dir, lat, poly, y0, y1, couleur) }
+      elsif m > 0 && struct == 'central'
+        acier = MATIERES['Noir']
+        sl = h / g
+        t0 = zb - ep - 1.cm
+        poly = couper_z([[0, t0], [m * g, t0 + sl * m * g], [m * g, t0 + sl * m * g - 16.cm], [0, t0 - 16.cm]], zb)
+        prisme_xz(ents, o, dir, lat, poly, w / 2 - 4.cm, w / 2 + 4.cm, acier)
+        m.times do |k|
+          i = k + 1; xa = (i - 1) * g + 2.cm
+          bloc(ents, o, dir, lat, xa, i * g - 2.cm, w / 2 - 4.cm, w / 2 + 4.cm, [t0 + sl * xa - 2.cm, zb].max, zb + i * h - ep, acier)
+        end
+      elsif limons && m > 0
         [[0, 4.cm], [w - 4.cm, w]].each do |y0, y1|
           pas = h / g
           xc = pas > 0 ? g * (22.cm - h) / h : 0
           xc = 0 if xc < 0
           pts = [[0, zb], [xc, zb], [m * g, zb + m * h + h - 22.cm], [m * g, zb + m * h + h - ep - 0.5.cm], [0, zb + h - ep - 0.5.cm]]
           pts = pts.select.with_index { |_, i| i != 1 || xc > 0 }
-          q = pts.map { |x, z| o.offset(dir, x).offset(lat, y0).offset(Z_AXIS, z - zb + zb) }
-          f = ents.add_face(q)
-          next unless f
-          f.reverse! if f.normal.dot(lat) < 0
-          f.pushpull(y1 - y0)
-          c = Sketchup::Color.new(*couleur)
-          ents.grep(Sketchup::Face).each { |x| x.back_material = c if x.material.nil?; x.material = c if x.material.nil? }
+          prisme_xz(ents, o, dir, lat, pts, y0, y1, couleur)
         end
       end
       cotes = []
@@ -118,6 +154,39 @@ module A2M
         cotes << [o.offset(dir, 0).offset(lat, y).offset(Z_AXIS, zb + h), o.offset(dir, m * g).offset(lat, y).offset(Z_AXIS, zb + m * h + h)]
       end
       cotes
+    end
+
+    # Quart tournant à 3 marches balancées dans un carré w × w : rayons à 0°, 30°, 60°, 90° depuis l'angle intérieur
+    # (retourne le chemin du garde-corps du côté extérieur)
+    def self.quartier(ents, o1, dir, lat, w, zt1, h, ep, couleur, gauche, contre)
+      pt = ->(x, y) { o1.offset(dir, x).offset(lat, gauche ? y : w - y) }
+      e30 = [Math.tan(Math::PI / 6) * w, 0]
+      e60 = [w, w - w / Math.tan(Math::PI / 3)]
+      pp = [0, w]
+      polys = [[pp, [0, 0], e30], [pp, e30, [w, 0], e60], [pp, e60, [w, w], [w, w + RI], [0, w + RI]]]
+      polys.each_with_index do |pl, j|
+        z = zt1 + j * h
+        f = ents.add_face(pl.map { |x, y| pt.call(x, y).offset(Z_AXIS, z - ep) })
+        next unless f
+        f.reverse! if f.normal.z < 0
+        f.pushpull(ep)
+        c = Sketchup::Color.new(*couleur)
+        ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+      end
+      if contre
+        [e30, e60, [0, 0]].each_with_index do |b, j|
+          a3 = pt.call(*pp); b3 = pt.call(*b)
+          nrm = Z_AXIS.cross(b3 - a3); nrm.normalize!
+          z = zt1 + [1, 2, 0][j] * h
+          f = ents.add_face([a3, b3, b3.offset(nrm, RI), a3.offset(nrm, RI)].map { |p| p.offset(Z_AXIS, z - h) })
+          next unless f
+          f.reverse! if f.normal.z < 0
+          f.pushpull(h - ep)
+          c = Sketchup::Color.new(*couleur)
+          ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+        end
+      end
+      [[[0, 0], 0], [e30, 1], [[w, 0], 1.5], [e60, 2], [[w, w], 3]].map { |q, k| pt.call(*q).offset(Z_AXIS, zt1 + k * h) }
     end
 
     ENR_ESC = 3.cm
@@ -191,7 +260,8 @@ module A2M
       hauteur = nombre(r['h'], 270).cm; w = nombre(r['w'], 90).cm; g = nombre(r['g'], 25).cm
       n = r['nm'].to_i > 1 ? r['nm'].to_i : [(hauteur / 17.5.cm).round, 2].max
       h = hauteur / n
-      ep = 4.cm
+      ep = nombre(r['ep'], 4).cm; nez = nombre(r['nez'], 2).cm
+      o_orig = o; oz = o.z; o = Geom::Point3d.new(o.x, o.y, 0)
       treads = n - 1
       couleur = MATIERES[r['mat']] || MATIERES['Chêne']
       dir = dir.clone; dir.z = 0; dir.normalize!
@@ -209,51 +279,59 @@ module A2M
         e = grp.entities
         gc = []
         types = r['t']
-        beton = !!r['beton']
+        beton = r['struct'] ? r['struct'] == 'beton' : !!r['beton']
+        struct = beton ? 'bois' : (r['struct'] || 'bois')
         eb = nombre(r['eb'], 14).cm; dd = nombre(r['db'], 10).to_i; sd = nombre(r['sb'], 15).cm
         stock = {}
         rge = beton ? e.add_group : nil
         epp = beton ? eb : ep
         vol = lambda do |o2, d2, l2, m2, zb2|
           if beton then volee_beton(e, rge.entities, stock, o2, d2, l2, m2, zb2, h, g, w, eb, dd, sd, couleur, r['mur'])
-          else volee(e, o2, d2, l2, m2, zb2, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur']) end
+          else volee(e, o2, d2, l2, m2, zb2, h, g, w, ep, r['contre'], r['limons'], couleur, r['mur'], struct, nez) end
         end
         if types == 'droit'
           gc.concat(vol.call(o, dir, lat, treads, o.z))
         else
           gauche = types.end_with?('_g')
-          m1 = types.start_with?('quart') ? (treads - 1) / 2 : (treads - 1) / 2
-          m2 = treads - 1 - m1
+          quart = types.start_with?('quart')
+          bal = quart && r['bal'] && !beton && treads >= 5
+          m1 = bal ? (treads - 3) / 2 : (treads - 1) / 2
+          m2 = bal ? treads - 3 - m1 : treads - 1 - m1
           gc.concat(vol.call(o, dir, lat, m1, o.z))
-          # palier : une marche pleine
-          zt = o.z + (m1 + 1) * h
           o1 = o.offset(dir, m1 * g)
-          lon = types.start_with?('quart') ? w : w
-          lar = types.start_with?('quart') ? w : 2 * w
-          if gauche
-            bloc(e, o1, dir, lat, 0, lon, 0, lar, zt - epp, zt, couleur)
-            grille_palier(rge.entities, stock, o1, dir, lat, 0, lon, 0, lar, zt - epp + ENR_ESC.to_f + dd / 50.8, dd, sd) if beton
+          if bal
+            zt1 = o.z + (m1 + 1) * h
+            ch = quartier(e, o1, dir, lat, w, zt1, h, ep, couleur, gauche, r['contre'])
+            gc << ch unless r['mur'] == (gauche ? 'droite' : 'gauche')
+            zt = zt1 + 2 * h
           else
-            bloc(e, o1, dir, lat, 0, lon, w - lar, w, zt - epp, zt, couleur)
-            grille_palier(rge.entities, stock, o1, dir, lat, 0, lon, w - lar, w, zt - epp + ENR_ESC.to_f + dd / 50.8, dd, sd) if beton
+            # palier : une marche pleine (prolongée sous la première contremarche de la volée suivante)
+            zt = o.z + (m1 + 1) * h
+            lon = w
+            lar = quart ? w : 2 * w
+            xlo = quart ? 0 : -RI
+            y0p = gauche ? 0 : w - lar
+            y1p = gauche ? lar : w
+            ylo = quart ? (gauche ? y0p : y0p - RI) : y0p
+            yhi = quart ? (gauche ? y1p + RI : y1p) : y1p
+            bloc(e, o1, dir, lat, xlo, lon, ylo, yhi, zt - epp, zt, couleur)
+            bloc(e, o1, dir, lat, 0, RI, y0p, y1p, zt - h, zt - epp, couleur) if r['contre'] && !beton
+            grille_palier(rge.entities, stock, o1, dir, lat, 0, lon, y0p, y1p, zt - epp + ENR_ESC.to_f + dd / 50.8, dd, sd) if beton
           end
-          if types.start_with?('quart')
+          if quart
             if gauche
               o2 = o1.offset(dir, w).offset(lat, w); d2 = lat; l2 = dir.reverse
             else
-              o2 = o1.offset(lat, 0); d2 = lat.reverse; l2 = dir
-              o2 = o1.offset(dir, 0).offset(lat, 0)
+              o2 = o1; d2 = lat.reverse; l2 = dir
             end
-            # volée 2 : démarre au bord du palier, en montant
-            gc.concat(vol.call(o2, d2, l2, m2, zt))
           else
             if gauche
               o2 = o1.offset(lat, 2 * w); d2 = dir.reverse; l2 = lat.reverse
             else
               o2 = o1.offset(lat, -w); d2 = dir.reverse; l2 = lat
             end
-            gc.concat(vol.call(o2, d2, l2, m2, zt))
           end
+          gc.concat(vol.call(o2, d2, l2, m2, zt))
         end
         if beton
           if stock.empty?
@@ -272,9 +350,10 @@ module A2M
           end
           grp.name = "#{grp.name} (béton #{(eb.to_f * 2.54).round} cm)"
         end
-        grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |a, b| [a.to_a, b.to_a] }))
+        grp.set_attribute('a2m', 'escalier_gc', JSON.generate(gc.map { |c| c.map(&:to_a) }))
         grp.set_attribute('a2m', 'escalier', JSON.generate('type' => types, 'marches' => n, 'hauteur_marche' => (h.to_f * 2.54).round(1), 'giron' => (g.to_f * 2.54).round(1), 'largeur' => (w.to_f * 2.54).round(0)))
-        A2M::Modif.noter(grp, 'escalier', { 'r' => r.reject { |k, _| k == 'replacer' }, 'o' => o.to_a, 'dir' => dir.to_a })
+        A2M::Modif.noter(grp, 'escalier', { 'r' => r.reject { |k, _| k == 'replacer' }, 'o' => o_orig.to_a, 'dir' => dir.to_a })
+        grp.transform!(Geom::Transformation.translation(Geom::Vector3d.new(0, 0, oz))) if oz.abs > 0.001
         @dernier = grp
         model.commit_operation
         Sketchup.status_text = "Escalier posé : #{n} marches de #{(h.to_f * 2.54).round(1)} cm, giron #{(g.to_f * 2.54).round(1)} cm."

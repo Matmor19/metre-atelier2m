@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.107.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.108.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -145,6 +145,9 @@ Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons
 - Escalier droit, quart ou demi-tournant calculé avec la loi de Blondel, avec vue de dessus et coupe, réglable en direct après la pose (2 clics).
 - Option « Structure béton + ferraillage » : marches et paillasse inclinée en un seul bloc (épaisseur 10 à 25 cm), barres principales suivant la pente (Ø et espacement au choix), barres de répartition Ø8 tous les 25 cm, grille dans le palier. Les mètres et kilos par diamètre sont repris dans le métré.
 - Pour changer plus tard : « Modifier ce que j'ai dessiné ».
+- Structure au choix : bois (limons pleins), limons crémaillère (les marches reposent dans les crans), limon central métal (poutre au centre, marches en console) ou béton armé (avec ferraillage).
+- Quart tournant : option « Marches balancées » pour remplacer le palier par 3 marches triangulaires (angles de 30°).
+- L'épaisseur des marches et le nez de marche se règlent en direct.
 
 ### Garde-corps
 Poteaux, fixations (platine, rosace, chant, scellé), main courante et remplissage (barreaux, câbles, verre, pinces, profilé, grille, lisses, plein) le long d'un tracé ou d'un escalier
@@ -323,6 +326,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Escalier : choix de la structure (bois à limons pleins, limons crémaillère, limon central métal, béton armé), marches balancées pour le quart tournant (3 marches triangulaires à la place du palier), épaisseur des marches et nez de marche réglables, contremarches posées sur la marche d'en dessous et palier avec sa contremarche, l'escalier posé en altitude garde la bonne hauteur, garde-corps possible sur le côté extérieur des marches balancées
 - Garde-corps en verre (et panneau plein) : les panneaux suivent maintenant la pente d'un escalier (parallélogrammes parallèles à la main courante) ; les pinces suivent aussi
 - Garde-corps : 5 systèmes de fixation des poteaux (platine carrée, rosace ronde, fixation en chant sur nez de dalle ou limon, scellé avec collerette, posé directement) avec boulons dessinés ; 3 nouveaux remplissages (verre sur pinces, verre en profilé au sol sans poteaux intermédiaires, grille métallique) ; main courante au choix (tube, plat bois, sans) ; le verre est maintenant transparent ; les fixations et pinces sont comptées pour le métré
 - Garde-corps : pièces rondes (poteaux, main courante Ø 4,2 cm, barreaux) ou carrées au choix, et poteaux de départ et d'arrivée renforcés (plus gros et plus hauts), réglables en direct
@@ -342,4 +346,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé
 - Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)
 - Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré
-- Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)

@@ -144,7 +144,10 @@
  "escalier": [
   "Escalier droit, quart ou demi-tournant calculé avec la loi de Blondel, avec vue de dessus et coupe, réglable en direct après la pose (2 clics).",
   "Option « Structure béton + ferraillage » : marches et paillasse inclinée en un seul bloc (épaisseur 10 à 25 cm), barres principales suivant la pente (Ø et espacement au choix), barres de répartition Ø8 tous les 25 cm, grille dans le palier. Les mètres et kilos par diamètre sont repris dans le métré.",
-  "Pour changer plus tard : « Modifier ce que j'ai dessiné »."
+  "Pour changer plus tard : « Modifier ce que j'ai dessiné ».",
+  "Structure au choix : bois (limons pleins), limons crémaillère (les marches reposent dans les crans), limon central métal (poutre au centre, marches en console) ou béton armé (avec ferraillage).",
+  "Quart tournant : option « Marches balancées » pour remplacer le palier par 3 marches triangulaires (angles de 30°).",
+  "L'épaisseur des marches et le nez de marche se règlent en direct."
  ],
  "mode_vue": [
   "Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.",

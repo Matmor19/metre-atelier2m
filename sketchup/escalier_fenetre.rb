@@ -37,6 +37,8 @@ module A2M
       <h2>Forme</h2>
       <div class="grille" id="types"></div>
       <div id="champs"></div>
+      <h2>Structure</h2>
+      <div class="grille" id="struct"></div>
       <h2>Ouvrage</h2>
       <div class="puces" id="opts"></div>
       <h2>Matière</h2>
@@ -50,12 +52,12 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var P = { t: 'droit', h: 270, w: 90, g: 25, nm: 0, contre: true, limons: true, mur: 'aucun', mat: 'Chêne', beton: false, eb: 14, db: 10, sb: 15 }, placed = false, tmr = null;
-      var CH = [['h', 'Hauteur à monter (cm)', 100, 450, 0.5], ['w', 'Largeur de l’escalier (cm)', 60, 150, 1], ['g', 'Giron (cm)', 18, 35, 0.5], ['nm', 'Nombre de marches (0 = calculé)', 0, 25, 1], ['eb', 'Épaisseur de la paillasse béton (cm)', 10, 25, 1, 1], ['db', 'Ø des barres principales (mm)', 8, 16, 2, 1], ['sb', 'Espacement des barres (cm)', 10, 25, 1, 1]];
+      var P = { t: 'droit', h: 270, w: 90, g: 25, nm: 0, contre: true, limons: true, mur: 'aucun', mat: 'Chêne', beton: false, struct: 'bois', ep: 4, nez: 2, bal: false, eb: 14, db: 10, sb: 15 }, placed = false, tmr = null;
+      var CH = [['h', 'Hauteur à monter (cm)', 100, 450, 0.5], ['w', 'Largeur de l’escalier (cm)', 60, 150, 1], ['g', 'Giron (cm)', 18, 35, 0.5], ['nm', 'Nombre de marches (0 = calculé)', 0, 25, 1], ['ep', 'Épaisseur des marches (cm)', 2, 8, 0.5, 'w'], ['nez', 'Nez de marche (cm)', 0, 5, 0.5, 'w'], ['eb', 'Épaisseur de la paillasse béton (cm)', 10, 25, 1, 'b'], ['db', 'Ø des barres principales (mm)', 8, 16, 2, 'b'], ['sb', 'Espacement des barres (cm)', 10, 25, 1, 'b']];
       var FORMES = { droit: 'M8 32 V8 H40 V32 Z M8 14 H40 M8 20 H40 M8 26 H40', quart_g: 'M8 32 V18 H22 V8 H40 V32 Z M8 24 H22 M22 14 H40 M22 24 H40', quart_d: 'M8 8 H26 V18 H40 V32 H8 Z M8 14 H26 M26 24 H40 M16 18 V32', demi_g: 'M8 8 H40 V32 H8 Z M24 8 V32 M8 14 H24 M32 14 H40', demi_d: 'M8 8 H40 V32 H8 Z M24 8 V32 M8 14 H24 M32 14 H40' };
-      function envoyer() { clearTimeout(tmr); tmr = setTimeout(function () { if (placed) sketchup.maj(JSON.stringify(P)); }, 80); }
+      function envoyer() { P.beton = P.struct === 'beton'; clearTimeout(tmr); tmr = setTimeout(function () { if (placed) sketchup.maj(JSON.stringify(P)); }, 80); }
       function pose(v) { placed = v; el('placer').textContent = v ? 'Replacer l’escalier (2 clics)' : 'Placer l’escalier (2 clics)'; el('fin').style.display = v ? 'flex' : 'none'; }
-      function init(p, pl) { for (var k in p) { P[k] = (typeof P[k] === 'number') ? (parseFloat(String(p[k]).replace(',', '.')) || 0) : p[k]; } pose(!!pl); rendre(); champs(true); dessiner(); }
+      function init(p, pl) { for (var k in p) { P[k] = (typeof P[k] === 'number') ? (parseFloat(String(p[k]).replace(',', '.')) || 0) : p[k]; } if (p.beton && !p.struct) P.struct = 'beton'; pose(!!pl); rendre(); champs(true); dessiner(); }
       function rendre() {
         var g = el('types'); g.innerHTML = '';
         D.types.forEach(function (t) {
@@ -69,8 +71,14 @@ module A2M
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P[x[0]] ? ' rempli' : ''); b.textContent = x[1];
           b.addEventListener('click', function () { P[x[0]] = !P[x[0]]; rendre(); envoyer(); }); o.appendChild(b);
         });
-        var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'puce' + (P.beton ? ' rempli' : ''); bt.textContent = 'Structure béton + ferraillage';
-        bt.addEventListener('click', function () { P.beton = !P.beton; rendre(); envoyer(); }); o.appendChild(bt);
+        if (P.t.indexOf('quart') === 0) { var bl = document.createElement('button'); bl.type = 'button'; bl.className = 'puce' + (P.bal ? ' rempli' : ''); bl.textContent = 'Marches balancées (3 au lieu du palier)'; bl.addEventListener('click', function () { P.bal = !P.bal; rendre(); dessiner(); envoyer(); }); o.appendChild(bl); }
+        var sg = el('struct'); sg.innerHTML = '';
+        [['bois', 'Bois : limons pleins', 'Marches, contremarches et deux limons latéraux', 'M6 30 L34 10 V16 L6 36 Z M10 26 H16 V22 H22 V18 H28 V14 H34'], ['cremaillere', 'Limons crémaillère', 'Les marches reposent dans les crans des limons', 'M6 34 L34 14 V16 H28 V20 H22 V24 H16 V28 H10 V32 H6 Z'], ['central', 'Limon central métal', 'Une poutre centrale, marches en console', 'M6 32 L36 14 V20 L6 38 Z M10 24 H17 M18 20 H25 M26 16 H33'], ['beton', 'Béton armé', 'Paillasse en dents de scie avec ses barres', 'M6 34 V30 H12 V26 H18 V22 H24 V18 H30 V14 H36 L36 20 L6 38 Z']].forEach(function (x) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (P.struct === x[0] ? ' rempli' : '');
+          b.innerHTML = '<div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50" fill="none" stroke="#3C3C3C" stroke-width="1.2"><path d="' + x[3] + '"/></svg></div><span></span><div class="petit" style="margin:2px 0 0"></div>';
+          b.querySelector('span').textContent = x[1]; b.querySelector('.petit').textContent = x[2];
+          b.addEventListener('click', function () { P.struct = x[0]; P.beton = x[0] === 'beton'; rendre(); envoyer(); }); sg.appendChild(b);
+        });
         var w = document.createElement('span'); w.className = 'petit'; w.textContent = ' Côté mur (sans garde-corps) :'; o.appendChild(w);
         [['aucun', 'aucun'], ['gauche', 'à gauche'], ['droite', 'à droite']].forEach(function (x) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.mur === x[0] ? ' rempli' : ''); b.textContent = x[1];
@@ -89,14 +97,14 @@ module A2M
           CH.forEach(function (c) {
             var w = document.createElement('div'); w.className = 'champ';
             w.innerHTML = '<label></label><input type="text" id="v_' + c[0] + '"><input type="range" id="r_' + c[0] + '">';
-            w.querySelector('label').textContent = c[1]; if (c[5]) w.setAttribute('data-b', '1'); z.appendChild(w);
+            w.querySelector('label').textContent = c[1]; if (c[5]) w.setAttribute('data-b', c[5]); z.appendChild(w);
             var r = w.querySelector('[type=range]'), v = w.querySelector('[type=text]');
             r.min = c[2]; r.max = c[3]; r.step = c[4];
             r.addEventListener('input', function () { v.value = r.value.replace('.', ','); P[c[0]] = parseFloat(r.value); dessiner(); envoyer(); });
             v.addEventListener('input', function () { var x = parseFloat(v.value.replace(',', '.')); if (!isNaN(x)) { P[c[0]] = x; if (x > +r.max) r.max = x; r.value = x; dessiner(); envoyer(); } });
           });
         }
-        Array.prototype.forEach.call(z.querySelectorAll('[data-b]'), function (q) { q.style.display = P.beton ? '' : 'none'; });
+        Array.prototype.forEach.call(z.querySelectorAll('[data-b]'), function (q) { q.style.display = (q.getAttribute('data-b') === 'b') === (P.struct === 'beton') ? '' : 'none'; });
         CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = (+P[c[0]]).toString().replace('.', ','); } });
       }
       // Géométrie à plat : mêmes règles que le modèle (volée 1, palier, volée 2)
@@ -106,10 +114,10 @@ module A2M
         if (!tourne) { v1 = tr; vol(0, 0, 1, 0, 0, 1, tr); }
         else {
           var gauche = P.t.slice(-2) === '_g', quart = P.t.indexOf('quart') === 0;
-          v1 = Math.floor((tr - 1) / 2); v2 = tr - 1 - v1;
+          var bal = quart && P.bal && P.struct !== 'beton' && tr >= 5; v1 = Math.floor((tr - (bal ? 3 : 1)) / 2); v2 = tr - (bal ? 3 : 1) - v1;
           vol(0, 0, 1, 0, 0, 1, v1);
           var x1 = v1 * g, lar = quart ? w : 2 * w, y0 = gauche ? 0 : w - lar;
-          pal = [[x1, y0], [x1 + w, y0], [x1 + w, y0 + lar], [x1, y0 + lar]];
+          pal = [[x1, y0], [x1 + w, y0], [x1 + w, y0 + lar], [x1, y0 + lar]]; if (bal) { var tn = Math.tan(Math.PI / 6) * w, e60 = w - w / Math.tan(Math.PI / 3), fy = function (yy) { return gauche ? yy : w - yy; }; R.push([[x1, fy(w)], [x1, fy(0)], [x1 + tn, fy(0)]], [[x1, fy(w)], [x1 + tn, fy(0)], [x1 + w, fy(0)], [x1 + w, fy(e60)]], [[x1, fy(w)], [x1 + w, fy(e60)], [x1 + w, fy(w)]]); pal = null; }
           if (quart) { if (gauche) vol(x1 + w, w, 0, 1, -1, 0, v2); else vol(x1, 0, 0, -1, 1, 0, v2); }
           else { if (gauche) vol(x1, 2 * w, -1, 0, 0, -1, v2); else vol(x1, -w, -1, 0, 0, 1, v2); }
         }
