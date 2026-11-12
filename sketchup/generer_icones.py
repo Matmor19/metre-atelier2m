@@ -120,6 +120,10 @@ icones['planelle'] = (boite(0, 0, 0, 5, 1.3, 2.2, cx=6, cy=16, k=2.3) + boite(0,
 _a = P0(7.5, 16.5, 2.6)
 icones['axes'] = (ligne(_a(0, 0, 0), _a(4.5, 0, 0), '#D62828', 1.4) + ligne(_a(0, 0, 0), _a(0, 4.5, 0), '#2E9E6B', 1.4) + ligne(_a(0, 0, 0), _a(0, 0, 4.2), '#286ED2', 1.4)
     + f'<circle cx="{_a(0,0,0)[0]:.2f}" cy="{_a(0,0,0)[1]:.2f}" r="1.2" fill="{D}"/>' + f'<rect x="14" y="3.5" width="5.2" height="4.4" rx="0.8" fill="{O}" {st(0.6)}/><path d="M15.2 3.5 V2.4 Q15.2 1.2 16.6 1.2 Q18 1.2 18 2.4 V3.5" fill="none" {st(0.7)}/>')
+icones['aciers'] = ('<rect x="4" y="3.5" width="16" height="17" rx="1.2" fill="#FFFFFF" ' + st() + '/>'
+    + ''.join('<path d="M6.5 %s H17.5" stroke="#9C8F84" stroke-width="0.5"/>' % y for y in (8.5, 12.5, 16.5)) + '<path d="M10.5 5.5 V19" stroke="#9C8F84" stroke-width="0.5"/>'
+    + ''.join('<circle cx="8.3" cy="%s" r="1.15" fill="%s" stroke="%s" stroke-width="0.4"/>' % (y, O, D) for y in (6.6, 10.5, 14.5, 18))
+    + ''.join('<path d="M12 %s H17" stroke="%s" stroke-width="1.1" stroke-linecap="round"/>' % (y, D) for y in (6.6, 10.5, 14.5, 18)))
 for _n, _t in (('charpente', (5, 1)), ('couverture', (0, -7)), ('axes', (1.5, -1))): icones[_n] = '<g transform="translate(%s,%s)">' % _t + icones[_n] + '</g>'
 import cairosvg
 for n, corps in icones.items():

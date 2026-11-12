@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.103.2)
+# Métré Atelier 2M — notice d'utilisation (version 2.104.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -166,6 +166,13 @@ Sélectionnez un béton (dalle, semelle, linteau, poutre, poteau) : les barres e
 - Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).
 - Limites : dalle, poutre et poteau sont lus par leur boîte rectangulaire alignée sur les axes ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études.
 
+### Liste des aciers
+Tous les ferraillages du modèle par ouvrage et par diamètre, avec les barres de 12 m à commander ; enregistrable en CSV
+
+- Récapitulatif de tous les ferraillages du modèle (dalles, semelles, poutres, poteaux, escaliers béton).
+- Un tableau par ouvrage et par diamètre, puis le total à commander : mètres, kilos et nombre de barres de 12 m.
+- Le bouton « Enregistrer en CSV » crée un fichier qui s'ouvre dans Excel ; « Actualiser » reprend le modèle après une modification.
+
 ### Détail / Présentation
 Bascule le même modèle : en « détail », les barres du ferraillage sont visibles et le béton est transparent ; en « présentation », le ferraillage est masqué et le béton est plein. Rien n'est supprimé
 
@@ -311,6 +318,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos et nombre de barres de 12 m à commander ; enregistrable en CSV. Nécessite de redémarrer SketchUp une fois
 - Pictogrammes : textures, hachures, phases, charpente, zinguerie, couverture, planelle et axes redessinés en perspective
 - Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective
 - Ferraillage : nouveau réglage « Crochets aux extrémités » : les crochets (10 Ø à chaque bout, 7 cm minimum) sont comptés dans les mètres et les kilos des barres (ils ne sont pas dessinés)
@@ -330,4 +338,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné
 - Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente
 - Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires
-- Contrôler et préparer un objet : referme les trous laissés par des faces supprimées (triangulation des contours ouverts) et oriente les faces vers l'extérieur de façon fiable

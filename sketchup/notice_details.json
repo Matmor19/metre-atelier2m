@@ -156,5 +156,10 @@
   "La fenêtre montre la coupe d'un pan à l'échelle ; entraxe des chevrons, pas des liteaux, section et éléments se règlent en direct, sans bouton « Appliquer ».",
   "Le bilan donne les mètres de chaque pièce et le volume de bois en m³ (hors chutes), repris dans le métré.",
   "Pour changer plus tard : « Modifier ce que j'ai dessiné »."
+ ],
+ "aciers": [
+  "Récapitulatif de tous les ferraillages du modèle (dalles, semelles, poutres, poteaux, escaliers béton).",
+  "Un tableau par ouvrage et par diamètre, puis le total à commander : mètres, kilos et nombre de barres de 12 m.",
+  "Le bouton « Enregistrer en CSV » crée un fichier qui s'ouvre dans Excel ; « Actualiser » reprend le modèle après une modification."
  ]
 }
