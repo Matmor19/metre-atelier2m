@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.97.76)
+# Métré Atelier 2M — notice d'utilisation (version 2.98.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -143,6 +143,15 @@ Poteaux, main courante et remplissage (barreaux, câbles, verre, lisses, plein) 
 ### Créer les semelles
 Semelles filantes sous les murs sélectionnés : largeur et hauteur
 
+### Ferraillage (barres et cadres en 3D)
+Sélectionnez un béton (dalle, semelle, linteau, poutre, poteau) : les barres et les cadres se dessinent en 3D, avec les mètres et les kilos par diamètre, réglés en direct par des curseurs ; repris par l'extraction du métré
+
+- Pour dessiner les armatures (barres et cadres) d'un béton déjà modélisé : dalle, semelle, linteau, poutre ou poteau.
+- 1. Sélectionnez le groupe de béton. 2. Cliquez l'outil : la fenêtre s'ouvre et le ferraillage est posé tout de suite, selon la forme devinée du béton.
+- 3. Réglez avec les curseurs (enrobage, diamètres, nombre de barres, espacement) : le modèle se refait en direct. Les cadres sont resserrés (espacement ÷ 2) sur les deux bouts, sur le plus grand de : grand côté, longueur ÷ 6, 45 cm.
+- Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).
+- Limites : le béton est lu par sa boîte rectangulaire alignée sur les axes (pas de dalle en L ni de semelle filante tournée) ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études.
+
 ### Hachures de coupe par couche
 Une hachure par type de couche (mur, isolant, plaque, cloison, chape…), posée automatiquement en dessinant ; peut aussi l'appliquer au modèle déjà dessiné
 
@@ -281,6 +290,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré
 - Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)
 - Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice des deux pans)
 - Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné
@@ -300,4 +310,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : case « Murs pignons » (2 pans et monopente). Elle crée les deux murs pignons aux extrémités du faîtage, jusqu'à la sous-face de la toiture, avec l'épaisseur réglable ; ils sont sur la balise Mur pignon et se refont avec la toiture
 - Garde-corps : nouvelle fenêtre avec élévation d'une travée (barreaux, câbles, lisses, verre, plein : vide entre barreaux contrôlé à 11 cm, hauteur à 100 cm) et vue de dessus du tracé avec les poteaux. Hauteur, entraxe, section des poteaux, vide sous le remplissage, espacement des barreaux, écart des câbles et nombre de lisses se règlent en direct une fois le garde-corps posé
 - Escalier : nouvelle fenêtre avec vue de dessus et coupe à l'échelle, qui se dessinent à mesure des réglages (forme, hauteur, largeur, giron, nombre de marches, loi de Blondel). Une fois l'escalier posé en 2 clics, chaque réglage le refait en direct dans le modèle ; il se rouvre avec « Modifier ce que j'ai dessiné »
-- Toiture : nouvelle fenêtre avec vue de dessus et coupe à l'échelle (pans, faîtage et arêtiers, sens de la pente, murs). Type, pente, débord, épaisseur, sens du faîtage et numéro se règlent avec des curseurs et la toiture du modèle suit en direct. S'ouvre avec « Créer la toiture » et « Modifier la toiture » (ancienne fenêtre gardée en réserve)

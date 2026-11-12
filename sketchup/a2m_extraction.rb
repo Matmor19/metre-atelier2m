@@ -435,6 +435,13 @@ module A2M
       res['infos']['isolant_sol'] = r2(surf['A2M_ISOLANT_SOL']) if surf['A2M_ISOLANT_SOL'] > 0
       res['infos']['chape'] = r2(surf['A2M_CHAPE']) if surf['A2M_CHAPE'] > 0
       res['infos']['planelles'] = r2(planelles) if planelles > 0
+      if defined?(A2M::Ferraillage)
+        fer = A2M::Ferraillage.totaux(m.entities)
+        unless fer.empty?
+          res['infos']['ferraillage'] = fer.sort.map { |d, (ml, kg)| "Ø#{d} : #{r2(ml)} m, #{r2(kg)} kg" }.join(' ; ') + " ; total #{r2(fer.values.sum { |v| v[1] })} kg"
+          res['infos']['ferraillage_kg'] = r2(fer.values.sum { |v| v[1] })
+        end
+      end
       res['infos']['enduit_ext_m2'] = r2(enduit[:m2]) if enduit[:m2] > 0
       res['infos']['enduit_ext_ep_cm'] = r2(enduit[:ep_aire] / enduit[:l]) if enduit[:l] > 0
       res['infos']['allees'] = r2(surf['A2M_ALLEE']) if surf['A2M_ALLEE'] > 0

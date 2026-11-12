@@ -63,6 +63,7 @@ module A2M
       when :charpente then A2M::Charpente.modifier(ent, d)
       when :zinguerie then A2M::Zinguerie.modifier(ent, d)
       when :semelle then A2M::Fondations.modifier(ent, d)
+      when :ferraillage then A2M::Ferraillage.modifier(ent, d)
       else UI.messagebox('Cet objet ne peut pas encore être rouvert.')
       end
     end

@@ -127,5 +127,12 @@
   "Le zéro est le dessous de la dalle : en dessous, les altitudes sont négatives (−0,60) ; au-dessus, positives (+0,15).",
   "« Tracer les niveaux dans le modèle » dessine un cadre en lignes de construction et une étiquette par niveau, dans un groupe « Niveaux (A2M) » sur la balise A2M_NIVEAUX, que l'on masque en un clic.",
   "« Caler le zéro sur un point cliqué » : cliquez le dessous de la dalle ; le modèle est déplacé en hauteur pour que ce point devienne 0 (l'altitude NGF de l'origine suit si elle est connue)."
+ ],
+ "ferraillage": [
+  "Pour dessiner les armatures (barres et cadres) d'un béton déjà modélisé : dalle, semelle, linteau, poutre ou poteau.",
+  "1. Sélectionnez le groupe de béton. 2. Cliquez l'outil : la fenêtre s'ouvre et le ferraillage est posé tout de suite, selon la forme devinée du béton.",
+  "3. Réglez avec les curseurs (enrobage, diamètres, nombre de barres, espacement) : le modèle se refait en direct. Les cadres sont resserrés (espacement ÷ 2) sur les deux bouts, sur le plus grand de : grand côté, longueur ÷ 6, 45 cm.",
+  "Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).",
+  "Limites : le béton est lu par sa boîte rectangulaire alignée sur les axes (pas de dalle en L ni de semelle filante tournée) ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études."
  ]
 }

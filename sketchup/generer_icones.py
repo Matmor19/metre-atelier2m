@@ -29,6 +29,8 @@ icones['styles'] = (f'<path d="M12 3.5 L19.5 7.8 L12 12.1 L4.5 7.8 Z" fill="#FFF
 def carte(x, y, c1, c2): return f'<rect x="{x}" y="{y}" width="8.2" height="8.2" rx="1" fill="#fff" {st(0.6)}/><rect x="{x+1.4}" y="{y+1.4}" width="2.4" height="5.4" fill="{c1}"/><rect x="{x+4.4}" y="{y+1.4}" width="2.4" height="5.4" fill="{c2}"/>'
 icones['compositions'] = carte(3, 3, '#C9C9C9', '#FAE08C') + carte(12.8, 3, '#FAE08C', '#E9A06A') + carte(3, 12.8, '#E9A06A', '#C9C9C9') + carte(12.8, 12.8, '#C9C9C9', '#FAE08C') + f'<circle cx="19.6" cy="19.6" r="3.2" fill="{O}" stroke="#fff" stroke-width="0.7"/><path d="M18.2 19.6 H21 M19.6 18.2 V21" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/>'
 icones['niveaux'] = (f'<rect x="9" y="3.5" width="4" height="17" fill="#FFFFFF" {st()}/>' + f'<path d="M3.5 7 H20.5" stroke="#3E8EDE" stroke-width="0.9" stroke-dasharray="2 1"/>' + f'<path d="M3.5 12 H20.5" stroke="{O}" stroke-width="1.5"/>' + f'<path d="M3.5 17 H20.5" stroke="#2E9E6B" stroke-width="0.9" stroke-dasharray="2 1"/>' + f'<path d="M4 12 L6.6 10.4 V13.6 Z" fill="{O}"/><path d="M4 7 L6.4 5.6 V8.4 Z" fill="#3E8EDE"/><path d="M4 17 L6.4 15.6 V18.4 Z" fill="#2E9E6B"/>' + f'<path d="M18.5 7.5 V11.5 M17.2 9 L18.5 7.5 L19.8 9" fill="none" {st(0.8)}/>')
+icones['ferraillage'] = (f'<rect x="3.5" y="5" width="17" height="14" fill="#FFFFFF" {st()}/><rect x="6" y="7.5" width="12" height="9" fill="none" stroke="{O}" stroke-width="1.1"/>'
+    + ''.join(f'<circle cx="{x}" cy="{y}" r="1.1" fill="{O}" stroke="{D}" stroke-width="0.4"/>' for x, y in ((6,16.5),(12,16.5),(18,16.5),(6,7.5),(18,7.5))))
 import cairosvg
 for n, corps in icones.items():
     open(os.path.join(ici, 'icones', n + '.svg'), 'w', encoding='utf-8').write(TUILE + corps + '</svg>')

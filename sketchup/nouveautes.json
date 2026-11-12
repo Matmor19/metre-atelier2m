@@ -1,4 +1,5 @@
 [
+ "Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré",
  "Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)",
  "Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice des deux pans)",
  "Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné",

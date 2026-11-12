@@ -119,7 +119,7 @@ module A2M
           menu.add_separator
           menu.add_item('Atelier 2M : modifier cette ouverture') { A2M::Ouvertures.modifier(ouv) }
         end
-        autre = Sketchup.active_model.selection.to_a.find { |e| %i[sol solmur escalier garde_corps couverture charpente zinguerie semelle].include?(A2M::Modif.genre(e)) }
+        autre = Sketchup.active_model.selection.to_a.find { |e| %i[sol solmur escalier garde_corps couverture charpente zinguerie semelle ferraillage].include?(A2M::Modif.genre(e)) }
         if autre
           menu.add_separator
           menu.add_item('Atelier 2M : modifier cet objet') { A2M::Modif.modifier(autre) }
