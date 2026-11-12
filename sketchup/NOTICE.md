@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.104.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.104.1)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -318,6 +318,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour la nappe basse, vers le bas pour la haute), en plus d'être comptés dans les kilos
 - Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos et nombre de barres de 12 m à commander ; enregistrable en CSV. Nécessite de redémarrer SketchUp une fois
 - Pictogrammes : textures, hachures, phases, charpente, zinguerie, couverture, planelle et axes redessinés en perspective
 - Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective
@@ -337,4 +338,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice des deux pans)
 - Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné
 - Zinguerie : la descente utilise ta naissance, tes colliers et ton regard (descente Ø 80 sur gouttière zinc dév. 25) ; la gouttière est coupée à la naissance et redevient continue si tu supprimes la descente
-- Zinguerie : la gouttière zinc dév. 25 prend ton profil « Goutière Zinc » de la bibliothèque et pose ton « Crochet goutière Dev 25 » (calé sous le creux de la gouttière, tous les 50 cm par défaut) ; les autres gouttières gardent les pièces provisoires

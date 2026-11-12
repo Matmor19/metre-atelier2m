@@ -52,12 +52,21 @@ module A2M
       stock[dmm] = (stock[dmm] || 0.0) + (long_m + ext + jonctions * 40 * dmm / 1000.0) * nb
       stock[:jonctions] = (stock[:jonctions] || 0) + jonctions * nb
     end
-    def self.famille(ents, model, nom, dmm, long_m, dir, positions, stock)
+    def self.famille(ents, model, nom, dmm, long_m, dir, positions, stock, cdir = nil)
       return if positions.empty? || long_m <= 0.001
       g = ents.add_group
       g.name = "#{nom} Ø#{dmm}"
       dfn = barre_def(model, dmm, long_m)
       positions.each { |p| g.entities.add_instance(dfn, Geom::Transformation.new(p, dir)) }
+      if @cro && cdir
+        lh = [10 * dmm / 1000.0, 0.07].max
+        hdef = barre_def(model, dmm, lh)
+        positions.each do |p|
+          fin = p.offset(dir, long_m.m)
+          g.entities.add_instance(hdef, Geom::Transformation.new(p, cdir))
+          g.entities.add_instance(hdef, Geom::Transformation.new(fin, cdir))
+        end
+      end
       compter(stock, dmm, long_m, positions.size, @cro ? 2 * [10 * dmm / 1000.0, 0.07].max : 0.0)
       g
     end
@@ -171,9 +180,10 @@ module A2M
       couches << [lz - enr - rad - d / 1000.0, lz - enr - rad] if r['type'] == 'dalle' && r['haut'] == 1
       noms = ['basse', 'haute']
       couches.each_with_index do |(zx, zy), i|
+        cd = i == 0 ? Z_AXIS : Z_AXIS.reverse   # crochets : vers le haut pour la nappe basse, vers le bas pour la haute
         # barres selon X (réparties en Y) posées au niveau zx ; barres selon Y (réparties en X) au niveau zy
-        famille(ents, model, "Nappe #{noms[i]} sens X", d, lx - 2 * enr, X_AXIS, ys.map { |y| mn + Geom::Vector3d.new(enr.m, y.m, zx.m) }, stock)
-        famille(ents, model, "Nappe #{noms[i]} sens Y", d, ly - 2 * enr, Y_AXIS, xs.map { |x| mn + Geom::Vector3d.new(x.m, enr.m, zy.m) }, stock)
+        famille(ents, model, "Nappe #{noms[i]} sens X", d, lx - 2 * enr, X_AXIS, ys.map { |y| mn + Geom::Vector3d.new(enr.m, y.m, zx.m) }, stock, cd)
+        famille(ents, model, "Nappe #{noms[i]} sens Y", d, ly - 2 * enr, Y_AXIS, xs.map { |x| mn + Geom::Vector3d.new(x.m, enr.m, zy.m) }, stock, cd)
       end
       nx + ny
     end
@@ -346,7 +356,7 @@ module A2M
         q.detail.forEach(function(x){ h += '<tr><td>Ø '+x.d+' mm</td><td align=right>'+x.ml.toFixed(1)+' m</td><td align=right>'+x.kg.toFixed(1)+' kg</td></tr>'; });
         h += '<tr><td><b>Total</b></td><td align=right><b>'+q.ml.toFixed(1)+' m</b></td><td align=right><b>'+q.kg.toFixed(1)+' kg</b></td></tr></table>';
         if (q.cadres) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.cadres+' cadres, zone serrée de '+q.zone_cm+' cm à chaque bout (cadres à l\'espacement divisé par 2).</div>';
-        if (P.cro) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">Crochets comptés dans les mètres et les kilos (10 Ø à chaque bout, 7 cm minimum) ; ils ne sont pas dessinés.</div>';
+        if (P.cro) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">Crochets comptés dans les mètres et les kilos (10 Ø à chaque bout, 7 cm minimum) ; dessinés en 3D sur les dalles et semelles.</div>';
         if (q.jonctions) h += '<div style="font-size:12px;color:#6f665e;margin-top:6px">'+q.jonctions+' jonction(s) de barres (barres de 12 m, recouvrement 40 Ø compté dans les kilos).</div>';
         el('qte').innerHTML = h;
       }

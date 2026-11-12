@@ -1,4 +1,5 @@
 [
+ "Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour la nappe basse, vers le bas pour la haute), en plus d'être comptés dans les kilos",
  "Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos et nombre de barres de 12 m à commander ; enregistrable en CSV. Nécessite de redémarrer SketchUp une fois",
  "Pictogrammes : textures, hachures, phases, charpente, zinguerie, couverture, planelle et axes redessinés en perspective",
  "Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective",
