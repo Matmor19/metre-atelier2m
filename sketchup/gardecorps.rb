@@ -68,7 +68,7 @@ module A2M
     def self.nombre(v, d) (Float(v.to_s.tr(',', '.')) rescue d) end
 
     # Barre pleine entre a et b : section l (largeur horizontale) × h, centrée sur l'axe a-b
-    def self.barre(ents, a, b, l, h, couleur, verre = false)
+    def self.barre(ents, a, b, l, h, couleur, verre = false, rond = false)
       d = b - a
       return nil if d.length < 0.5.mm
       d.normalize!
@@ -76,6 +76,16 @@ module A2M
       lat = lat.length < 0.001 ? X_AXIS.clone : lat
       lat.normalize!
       up = lat.cross(d); up.normalize!
+      if rond
+        cercle = ents.add_circle(a, d, [l, h].min / 2.0, 12)
+        fc = ents.add_face(cercle)
+        return nil unless fc
+        fc.reverse! if fc.normal.dot(d) < 0
+        fc.pushpull(a.distance(b))
+        c = Sketchup::Color.new(*couleur)
+        ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+        return nil
+      end
       pts = [a.offset(lat, -l / 2).offset(up, -h / 2), a.offset(lat, l / 2).offset(up, -h / 2), a.offset(lat, l / 2).offset(up, h / 2), a.offset(lat, -l / 2).offset(up, h / 2)]
       f = ents.add_face(pts)
       return nil unless f
@@ -106,6 +116,8 @@ module A2M
       pot = nombre(r['pot'], 4).cm; esp = [nombre(r['esp'], 10), 3].max.cm; bas = nombre(r['bas'], 8).cm; pas_c = [nombre(r['pas'], 10), 3].max.cm; nl = [nombre(r['nl'], 3).to_i, 1].max
       @dernier_g = nil; @posts ||= []
       couleur = MATIERES[r['mat']] || MATIERES['Métal noir']
+      rd = r['prof'] != 'carre'
+      renf = r['fort'] != false ? 1.5 : 1.0   # poteaux de départ et d'arrivée renforcés
       tag, _ = A2M::Balises.balise(model, TAG, [60, 60, 66])
       g = model.entities.add_group
       g.layer = tag
@@ -121,16 +133,16 @@ module A2M
         pas = l / n
         dir = b - a; dir.normalize!
         # poteaux
-        (0..n).each { |k| p = a.offset(dir, pas * k); next unless k < n || i == pts.size - 2; barre(e, p.offset(Z_AXIS, 0), p.offset(Z_AXIS, hauteur), pot, pot, couleur); @posts << p }
+        (0..n).each { |k| p = a.offset(dir, pas * k); next unless k < n || i == pts.size - 2; ex = (i == 0 && k == 0) || (i == pts.size - 2 && k == n); sp = ex ? pot * renf : pot; barre(e, p.offset(Z_AXIS, 0), p.offset(Z_AXIS, hauteur + (ex ? 2.cm : 0)), sp, sp, couleur, false, rd); @posts << p }
         # main courante sur le dessus
         ha = a.offset(Z_AXIS, hauteur); hb = b.offset(Z_AXIS, hauteur)
-        barre(e, ha, hb, 5.cm, 4.cm, couleur)
+        barre(e, ha, hb, rd ? 4.2.cm : 5.cm, rd ? 4.2.cm : 4.cm, couleur, false, rd)
         case cle
         when 'barreaux'
           nb = (l / esp).floor
           (1..nb).each do |k|
             p = a.offset(dir, l * k / (nb + 1.0))
-            barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 1.4.cm, 1.4.cm, couleur)
+            barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 1.4.cm, 1.4.cm, couleur, false, rd)
           end
           barre(e, a.offset(Z_AXIS, bas), b.offset(Z_AXIS, bas), 3.cm, 2.cm, couleur)
         when 'cables'

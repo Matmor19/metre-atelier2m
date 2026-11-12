@@ -38,6 +38,8 @@ module A2M
       <div id="champs"></div>
       <h2>Matière</h2>
       <div class="puces" id="mat"></div>
+      <h2>Profil des pièces</h2>
+      <div class="puces" id="prof"></div>
       <h2>Sur quoi</h2>
       <div class="puces" id="cible"></div>
       <div class="petit">« Tracé sélectionné » : sélectionnez des arêtes (bord de dalle, de balcon, limon d'escalier) avant de cliquer « Poser ». « Escaliers » : les côtés libres des escaliers posés avec l'outil Escalier.</div>
@@ -49,7 +51,7 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var P = { r: 'barreaux', mat: 'Métal noir', cible: 'sel', haut: 100, ent: 120, esp: 10, pas: 10, nl: 3, pot: 4, bas: 8 }, placed = false, tmr = null, T = null;
+      var P = { r: 'barreaux', mat: 'Métal noir', cible: 'sel', haut: 100, ent: 120, esp: 10, pas: 10, nl: 3, pot: 4, bas: 8, prof: 'rond', fort: true }, placed = false, tmr = null, T = null;
       var CH = [['haut', 'Hauteur (cm)', 80, 130, 1, null], ['ent', 'Entraxe des poteaux (cm)', 60, 200, 1, null], ['pot', 'Section des poteaux (cm)', 2, 10, 0.5, null],
                 ['bas', 'Vide sous le remplissage (cm)', 2, 15, 0.5, null],
                 ['esp', 'Espacement maximal des barreaux (cm)', 5, 15, 0.5, 'barreaux'], ['pas', 'Écart entre les câbles (cm)', 5, 15, 0.5, 'cables'], ['nl', 'Nombre de lisses', 1, 6, 1, 'lisses']];
@@ -67,6 +69,9 @@ module A2M
         });
         var m = el('mat'); m.innerHTML = '';
         D.mat.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.mat === x ? ' rempli' : ''); b.textContent = x; b.addEventListener('click', function () { P.mat = x; rendre(); envoyer(); }); m.appendChild(b); });
+        var pf = el('prof'); pf.innerHTML = '';
+        [['rond', 'Rond'], ['carre', 'Carré']].forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.prof === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.prof = x[0]; rendre(); envoyer(); }); pf.appendChild(b); });
+        var fb = document.createElement('button'); fb.type = 'button'; fb.className = 'puce' + (P.fort ? ' rempli' : ''); fb.textContent = 'Poteaux d\u2019extrémité renforcés'; fb.addEventListener('click', function () { P.fort = !P.fort; rendre(); envoyer(); }); pf.appendChild(fb);
         var c = el('cible'); c.innerHTML = '';
         [['sel', 'Tracé sélectionné'], ['esc', 'Escaliers']].forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.cible === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.cible = x[0]; rendre(); }); c.appendChild(b); });
       }

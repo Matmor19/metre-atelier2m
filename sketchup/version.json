@@ -1,12 +1,12 @@
 {
- "version": "2.104.1",
+ "version": "2.105.0",
  "notes": [
+  "Garde-corps : pièces rondes (poteaux, main courante Ø 4,2 cm, barreaux) ou carrées au choix, et poteaux de départ et d'arrivée…",
   "Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour…",
   "Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos…",
   "Pictogrammes : textures, hachures, phases, charpente, zinguerie, couverture, planelle et axes redessinés en perspective",
   "Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective",
   "Ferraillage : nouveau réglage « Crochets aux extrémités » : les crochets (10 Ø à chaque bout, 7 cm minimum) sont comptés dans les…",
-  "Charpente : la coupe de la fenêtre montre mieux la sablière et la faîtière (épaisseurs agrandies, contrastes renforcés)",
-  "… et 173 autres nouveautés plus anciennes."
+  "… et 174 autres nouveautés plus anciennes."
  ]
 }
