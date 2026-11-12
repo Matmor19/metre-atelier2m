@@ -1,12 +1,12 @@
 {
- "version": "2.109.0",
+ "version": "2.110.0",
  "notes": [
+  "Garde-corps : assemblage repris",
   "Escalier : choix de la structure (bois à limons pleins, limons crémaillère, limon central métal, béton armé), marches balancées…",
   "Garde-corps en verre (et panneau plein) : les panneaux suivent maintenant la pente d'un escalier (parallélogrammes parallèles à…",
   "Garde-corps : 5 systèmes de fixation des poteaux (platine carrée, rosace ronde, fixation en chant sur nez de dalle ou limon,…",
   "Garde-corps : pièces rondes (poteaux, main courante Ø 4,2 cm, barreaux) ou carrées au choix, et poteaux de départ et d'arrivée…",
   "Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour…",
-  "Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos…",
-  "… et 177 autres nouveautés plus anciennes."
+  "… et 178 autres nouveautés plus anciennes."
  ]
 }

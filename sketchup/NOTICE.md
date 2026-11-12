@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.109.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.110.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -326,6 +326,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Garde-corps : assemblage repris — le dessus de la main courante est exactement à la hauteur réglée (les poteaux s'arrêtent dessous, les barreaux montent jusqu'à son dessous) et, aux angles, les tronçons de main courante se rejoignent au lieu de laisser un vide
 - Escalier : choix de la structure (bois à limons pleins, limons crémaillère, limon central métal, béton armé), marches balancées pour le quart tournant (3 marches triangulaires à la place du palier), épaisseur des marches et nez de marche réglables, contremarches posées sur la marche d'en dessous et palier avec sa contremarche, l'escalier posé en altitude garde la bonne hauteur, garde-corps possible sur le côté extérieur des marches balancées
 - Garde-corps en verre (et panneau plein) : les panneaux suivent maintenant la pente d'un escalier (parallélogrammes parallèles à la main courante) ; les pinces suivent aussi
 - Garde-corps : 5 systèmes de fixation des poteaux (platine carrée, rosace ronde, fixation en chant sur nez de dalle ou limon, scellé avec collerette, posé directement) avec boulons dessinés ; 3 nouveaux remplissages (verre sur pinces, verre en profilé au sol sans poteaux intermédiaires, grille métallique) ; main courante au choix (tube, plat bois, sans) ; le verre est maintenant transparent ; les fixations et pinces sont comptées pour le métré
@@ -345,4 +346,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Semelles : nouveau champ « Béton de propreté (cm) » : une couche de béton de propreté, 5 cm plus large de chaque côté, est posée sous la semelle (balise A2M_BETON_PROPRETE), et se refait avec « Modifier ce que j'ai dessiné »
 - Ferraillage : nouveau type « Semelle filante (suit le tracé) » : barres longitudinales basses et hautes qui suivent le contour du béton (angles compris) et barres transversales à l'espacement choisi, avec mètres et kilos par diamètre ; un béton déjà ferraillé est repris et non doublé
 - Mise à jour : le fichier du Ferraillage est enfin dans le paquet d'installation (la 2.98.0 ne se chargeait pas)
-- Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré

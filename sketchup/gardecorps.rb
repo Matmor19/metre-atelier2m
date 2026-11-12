@@ -189,6 +189,9 @@ module A2M
       fix = r['fix'] || 'aucune'
       mc = r['mc'] || 'tube'
       cote = r['cote'].to_i == -1 ? -1 : 1
+      hr = { 'tube' => (rd ? 4.2.cm : 4.cm), 'plat' => 3.5.cm }[mc] || 0.0   # épaisseur de la main courante : son dessus est à la hauteur réglée
+      zr = hauteur - hr / 2
+      ytop = hauteur - (mc == 'aucune' ? 2.cm : hr - 0.5.cm)
       pts = fix == 'lateral' ? decaler(pts0, cote * (pot / 2 + 1.cm)) : pts0
       zb = { 'plat' => 1.cm, 'rosace' => 1.cm, 'lateral' => -20.cm, 'scelle' => -10.cm }[fix] || 0.0
       sans_inter = (cle == 'verre_profil')
@@ -215,7 +218,7 @@ module A2M
           ex = (i == 0 && k == 0) || (i == pts.size - 2 && k == n)
           next if sans_inter && !ex
           sp = ex ? pot * renf : pot
-          barre(e, p.offset(Z_AXIS, zb), p.offset(Z_AXIS, hauteur + (ex ? 2.cm : 0)), sp, sp, couleur, false, rd)
+          barre(e, p.offset(Z_AXIS, zb), p.offset(Z_AXIS, ex ? hauteur + 2.cm : (mc == 'aucune' ? hauteur : zr)), sp, sp, couleur, false, rd)
           @posts << p; npot += 1
           case fix
           when 'plat'
@@ -232,7 +235,9 @@ module A2M
           end
         end
         # main courante sur le dessus
-        ha = a.offset(Z_AXIS, hauteur); hb = b.offset(Z_AXIS, hauteur)
+        # main courante : son dessus est à la hauteur réglée ; aux angles intérieurs elle dépasse d'une demi-section pour que les tronçons se rejoignent
+        ext = [hr, rd ? 4.2.cm : 5.cm].max / 2
+        ha = (i > 0 ? a.offset(dir, -ext) : a).offset(Z_AXIS, zr); hb = (i < pts.size - 2 ? b.offset(dir, ext) : b).offset(Z_AXIS, zr)
         case mc
         when 'tube' then barre(e, ha, hb, rd ? 4.2.cm : 5.cm, rd ? 4.2.cm : 4.cm, couleur, false, rd)
         when 'plat' then barre(e, ha, hb, 7.cm, 3.5.cm, couleur)
@@ -243,7 +248,7 @@ module A2M
           nb = (l / esp).floor
           (1..nb).each do |k|
             p = a.offset(dir, l * k / (nb + 1.0))
-            barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 1.4.cm, 1.4.cm, couleur, false, rd)
+            barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, ytop), 1.4.cm, 1.4.cm, couleur, false, rd)
           end
           barre(e, a.offset(Z_AXIS, bas), b.offset(Z_AXIS, bas), 3.cm, 2.cm, couleur)
         when 'cables'
@@ -271,7 +276,7 @@ module A2M
           (0...n).each { |k| p = a.offset(dir, pas * k + 0.5.cm); q = a.offset(dir, pas * (k + 1) - 0.5.cm); panneau(e, p, q, 7.cm, htop, 1.2.cm, [170, 205, 225], 0.4) }
         when 'grille'
           nb = (l / esp).floor
-          (1..nb).each { |k| p = a.offset(dir, l * k / (nb + 1.0)); barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 0.8.cm, 0.8.cm, couleur, false, true) }
+          (1..nb).each { |k| p = a.offset(dir, l * k / (nb + 1.0)); barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, ytop), 0.8.cm, 0.8.cm, couleur, false, true) }
           z = bas + pas_c / 2
           while z < hauteur - 3.cm
             barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.8.cm, 0.8.cm, couleur, false, true); z += pas_c
