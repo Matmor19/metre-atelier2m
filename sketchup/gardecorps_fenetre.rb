@@ -36,6 +36,11 @@ module A2M
       <h2>Remplissage</h2>
       <div class="grille" id="rempl"></div>
       <div id="champs"></div>
+      <h2>Fixation des poteaux</h2>
+      <div class="grille" id="fixg"></div>
+      <div class="puces" id="cotep" style="display:none"></div>
+      <h2>Main courante</h2>
+      <div class="puces" id="mcp"></div>
       <h2>Matière</h2>
       <div class="puces" id="mat"></div>
       <h2>Profil des pièces</h2>
@@ -51,10 +56,10 @@ module A2M
     SCRIPT = <<~'JS'
       var D = __DONNEES__;
       function el(id) { return document.getElementById(id); }
-      var P = { r: 'barreaux', mat: 'Métal noir', cible: 'sel', haut: 100, ent: 120, esp: 10, pas: 10, nl: 3, pot: 4, bas: 8, prof: 'rond', fort: true }, placed = false, tmr = null, T = null;
+      var P = { r: 'barreaux', mat: 'Métal noir', cible: 'sel', haut: 100, ent: 120, esp: 10, pas: 10, nl: 3, pot: 4, bas: 8, prof: 'rond', fort: true, fix: 'plat', mc: 'tube', cote: 1 }, placed = false, tmr = null, T = null;
       var CH = [['haut', 'Hauteur (cm)', 80, 130, 1, null], ['ent', 'Entraxe des poteaux (cm)', 60, 200, 1, null], ['pot', 'Section des poteaux (cm)', 2, 10, 0.5, null],
                 ['bas', 'Vide sous le remplissage (cm)', 2, 15, 0.5, null],
-                ['esp', 'Espacement maximal des barreaux (cm)', 5, 15, 0.5, 'barreaux'], ['pas', 'Écart entre les câbles (cm)', 5, 15, 0.5, 'cables'], ['nl', 'Nombre de lisses', 1, 6, 1, 'lisses']];
+                ['esp', 'Espacement maximal des barreaux (cm)', 5, 15, 0.5, 'barreaux,grille'], ['pas', 'Écart entre les câbles (cm)', 5, 15, 0.5, 'cables,grille'], ['nl', 'Nombre de lisses', 1, 6, 1, 'lisses']];
       function envoyer() { clearTimeout(tmr); tmr = setTimeout(function () { if (placed) sketchup.maj(JSON.stringify(P)); }, 80); }
       function pose(v, t) { placed = v; T = t || T; el('placer').textContent = v ? 'Replacer sur la sélection' : 'Poser le garde-corps'; el('fin').style.display = v ? 'flex' : 'none'; dessiner(); }
       function init(p, pl) { for (var k in p) { P[k] = (typeof P[k] === 'number') ? (parseFloat(String(p[k]).replace(',', '.')) || P[k]) : p[k]; } placed = !!pl; rendre(); champs(true); pose(!!pl); }
@@ -62,7 +67,7 @@ module A2M
         var g = el('rempl'); g.innerHTML = '';
         D.rempl.forEach(function (t) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (P.r === t.cle ? ' rempli' : '');
-          var m = { barreaux: '<path d="M10 10 V32 M16 10 V32 M22 10 V32 M28 10 V32 M34 10 V32 M38 10 V32"/>', cables: '<path d="M8 14 H40 M8 20 H40 M8 26 H40 M8 32 H40"/>', verre: '<rect x="9" y="12" width="30" height="20"/>', lisses: '<path d="M8 16 H40 M8 24 H40 M8 32 H40"/>', plein: '<rect x="9" y="14" width="30" height="18" fill="#ddd"/>' }[t.cle];
+          var m = { barreaux: '<path d="M10 10 V32 M16 10 V32 M22 10 V32 M28 10 V32 M34 10 V32 M38 10 V32"/>', cables: '<path d="M8 14 H40 M8 20 H40 M8 26 H40 M8 32 H40"/>', verre: '<rect x="9" y="12" width="30" height="20"/>', lisses: '<path d="M8 16 H40 M8 24 H40 M8 32 H40"/>', plein: '<rect x="9" y="14" width="30" height="18" fill="#ddd"/>', verre_pinces: '<rect x="11" y="12" width="26" height="20" fill="#cfe6f5"/><circle cx="11" cy="16" r="2"/><circle cx="11" cy="28" r="2"/><circle cx="37" cy="16" r="2"/><circle cx="37" cy="28" r="2"/>', verre_profil: '<rect x="9" y="10" width="30" height="20" fill="#cfe6f5"/><rect x="8" y="30" width="32" height="4" fill="#999"/>', grille: '<path d="M12 10 V32 M20 10 V32 M28 10 V32 M36 10 V32 M8 16 H40 M8 22 H40 M8 28 H40"/>' }[t.cle];
           b.innerHTML = '<div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50" fill="none" stroke="#3C3C3C" stroke-width="1.2"><path d="M8 8 H40" stroke="#E07838" stroke-width="2.4"/>' + m + '</svg></div><span></span><div class="petit" style="margin:2px 0 0"></div>';
           b.querySelector('span').textContent = t.libelle; b.querySelector('.petit').textContent = t.aide;
           b.addEventListener('click', function () { P.r = t.cle; rendre(); champs(false); dessiner(); envoyer(); }); g.appendChild(b);
@@ -72,6 +77,18 @@ module A2M
         var pf = el('prof'); pf.innerHTML = '';
         [['rond', 'Rond'], ['carre', 'Carré']].forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.prof === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.prof = x[0]; rendre(); envoyer(); }); pf.appendChild(b); });
         var fb = document.createElement('button'); fb.type = 'button'; fb.className = 'puce' + (P.fort ? ' rempli' : ''); fb.textContent = 'Poteaux d\u2019extrémité renforcés'; fb.addEventListener('click', function () { P.fort = !P.fort; rendre(); envoyer(); }); pf.appendChild(fb);
+        var fg = el('fixg'); fg.innerHTML = '';
+        D.fix.forEach(function (t) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'carte' + (P.fix === t.cle ? ' rempli' : '');
+          var m = { plat: '<rect x="18" y="8" width="5" height="22"/><rect x="10" y="30" width="22" height="3" fill="#bbb"/><circle cx="13" cy="28" r="1"/><circle cx="29" cy="28" r="1"/>', rosace: '<rect x="18" y="8" width="5" height="22"/><ellipse cx="20.5" cy="31" rx="12" ry="3" fill="#bbb"/>', lateral: '<rect x="28" y="6" width="12" height="30" fill="#ddd"/><rect x="21" y="8" width="5" height="28"/><rect x="26" y="26" width="2" height="9" fill="#bbb"/>', scelle: '<rect x="4" y="26" width="40" height="10" fill="#ddd"/><rect x="18" y="8" width="5" height="26"/><rect x="15" y="25" width="11" height="2" fill="#bbb"/>', aucune: '<rect x="18" y="8" width="5" height="26"/><path d="M6 34 H36"/>' }[t.cle];
+          b.innerHTML = '<div class="vignette"><svg viewBox="0 0 48 40" width="60" height="50" fill="none" stroke="#3C3C3C" stroke-width="1.2">' + m + '</svg></div><span></span><div class="petit" style="margin:2px 0 0"></div>';
+          b.querySelector('span').textContent = t.libelle; b.querySelector('.petit').textContent = t.aide;
+          b.addEventListener('click', function () { P.fix = t.cle; rendre(); dessiner(); envoyer(); }); fg.appendChild(b);
+        });
+        var cp = el('cotep'); cp.innerHTML = ''; cp.style.display = P.fix === 'lateral' ? 'flex' : 'none';
+        [[1, 'Poteau à gauche du tracé'], [-1, 'Poteau à droite du tracé']].forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.cote === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.cote = x[0]; rendre(); envoyer(); }); cp.appendChild(b); });
+        var mp = el('mcp'); mp.innerHTML = '';
+        D.mains.forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.mc === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.mc = x[0]; rendre(); dessiner(); envoyer(); }); mp.appendChild(b); });
         var c = el('cible'); c.innerHTML = '';
         [['sel', 'Tracé sélectionné'], ['esc', 'Escaliers']].forEach(function (x) { var b = document.createElement('button'); b.type = 'button'; b.className = 'puce' + (P.cible === x[0] ? ' rempli' : ''); b.textContent = x[1]; b.addEventListener('click', function () { P.cible = x[0]; rendre(); }); c.appendChild(b); });
       }
@@ -88,12 +105,12 @@ module A2M
             v.addEventListener('input', function () { var x = parseFloat(v.value.replace(',', '.')); if (!isNaN(x)) { P[c[0]] = x; if (x > +r.max) r.max = x; r.value = x; dessiner(); envoyer(); } });
           });
         }
-        CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); el('w_' + c[0]).style.display = (!c[5] || c[5] === P.r) ? 'grid' : 'none'; if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = (+P[c[0]]).toString().replace('.', ','); } });
+        CH.forEach(function (c) { var r = el('r_' + c[0]), v = el('v_' + c[0]); el('w_' + c[0]).style.display = (!c[5] || c[5].split(',').indexOf(P.r) >= 0) ? 'grid' : 'none'; if (reset || document.activeElement !== v) { r.value = P[c[0]]; v.value = (+P[c[0]]).toString().replace('.', ','); } });
       }
       function dessiner() {
         var W = 520, H = 260, L = P.ent, h = P.haut, pot = P.pot, bas = P.bas;
-        var k = Math.min((W - 60) / (L + 2 * pot), (H - 50) / (h + 6));
-        function X(x) { return 30 + (x + pot) * k + ((W - 60) - (L + 2 * pot) * k) / 2; } function Z(z) { return H - 24 - z * k; }
+        var k = Math.min((W - 60) / (L + 2 * pot), (H - 95) / (h + 6));
+        function X(x) { return 30 + (x + pot) * k + ((W - 60) - (L + 2 * pot) * k) / 2; } function Z(z) { return H - 70 - z * k; }
         var c = '#3C3C3C', o = '<line x1="10" y1="' + Z(0) + '" x2="510" y2="' + Z(0) + '" stroke="#6f665e"/>';
         function R(x0, z0, x1, z1, f) { return '<rect x="' + X(x0) + '" y="' + Z(z1) + '" width="' + ((x1 - x0) * k) + '" height="' + ((z1 - z0) * k) + '" fill="' + (f || c) + '"/>'; }
         var info = '', ok = true;
@@ -101,8 +118,17 @@ module A2M
         if (P.r === 'cables') { for (var z = 12; z < h - 4; z += P.pas) o += R(0, z - 0.3, L, z + 0.3, '#9aa0a6'); info = 'Câbles tous les ' + P.pas.toString().replace('.', ',') + ' cm'; }
         if (P.r === 'verre') { o += R(3, bas, L - 3, h - 4, 'rgba(120,180,215,.45)'); info = 'Panneau de verre entre les poteaux'; }
         if (P.r === 'lisses') { for (var j = 1; j <= P.nl; j++) o += R(0, h * j / (P.nl + 1) - 1, L, h * j / (P.nl + 1) + 1); info = P.nl + ' lisses'; }
+        if (P.r === 'verre_pinces') { o += R(pot / 2 + 0.5, bas, L - pot / 2 - 0.5, h - 4, 'rgba(120,180,215,.45)'); [[pot / 2 + 2.5, bas + 8], [pot / 2 + 2.5, h - 12], [L - pot / 2 - 2.5, bas + 8], [L - pot / 2 - 2.5, h - 12]].forEach(function (q) { o += '<circle cx="' + X(q[0]) + '" cy="' + Z(q[1]) + '" r="' + (2.5 * k) + '" fill="#9aa0a6" stroke="#555"/>'; }); info = 'Verre sur 4 pinces par panneau'; }
+        if (P.r === 'verre_profil') { o += R(0.5, 7, L - 0.5, h - (P.mc === 'aucune' ? 0 : 2), 'rgba(120,180,215,.45)') + R(-3, 0, L + 3, 8, '#9aa0a6'); info = 'Verre continu dans un profilé, sans poteau intermédiaire'; }
+        if (P.r === 'grille') { var nb2 = Math.floor(L / P.esp), sp2 = L / (nb2 + 1); for (var i2 = 1; i2 <= nb2; i2++) o += R(sp2 * i2 - 0.4, bas, sp2 * i2 + 0.4, h - 2); for (var z2 = bas + P.pas / 2; z2 < h - 3; z2 += P.pas) o += R(0, z2 - 0.4, L, z2 + 0.4); info = 'Grille : tiges verticales tous les ' + P.esp.toString().replace('.', ',') + ' cm, horizontales tous les ' + P.pas.toString().replace('.', ',') + ' cm'; }
         if (P.r === 'plein') { o += R(2, bas, L - 2, h - 6, '#c8a574'); info = 'Panneau plein'; }
-        o += R(-pot, 0, 0, h) + R(L, 0, L + pot, h) + R(-pot - 0.5, h - 4, L + pot + 0.5, h);
+        var zb = { plat: 1, rosace: 1, lateral: -20, scelle: -10 }[P.fix] || 0;
+        if (P.r !== 'verre_profil') o += R(-pot, zb, 0, h) + R(L, zb, L + pot, h);
+        if (P.fix === 'plat') o += R(-6, 0, 6, 1, '#9aa0a6') + R(L - 6, 0, L + 6, 1, '#9aa0a6');
+        if (P.fix === 'rosace') o += R(-6, 0, 6, 1, '#9aa0a6') + R(L - 6, 0, L + 6, 1, '#9aa0a6') + R(-pot * 0.8, 1, pot * 0.8, 2.5, '#9aa0a6') + R(L - pot * 0.8, 1, L + pot * 0.8, 2.5, '#9aa0a6');
+        if (P.fix === 'scelle') o += R(-pot * 1.1, 0, pot * 1.1, 1.2, '#9aa0a6') + R(L - pot * 1.1, 0, L + pot * 1.1, 1.2, '#9aa0a6');
+        if (P.fix === 'lateral') o += R(-pot / 2 - 1, -16, -pot / 2, 4, '#9aa0a6') + R(L + pot / 2, -16, L + pot / 2 + 1, 4, '#9aa0a6');
+        if (P.mc === 'tube') o += R(-pot - 0.5, h - 4, L + pot + 0.5, h); else if (P.mc === 'plat') o += R(-pot - 0.5, h - 3.5, L + pot + 0.5, h);
         o += '<text x="12" y="16" font-size="10" fill="#8a7f75">hauteur ' + h + ' cm, entraxe ' + L + ' cm</text>';
         var hn = h >= 100 ? '<span class="bon">✓ hauteur d’au moins 100 cm</span>' : '<span class="mauvais">⚠ moins de 100 cm</span>';
         el('elev').innerHTML = o; el('info').innerHTML = info + ' · ' + hn;
@@ -143,7 +169,7 @@ module A2M
         @fen.bring_to_front
         return
       end
-      d = { 'rempl' => A2M::GardeCorps::REMPLISSAGES.map { |k, l, a| { 'cle' => k, 'libelle' => l, 'aide' => a } }, 'mat' => A2M::GardeCorps::MATIERES.keys }
+      d = { 'fix' => A2M::GardeCorps::FIXATIONS.map { |k, l, a| { 'cle' => k, 'libelle' => l, 'aide' => a } }, 'mains' => A2M::GardeCorps::MAINS, 'rempl' => A2M::GardeCorps::REMPLISSAGES.map { |k, l, a| { 'cle' => k, 'libelle' => l, 'aide' => a } }, 'mat' => A2M::GardeCorps::MATIERES.keys }
       html = A2M::Panneau.page('Garde-corps', 'Élévation d\'une travée et tracé à l\'échelle : tout se règle ici', CORPS, SCRIPT, d)
       dlg = A2M::Panneau.fenetre('Métré Atelier 2M : garde-corps', 'A2M_Panneau_GCFen', html, 580, 1000)
       @fen = dlg

@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.105.0)
+# Métré Atelier 2M — notice d'utilisation (version 2.106.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -147,7 +147,12 @@ Escalier droit, quart tournant ou demi-tournant : marches, contremarches, limons
 - Pour changer plus tard : « Modifier ce que j'ai dessiné ».
 
 ### Garde-corps
-Poteaux, main courante et remplissage (barreaux, câbles, verre, lisses, plein) le long d'un tracé ou d'un escalier
+Poteaux, fixations (platine, rosace, chant, scellé), main courante et remplissage (barreaux, câbles, verre, pinces, profilé, grille, lisses, plein) le long d'un tracé ou d'un escalier
+
+- Choisir le remplissage : barreaux, câbles inox, verre, verre sur pinces, verre en profilé (sans poteaux intermédiaires), grille, lisses ou panneau plein.
+- Choisir la fixation des poteaux : platine carrée, rosace ronde, fixation en chant (platine verticale sur le nez de dalle ou le limon ; choisir le côté du poteau), scellé avec collerette, ou posé directement.
+- Choisir la main courante (tube, plat bois, sans), la matière et le profil rond ou carré ; tout se règle en direct.
+- Les nombres de fixations et de pinces sont envoyés au métré.
 
 ### Créer les semelles
 Semelles filantes sous les murs sélectionnés : largeur et hauteur
@@ -318,6 +323,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Garde-corps : 5 systèmes de fixation des poteaux (platine carrée, rosace ronde, fixation en chant sur nez de dalle ou limon, scellé avec collerette, posé directement) avec boulons dessinés ; 3 nouveaux remplissages (verre sur pinces, verre en profilé au sol sans poteaux intermédiaires, grille métallique) ; main courante au choix (tube, plat bois, sans) ; le verre est maintenant transparent ; les fixations et pinces sont comptées pour le métré
 - Garde-corps : pièces rondes (poteaux, main courante Ø 4,2 cm, barreaux) ou carrées au choix, et poteaux de départ et d'arrivée renforcés (plus gros et plus hauts), réglables en direct
 - Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour la nappe basse, vers le bas pour la haute), en plus d'être comptés dans les kilos
 - Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos et nombre de barres de 12 m à commander ; enregistrable en CSV. Nécessite de redémarrer SketchUp une fois
@@ -337,4 +343,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Ferraillage (nouveau) : sélectionnez un béton (dalle, semelle, linteau/poutre, poteau), les barres et les cadres d'acier se dessinent en 3D (enrobage, diamètres, espacement, zones de cadres serrés aux bouts) avec les mètres et les kilos par diamètre ; réglages par curseurs, rouvrable avec « Modifier ce que j'ai dessiné », total repris par l'extraction du métré
 - Toiture : les tuiles faîtières sont posées par leur axe (la tuile est un cône, elle est tournée de 1,9° pour que son axe suive le faîtage et les arêtiers)
 - Toiture : l'about droit du faîtage est retourné dans le bon sens ; les tuiles d'arêtier sont centrées sur leur axe (bissectrice des deux pans)
-- Toiture : les arêtiers sont posés avec ta tuile faîtière (pas ≤ 48,5 cm, du bas vers le haut) ; pas d'about d'arêtier tant que tu n'en as pas dessiné

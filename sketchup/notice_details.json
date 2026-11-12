@@ -161,5 +161,11 @@
   "Récapitulatif de tous les ferraillages du modèle (dalles, semelles, poutres, poteaux, escaliers béton).",
   "Un tableau par ouvrage et par diamètre, puis le total à commander : mètres, kilos et nombre de barres de 12 m.",
   "Le bouton « Enregistrer en CSV » crée un fichier qui s'ouvre dans Excel ; « Actualiser » reprend le modèle après une modification."
+ ],
+ "gardecorps": [
+  "Choisir le remplissage : barreaux, câbles inox, verre, verre sur pinces, verre en profilé (sans poteaux intermédiaires), grille, lisses ou panneau plein.",
+  "Choisir la fixation des poteaux : platine carrée, rosace ronde, fixation en chant (platine verticale sur le nez de dalle ou le limon ; choisir le côté du poteau), scellé avec collerette, ou posé directement.",
+  "Choisir la main courante (tube, plat bois, sans), la matière et le profil rond ou carré ; tout se règle en direct.",
+  "Les nombres de fixations et de pinces sont envoyés au métré."
  ]
 }

@@ -12,7 +12,10 @@ module A2M
       ['cables',   'Câbles inox',          'Câbles horizontaux tous les 10 cm'],
       ['verre',    'Verre feuilleté',      'Panneau vitré entre les poteaux'],
       ['lisses',   'Lisses horizontales',  'Trois lisses en bois ou métal'],
-      ['plein',    'Panneau plein',        'Lisse haute et panneau plein (bois, tôle)']
+      ['plein',    'Panneau plein',        'Lisse haute et panneau plein (bois, tôle)'],
+      ['verre_pinces', 'Verre sur pinces',     'Verre fixé par des pinces rondes inox sur chaque poteau'],
+      ['verre_profil', 'Verre en profilé',     'Verre continu tenu par un profilé au sol, sans poteaux intermédiaires'],
+      ['grille',   'Grille métallique',    'Mailles soudées : tiges verticales et horizontales fines']
     ].freeze
     MATIERES = {
       'Bois chêne' => [176, 140, 96], 'Bois blanc' => [240, 240, 236], 'Métal noir' => [40, 42, 46],
@@ -96,8 +99,72 @@ module A2M
       nil
     end
 
+    # Systèmes de fixation des poteaux : clé, libellé, aide
+    FIXATIONS = [
+      ['plat',    'Platine carrée sur dessus', 'Platine 12 × 12 cm vissée sur le dessus, 4 boulons'],
+      ['rosace',  'Platine ronde (rosace)',    'Rosace ronde de 12 cm avec cache de finition'],
+      ['lateral', 'Fixation en chant',         'Platine verticale sur le nez de dalle ou le limon, 2 boulons'],
+      ['scelle',  'Scellé avec collerette',    'Poteau scellé de 10 cm dans le béton, collerette de finition'],
+      ['aucune',  'Poteau posé directement',   'Pas de platine : poteau seul']
+    ].freeze
+    MAINS = [['tube', 'Tube'], ['plat', 'Plat bois'], ['aucune', 'Sans main courante']].freeze
+
+    def self.colorer(ents, couleur, alpha = nil)
+      if alpha
+        mats = ents.model.materials
+        c = mats['A2M_GC_Verre'] || mats.add('A2M_GC_Verre')
+        c.color = Sketchup::Color.new(*couleur); c.alpha = alpha
+      else
+        c = Sketchup::Color.new(*couleur)
+      end
+      ents.grep(Sketchup::Face).each { |x| next unless x.material.nil?; x.material = c; x.back_material = c }
+    end
+
+    # Prisme à base rectangulaire horizontale (a le long de dh, b le long de lat), de z0 à z0 + h au-dessus du point c
+    def self.plaque_h(ents, c, dh, lat, a, b, z0, h, couleur)
+      o = Geom::Point3d.new(c.x, c.y, c.z + z0)
+      f = ents.add_face(o.offset(dh, -a / 2).offset(lat, -b / 2), o.offset(dh, a / 2).offset(lat, -b / 2), o.offset(dh, a / 2).offset(lat, b / 2), o.offset(dh, -a / 2).offset(lat, b / 2))
+      return unless f
+      f.reverse! if f.normal.z < 0
+      f.pushpull(h)
+      colorer(ents, couleur)
+    end
+
+    def self.disque(ents, c, r, z0, h, couleur)
+      o = Geom::Point3d.new(c.x, c.y, c.z + z0)
+      f = ents.add_face(ents.add_circle(o, Z_AXIS, r, 16))
+      return unless f
+      f.reverse! if f.normal.z < 0
+      f.pushpull(h)
+      colorer(ents, couleur)
+    end
+
+    # Plaque verticale parallèle au tracé, à la distance off (signée) du point c, d'épaisseur ep vers le côté de off
+    def self.plaque_v(ents, c, dh, lat, w, z0, z1, off, ep, couleur)
+      s = off < 0 ? -1 : 1
+      o = Geom::Point3d.new(c.x, c.y, c.z).offset(lat, off)
+      f = ents.add_face(o.offset(dh, -w / 2).offset(Z_AXIS, z0), o.offset(dh, w / 2).offset(Z_AXIS, z0), o.offset(dh, w / 2).offset(Z_AXIS, z1), o.offset(dh, -w / 2).offset(Z_AXIS, z1))
+      return unless f
+      f.reverse! if f.normal.dot(lat) * s < 0
+      f.pushpull(ep)
+      colorer(ents, couleur)
+    end
+
+    # Tracé décalé latéralement de d (angles en onglet)
+    def self.decaler(pts, d)
+      segs = (0...pts.size - 1).map { |i| v = pts[i + 1] - pts[i]; v.z = 0; v.length < 0.001 ? nil : (v.normalize!; Z_AXIS.cross(v)) }
+      pts.each_with_index.map do |p, i|
+        n1 = i > 0 ? segs[i - 1] : nil; n2 = segs[i]
+        n1 ||= n2; n2 ||= n1
+        next p unless n1
+        s = n1 + n2; k = 1 + n1.dot(n2)
+        m = s.length > 0.001 && k > 0.2 ? Geom::Vector3d.new(s.x / k, s.y / k, 0) : n1
+        p.offset(Geom::Vector3d.new(m.x * d, m.y * d, 0))
+      end
+    end
+
     # Panneau mince (verre, plein) entre deux poteaux : de bas à haut
-    def self.panneau(ents, a, b, z0, z1, ep, couleur)
+    def self.panneau(ents, a, b, z0, z1, ep, couleur, alpha = nil)
       d = b - a; d.z = 0
       return if d.length < 1.cm
       d.normalize!
@@ -108,22 +175,30 @@ module A2M
       return unless f
       f.reverse! if f.normal.dot(lat) < 0
       f.pushpull(ep)
+      colorer(ents, couleur, alpha)
     end
 
     # Pose le garde-corps le long d'une polyligne de points 3D (le dessus de la main courante suit le tracé + hauteur)
-    def self.poser_chemin(model, pts, r)
+    def self.poser_chemin(model, pts0, r)
       cle = r['r']; hauteur = nombre(r['haut'], 100).cm; ent = nombre(r['ent'], 120).cm
       pot = nombre(r['pot'], 4).cm; esp = [nombre(r['esp'], 10), 3].max.cm; bas = nombre(r['bas'], 8).cm; pas_c = [nombre(r['pas'], 10), 3].max.cm; nl = [nombre(r['nl'], 3).to_i, 1].max
       @dernier_g = nil; @posts ||= []
       couleur = MATIERES[r['mat']] || MATIERES['Métal noir']
+      inox = MATIERES['Inox']
       rd = r['prof'] != 'carre'
       renf = r['fort'] != false ? 1.5 : 1.0   # poteaux de départ et d'arrivée renforcés
+      fix = r['fix'] || 'aucune'
+      mc = r['mc'] || 'tube'
+      cote = r['cote'].to_i == -1 ? -1 : 1
+      pts = fix == 'lateral' ? decaler(pts0, cote * (pot / 2 + 1.cm)) : pts0
+      zb = { 'plat' => 1.cm, 'rosace' => 1.cm, 'lateral' => -20.cm, 'scelle' => -10.cm }[fix] || 0.0
+      sans_inter = (cle == 'verre_profil')
       tag, _ = A2M::Balises.balise(model, TAG, [60, 60, 66])
       g = model.entities.add_group
       g.layer = tag
       g.name = "Garde-corps – #{REMPLISSAGES.find { |x| x[0] == cle }[1]}"
       e = g.entities
-      ml = 0.0
+      ml = 0.0; npot = 0; npinces = 0
       (0...pts.size - 1).each do |i|
         a = pts[i]; b = pts[i + 1]
         l = a.distance(b)
@@ -132,11 +207,38 @@ module A2M
         n = [(l / ent).ceil, 1].max
         pas = l / n
         dir = b - a; dir.normalize!
-        # poteaux
-        (0..n).each { |k| p = a.offset(dir, pas * k); next unless k < n || i == pts.size - 2; ex = (i == 0 && k == 0) || (i == pts.size - 2 && k == n); sp = ex ? pot * renf : pot; barre(e, p.offset(Z_AXIS, 0), p.offset(Z_AXIS, hauteur + (ex ? 2.cm : 0)), sp, sp, couleur, false, rd); @posts << p }
+        dh = dir.clone; dh.z = 0; dh = dh.length < 0.001 ? X_AXIS.clone : dh.normalize
+        lat = Z_AXIS.cross(dh)
+        # poteaux et leur fixation
+        (0..n).each do |k|
+          p = a.offset(dir, pas * k)
+          next unless k < n || i == pts.size - 2
+          ex = (i == 0 && k == 0) || (i == pts.size - 2 && k == n)
+          next if sans_inter && !ex
+          sp = ex ? pot * renf : pot
+          barre(e, p.offset(Z_AXIS, zb), p.offset(Z_AXIS, hauteur + (ex ? 2.cm : 0)), sp, sp, couleur, false, rd)
+          @posts << p; npot += 1
+          case fix
+          when 'plat'
+            plaque_h(e, p, dh, lat, 12.cm, 12.cm, 0, 1.cm, inox)
+            [[-1, -1], [1, -1], [1, 1], [-1, 1]].each { |sx, sy| disque(e, p.offset(dh, sx * 4.2.cm).offset(lat, sy * 4.2.cm), 0.6.cm, 1.cm, 0.8.cm, inox) }
+          when 'rosace'
+            disque(e, p, 6.cm, 0, 1.cm, inox)
+            disque(e, p, [sp * 0.8, 3.cm].max, 1.cm, 1.5.cm, inox)
+          when 'scelle'
+            disque(e, p, [sp * 1.1, 3.cm].max, 0, 1.2.cm, inox)
+          when 'lateral'
+            plaque_v(e, p, dh, lat, 10.cm, -16.cm, 4.cm, -cote * pot / 2, 1.cm, inox)
+            [-10.cm, -2.cm].each { |z| barre(e, p.offset(lat, -cote * (pot / 2 + 1.cm)).offset(Z_AXIS, z), p.offset(lat, -cote * (pot / 2 + 1.8.cm)).offset(Z_AXIS, z), 1.6.cm, 1.6.cm, inox, false, true) }
+          end
+        end
         # main courante sur le dessus
         ha = a.offset(Z_AXIS, hauteur); hb = b.offset(Z_AXIS, hauteur)
-        barre(e, ha, hb, rd ? 4.2.cm : 5.cm, rd ? 4.2.cm : 4.cm, couleur, false, rd)
+        case mc
+        when 'tube' then barre(e, ha, hb, rd ? 4.2.cm : 5.cm, rd ? 4.2.cm : 4.cm, couleur, false, rd)
+        when 'plat' then barre(e, ha, hb, 7.cm, 3.5.cm, couleur)
+        end
+        htop = hauteur - (mc == 'aucune' ? 0 : 2.cm)
         case cle
         when 'barreaux'
           nb = (l / esp).floor
@@ -148,18 +250,43 @@ module A2M
         when 'cables'
           z = 12.cm
           while z < hauteur - 4.cm
-            barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.6.cm, 0.6.cm, MATIERES['Inox']); z += pas_c
+            barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.6.cm, 0.6.cm, inox); z += pas_c
           end
         when 'verre'
-          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 4.cm, 1.cm, [170, 205, 225]) }
+          (0...n).each { |k| p = a.offset(dir, pas * k + 3.cm); q = a.offset(dir, pas * (k + 1) - 3.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 4.cm, 1.cm, [170, 205, 225], 0.4) }
+        when 'verre_pinces'
+          (0...n).each do |k|
+            p = a.offset(dir, pas * k + pot / 2 + 0.5.cm); q = a.offset(dir, pas * (k + 1) - pot / 2 - 0.5.cm)
+            z0 = [p.z, q.z].min + bas; z1 = [p.z, q.z].max + hauteur - 4.cm
+            panneau(e, p, q, z0, z1, 1.cm, [170, 205, 225], 0.4)
+            [[p, 1], [q, -1]].each do |pe, sg|
+              c = pe.offset(dh, sg * 2.cm)
+              [z0 + 8.cm, z1 - 8.cm].each do |zz|
+                cp = Geom::Point3d.new(c.x, c.y, zz)
+                barre(e, cp.offset(lat, -1.3.cm), cp.offset(lat, 1.3.cm), 5.cm, 5.cm, inox, false, true); npinces += 1
+              end
+            end
+          end
+        when 'verre_profil'
+          barre(e, a.offset(Z_AXIS, 4.cm), b.offset(Z_AXIS, 4.cm), 6.cm, 8.cm, inox)
+          (0...n).each { |k| p = a.offset(dir, pas * k + 0.5.cm); q = a.offset(dir, pas * (k + 1) - 0.5.cm); panneau(e, p, q, [p.z, q.z].min + 7.cm, [p.z, q.z].max + htop, 1.2.cm, [170, 205, 225], 0.4) }
+        when 'grille'
+          nb = (l / esp).floor
+          (1..nb).each { |k| p = a.offset(dir, l * k / (nb + 1.0)); barre(e, p.offset(Z_AXIS, bas), p.offset(Z_AXIS, hauteur - 2.cm), 0.8.cm, 0.8.cm, couleur, false, true) }
+          z = bas + pas_c / 2
+          while z < hauteur - 3.cm
+            barre(e, a.offset(Z_AXIS, z), b.offset(Z_AXIS, z), 0.8.cm, 0.8.cm, couleur, false, true); z += pas_c
+          end
         when 'lisses'
-          (1..nl).map { |i| i / (nl + 1.0) }.each { |t| barre(e, a.offset(Z_AXIS, hauteur * t), b.offset(Z_AXIS, hauteur * t), 4.cm, 2.cm, couleur) }
+          (1..nl).map { |j| j / (nl + 1.0) }.each { |t| barre(e, a.offset(Z_AXIS, hauteur * t), b.offset(Z_AXIS, hauteur * t), rd ? 3.cm : 4.cm, rd ? 3.cm : 2.cm, couleur, false, rd) }
         when 'plein'
           (0...n).each { |k| p = a.offset(dir, pas * k + 2.cm); q = a.offset(dir, pas * (k + 1) - 2.cm); panneau(e, p, q, [p.z, q.z].min + bas, [p.z, q.z].max + hauteur - 6.cm, 2.cm, [190, 150, 100]) }
         end
       end
-      A2M::Modif.noter(g, 'garde_corps', { 'r' => r.reject { |k, _| k == 'replacer' }, 'pts' => A2M::Modif.pts_vers(pts) })
-      g.set_attribute('a2m', 'garde_corps', JSON.generate('type' => cle, 'ml' => (ml.to_f * 0.0254).round(2), 'hauteur' => (hauteur.to_f * 2.54).round(0)))
+      A2M::Modif.noter(g, 'garde_corps', { 'r' => r.reject { |k, _| k == 'replacer' }, 'pts' => A2M::Modif.pts_vers(pts0) })
+      nfix = fix == 'aucune' ? 0 : npot
+      g.set_attribute('a2m', 'garde_corps', JSON.generate('type' => cle, 'ml' => (ml.to_f * 0.0254).round(2), 'hauteur' => (hauteur.to_f * 2.54).round(0),
+                                                          'poteaux' => npot, 'fixation' => (FIXATIONS.find { |x| x[0] == fix } || [])[1], 'nb_fixations' => nfix, 'pinces' => npinces))
       @dernier_g = g
       ml * 0.0254
     end
