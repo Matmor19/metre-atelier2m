@@ -198,33 +198,6 @@ module A2M
       retournees
     end
 
-    # Diagnostic (provisoire) : compte les faces, les arêtes ouvertes, les faces incohérentes ; sélectionne les arêtes de bord
-    def self.diagnostic(reparer = false)
-      model = Sketchup.active_model
-      ents = model.active_entities
-      model.start_operation(reparer ? 'Réparer les faces' : 'Diagnostic des faces', true)
-      comb = 0; ret = 0
-      if reparer
-        comb = combler_trous(ents)[0]
-        ret = orienter_faces(ents)
-      end
-      faces = ents.grep(Sketchup::Face); aretes = ents.grep(Sketchup::Edge)
-      bord = aretes.select { |e| e.faces.size == 1 }
-      multi = aretes.select { |e| e.faces.size > 2 }
-      libres = aretes.select { |e| e.faces.empty? }
-      cachees = aretes.select(&:hidden?)
-      incoh = 0
-      aretes.each { |e| fs = e.faces; incoh += 1 if fs.size == 2 && e.reversed_in?(fs[0]) == e.reversed_in?(fs[1]) }
-      model.commit_operation
-      model.selection.clear
-      model.selection.add(bord)
-      txt = "#{faces.size} faces, #{aretes.size} arêtes (#{cachees.size} masquées)\n"
-      txt += "Arêtes de bord (1 seule face) : #{bord.size}\nArêtes libres : #{libres.size}\nArêtes à plus de 2 faces : #{multi.size}\nArêtes où deux faces sont de sens contraire : #{incoh}"
-      txt += "\n\nRéparation : #{comb} trou(s) refermé(s), #{ret} face(s) retournée(s)" if reparer
-      txt += "\n\n(les arêtes de bord sont sélectionnées)"
-      UI.messagebox(txt)
-    end
-
     def self.controler
       model = Sketchup.active_model
       sel = model.selection.to_a
@@ -425,10 +398,4 @@ module A2M
       dlg.show
     end
   end
-end
-
-if defined?(UI) && !defined?(A2M::MENU_DIAG)
-  A2M::MENU_DIAG = true
-  UI.menu('Extensions').add_item('Métré A2M (provisoire) : diagnostic des faces de l\'objet ouvert') { A2M::ImportObjet.diagnostic(false) }
-  UI.menu('Extensions').add_item('Métré A2M (provisoire) : réparer les faces de l\'objet ouvert') { A2M::ImportObjet.diagnostic(true) }
 end
