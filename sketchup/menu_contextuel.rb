@@ -16,14 +16,30 @@ module A2M
       s.is_a?(Array) && s.size == 2 ? s : ['ici', 'gauche']
     end
 
-    # Axe horizontal de la largeur de la porte (le plus long) et centre, en repère du parent
+    # Axe horizontal de la largeur de la porte (le long du mur) et centre, en repère du parent
     def self.axes(e)
+      t = e.transformation
+      # Porte de la bibliothèque posée par l'outil : on pivote ou on retourne autour du milieu du CORPS du cadre, calculé comme à la
+      # pose (PortesInt.transfo). L'origine de l'objet n'est PAS ce milieu (elle peut en être loin d'un mètre) et la boîte englobante
+      # compte la poignée d'un seul côté : tourner autour de l'une ou de l'autre faisait sortir la porte de la cloison.
+      # L'axe x de l'objet posé est toujours le long du mur (repère donné à la pose).
+      # Reconnaissance : marque « a2m / sens » donnée par l'outil Porte intérieure (PortesInt.poser), ou objet de la bibliothèque.
+      # Sans cela, la boîte englobante compterait aussi l'arc d'ouverture dessiné au sol, et le centre serait faux.
+      if e.is_a?(Sketchup::ComponentInstance) && (e.get_attribute('a2m', 'sens') || e.get_attribute('a2m_biblio', 'fichier'))
+        d = e.definition
+        cf = (A2M::PortesInt.corps_faces(d.entities, Geom::Transformation.new) rescue nil)
+        if cf
+          xm = cf[:xc] / 2.54; ym = cf[:yc] / 2.54
+        else
+          bv = A2M::Bibliotheque.boite_visible(d)
+          xm = bv.center.x; ym = bv.center.y
+        end
+        c = t * Geom::Point3d.new(xm, ym, 0)
+        ax = Geom::Vector3d.new(t.xaxis.x, t.xaxis.y, 0)
+        return [c, ax.length > 0.001 ? ax.normalize : Geom::Vector3d.new(1, 0, 0)]
+      end
       bb = e.bounds
       c = bb.center
-      t = e.transformation
-      # Porte de la bibliothèque posée par l'outil : l'origine de l'objet est le milieu du CORPS du cadre (dans la largeur et l'épaisseur
-      # de la cloison). La boîte englobante, elle, compte la poignée d'un seul côté : pivoter ou retourner autour d'elle décalerait la porte.
-      c = Geom::Point3d.new(t.origin.x, t.origin.y, c.z) if e.get_attribute('a2m_biblio', 'fichier')
       bl = (e.is_a?(Sketchup::Group) ? e.entities.parent : e.definition).bounds
       wx = bl.width * t.xscale; wy = bl.height * t.yscale
       ax = wx >= wy ? t.xaxis : t.yaxis
@@ -32,7 +48,83 @@ module A2M
       [c, ax]
     end
 
+    # Porte posée par l'outil (ou objet de la bibliothèque) : composant, souvent dynamique
+    def self.porte_outil?(e)
+      e.is_a?(Sketchup::ComponentInstance) && (e.get_attribute('a2m', 'sens') || e.get_attribute('a2m_biblio', 'fichier'))
+    end
+
+    # Milieu du corps du cadre dans le repère de l'objet (pouces), comme à la pose
+    def self.centre_local(d)
+      cf = (A2M::PortesInt.corps_faces(d.entities, Geom::Transformation.new) rescue nil)
+      return [cf[:xc] / 2.54, cf[:yc] / 2.54] if cf
+      bv = A2M::Bibliotheque.boite_visible(d)
+      [bv.center.x, bv.center.y]
+    end
+
+    DA = 'dynamic_attributes'.freeze
+
+    # Pièces animées au clic (vantail d'une porte dynamique : onclick = ANIMATE(...)), sans descendre dans leur contenu
+    def self.animes(ents)
+      ents.flat_map do |x|
+        if x.is_a?(Sketchup::ComponentInstance) && [x, x.definition].any? { |o| o.get_attribute(DA, 'onclick').to_s =~ /ANIMATE/i }
+          [x]
+        elsif x.is_a?(Sketchup::Group) || x.is_a?(Sketchup::ComponentInstance)
+          animes(x.definition.entities)
+        else
+          []
+        end
+      end
+    end
+
+    def self.retournee?(t)
+      a = t.to_a
+      (a[0] * (a[5] * a[10] - a[6] * a[9]) - a[4] * (a[1] * a[10] - a[2] * a[9]) + a[8] * (a[1] * a[6] - a[2] * a[5])) < 0
+    end
+
+    # ANIMATE("RotZ",0,-45,-90) -> ANIMATE("RotZ",0,45,90) : le vantail retourné tourne dans l'autre sens
+    def self.inverser_rotz(txt)
+      txt.to_s.gsub(/(ANIMATE\w*\(\s*"rotz"\s*,)([^)]*)\)/i) do
+        debut = Regexp.last_match(1)
+        vals = Regexp.last_match(2).split(',').map do |v|
+          s = v.strip
+          next v unless s =~ /\A-?\d+(\.\d+)?\z/
+          s.start_with?('-') ? s[1..] : (s.to_f.zero? ? s : "-#{s}")
+        end
+        "#{debut}#{vals.join(',')})"
+      end
+    end
+
+    # Vantail animé retourné en miroir par le changement de charnière : l'extension Composants dynamiques perd ce retournement
+    # dès la première animation (le vantail repart de travers). On remet donc la pièce à l'endroit (déterminant positif), on
+    # retourne son contenu dans son propre repère (autour de son origine = l'axe des paumelles), et on inverse le sens de RotZ.
+    def self.redresser(p)
+      return unless retournee?(p.transformation)
+      p.make_unique if p.definition.count_instances > 1
+      s = Geom::Transformation.scaling(-1, 1, 1)
+      p.definition.entities.transform_entities(s, p.definition.entities.to_a)
+      p.transformation = p.transformation * s
+      [p, p.definition].each do |o|
+        oc = o.get_attribute(DA, 'onclick')
+        o.set_attribute(DA, 'onclick', inverser_rotz(oc)) if oc
+        rz = o.get_attribute(DA, 'rotz')
+        o.set_attribute(DA, 'rotz', (-rz.to_f).to_s) if rz && rz.to_f != 0
+      end
+    end
+
     def self.miroir(e)
+      if porte_outil?(e)
+        # Le miroir est fait sur le CONTENU de la porte (autour du milieu du cadre, le long de sa largeur), pas sur la porte :
+        # un composant dynamique retourné en miroir est redessiné par l'extension Composants dynamiques, qui le recale sur sa
+        # boîte englobante (arc d'ouverture compris) et le fait sortir de la cloison. Ici la porte garde sa place.
+        e.make_unique if e.definition.count_instances > 1
+        d = e.definition
+        xm, _ym = centre_local(d)
+        m = Geom::Transformation.translation(Geom::Vector3d.new(xm, 0, 0)) * Geom::Transformation.scaling(-1, 1, 1) *
+            Geom::Transformation.translation(Geom::Vector3d.new(-xm, 0, 0))
+        d.entities.transform_entities(m, d.entities.to_a)
+        animes(d.entities).each { |p| redresser(p) }
+        return
+      end
       c, n = axes(e)
       m = [1 - 2 * n.x * n.x, -2 * n.y * n.x, 0, 0,
            -2 * n.x * n.y, 1 - 2 * n.y * n.y, 0, 0,
@@ -42,7 +134,34 @@ module A2M
       e.transform!(Geom::Transformation.new(m))
     end
 
+    # Vantail animé tourné d'un demi-tour avec le contenu de la porte : on garde son origine (axe des paumelles) et on remet
+    # ses axes droits, le demi-tour passant dans son contenu. L'extension Composants dynamiques recalcule RotZ à partir des
+    # axes de la pièce : sans cela l'animation repartirait de l'ancienne orientation.
+    def self.aplanir(p)
+      t = p.transformation
+      return if retournee?(t)
+      # On garde l'ouverture en cours (RotZ, en degrés, sens trigonométrique) : la porte peut être ouverte à 45° ou 90°
+      # au moment du changement. Effacer cet angle décalait toute l'animation (ouverture à 90°, demi-tour, plus de fermeture).
+      rz = [p, p.definition].map { |o| o.get_attribute(DA, 'rotz') }.compact.first.to_f
+      cible = Geom::Transformation.translation(Geom::Vector3d.new(t.origin.to_a)) * Geom::Transformation.rotation(ORIGIN, Z_AXIS, rz.degrees)
+      q = cible.inverse * t
+      p.make_unique if p.definition.count_instances > 1
+      p.definition.entities.transform_entities(q, p.definition.entities.to_a)
+      p.transformation = cible
+    end
+
     def self.tourner(e)
+      if porte_outil?(e)
+        # Demi-tour du CONTENU autour du milieu du cadre (même raison que pour le miroir : la porte elle-même ne bouge pas,
+        # l'extension Composants dynamiques n'a rien à recaler)
+        e.make_unique if e.definition.count_instances > 1
+        d = e.definition
+        xm, ym = centre_local(d)
+        r = Geom::Transformation.rotation(Geom::Point3d.new(xm, ym, 0), Z_AXIS, Math::PI)
+        d.entities.transform_entities(r, d.entities.to_a)
+        animes(d.entities).each { |p| aplanir(p) }
+        return
+      end
       c, _ = axes(e)
       e.transform!(Geom::Transformation.rotation(Geom::Point3d.new(c.x, c.y, 0), Z_AXIS, Math::PI))
     end
