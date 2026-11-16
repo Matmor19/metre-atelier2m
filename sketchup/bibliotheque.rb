@@ -165,7 +165,12 @@ module A2M
       return d unless d.empty?
       base = ENV['USERPROFILE'] || ENV['HOME'] || Dir.home
       doc = File.join(base, 'Documents')
-      File.join(File.directory?(doc) ? doc : base, 'Atelier 2M', 'Bibliothèque SketchUp')
+      racine = File.join(File.directory?(doc) ? doc : base, 'Atelier 2M')
+      # Bibliothèque réservée au plugin : Documents\ATELIER 2M\BIBLIOTHEQUE A2M (depuis la 2.111.6).
+      # L'ancien dossier « Bibliothèque SketchUp » n'est repris que si le nouveau n'existe pas encore (autre poste).
+      neuf = File.join(racine, 'BIBLIOTHEQUE A2M')
+      ancien = File.join(racine, 'Bibliothèque SketchUp')
+      !File.directory?(neuf) && File.directory?(ancien) ? ancien : neuf
     end
 
     def self.index_chemin() File.join(dossier, 'index.json') end
