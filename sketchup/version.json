@@ -1,12 +1,12 @@
 {
- "version": "2.111.0",
+ "version": "2.111.12",
  "notes": [
-  "Escalier « hyper complet » : limons en profilé (plat acier, tube rectangulaire, UPN, IPE, avec leurs tailles) latéraux ou…",
-  "Garde-corps : assemblage repris",
-  "Escalier : choix de la structure (bois à limons pleins, limons crémaillère, limon central métal, béton armé), marches balancées…",
-  "Garde-corps en verre (et panneau plein) : les panneaux suivent maintenant la pente d'un escalier (parallélogrammes parallèles à…",
-  "Garde-corps : 5 systèmes de fixation des poteaux (platine carrée, rosace ronde, fixation en chant sur nez de dalle ou limon,…",
-  "Garde-corps : pièces rondes (poteaux, main courante Ø 4,2 cm, barreaux) ou carrées au choix, et poteaux de départ et d'arrivée…",
-  "… et 179 autres nouveautés plus anciennes."
+  "Portes dynamiques : « Ouvrir de l'autre côté du mur » fait sur une porte ouverte (45° ou 90°) garde l'animation juste : elle se…",
+  "Portes : « Ouvrir de l'autre côté du mur » (clic droit) fait maintenant le demi-tour à l'intérieur de la porte, autour du milieu…",
+  "Portes dynamiques : après « Charnière gauche ↔ droite », l'ouverture animée au clic (outil Interagir) tourne autour des nouvelles…",
+  "Portes : « Charnière gauche ↔ droite » retourne maintenant le contenu de la porte autour du milieu de son cadre, sans déplacer la…",
+  "Bibliothèque d'objets du plugin (portes, menuiseries, profils, objets) : nouveau dossier réservé Documents\\ATELIER…",
+  "Portes posées avec l'outil Porte intérieure : le clic droit « Charnière gauche ↔ droite » / « Ouvrir de l'autre côté du mur » ne…",
+  "… et 189 autres nouveautés plus anciennes."
  ]
 }
