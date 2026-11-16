@@ -30,10 +30,21 @@ module A2M
       (a.to_s.split('.').map(&:to_i) <=> b.to_s.split('.').map(&:to_i)) > 0
     end
 
-    # manuel : lancé depuis le menu (on répond aussi quand tout est à jour ou que la connexion échoue)
+    # manuel : lancé depuis le menu (on répond aussi quand tout est à jour ou que la connexion échoue).
+    # Depuis le menu, on regarde d'abord le dossier des .rbz (versions de test déposées sur cet ordinateur), puis GitHub.
     def self.verifier(manuel = false)
+      if manuel
+        l = rbz_local
+        return installer_local(*l) if l
+      end
       return unless defined?(Sketchup::Http::Request)
       base { |b| verifier_depuis(b, manuel) }
+    end
+
+    # Où l'on a cherché, pour le message « à jour »
+    def self.lieux
+      d = dossiers
+      "\n\nRecherché en ligne (GitHub)" + (d.empty? ? '.' : " et dans :\n" + d.map { |x| "  • #{x}" }.join("\n"))
     end
 
     def self.verifier_depuis(b, manuel)
@@ -51,7 +62,7 @@ module A2M
                               "Nouveautés :\n#{notes}\n\nMettre à jour maintenant ?", MB_YESNO)
             telecharger(v) if q == IDYES
           elsif manuel
-            UI.messagebox("Métré Atelier 2M est à jour (version #{installee}).")
+            UI.messagebox("Métré Atelier 2M est à jour (version #{installee}).#{lieux}")
           end
         rescue StandardError => ex
           UI.messagebox("Impossible de vérifier les mises à jour (#{ex.message}). Vérifiez la connexion internet.") if manuel
@@ -119,7 +130,7 @@ module A2M
     end
 
     # Fichiers qui créent menus, barres d'outils ou observateurs : les recharger les doublerait, ils attendent le redémarrage
-    SANS_RECHARGE = %w[menu_contextuel palette plan2d suivi tableau variantes].freeze
+    SANS_RECHARGE = %w[palette plan2d suivi tableau variantes].freeze
 
     # Recharge les fichiers de l'extension tout juste installée, sans fermer SketchUp ; renvoie [rechargés, échecs]
     def self.recharger(v = nil)
@@ -169,7 +180,7 @@ module A2M
     end
 
     def self.version_disque
-      f = File.join(File.dirname(__FILE__), '..', 'a2m_metre_chargeur.rb')
+      f = File.join(File.dirname(__FILE__), '..', 'a2m_metre.rb')   # nom du chargeur une fois installé (dans le .rbz)
       File.read(f, encoding: 'UTF-8')[/EXT\.version = '([^']+)'/, 1]
     rescue StandardError
       nil
