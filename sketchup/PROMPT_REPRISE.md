@@ -1,5 +1,7 @@
 # Prompt de reprise — extension SketchUp « Métré Atelier 2M »
 
+> ⚠️ **Document ancien (version 2.97.76), conservé pour l'historique : ne plus l'utiliser comme prompt de reprise.** La référence actuelle est `CLAUDE.md` à la racine du dépôt. Ne s'appliquent plus : « pousser sans demander », le pilotage de SketchUp par Claude (sections 2 et 6), le test par fichier-drapeau, `python3`. Le code de diagnostic du point 4.5 (`EntretienPortes`, `DiagPortes`, menus « (provisoire) ») a été retiré. Les points à vérifier et à améliorer (sections 4 et 5) restent une liste d'idées à confirmer avec Mathieu.
+
 Copie tout ce qui suit dans une nouvelle conversation (ouverte depuis l'application Claude de bureau, sur l'ordinateur où est SketchUp).
 
 ---

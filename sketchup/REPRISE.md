@@ -1,5 +1,7 @@
 # Reprise du travail — extension SketchUp « Métré Atelier 2M »
 
+> ⚠️ **Document ancien (version 2.18, 31/10/2026), conservé pour l'historique.** La référence actuelle est `CLAUDE.md` à la racine du dépôt. Plusieurs consignes ci-dessous ne s'appliquent plus : Claude ne pilote plus SketchUp (Mathieu teste lui-même), aucun push sans l'accord de Mathieu, `python3` n'existe pas sous Windows (voir la commande de construction dans `CLAUDE.md`). Les « pièges SketchUp 2027 » restent valables. Vérifier dans le code avant de croire le reste.
+
 État au 31/10/2026 : version **2.18.0** publiée et installée chez Mathieu (SketchUp 2027, Windows).
 
 ## Méthode de travail (à respecter)
