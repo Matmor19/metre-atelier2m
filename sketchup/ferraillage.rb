@@ -285,6 +285,102 @@ module A2M
       groupes.each_value { |g| g.erase! if g.valid? && g.entities.count == 0 }
     end
 
+    # --- Aspect de l'acier : rouge rouille en 3D, plein (poché) sur les coupes ---
+    ROUILLE = [158, 58, 30].freeze
+    MATIERE_PERSO = 'A2M_Acier'            # matière préparée par l'utilisateur : utilisée telle quelle
+    MATIERE = 'A2M_Acier rouille'          # créée par le plugin si la précédente n'existe pas
+    HACHURE = 'A2M Acier plein'
+    STYLE = 1                              # numéro du style posé (pour ne pas refaire un ferraillage déjà à jour)
+
+    def self.matiere(model)
+      model.materials[MATIERE_PERSO] || model.materials[MATIERE] || begin
+        m = model.materials.add(MATIERE)
+        m.color = Sketchup::Color.new(*ROUILLE)
+        m
+      end
+    end
+
+    # Hachure unie rouille : une petite image PNG pleine, posée comme les hachures de couches (A2M::Hachures.construire)
+    def self.hachure_pleine(model)
+      return nil unless defined?(A2M::Hachures) && A2M::Hachures.disponible?(model)
+      hp = model.hatch_patterns
+      h = (hp[HACHURE] rescue nil)
+      return h if h
+      cote = 8
+      ligne = "\x00".b + ([ROUILLE[0], ROUILLE[1], ROUILLE[2], 255].pack('C4') * cote)
+      png = A2M::MotifPat.encoder(cote, cote, ligne * cote)
+      f = File.join(A2M::Hachures.dossier, 'textures', 'acier_plein.png')
+      File.binwrite(f, png)
+      base = A2M::Hachures.bibliotheque_sketchup.first or return nil
+      h = hp.add(HACHURE, base)
+      h.clear_fill_pattern rescue nil
+      h.set_fill_texture_image_and_file_name(Sketchup::ImageRep.new(f), f)
+      h.set_uv_scale(1.0, 1.0)
+      h.rotation_angle = 0
+      h
+    rescue StandardError
+      nil                                  # sans hachure, l'acier reste rouille en 3D (erreur notée par le journal)
+    end
+
+    # Habille un ferraillage : matière rouille sur le groupe (les barres en héritent),
+    # hachure pleine sur chaque volume d'acier (barre, cadre, crochet). Ne refait aucune barre.
+    def self.habiller(grp, model = Sketchup.active_model)
+      return unless grp && grp.valid?
+      m = matiere(model)
+      h = hachure_pleine(model)
+      grp.material = m unless grp.material == m
+      vus = {}
+      poser = lambda do |e, prof|
+        ents = e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities
+        if h && e.respond_to?(:hatch_pattern=) && ents.any? { |x| x.is_a?(Sketchup::Face) }
+          begin
+            e.hatch_pattern = h unless e.hatch_pattern == h
+          rescue StandardError
+            nil
+          end
+        end
+        next if prof > 4
+        if e.is_a?(Sketchup::ComponentInstance)
+          next if vus[e.definition]
+          vus[e.definition] = true
+        end
+        ents.each { |x| poser.call(x, prof + 1) if x.is_a?(Sketchup::Group) || x.is_a?(Sketchup::ComponentInstance) }
+      end
+      poser.call(grp, 0)
+      grp.set_attribute(DICO, 'style', STYLE)
+    end
+
+    # Groupes de ferraillage du modèle (outil Ferraillage et escalier béton, rangés dans d'autres groupes compris)
+    def self.groupes(ents, prof = 0, res = [])
+      ents.each do |e|
+        next unless e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
+        if e.get_attribute(DICO, 'kg') then res << e
+        elsif prof < 3 then groupes(e.is_a?(Sketchup::Group) ? e.entities : e.definition.entities, prof + 1, res)
+        end
+      end
+      res
+    end
+
+    # Met à l'aspect rouille les ferraillages déjà posés, sans les refaire.
+    # Appelée à l'ouverture de l'outil Ferraillage et au passage en mode Détail.
+    # operation = false quand l'appelant a déjà ouvert sa propre opération (une seule annulation).
+    def self.mettre_a_jour(model = Sketchup.active_model, operation = true)
+      # hachure absente du modèle (supprimée, ou modèle d'une version précédente) : tout est à reprendre
+      neuve = defined?(A2M::Hachures) && A2M::Hachures.disponible?(model) && !(model.hatch_patterns[HACHURE] rescue nil)
+      m = matiere(model)                   # une « A2M_Acier » ajoutée depuis la dernière fois prend la place de la rouille
+      a_faire = groupes(model.entities).select { |g| neuve || g.material != m || g.get_attribute(DICO, 'style') != STYLE }
+      return 0 if a_faire.empty?
+      model.start_operation('Ferraillage : aspect rouille', true) if operation
+      begin
+        a_faire.each { |g| habiller(g, model) }
+        model.commit_operation if operation
+      rescue StandardError
+        model.abort_operation if operation
+        return 0
+      end
+      a_faire.size
+    end
+
     # Construit le ferraillage de la source ; renvoie le groupe créé et le détail
     def self.construire(src, r, ancien = nil)
       @cro = r['cro'].to_i == 1
@@ -304,6 +400,7 @@ module A2M
       raise 'Aucune barre créée : le béton est trop petit pour cet enrobage.' if stock.empty?
       lb, _ = A2M::Balises.balise(model, BALISE, [200, 60, 40])
       grp.layer = lb
+      habiller(grp, model)                 # rouge rouille, plein en coupe
       jonc = stock.delete(:jonctions).to_i
       detail = stock.sort.map { |dd, l| { 'd' => dd, 'ml' => (l * 100).round / 100.0, 'kg' => (l * kgm(dd) * 100).round / 100.0 } }
       kg = detail.sum { |x| x['kg'] }.round(2)
@@ -367,6 +464,7 @@ module A2M
 
     def self.ouvrir
       model = Sketchup.active_model
+      mettre_a_jour(model)                 # ferraillages déjà posés : aspect rouille, sans les refaire
       src = model.selection.to_a.find { |e| beton?(e) }
       unless src
         UI.messagebox('Sélectionnez d\'abord le béton à ferrailler (un groupe : dalle, semelle, linteau, poutre ou poteau).')

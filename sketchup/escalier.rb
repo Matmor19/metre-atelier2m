@@ -486,6 +486,7 @@ module A2M
             rge.set_attribute(A2M::Ferraillage::DICO, 'ml', detail.sum { |x| x['ml'] }.round(2))
             rge.set_attribute(A2M::Ferraillage::DICO, 'detail', JSON.generate(detail))
             rge.set_attribute(A2M::Ferraillage::DICO, 'type', 'escalier')
+            A2M::Ferraillage.habiller(rge, model)   # rouge rouille, plein en coupe
           end
           grp.name = "#{grp.name} (béton #{(eb.to_f * 2.54).round} cm)"
         end

@@ -1,4 +1,5 @@
 [
+ "Ferraillage en rouge rouille et plein en coupe : barres, cadres, crochets et ferraillage de l'escalier béton prennent votre matière « A2M_Acier » si elle existe dans le modèle (utilisée telle quelle), sinon « A2M_Acier rouille » (RGB 158, 58, 30) ; sur une coupe, les aciers apparaissent pleins grâce à la hachure unie « A2M Acier plein ». Les ferraillages déjà posés sont mis à jour tout seuls, sans être refaits, à l'ouverture de l'outil Ferraillage et au passage en mode Détail",
  "Portes dynamiques : « Ouvrir de l'autre côté du mur » fait sur une porte ouverte (45° ou 90°) garde l'animation juste : elle se referme normalement",
  "Portes : « Ouvrir de l'autre côté du mur » (clic droit) fait maintenant le demi-tour à l'intérieur de la porte, autour du milieu de son cadre : la porte reste dans sa cloison et son ouverture animée reste juste",
  "Portes dynamiques : après « Charnière gauche ↔ droite », l'ouverture animée au clic (outil Interagir) tourne autour des nouvelles paumelles et dans le bon sens",

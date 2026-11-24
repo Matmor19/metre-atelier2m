@@ -134,6 +134,9 @@
   "3. Réglez avec les curseurs (enrobage, diamètres, nombre de barres, espacement) : le modèle se refait en direct. Poutre et poteau : les cadres sont resserrés (espacement ÷ 2) sur les deux bouts, sur le plus grand de : grand côté, longueur ÷ 6, 45 cm.",
   "Semelle filante : les barres longitudinales suivent le contour du béton (tracé des semelles créées par l'outil Semelles), les barres transversales sont posées en travers à l'espacement choisi.",
   "Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).",
+  "Aspect : l'acier est rouge rouille. Si votre modèle contient une matière « A2M_Acier », elle est utilisée telle quelle (votre couleur, votre texture) ; sinon le plugin crée « A2M_Acier rouille » (RGB 158, 58, 30), que vous pouvez modifier ensuite.",
+  "Plein en coupe : chaque barre, cadre et crochet reçoit la hachure unie « A2M Acier plein » ; sur une coupe, les ronds d'acier apparaissent pleins et rouille. L'option « Remplissage de coupe » doit être cochée dans le style.",
+  "Les ferraillages posés avec une version précédente prennent cet aspect tout seuls, sans être refaits, à l'ouverture de l'outil Ferraillage ou au passage en mode Détail.",
   "Limites : dalle, poutre et poteau sont lus par leur boîte rectangulaire alignée sur les axes ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études."
  ],
  "fondation": [
@@ -156,7 +159,7 @@
  ],
  "mode_vue": [
   "Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.",
-  "Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur.",
+  "Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur. Au passage en Détail, les ferraillages posés avant la 2.113 deviennent rouge rouille et pleins en coupe, sans être refaits.",
   "Mode présentation : le ferraillage est masqué et le béton redevient plein. Rien n'est supprimé : on rebascule quand on veut."
  ],
  "charpente": [

@@ -1,4 +1,4 @@
-# Métré Atelier 2M — notice d'utilisation (version 2.111.12)
+# Métré Atelier 2M — notice d'utilisation (version 2.113.0)
 
 Notice générée automatiquement à chaque version : chaque bouton de la palette y figure, avec son rôle et, quand il est détaillé, la marche à suivre.
 
@@ -177,6 +177,9 @@ Sélectionnez un béton (dalle, semelle, linteau, poutre, poteau) : les barres e
 - 3. Réglez avec les curseurs (enrobage, diamètres, nombre de barres, espacement) : le modèle se refait en direct. Poutre et poteau : les cadres sont resserrés (espacement ÷ 2) sur les deux bouts, sur le plus grand de : grand côté, longueur ÷ 6, 45 cm.
 - Semelle filante : les barres longitudinales suivent le contour du béton (tracé des semelles créées par l'outil Semelles), les barres transversales sont posées en travers à l'espacement choisi.
 - Le tableau donne les mètres et les kilos par diamètre (kg/m = π × Ø² / 4 × 7850). Le total est repris dans l'extraction du métré (ligne « ferraillage » des infos).
+- Aspect : l'acier est rouge rouille. Si votre modèle contient une matière « A2M_Acier », elle est utilisée telle quelle (votre couleur, votre texture) ; sinon le plugin crée « A2M_Acier rouille » (RGB 158, 58, 30), que vous pouvez modifier ensuite.
+- Plein en coupe : chaque barre, cadre et crochet reçoit la hachure unie « A2M Acier plein » ; sur une coupe, les ronds d'acier apparaissent pleins et rouille. L'option « Remplissage de coupe » doit être cochée dans le style.
+- Les ferraillages posés avec une version précédente prennent cet aspect tout seuls, sans être refaits, à l'ouverture de l'outil Ferraillage ou au passage en mode Détail.
 - Limites : dalle, poutre et poteau sont lus par leur boîte rectangulaire alignée sur les axes ; les ancrages et recouvrements ne sont pas ajoutés ; le dimensionnement reste à vérifier par le bureau d'études.
 
 ### Liste des aciers
@@ -190,7 +193,7 @@ Tous les ferraillages du modèle par ouvrage et par diamètre, avec les barres d
 Bascule le même modèle : en « détail », les barres du ferraillage sont visibles et le béton est transparent ; en « présentation », le ferraillage est masqué et le béton est plein. Rien n'est supprimé
 
 - Un seul bouton pour passer du travail de détail à la présentation, sur le même modèle.
-- Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur.
+- Mode détail : les barres du ferraillage (balise A2M_FERRAILLAGE) sont affichées et le béton est en transparence (rayons X) pour voir à l'intérieur. Au passage en Détail, les ferraillages posés avant la 2.113 deviennent rouge rouille et pleins en coupe, sans être refaits.
 - Mode présentation : le ferraillage est masqué et le béton redevient plein. Rien n'est supprimé : on rebascule quand on veut.
 
 ### Hachures de coupe par couche
@@ -331,6 +334,7 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 
 ## Dernières nouveautés
 
+- Ferraillage en rouge rouille et plein en coupe : barres, cadres, crochets et ferraillage de l'escalier béton prennent votre matière « A2M_Acier » si elle existe dans le modèle (utilisée telle quelle), sinon « A2M_Acier rouille » (RGB 158, 58, 30) ; sur une coupe, les aciers apparaissent pleins grâce à la hachure unie « A2M Acier plein ». Les ferraillages déjà posés sont mis à jour tout seuls, sans être refaits, à l'ouverture de l'outil Ferraillage et au passage en mode Détail
 - Portes dynamiques : « Ouvrir de l'autre côté du mur » fait sur une porte ouverte (45° ou 90°) garde l'animation juste : elle se referme normalement
 - Portes : « Ouvrir de l'autre côté du mur » (clic droit) fait maintenant le demi-tour à l'intérieur de la porte, autour du milieu de son cadre : la porte reste dans sa cloison et son ouverture animée reste juste
 - Portes dynamiques : après « Charnière gauche ↔ droite », l'ouverture animée au clic (outil Interagir) tourne autour des nouvelles paumelles et dans le bon sens
@@ -350,4 +354,3 @@ Ouvre la palette flottante : boutons espacés, animés au survol, rangés par é
 - Ferraillage : les crochets aux extrémités des barres sont maintenant dessinés en 3D sur les dalles et semelles (vers le haut pour la nappe basse, vers le bas pour la haute), en plus d'être comptés dans les kilos
 - Liste des aciers (nouveau, dans « Dessiner ») : tous les ferraillages du modèle par ouvrage et par diamètre, avec mètres, kilos et nombre de barres de 12 m à commander ; enregistrable en CSV. Nécessite de redémarrer SketchUp une fois
 - Pictogrammes : textures, hachures, phases, charpente, zinguerie, couverture, planelle et axes redessinés en perspective
-- Pictogrammes : porte, ouverture (fenêtre), plinthe, sol et cloison redessinés en perspective

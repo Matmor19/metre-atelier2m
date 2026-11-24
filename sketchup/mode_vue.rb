@@ -16,6 +16,8 @@ module A2M
       detail = (m == 'detail')
       model.start_operation(detail ? 'Mode détail' : 'Mode présentation', true)
       TAGS_DETAIL.each { |nom| t = model.layers[nom]; t.visible = detail if t }
+      # ferraillages posés avant la 2.113 : aspect rouille et plein en coupe, sans les refaire (même annulation)
+      A2M::Ferraillage.mettre_a_jour(model, false) if detail && defined?(A2M::Ferraillage)
       model.commit_operation
       begin model.rendering_options['ModelTransparency'] = detail; rescue StandardError; end
       model.set_attribute(DICO, CLE, m)

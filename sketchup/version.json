@@ -1,12 +1,12 @@
 {
- "version": "2.111.12",
+ "version": "2.113.0",
  "notes": [
+  "Ferraillage en rouge rouille et plein en coupe : barres, cadres, crochets et ferraillage de l'escalier béton prennent votre…",
   "Portes dynamiques : « Ouvrir de l'autre côté du mur » fait sur une porte ouverte (45° ou 90°) garde l'animation juste : elle se…",
   "Portes : « Ouvrir de l'autre côté du mur » (clic droit) fait maintenant le demi-tour à l'intérieur de la porte, autour du milieu…",
   "Portes dynamiques : après « Charnière gauche ↔ droite », l'ouverture animée au clic (outil Interagir) tourne autour des nouvelles…",
   "Portes : « Charnière gauche ↔ droite » retourne maintenant le contenu de la porte autour du milieu de son cadre, sans déplacer la…",
   "Bibliothèque d'objets du plugin (portes, menuiseries, profils, objets) : nouveau dossier réservé Documents\\ATELIER…",
-  "Portes posées avec l'outil Porte intérieure : le clic droit « Charnière gauche ↔ droite » / « Ouvrir de l'autre côté du mur » ne…",
-  "… et 189 autres nouveautés plus anciennes."
+  "… et 190 autres nouveautés plus anciennes."
  ]
 }
