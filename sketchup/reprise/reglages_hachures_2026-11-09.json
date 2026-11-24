@@ -1,0 +1,136 @@
+{
+  "couches": {
+    "A2M_MUR_PERI": {
+      "trait": "#000000",
+      "trait_op": 100,
+      "fond": "#a4a2a3",
+      "fond_op": 100,
+      "ep": 1.5,
+      "taille": 5,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "Atelier 2M|a2m.pat|A2M_Maçonnerie"
+    },
+    "A2M_MUR_SOUB": {
+      "trait": "#1e1e1e",
+      "trait_op": 100,
+      "fond": "#a4a2a3",
+      "fond_op": 100,
+      "ep": 1.5,
+      "taille": 5,
+      "angle": 0,
+      "motif": "Atelier 2M|a2m.pat|A2M_Maçonnerie"
+    },
+    "A2M_MUR_REFEND": {
+      "trait": "#1e1e1e",
+      "trait_op": 100,
+      "fond": "#ffffff",
+      "fond_op": 100,
+      "ep": 1.5,
+      "taille": 5,
+      "angle": 0,
+      "motif": "Atelier 2M|a2m.pat|A2M_Maçonnerie"
+    },
+    "A2M_ISOLANT_DOUBLAGE": {
+      "trait": "#1e1e1e",
+      "trait_op": 100,
+      "fond": "#f2bc5f",
+      "fond_op": 100,
+      "ep": 4.5,
+      "taille": 11.7,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "Mes dessins|Isolant 140 mm.dessin.json|Isolant 140 mm",
+      "dx": -0.1
+    },
+    "A2M_SEMELLE": {
+      "trait": "#ffffff",
+      "trait_op": 100,
+      "fond": "#424242",
+      "fond_op": 100,
+      "ep": 1,
+      "taille": 6.2,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "ZWCAD · motifs|ZWCADISO.pat|CONCRE"
+    },
+    "A2M_CHAPE": {
+      "trait": "#d1d1d1",
+      "trait_op": 100,
+      "fond": "#ffffff",
+      "fond_op": 100,
+      "ep": 1,
+      "taille": 10,
+      "angle": 45,
+      "largeur": 80,
+      "motif": "ZWCAD · motifs|ZWCADISO.pat|INSUL"
+    },
+    "A2M_PLANELLE": {
+      "trait": "#1e1e1e",
+      "trait_op": 0,
+      "fond": "#a15126",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 10,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "Atelier 2M|a2m.pat|A2M_Maçonnerie"
+    },
+    "A2M_ISOLANT_PLANELLE": {
+      "trait": "#001eff",
+      "trait_op": 100,
+      "fond": "#d1ddf5",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 0.5,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "ZWCAD · motifs|ZWCADISO.pat|ANSI37"
+    },
+    "A2M_DALLAGE": {
+      "trait": "#1e1e1e",
+      "trait_op": 100,
+      "fond": "#787878",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 3.2,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "ZWCAD · motifs|ZWCADISO.pat|AR-CONC"
+    },
+    "A2M_ENDUIT_EXT": {
+      "trait": "#1e1e1e",
+      "trait_op": 0,
+      "fond": "#837d63",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 1.2,
+      "angle": 45,
+      "largeur": 80,
+      "motif": "ZWCAD · motifs|ZWCADISO.pat|2X2BRIKS"
+    },
+    "A2M_DOUBLAGE": {
+      "trait": "#1e1e1e",
+      "trait_op": 0,
+      "fond": "#737373",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 10,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "Atelier 2M|a2m.pat|A2M_Lignes_horizontales"
+    },
+    "A2M_CLOISON": {
+      "trait": "#1e1e1e",
+      "trait_op": 0,
+      "fond": "#bfc7d4",
+      "fond_op": 100,
+      "ep": 4,
+      "taille": 1.7,
+      "angle": 0,
+      "largeur": 80,
+      "motif": "SketchUp|ANSI32.pat|ANSI32"
+    }
+  },
+  "dossiers": []
+}

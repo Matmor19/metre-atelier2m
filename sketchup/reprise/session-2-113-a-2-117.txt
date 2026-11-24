@@ -1,0 +1,399 @@
+
+La version 2.113.2 est prête dans 02_BIBLIOTHEQUES\SKETCHUP. Je n’ai pas encore pu vérifier dans SketchUp le remplissage en coupe.
+
+Ce qui change
+1. Tout le ferraillage en rouge rouille. Cela concerne les barres, cadres, treillis, cages et équerres, y compris le ferraillage de l’escalier béton.
+
+Si tu as déjà préparé une matière « A2M_Acier » dans ton modèle, elle est utilisée telle quelle, avec ta couleur et ta texture. Je n’y touche pas.
+Sinon, le plugin crée « A2M_Acier rouille », en rouge rouille (RGB 158, 58, 30). Tu pourras ensuite la modifier ou lui mettre une texture de rouille.
+2. Plein en coupe. Chaque barre, cadre et équerre reçoit une hachure unie de la même couleur rouille (« A2M Acier plein »). Sur une coupe, les ronds d’acier apparaissent donc pleins et rouges, au lieu d’être vides. Le plugin s’appuie sur le même système de hachures que pour les murs, celui de SketchUp 2027.
+
+3. Tes ferraillages déjà posés sont mis à jour automatiquement, sans rien refaire, dans deux cas :
+
+quand tu ouvres l’outil Ferraillage ;
+quand tu passes en mode Détail (bouton Détail / Présentation).
+Vérifié hors SketchUp : l’image de remplissage est une vraie image PNG, unie, de la bonne couleur. ruby -c est OK.
+
+À tester
+Clique Rechercher une mise à jour, réponds Oui pour la 2.113.2, puis redémarre SketchUp.
+Ouvre le modèle de ta capture, puis clique Détail / Présentation pour passer en Détail, ou ouvre l’outil Ferraillage. ✅ Le ferraillage devient rouge rouille.
+Sur ta coupe : ✅ les ronds d’acier (filants, cadres, treillis) apparaissent pleins et rouges.
+Une précision : le remplissage en coupe ne marche que si l’option « Remplissage de coupe » est cochée dans ton style. Elle l’est déjà, puisque ton béton est rempli sur ta capture. Si les aciers restaient vides, dis-le-moi : SketchUp ne remplit que les objets « solides », et je vérifierai alors que chaque barre l’est bien.
+
+
+nouveautes.json
+est ce que si je te donne le ferraillage verticaux comme pour les autres, il y a possibilité de les intégrer aux angles des murs dessinnés, dans l'épaisseur du porteur
+
+Je vérifie ce que les murs dessinés par le plugin mémorisent, pour savoir si on peut retrouver leurs angles et leur couche porteuse.
+
+Oui, c’est tout à fait possible, et les murs dessinés avec le plugin s’y prêtent bien.
+
+Pourquoi c’est faisable
+Chaque mur dessiné avec Dessiner un mur ou Mur composé garde en mémoire :
+
+son tracé : son axe et ses extrémités, ce qui permet de retrouver où deux murs se rejoignent, en angle (L) ou en T (refend contre périphérique) ;
+sa composition, couche par couche : par exemple « bloc béton 20 + isolant 10 + plaque 1,3 », avec la position de chaque couche. Je peux donc repérer la couche porteuse et placer le chaînage au milieu de son épaisseur, sans déborder dans l’isolant ou le doublage ;
+sa hauteur et son niveau de pose : le chaînage peut aller du haut de la semelle jusqu’au chaînage horizontal, ou jusqu’au haut du mur.
+Ce que ferait l’outil, sur le modèle des semelles et du dallage
+Il trouve tous les angles des murs porteurs, et les jonctions en T si tu le souhaites.
+Il pose à chacun une cage verticale (ta référence) dans l’épaisseur du porteur, dessinée en 3D en rouille et pleine en coupe.
+Il donne le nombre de cages à commander, avec les recouvrements et les attentes dans la semelle si tu en fais. Tout est repris dans la Liste des aciers.
+Ce qu’il me faut de ta part
+Comme pour les autres :
+
+La référence de la cage verticale que tu utilises. Est-ce le même chaînage LIB 4 HA10 10 × 10 que pour l’horizontal, ou un autre produit ?
+Où tu en mets : seulement aux angles, ou aussi aux jonctions en T, aux extrémités de murs, aux côtés des grandes ouvertures, ou tous les X mètres sur les longs murs ?
+En bas et en haut :
+pars-tu avec des attentes dans la semelle, et de quelle longueur ?
+la cage verticale monte-t-elle jusqu’au chaînage horizontal et le traverse-t-elle, avec un retour ?
+Envoie-moi la fiche produit et ces réponses, et je te propose le fonctionnement complet avant de coder.
+
+C’est noté : même cage que pour le chaînage horizontal, LIB C10104T10E15 (4 HA10, 10 × 10 cm, cadres HA5 tous les 15 cm, 6 m). Je pourrai réutiliser exactement le même dessin et le même comptage.
+
+Il me reste à savoir où tu les poses.
+
+Où poses-tu les chaînages verticaux (cage LIB 4 HA10 10×10) dans les murs porteurs ? Coche tout ce qui s'applique.
+Angles (L), Jonctions en T, Extrémités de murs, Côtés des grandes ouvertures
+À partir de quelle largeur d'ouverture mets-tu un chaînage vertical de chaque côté ?
+1,80 m et plus
+En bas et en haut, comment se raccorde le chaînage vertical ?
+Avec attentes en pied
+Tes attentes en pied de chaînage vertical : combien par chaînage et de quelle longueur ?
+2 HA10, 50 cm + retour
+J’ai toutes les informations. Voici le fonctionnement que je propose avant de coder.
+
+Un nouvel outil « Chaînages verticaux »
+Il se range dans la rubrique Dessiner, à côté de Ferraillage, et s’ouvre dans la palette comme les autres.
+
+1. Ce qu’il trouve tout seul dans les murs dessinés, sur les murs porteurs seulement (périphériques, refends, pignons ; les cloisons et doublages sont exclus) :
+
+les angles (L) ;
+les jonctions en T ;
+les extrémités libres de murs ;
+les deux côtés des ouvertures de 1,80 m et plus, d’après les ouvertures percées avec l’outil Ouverture.
+2. Où il pose la cage (LIB 4 HA10, 10 × 10 cm, cadres HA5 tous les 15 cm) :
+
+au milieu de l’épaisseur de la couche porteuse (le bloc ou le béton), jamais dans l’isolant ni le doublage ;
+à un angle ou un T : au croisement des deux couches porteuses ;
+à une extrémité ou au bord d’une ouverture : à 5 cm du bord (enrobage).
+3. Sur quelle hauteur : du bas du mur porteur, donc du dessus de la semelle, jusqu’au haut du mur. Elle traverse ainsi le chaînage horizontal. Si un mur périphérique repose sur un mur de soubassement, la cage traverse les deux.
+
+4. Les attentes en pied : 2 HA10 en L par chaînage. Chacune a 50 cm qui montent dans la cage et un retour de 20 cm couché dans la semelle.
+
+5. Les quantités, reprises dans la Liste des aciers :
+
+le nombre de cages de 6 m, en réutilisant les chutes. Par exemple, une cage de 6 m donne 2 chaînages de 2,70 m. Si tu ne réutilises pas les chutes, dis-le-moi ;
+le nombre d’attentes HA10.
+6. Des curseurs pour tout régler :
+
+largeur d’ouverture minimale (1,80 m) ;
+angles, T et extrémités oui ou non ;
+nombre d’attentes et leurs longueurs ;
+enrobage.
+7. Le dessin suit tes réglages : rouille, plein en coupe, dans le calque A2M_FERRAILLAGE, masqué en mode Présentation. On peut le rouvrir avec « Modifier ce que j’ai dessiné ».
+
+Ce qui restera à la main : les murs dessinés sans les outils du plugin, dont le plugin ne connaît pas la composition. Pour ceux-là, je te demanderai de les sélectionner, et la cage sera posée au milieu de leur épaisseur totale.
+
+Est-ce que ce fonctionnement te convient ? Si oui, je le code. Sinon, dis-moi ce que tu veux changer, notamment la réutilisation des chutes.
+
+oui code le, je n'ai simplement pas compris le point 7
+
+Le point 7 en clair : c’est seulement l’aspect des chaînages dessinés.
+
+Ils sont rouge rouille à l’écran et pleins sur les coupes, comme le reste du ferraillage.
+Ils sont rangés dans le même calque que le reste du ferraillage. Le bouton « Détail / Présentation » les affiche ou les cache donc avec les autres aciers.
+Si tu cliques dessus avec « Modifier ce que j’ai dessiné », la fenêtre de l’outil se rouvre avec tes réglages, pour les modifier.
+Bref, ils se comportent comme le ferraillage que tu connais déjà. Je code l’outil.
+
+Chaque mur et ouverture a maintenant son tracé et sa largeur en mémoire ; j’écris le nouvel outil chainages_v.rb dans un fichier séparé.
+
+Le test de détection est juste sur le bâtiment d’essai : 4 angles, 2 jonctions en T, 2 extrémités, 2 côtés de baie, et 8 cages de 6 m dont les deux de 2,47 m prises dans les chutes. Je branche maintenant l’outil dans la palette, les menus et la notice, puis je lui dessine un pictogramme.
+
+Je dessine le pictogramme « Chaînages verticaux » : un angle de mur avec la cage verticale couleur rouille et une attente en pied.
+
+Le pictogramme est lisible : un angle de murs avec la cage verticale couleur rouille, et l’attente orange en pied. J’ajoute la notice, puis je construis la version.
+
+La version 2.114.0 est prête dans 02_BIBLIOTHEQUES\SKETCHUP, avec le nouvel outil « Chaînages verticaux ». La détection et le comptage sont testés hors SketchUp, mais je n’ai encore rien pu vérifier dans SketchUp.
+
+Où le trouver
+Dans la rubrique Dessiner de la palette, juste après Ferraillage, sous le nom « Chaînages vert. ». Il s’ouvre dans la palette comme les autres outils.
+
+Ce qu’il fait, dès le clic
+Il lit tous les murs porteurs dessinés avec les outils Mur et Mur composé : périphériques, soubassements, refends et pignons. Les cloisons et doublages ne sont pas concernés.
+Il pose une cage LIB 4 HA10 10 × 10 (cadres HA5 tous les 15 cm) :
+aux angles, aux jonctions en T et aux extrémités libres ;
+des deux côtés des ouvertures de 1,80 m et plus, à 10 cm du tableau ;
+au milieu de l’épaisseur de la couche porteuse, jamais dans l’isolant ni le doublage ;
+du bas du mur jusqu’en haut, soubassement compris quand le mur repose dessus, moins 3 cm sous le haut.
+Il ajoute 2 attentes HA10 en L au pied de chaque chaînage : 50 cm dans la cage, l’ancrage sous le mur, et un retour de 20 cm dans la semelle.
+Il compte :
+le nombre de chaînages par type ;
+les cages de 6 m à commander, en réutilisant les chutes ;
+le nombre d’attentes ;
+les longueurs, et les kilos par diamètre.
+Tout est repris dans la Liste des aciers et dans le métré.
+
+Réglages : des boutons pour activer ou couper les angles, T, extrémités et ouvertures, et des curseurs pour la largeur minimale d’ouverture, le nombre et les longueurs des attentes, et l’arrêt en haut. Le 3D se refait en direct.
+
+Aspect : rouge rouille, plein en coupe, masqué en mode Présentation. On peut le rouvrir avec « Modifier ce que j’ai dessiné » ou par le clic droit.
+
+Pictogramme : un angle de murs avec la cage verticale rouille et l’attente orange.
+
+Vérifié hors SketchUp
+Sur un bâtiment d’essai de 10 × 8 m avec soubassement, un refend et un mur isolé, l’outil trouve :
+
+4 angles, 2 jonctions en T et 2 extrémités ;
+les 2 côtés d’une baie de 2,20 m. La fenêtre de 1,20 m est bien ignorée.
+Cela donne 10 chaînages et 8 cages de 6 m, les deux chaînages courts étant pris dans les chutes. ruby -c est OK sur tous les fichiers, et le .rbz contient bien le nouvel outil et son icône.
+
+Limites
+Seuls les murs dessinés avec le plugin sont lus : ce sont les seuls dont le tracé et les couches sont connus.
+Seules les ouvertures percées avec l’outil Ouverture sont prises en compte.
+Le chaînage traverse soubassement et mur du dessus d’un seul tenant. Si tu les arrêtes au niveau de la dalle, dis-le-moi, et je les séparerai.
+À tester
+Clique Rechercher une mise à jour, réponds Oui pour la 2.114.0, puis redémarre SketchUp : un nouveau bouton n’apparaît qu’au redémarrage.
+Sur un modèle avec des murs dessinés, clique Chaînages vert. ✅ Les cages apparaissent aux angles, aux T, aux extrémités et autour des grandes baies, dans le porteur.
+✅ Les quantités correspondent à ton calcul. Coupe ou active un type d’emplacement pour voir le résultat changer.
+7 fichiers modifiés
+
+chainages_v.rb
+
+build_rbz.py
+
+palette.rb
+
+Tout voir
+avec ou sans détail/présentation. Sans , comme sur la seconde capture, il faudrait tout de même avoir la représentation en coupe. Pocher peut être les fer ronds et les cadres
+
+Je comprends. En mode Présentation, le plugin cache complètement le calque du ferraillage, donc les aciers disparaissent aussi des coupes. C’est ta 2e capture.
+
+Il n’y a pas besoin de les cacher. Le béton opaque suffit déjà à masquer les aciers qui sont dedans, et sur une coupe, seuls apparaîtront les fers coupés par le plan de coupe, pochés en rouille. Je change donc le mode Présentation : béton plein, ferraillage toujours présent, et visible uniquement là où la coupe le tranche.
+
+La version 2.114.1 est prête dans 02_BIBLIOTHEQUES\SKETCHUP. Je n’ai pas encore pu la vérifier dans SketchUp.
+
+Ce qui change dans le bouton « Détail / Présentation »
+Mode	Béton	Ferraillage en 3D	Ferraillage sur les coupes
+Détail (inchangé)	transparent	tout visible	tout visible
+Présentation (avant)	plein	caché	rien, comme sur ta 2e capture
+Présentation (2.114.1)	plein	masqué par le béton	les fers coupés, pochés en rouille
+Pourquoi ça marche : le ferraillage n’est plus caché en Présentation. Comme il est à l’intérieur du béton opaque, on ne le voit pas dans les vues normales. Mais sur une coupe, SketchUp tranche les barres : leurs sections apparaissent pleines, en rouge rouille, comme en Détail.
+
+Une limite sur les cadres
+En Présentation, un cadre n’apparaît sur la coupe que s’il est tranché par le plan de coupe. Les cadres situés juste derrière le plan restent cachés par le béton. C’est le comportement normal d’un dessin de coupe, mais différent de ta 1re capture, où le béton transparent laissait voir tous les cadres.
+
+Si tu veux voir le cadre le plus proche même quand le plan ne le coupe pas exactement, dis-le-moi. Il existe deux solutions : décaler un peu ton plan de coupe pour qu’il passe dans un cadre, ou ajouter un réglage qui dessine le cadre à l’endroit du plan de coupe.
+
+À tester
+Clique Rechercher une mise à jour, réponds Oui pour la 2.114.1, puis redémarre SketchUp.
+Passe en Présentation. ✅ Sur ta coupe, les filants du chaînage et de la semelle apparaissent en ronds pleins rouille, et le béton reste plein.
+✅ Dans une vue 3D sans coupe, aucun acier ne se voit.
+A modifié 4 fichiers
+
+mode_vue.rb
+
+build_rbz.py
+
+a2m_metre_chargeur.rb
+
+Tout voir
+ajoute le réglage pour dessiner le cadre au plan de coupe
+
+Je l’ajoute. Voici le fonctionnement :
+
+un nouveau bouton « Cadres au plan de coupe » dans la rubrique Dessiner, à côté de « Détail / Présentation » ;
+au clic, le plugin cherche, pour chaque cage dont les cadres sont parallèles au plan de coupe actif (semelles, chaînages, poutres), le cadre le plus proche du plan, et en pose une copie exactement dans le plan. La coupe le tranche alors et le montre poché en rouille ;
+re-clic : les cadres de coupe sont retirés. Quand l’option est active, passer en Présentation les recalcule, par exemple après avoir déplacé le plan de coupe ;
+ces copies ne comptent pas dans le métré : ce n’est que du dessin.
+Le pictogramme est clair : une section de béton avec le cadre et les 4 fers pochés en rouille, et le trait de coupe orange. Je termine : notice, version, construction.
+
+J’ai ajouté le réglage dans la version 2.115.0, déjà copiée dans 02_BIBLIOTHEQUES\SKETCHUP. Je n’ai rien pu vérifier dans SketchUp ; c’est donc à toi de tester.
+
+Le nouveau bouton « Cadres en coupe »
+Il se trouve dans la rubrique Dessiner, juste après « Détail / Présentation ». Son pictogramme montre une section de béton avec le cadre et 4 fers pochés.
+
+Premier clic :
+
+le plugin cherche le plan de coupe actif ;
+pour chaque cage dont les cadres sont parallèles à ce plan, il prend le cadre le plus proche du plan, à moins de 10 cm ;
+il en pose une copie exactement dans le plan de coupe. La coupe la tranche, et le cadre apparaît poché en rouille avec ses fers, même avec le béton plein du mode Présentation.
+Cela marche pour toutes les cages : semelles, chaînages de dallage, poutres et poteaux. Pour une coupe horizontale, cela marche aussi avec les chaînages verticaux.
+
+Re-clic : les cadres de coupe sont retirés.
+
+Si tu déplaces ton plan de coupe, quand l’option est active, il suffit de passer en Présentation : les cadres sont recalculés pour le nouveau plan.
+
+Ces cadres sont du dessin seul : ils ne comptent ni dans les kilos, ni dans la Liste des aciers, ni dans le métré.
+
+Contrôles faits : ruby -c est OK, le .rbz contient le bouton et son icône, la notice est complétée.
+
+À tester
+Clique Rechercher une mise à jour, réponds Oui pour la 2.115.0, puis redémarre SketchUp : un nouveau bouton n’apparaît qu’au redémarrage.
+Mets-toi en Présentation, avec ta coupe active, comme sur ta 2e capture.
+Clique Cadres en coupe. ✅ Le cadre de la semelle et celui du chaînage de dalle apparaissent pochés en rouille, avec leurs fers.
+Re-clique. ✅ Ils disparaissent.
+Point à surveiller : si aucun cadre n’apparaît alors que la coupe est active, la barre d’état te dira « aucun cadre parallèle à moins de 10 cm ». Dans ce cas, dis-moi l’orientation de ta coupe.
+
+Quand tout sera validé, il faudra publier sur GitHub. Beaucoup de choses attendent depuis la 2.111.12 : palette intégrée en cartes, pictogrammes, ferraillages FSR10 / ST25C / chaînages, chaînages verticaux et cadres en coupe. Je ne le ferai qu’avec ton accord.
+
+A modifié 5 fichiers
+
+mode_vue.rb
+
+build_rbz.py
+
+palette.rb
+
+Tout voir
+regarde, je n'ai pas possibilité de donner une hachure au béton de propreté sous la semelle filante, il faudrait que dans les textures de coupes, je puisse ajouter des éléments dans la colonne de gauche en les sélectionnant depuis mon espace dessin et qu'ensuite il garde en mémoire. Je voudrais aussi par exemple, pouvoir avoir une hachure pour mur périphérique, pour la brique, le parpaing ou autre
+
+Je regarde comment la fenêtre des hachures construit sa colonne de gauche et mémorise les réglages, pour y ajouter tes propres éléments.
+
+Recherché code, lu hachures.rb
+Le béton de propreté est bien créé par l’outil Semelles, mais sa balise A2M_BETON_PROPRETE manque dans la liste des hachures, ce qui empêche de le régler. Par ailleurs, la colonne de gauche est figée et le plugin ne distingue les objets que par leur balise, donc il ne peut pas séparer un mur périphérique en brique d’un mur en parpaing.
+
+J’ai trouvé pourquoi tu ne peux pas régler le béton de propreté : il a bien sa propre balise, mais elle manque dans la liste de la fenêtre des hachures. Plus largement, la colonne de gauche est figée sur une liste de balises, sans moyen d’en ajouter. Je n’ai encore rien modifié. Voici ce que je propose.
+
+1. Corriger tout de suite le béton de propreté
+J’ajoute « Béton de propreté » à la colonne de gauche, avec sa balise A2M_BETON_PROPRETE. Tu pourras lui donner une hachure comme aux autres couches.
+
+2. Des « couches personnelles », créées depuis ta sélection
+Un nouveau bouton en haut de la colonne de gauche : « + Couche depuis ma sélection ».
+
+Dans ton dessin, sélectionne un ou plusieurs objets, par exemple un mur périphérique en brique.
+Clique le bouton et donne un nom, par exemple « Mur périphérique – brique ».
+La couche apparaît dans la colonne de gauche. Tu lui choisis un motif et tu appliques, comme pour les autres.
+Ce que le plugin retient, dans ton fichier de réglages des hachures :
+
+le nom de la couche et sa hachure, valables dans tous tes modèles ;
+la règle pour retrouver les objets : leur balise + leur matière, par exemple « Mur périphérique + A2M_Brique maçonnée ».
+Un mur périphérique en brique dessiné plus tard, même dans un autre modèle, reçoit donc automatiquement la hachure brique. Un mur périphérique en parpaing garde celle des murs périphériques, ou la sienne si tu crées une couche « parpaing ».
+
+3. Les règles de priorité
+Une couche personnelle passe avant la couche de sa balise. Le mur en brique prend la hachure « brique », et non celle des murs périphériques.
+Sur chaque couche personnelle, deux petits boutons :
+« + sélection », pour y ajouter d’autres objets à la main, même d’une autre matière ;
+« Supprimer », pour retirer la couche. Les objets reprennent alors la hachure de leur balise.
+Ce qui ne change pas
+Les couches actuelles, la galerie de motifs, les réglages (trait, fond, écartement, angle) et l’application automatique en dessinant.
+
+
+Oui, code-les
+
+Exécuté 1 commande, lu fenetre.html
+Je modifie la partie Ruby : la mémoire des couches personnelles, la règle « balise + matière », la priorité sur la couche de la balise, et le béton de propreté.
+
+Je mets à jour la fenêtre avec le bouton « + Couche depuis ma sélection » et les boutons « + sélection » et « Supprimer » sur les couches personnelles.
+
+Je teste la logique des couches personnelles hors SketchUp, avec des faux murs :
+
+un mur périphérique en brique, et un autre en parpaing ;
+un béton de propreté ;
+un objet ajouté à la main.
+Tout fonctionne comme prévu, y compris le béton de propreté, la couche brique qui reprend le second mur et la mémorisation des réglages. Je construis maintenant la version.
+
+La version 2.116.0 est prête dans 02_BIBLIOTHEQUES\SKETCHUP. La logique est testée hors de SketchUp, mais je n’ai pas encore pu essayer la fenêtre dans SketchUp.
+
+Ce qui change dans « Hachures de coupe par couche »
+1. Béton de propreté : il apparaît maintenant dans la colonne de gauche, juste après « Semelles filantes ». Tu peux lui choisir une hachure comme pour les autres couches.
+
+2. Mes couches, en haut de la colonne de gauche, avec un bouton orange « + Couche depuis ma sélection » :
+
+Dans ton dessin, sélectionne un ou plusieurs objets, par exemple un mur périphérique en brique.
+Clique le bouton. Un nom est proposé, par exemple « Murs périphériques – Brique maçonnée ». Garde-le ou change-le.
+La couche apparaît sous le titre « Mes couches ». Choisis son motif, puis « Appliquer la hachure ».
+Ce que le plugin retient, pour tous tes modèles :
+
+le nom et la hachure de la couche ;
+sa règle : balise + matière, par exemple « Murs périphériques + A2M_Brique maçonnée ».
+Les murs périphériques en brique, ceux d’aujourd’hui comme ceux que tu dessineras plus tard, prennent tout seuls la hachure « brique ». Cette hachure passe avant celle des murs périphériques. Les murs en parpaing gardent la leur, ou une couche « parpaing » si tu en crées une.
+
+Sur chaque couche personnelle, la règle est affichée, avec deux petits boutons :
+
+« + sélection » ajoute à la main les objets sélectionnés, même d’une autre matière ;
+« Supprimer » retire la couche, et ses objets reprennent la hachure de leur balise.
+Vérifié hors SketchUp
+Avec deux murs en brique, un mur en parpaing, un béton de propreté et un objet quelconque :
+
+j’ai créé la couche « brique » à partir d’un seul mur, et le second l’a rejointe tout seul grâce à la règle ;
+le mur en parpaing est resté dans les murs périphériques ;
+un objet ajouté à la main est bien sorti de sa couche d’origine ;
+tout est enregistré dans Documents\ATELIER 2M\Hachures\reglages.json.
+Une limite à connaître : la règle ne se crée que si les objets sélectionnés ont la même balise et la même matière. Sinon, la couche ne contient que les objets ajoutés à la main. Le plugin te l’indique dans la description de la couche.
+
+À tester
+Rechercher une mise à jour > Oui pour la 2.116.0, puis redémarre SketchUp.
+Ouvre Hachures. ✅ « Béton de propreté » est dans la liste. Donne-lui une hachure et applique.
+Sélectionne un mur périphérique en brique, puis « + Couche depuis ma sélection ». Donne-lui la hachure brique et applique. ✅ Tous tes murs en brique la prennent, les autres non.
+Dessine un nouveau mur périphérique en brique. ✅ Il reçoit directement la hachure brique.
+A modifié 4 fichiers
+
+hachures.rb
+
+fenetre.html
+
+a2m_metre_chargeur.rb
+
+Tout voir
+Peux tu prendre la main sur sketchup, le ficheir CLAUDE SKETCHUP est déjà ouvert, analyse le au niveau des hachures de coupes et des textures. Normalement elles portent le nom A2M_ *****, je veux que tu enregistre ça dans la base de mon outil, afin de le garder en mémoire
+
+Oui. Plutôt que de recopier les noms à la main en cliquant dans SketchUp, ce qui serait lent et incomplet (dimensions des textures, motifs des hachures), je vais donner à ton outil la capacité d’enregistrer lui-même sa base. Je prendrai ensuite la main pour lancer l’enregistrement dans ton fichier « CLAUDE SKETCHUP ».
+
+Ce que je vais ajouter dans la fenêtre des hachures :
+
+« Mémoriser les A2M_ du modèle » : enregistre dans ta base, dans Documents\ATELIER 2M\Hachures\Base A2M, toutes les matières A2M_ (couleur, transparence, image de texture et ses dimensions) et toutes les hachures A2M (motif, aperçu), ainsi que quelle hachure est posée sur quelle balise et quelle matière dans ton modèle ;
+« Restaurer ma base dans ce modèle » : recrée dans un modèle neuf les matières et hachures qui y manquent.
+La fenêtre des hachures se recharge sans redémarrer SketchUp : j’installerai donc la mise à jour, puis je lancerai l’enregistrement sur ton fichier ouvert.
+
+Je prends maintenant la main sur SketchUp : j’installe la 2.117.0 avec « Rechercher une mise à jour », puis je lance l’enregistrement de la base sur ton fichier ouvert.
+
+Le menu Extensions est ouvert. J’ouvre « Métré Atelier 2M » pour lancer la recherche de mise à jour.
+
+La fenêtre propose d’installer la 2.117.0 depuis ton dossier. Ta version installée était la 2.115.0. Je clique Oui.
+
+SketchUp demande la confirmation habituelle pour installer une extension : c’est ton propre plugin. Je confirme.
+
+La version 2.117.0 est bien installée et rechargée. J’ouvre maintenant la fenêtre des Hachures depuis la palette.
+
+Le nouveau bouton « Mémoriser les A2M_ du modèle » est bien là. Je clique dessus.
+
+La base est bien enregistrée avec 18 matières A2M_, 11 hachures et 8 usages. Deux corrections sont prévues : les matières sont posées sur les faces des murs et non sur les groupes, donc le plugin prendra la matière principale des faces, et les hachures seront marquées avec leur aperçu pour que « Restaurer » les reconstruise à partir de leurs réglages.
+
+⚠️ Ta limite d’utilisation est atteinte : je m’arrête ici. Voici où on en est.
+
+Ce qui est fait
+Ta base A2M est enregistrée depuis ton fichier « CLAUDE SKETCHUP » : j’ai pris la main sur SketchUp, installé la 2.117.0, puis cliqué « Mémoriser les A2M_ du modèle ». Tout est dans Documents\ATELIER 2M\Hachures\Base A2M :
+
+18 matières A2M_, avec leur couleur, leur transparence, leur image de texture et ses dimensions. Par exemple A2M_Brique maconnée (300 × 200 cm), A2M_Parpaing, A2M_Dallage béton, A2M_Placo, A2M_Enduit extérieur, A2M_Laine de verre, ainsi que les textures « gros œuvre » ;
+11 hachures A2M, avec leurs réglages : motif, écartement, angle. Par exemple Murs périphériques, Soubassement, Semelles, Dallage, Planelles, Enduit, Doublage, Cloisons ;
+8 usages (balise + matière → hachure), par exemple « Murs de soubassement + A2M_Parpaing → hachure Maçonnerie ».
+Dans la fenêtre Hachures, deux nouveaux boutons : « Mémoriser les A2M_ du modèle » et « Restaurer ma base » (pour un modèle neuf).
+
+Ce qui reste
+La 2.117.1 est construite et copiée dans ton dossier, mais pas installée. Elle corrige deux choses que j’ai repérées en lisant ta base :
+tes murs ont leur matière sur les faces, pas sur le groupe. La 2.117.1 lit la matière principale des faces, sinon la règle « balise + matière » des couches personnelles (brique ou parpaing) ne trouverait pas tes murs ;
+« Restaurer » reconstruira chaque hachure depuis ses réglages.
+Pour finir : clique « Rechercher une mise à jour », réponds Oui, puis clique à nouveau « Mémoriser les A2M_ du modèle » dans la fenêtre Hachures. Les usages des murs seront alors complets.
+
+Rien n’est publié sur GitHub depuis la 2.111.12. Toutes les nouveautés de la journée sont en version de test locale : palette en cartes, pictogrammes, ferraillages, chaînages verticaux, cadres en coupe, couches de hachures, base A2M. Le commit et la publication restent à faire, avec ton accord.
+Encore à tester dans SketchUp : couches personnelles, chaînages verticaux, cadres en coupe, aspect rouille du ferraillage.
+A modifié 4 fichiers
+
+hachures.rb
+
+fenetre.html
+
+a2m_metre_chargeur.rb
+
+Tout voir
+Impossible d’accéder à votre ordinateur. Il est peut-être en veille ou hors ligne. Cette session se reconnectera dès qu’il sera de nouveau disponible.
+Impossible d’accéder à votre ordinateur.
+Il est peut-être en veille ou hors ligne. Cette session se reconnectera dès qu’il sera de nouveau disponible.
+Publie tout sur GitHub maintenant, version 2.117 comprise, et donne-moi le fichier a2m_metre.rbz.
+
+
+
+
+C:\Users\ateli\Documents\ATELIER 2M\PLUGIN A2M\metre-atelier2m\sketchup\chainages_v.rb
+
+Aucune modification à afficher
+
